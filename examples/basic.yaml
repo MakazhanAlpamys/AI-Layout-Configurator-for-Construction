@@ -1,0 +1,38 @@
+version: "0.1"
+project_name: "Demo house"
+boundary:
+  width: 12000
+  height: 9000
+  cutouts: []
+grid_mm: 100
+tolerance: 0.04
+wall_thickness_mm: 200
+door_width_mm: 900
+entry_room: hall
+rooms:
+  - id: hall
+    type: corridor
+    target_area: 12
+    min_width: 1800
+    min_depth: 1800
+    required_adjacency: [living, kitchen, bedroom]
+  - id: living
+    type: living_room
+    target_area: 24
+    min_width: 3000
+    min_depth: 3500
+    needs_daylight: true
+    required_adjacency: [hall]
+  - id: kitchen
+    type: kitchen
+    target_area: 12
+    min_width: 2400
+    min_depth: 2500
+    required_adjacency: [hall]
+  - id: bedroom
+    type: bedroom
+    target_area: 16
+    min_width: 2800
+    min_depth: 3000
+    needs_daylight: true
+    required_adjacency: [hall]
