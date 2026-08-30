@@ -1,0 +1,48 @@
+name: Generic residential baseline
+version: "0.1"
+jurisdiction: generic-baseline-not-a-building-code
+
+# These are configurable design-aid thresholds. They are not a permit verdict.
+rules:
+  - id: GEOMETRY_VALID
+    title: Layout geometry is valid
+    source: LayoutIR geometry contract
+    clause: internal.geometry
+
+  - id: MIN_ROOM_AREA
+    title: Minimum area by room type
+    source: Project baseline, configurable
+    clause: baseline.min_area_by_type
+    params:
+      min_area_by_type:
+        corridor: 1.5
+        bedroom: 9.0
+        living_room: 14.0
+        kitchen: 5.0
+
+  - id: MIN_CORRIDOR_WIDTH
+    title: Minimum clear corridor width
+    source: Project baseline, configurable
+    clause: baseline.corridor_width
+    params:
+      corridor_types: [corridor, hallway]
+      minimum_clear_width_mm: 1200
+
+  - id: DAYLIGHT_OPENING
+    title: Daylight-required rooms have an exterior opening
+    source: LayoutIR needs_daylight contract
+    clause: internal.daylight_opening
+    params:
+      require_for_needs_daylight: true
+
+  - id: EGRESS_REACHABILITY
+    title: Every room is reachable from the entry
+    source: LayoutIR topology contract
+    clause: internal.egress_reachability
+
+  - id: MAX_EGRESS_DISTANCE
+    title: Maximum route distance from the entry
+    source: Project baseline, configurable
+    clause: baseline.max_egress_distance
+    params:
+      max_travel_distance_mm: 30000

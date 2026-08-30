@@ -101,4 +101,11 @@ def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
     for room in spec.rooms:
         if room.id not in reachable:
             issues.append(ValidationIssue("unreachable_room", f"Комната {room.id} недостижима от {spec.entry_room}"))
+    if not (set(room_by_id) - set(placements)):
+        from .walls import build_wall_plan
+
+        try:
+            build_wall_plan(spec, result)
+        except (KeyError, ValueError) as exc:
+            issues.append(ValidationIssue("window_opening", f"Некорректное расположение оконного проёма: {exc}"))
     return ValidationReport(tuple(issues))

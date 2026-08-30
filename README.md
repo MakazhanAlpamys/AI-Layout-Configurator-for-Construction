@@ -2,7 +2,7 @@
 
 Детерминированный генератор одноэтажных прямоугольных планировок. На вход
 принимает YAML/JSON с габаритами здания, комнатами, площадями и смежностями;
-на выходе создаёт варианты планировок в DXF и векторном PDF.
+на выходе создаёт варианты планировок в DXF, векторном PDF и базовом IFC4.
 
 ## Быстрый старт
 
@@ -12,13 +12,37 @@ uv pip install --python .venv\Scripts\python.exe -e .
 .venv\Scripts\python.exe -m layout_configurator.cli generate examples/basic.yaml --output out --variants 2
 ```
 
-Результаты появятся в `out/`: `layout_01.dxf`, `layout_01.pdf`, JSON-снимок
-и `manifest.json`. Если в окружении уже есть обычный Python с `pip`, достаточно
+Результаты появятся в `out/`: `layout_01.dxf`, `layout_01.pdf`,
+`layout_01.ifc`, JSON-снимок и `manifest.json`. Если в окружении уже есть обычный Python с `pip`, достаточно
 заменить две первые команды на `python -m pip install -e .`. То же самое можно
 запустить без установки entry point:
 
 ```powershell
 python -m layout_configurator.cli generate examples/basic.yaml -o out
+```
+
+Типизированная правка существующего результата:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli edit out\layout_01.json `
+  --move-room hall 100 0 --output edited
+```
+
+Доступны `--move-room ROOM DX DY`, `--resize-room ROOM WIDTH HEIGHT`,
+`--add-door ROOM_A ROOM_B`, `--add-door-at ROOM_A ROOM_B OFFSET_MM WIDTH_MM`,
+`--remove-door DOOR_ID`, `--add-window ROOM SIDE OFFSET_MM WIDTH_MM` и
+`--remove-window WINDOW_ID`. Для `--add-door-at` и ручного окна `OFFSET_MM` —
+центр проёма от нижнего/левого края соответствующей грани. После команды
+изменённая геометрия фиксируется,
+остальные комнаты частично пересчитываются CP-SAT и проходят повторную
+проверку; при нарушении ограничений команда отклоняется, исходный JSON не
+перезаписывается.
+
+Проверка IFC по IDS-шаблону:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli validate `
+  out\layout_01.ifc --ids ids\layout_baseline.ids
 ```
 
 Ядро следует принципу solver-first: координаты выдаёт OR-Tools CP-SAT,
@@ -32,5 +56,50 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 - сетка координат по умолчанию 100 мм;
 - контур — bounding box с прямоугольными вычитаемыми зонами;
 - смежность означает общую границу не меньше ширины двери;
+- стены экспортируются двойными линиями с толщиной и вырезами дверей;
+- окна для комнат с `needs_daylight` экспортируются автоматически; ручные окна
+  можно добавить через `edit --add-window ROOM SIDE OFFSET_MM WIDTH_MM`;
+- IFC содержит пространственную структуру, комнаты, стены, двери и площади;
+  базовые property sets, материалы и IDS-шаблон уже есть; юрисдикционные
+  нормативные проверки будут отдельным этапом;
 - DXF/PDF — чертёжная выдача, не разрешение на строительство и не итоговая
   проверка строительных норм.
+
+## Детерминированная проверка ruleset
+
+Для layout JSON можно запустить версионируемый набор проектных правил:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli check `
+  out\layout_01.json --rules rules\baseline.yaml
+```
+
+`rules/baseline.yaml` проверяет геометрию, минимальные площади по типам комнат,
+ширину коридора, окна для `needs_daylight`, достижимость от входа и максимальную
+длину маршрута. Результат содержит `PASS`/`FAIL`/`NOT_APPLICABLE`, источник,
+пункт ruleset и evidence по каждому правилу; `--json` выдаёт машинный отчёт.
+
+Это настраиваемый generic baseline для проектной самопроверки, а не универсальный
+строительный код и не решение о разрешении на строительство. Юрисдикционные
+профили должны добавляться отдельными ruleset-файлами после фиксации конкретной
+юрисдикции. Числовые решения принимает код; LLM/RAG в verdict не участвуют.
+
+## JSON Schema boundary
+
+Канонический контракт `LayoutIR` описан в
+[`schemas/layout_ir.schema.json`](schemas/layout_ir.schema.json). Проверка
+нормализованного удобного YAML:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli schema examples\basic.yaml
+```
+
+Строгая проверка файла как есть, без нормализации и без молчаливого удаления
+неизвестных полей:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli schema input.json --raw
+```
+
+`--raw` — граница будущего LLM-парсера. Парсер может выдавать только JSON по
+схеме; координаты, DXF и нормативный verdict ему не выдаются.

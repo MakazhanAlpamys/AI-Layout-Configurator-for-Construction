@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass
 
-from .models import LayoutIR, LayoutResult, RoomSpec
+from .models import LayoutIR, LayoutResult, Rect
 
 
 class InfeasibleLayout(RuntimeError):
@@ -26,8 +27,9 @@ def solve_layouts(
     variants: int = 1,
     time_limit_seconds: float = 30,
     seed: int = 42,
+    fixed_rects: Mapping[str, Rect] | None = None,
 ) -> list[LayoutResult]:
-    """Solve one or more grid-snapped, non-overlapping layout variants."""
+    """Solve one or more grid-snapped layouts, optionally locking room rectangles."""
 
     if variants < 1:
         raise ValueError("variants должен быть не меньше 1")
@@ -35,6 +37,11 @@ def solve_layouts(
         from ortools.sat.python import cp_model
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("Установите зависимости проекта: pip install -e .") from exc
+
+    fixed_rects = fixed_rects or {}
+    unknown_fixed = set(fixed_rects) - {room.id for room in spec.rooms}
+    if unknown_fixed:
+        raise InfeasibleLayout(f"Нельзя зафиксировать неизвестные комнаты: {', '.join(sorted(unknown_fixed))}")
 
     model = cp_model.CpModel()
     grid = spec.grid_mm
@@ -53,6 +60,12 @@ def solve_layouts(
         area = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area")
         model.Add(x + width <= boundary_width)
         model.Add(y + height <= boundary_height)
+        if room.id in fixed_rects:
+            fixed = fixed_rects[room.id]
+            model.Add(x == _fixed_grid_value(fixed.x, grid, room.id, "x"))
+            model.Add(y == _fixed_grid_value(fixed.y, grid, room.id, "y"))
+            model.Add(width == _fixed_grid_value(fixed.width, grid, room.id, "width"))
+            model.Add(height == _fixed_grid_value(fixed.height, grid, room.id, "height"))
         model.AddMultiplicationEquality(area, [width, height])
 
         min_area = _area_to_grid2(room.min_area_m2, grid, ceil=True)
@@ -186,3 +199,10 @@ def _ceil_grid(value: float, grid: int) -> int:
 def _area_to_grid2(area_m2: float, grid: int, ceil: bool) -> int:
     value = area_m2 * 1_000_000 / (grid * grid)
     return math.ceil(value - 1e-9) if ceil else math.floor(value + 1e-9)
+
+
+def _fixed_grid_value(value: float, grid: int, room_id: str, field_name: str) -> int:
+    grid_value = round(value / grid)
+    if abs(value - grid_value * grid) > 1e-6:
+        raise InfeasibleLayout(f"Комната {room_id}: {field_name}={value} не попадает на сетку {grid} мм")
+    return int(grid_value)

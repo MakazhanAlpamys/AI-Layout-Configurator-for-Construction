@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/layout-ir-0.1.json",
+  "title": "LayoutIR 0.1",
+  "description": "Canonical normalized single-storey rectangular layout specification. Geometry is produced by the solver, not by this document.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "project_name",
+    "tolerance",
+    "grid_mm",
+    "wall_thickness_mm",
+    "door_width_mm",
+    "window_width_mm",
+    "window_height_mm",
+    "window_sill_mm",
+    "entry_room",
+    "boundary",
+    "rooms"
+  ],
+  "properties": {
+    "version": {"type": "string", "minLength": 1},
+    "project_name": {"type": "string", "minLength": 1},
+    "tolerance": {"type": "number", "exclusiveMinimum": 0, "exclusiveMaximum": 1},
+    "grid_mm": {"type": "integer", "minimum": 1},
+    "wall_thickness_mm": {"type": "number", "exclusiveMinimum": 0},
+    "door_width_mm": {"type": "number", "exclusiveMinimum": 0},
+    "window_width_mm": {"type": "number", "exclusiveMinimum": 0},
+    "window_height_mm": {"type": "number", "exclusiveMinimum": 0},
+    "window_sill_mm": {"type": "number", "minimum": 0},
+    "entry_room": {"$ref": "#/$defs/id"},
+    "boundary": {"$ref": "#/$defs/boundary"},
+    "rooms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/room"}
+    },
+    "doors": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/door"}
+    },
+    "windows": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/window"}
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "positiveNumber": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "nonNegativeNumber": {
+      "type": "number",
+      "minimum": 0
+    },
+    "idList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/id"}
+    },
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["width", "height"],
+      "properties": {
+        "width": {"$ref": "#/$defs/positiveNumber"},
+        "height": {"$ref": "#/$defs/positiveNumber"},
+        "cutouts": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/cutout"}
+        }
+      }
+    },
+    "cutout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": {"$ref": "#/$defs/nonNegativeNumber"},
+        "y": {"$ref": "#/$defs/nonNegativeNumber"},
+        "width": {"$ref": "#/$defs/positiveNumber"},
+        "height": {"$ref": "#/$defs/positiveNumber"}
+      }
+    },
+    "room": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "target_area", "min_area", "max_area", "min_width", "min_depth", "required_adjacency", "preferred_adjacency", "forbidden_adjacency", "needs_daylight"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "type": {"$ref": "#/$defs/id"},
+        "target_area": {"$ref": "#/$defs/positiveNumber"},
+        "min_area": {"$ref": "#/$defs/positiveNumber"},
+        "max_area": {"$ref": "#/$defs/positiveNumber"},
+        "min_width": {"$ref": "#/$defs/positiveNumber"},
+        "min_depth": {"$ref": "#/$defs/positiveNumber"},
+        "required_adjacency": {"$ref": "#/$defs/idList"},
+        "preferred_adjacency": {"$ref": "#/$defs/idList"},
+        "forbidden_adjacency": {"$ref": "#/$defs/idList"},
+        "needs_daylight": {"type": "boolean"}
+      }
+    },
+    "door": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "room_a", "room_b", "offset_mm", "width_mm"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "room_a": {"$ref": "#/$defs/id"},
+        "room_b": {"$ref": "#/$defs/id"},
+        "offset_mm": {"$ref": "#/$defs/nonNegativeNumber"},
+        "width_mm": {"$ref": "#/$defs/positiveNumber"}
+      }
+    },
+    "window": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "room_id", "side", "offset_mm", "width_mm"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "room_id": {"$ref": "#/$defs/id"},
+        "side": {"enum": ["left", "right", "bottom", "top"]},
+        "offset_mm": {"$ref": "#/$defs/nonNegativeNumber"},
+        "width_mm": {"$ref": "#/$defs/positiveNumber"}
+      }
+    }
+  }
+}

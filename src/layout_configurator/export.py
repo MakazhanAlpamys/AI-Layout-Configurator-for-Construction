@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .models import LayoutIR, LayoutResult, Rect
 from .validation import ValidationReport
+from .walls import build_wall_plan
 
 
 LAYERS = ("A-WALL", "A-ROOM", "A-DOOR", "A-WINDOW", "A-DIMS", "A-HATCH", "A-TEXT", "A-TITLE")
@@ -33,9 +34,12 @@ def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
     for cutout in boundary.cutouts:
         _add_rect_polyline(modelspace, cutout, "A-HATCH")
 
+    wall_plan = build_wall_plan(spec, result)
+    for ring in wall_plan.rings():
+        modelspace.add_lwpolyline(ring, close=True, dxfattribs={"layer": "A-WALL"})
+
     for room in spec.rooms:
         rect = result.placements[room.id]
-        _add_rect_polyline(modelspace, rect, "A-WALL", lineweight=int(spec.wall_thickness_mm * 10))
         text = modelspace.add_text(
             f"{room.id} ({rect.area_m2:.2f} m2)",
             dxfattribs={"height": max(180, min(rect.width, rect.height) / 10), "layer": "A-TEXT"},
@@ -55,13 +59,21 @@ def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
         block = document.blocks.new("DOOR_900")
         block.add_line((0, 0), (spec.door_width_mm, 0))
         block.add_arc((0, 0), spec.door_width_mm, 0, 90)
-    for room_a, room_b in spec.relation_pairs("required_adjacency"):
-        shared = _shared_segment(result.placements[room_a], result.placements[room_b])
-        if shared is None:
-            continue
-        (x, y), vertical_edge = shared
+    for opening in wall_plan.openings:
+        x, y = (opening.fixed, opening.start) if opening.orientation == "vertical" else (opening.start, opening.fixed)
         insert = modelspace.add_blockref("DOOR_900", (x, y), dxfattribs={"layer": "A-DOOR"})
-        if vertical_edge:
+        if opening.orientation == "vertical":
+            insert.dxf.rotation = 90
+    for opening in wall_plan.windows:
+        block_name = f"WINDOW_{opening.width:.0f}"
+        if block_name not in document.blocks:
+            block = document.blocks.new(block_name)
+            block.add_line((0, 0), (opening.width, 0))
+            block.add_line((0, -100), (0, 100))
+            block.add_line((opening.width, -100), (opening.width, 100))
+        x, y = (opening.fixed, opening.start) if opening.orientation == "vertical" else (opening.start, opening.fixed)
+        insert = modelspace.add_blockref(block_name, (x, y), dxfattribs={"layer": "A-WINDOW"})
+        if opening.orientation == "vertical":
             insert.dxf.rotation = 90
 
     title_x = boundary.width_mm - 3_000
@@ -93,8 +105,10 @@ def export_pdf(path: str | Path, spec: LayoutIR, result: LayoutResult, report: V
     def point(x: float, y: float) -> tuple[float, float]:
         return origin_x + x * scale, origin_y + y * scale
 
-    pdf.setLineWidth(max(0.6, spec.wall_thickness_mm * scale / 5))
+    pdf.setLineWidth(0.5)
+    pdf.setDash(3, 2)
     pdf.rect(origin_x, origin_y, spec.boundary.width_mm * scale, spec.boundary.height_mm * scale)
+    pdf.setDash()
     pdf.setLineWidth(0.6)
     for cutout in spec.boundary.cutouts:
         x, y = point(cutout.x, cutout.y)
@@ -102,14 +116,29 @@ def export_pdf(path: str | Path, spec: LayoutIR, result: LayoutResult, report: V
         pdf.rect(x, y, cutout.width * scale, cutout.height * scale)
         pdf.setDash()
 
+    wall_plan = build_wall_plan(spec, result)
+    pdf.setLineWidth(0.7)
+    for ring in wall_plan.rings():
+        path = pdf.beginPath()
+        first_x, first_y = point(*ring[0])
+        path.moveTo(first_x, first_y)
+        for ring_x, ring_y in ring[1:]:
+            path.lineTo(*point(ring_x, ring_y))
+        path.close()
+        pdf.drawPath(path, stroke=1, fill=0)
+
     for room in spec.rooms:
         rect = result.placements[room.id]
         x, y = point(rect.x, rect.y)
-        pdf.setLineWidth(max(0.7, spec.wall_thickness_mm * scale / 5))
-        pdf.rect(x, y, rect.width * scale, rect.height * scale)
-        pdf.setLineWidth(0.5)
         pdf.setFont("Helvetica", max(5, min(11, rect.width * scale / 16)))
         pdf.drawCentredString(x + rect.width * scale / 2, y + rect.height * scale / 2, f"{room.id} ({rect.area_m2:.1f} m2)")
+
+    pdf.setLineWidth(0.8)
+    for opening in wall_plan.windows:
+        if opening.orientation == "vertical":
+            pdf.line(*point(opening.fixed, opening.start), *point(opening.fixed, opening.end))
+        else:
+            pdf.line(*point(opening.start, opening.fixed), *point(opening.end, opening.fixed))
 
     pdf.setStrokeColorRGB(0.2, 0.2, 0.2)
     pdf.setFont("Helvetica-Bold", 12)
@@ -142,19 +171,3 @@ def _add_rect_polyline(modelspace, rect: Rect, layer: str, lineweight: int | Non
         close=True,
         dxfattribs=attribs,
     )
-
-
-def _shared_segment(a: Rect, b: Rect):
-    if abs(a.right - b.x) < 1e-6:
-        low, high = max(a.y, b.y), min(a.top, b.top)
-        return ((a.right, (low + high) / 2), True)
-    if abs(b.right - a.x) < 1e-6:
-        low, high = max(a.y, b.y), min(a.top, b.top)
-        return ((a.x, (low + high) / 2), True)
-    if abs(a.top - b.y) < 1e-6:
-        low, high = max(a.x, b.x), min(a.right, b.right)
-        return (((low + high) / 2, a.top), False)
-    if abs(b.top - a.y) < 1e-6:
-        low, high = max(a.x, b.x), min(a.right, b.right)
-        return (((low + high) / 2, a.y), False)
-    return None

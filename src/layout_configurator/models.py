@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping
+from typing import Any, Literal, Mapping
 
 
 class SpecError(ValueError):
@@ -97,6 +97,67 @@ class RoomSpec:
 
 
 @dataclass(frozen=True)
+class DoorSpec:
+    """Explicit door placement on the shared edge of two rooms."""
+
+    id: str
+    room_a: str
+    room_b: str
+    offset_mm: float
+    width_mm: float
+
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, Any], index: int) -> "DoorSpec":
+        door_id = str(raw.get("id", f"door_{index + 1}")).strip()
+        room_a = str(raw.get("room_a", raw.get("a", ""))).strip()
+        room_b = str(raw.get("room_b", raw.get("b", ""))).strip()
+        if not door_id or not room_a or not room_b or room_a == room_b:
+            raise SpecError("Each explicit door must have distinct id, room_a and room_b")
+        try:
+            offset = float(raw.get("offset_mm", raw.get("offset")))
+            width = float(raw.get("width_mm", raw.get("width")))
+        except (TypeError, ValueError) as exc:
+            raise SpecError(f"Door {door_id} offset and width must be numbers") from exc
+        if offset < 0 or width <= 0:
+            raise SpecError(f"Door {door_id} must have non-negative offset and positive width")
+        return cls(door_id, room_a, room_b, offset, width)
+
+
+@dataclass(frozen=True)
+class WindowSpec:
+    """Explicit window placement on an exterior room edge.
+
+    ``offset_mm`` is the opening centre measured from the room's lower/left
+    corner along the selected edge. The side is expressed from inside the
+    room: left/right are vertical edges, bottom/top are horizontal edges.
+    """
+
+    id: str
+    room_id: str
+    side: Literal["left", "right", "bottom", "top"]
+    offset_mm: float
+    width_mm: float
+
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, Any], index: int) -> "WindowSpec":
+        window_id = str(raw.get("id", f"window_{index + 1}")).strip()
+        room_id = str(raw.get("room_id", raw.get("room", ""))).strip()
+        side = str(raw.get("side", "")).strip().lower()
+        if not window_id or not room_id:
+            raise SpecError("Each explicit window must have id and room_id")
+        if side not in {"left", "right", "bottom", "top"}:
+            raise SpecError(f"Window {window_id} has unsupported side {side!r}")
+        try:
+            offset = float(raw.get("offset_mm", raw.get("offset")))
+            width = float(raw.get("width_mm", raw.get("width")))
+        except (TypeError, ValueError) as exc:
+            raise SpecError(f"Window {window_id} offset and width must be numbers") from exc
+        if offset < 0 or width <= 0:
+            raise SpecError(f"Window {window_id} must have non-negative offset and positive width")
+        return cls(window_id, room_id, side, offset, width)
+
+
+@dataclass(frozen=True)
 class BoundarySpec:
     width_mm: float
     height_mm: float
@@ -132,6 +193,11 @@ class LayoutIR:
     grid_mm: int = 100
     wall_thickness_mm: float = 200
     door_width_mm: float = 900
+    window_width_mm: float = 1_200
+    window_height_mm: float = 1_500
+    window_sill_mm: float = 900
+    doors: tuple[DoorSpec, ...] = ()
+    windows: tuple[WindowSpec, ...] = ()
     version: str = "0.1"
 
     @classmethod
@@ -151,6 +217,17 @@ class LayoutIR:
         if len(ids) != len(rooms):
             raise SpecError("id комнат должны быть уникальными")
 
+        windows_raw = payload.get("windows", ())
+        if not isinstance(windows_raw, (list, tuple)):
+            raise SpecError("windows must be a list")
+        windows = tuple(WindowSpec.from_mapping(item, index) for index, item in enumerate(windows_raw))
+        window_ids = {window.id for window in windows}
+        if len(window_ids) != len(windows):
+            raise SpecError("Explicit window ids must be unique")
+        for window in windows:
+            if window.room_id not in ids:
+                raise SpecError(f"Window {window.id} references unknown room {window.room_id}")
+
         entry_room = str(payload.get("entry_room", rooms[0].id))
         if entry_room not in ids:
             raise SpecError(f"entry_room {entry_room!r} не найден среди комнат")
@@ -159,9 +236,40 @@ class LayoutIR:
                 if relation not in ids:
                     raise SpecError(f"Комната {room.id} ссылается на неизвестную комнату {relation}")
 
+        doors_raw = payload.get("doors", ())
+        if not isinstance(doors_raw, (list, tuple)):
+            raise SpecError("doors must be a list")
+        doors = tuple(DoorSpec.from_mapping(item, index) for index, item in enumerate(doors_raw))
+        door_ids = {door.id for door in doors}
+        if len(door_ids) != len(doors):
+            raise SpecError("Explicit door ids must be unique")
+        door_pairs: set[tuple[str, str]] = set()
+        required_pairs = {
+            tuple(sorted((room.id, other)))
+            for room in rooms
+            for other in room.required_adjacency
+            if room.id != other
+        }
+        for door in doors:
+            if door.room_a not in ids or door.room_b not in ids:
+                raise SpecError(f"Door {door.id} references an unknown room")
+            pair = tuple(sorted((door.room_a, door.room_b)))
+            if pair in door_pairs:
+                raise SpecError(f"Only one explicit door per room pair is supported: {pair[0]}-{pair[1]}")
+            if pair not in required_pairs:
+                raise SpecError(f"Door {door.id} requires room adjacency in the specification")
+            door_pairs.add(pair)
+
         grid = int(payload.get("grid_mm", 100))
         if grid <= 0:
             raise SpecError("grid_mm должен быть положительным целым числом")
+        wall_thickness = float(payload.get("wall_thickness_mm", 200))
+        door_width = float(payload.get("door_width_mm", 900))
+        window_width = float(payload.get("window_width_mm", 1_200))
+        window_height = float(payload.get("window_height_mm", 1_500))
+        window_sill = float(payload.get("window_sill_mm", 900))
+        if min(wall_thickness, door_width, window_width, window_height) <= 0 or window_sill < 0:
+            raise SpecError("Толщина стены и размеры проёмов должны быть положительными")
         return cls(
             project_name=str(payload.get("project_name", payload.get("name", "Layout"))),
             boundary=BoundarySpec.from_mapping(payload.get("boundary", {})),
@@ -169,8 +277,13 @@ class LayoutIR:
             entry_room=entry_room,
             tolerance=tolerance,
             grid_mm=grid,
-            wall_thickness_mm=float(payload.get("wall_thickness_mm", 200)),
-            door_width_mm=float(payload.get("door_width_mm", 900)),
+            wall_thickness_mm=wall_thickness,
+            door_width_mm=door_width,
+            window_width_mm=window_width,
+            window_height_mm=window_height,
+            window_sill_mm=window_sill,
+            doors=doors,
+            windows=windows,
             version=str(payload.get("version", "0.1")),
         )
 
@@ -194,6 +307,29 @@ class LayoutIR:
             "grid_mm": self.grid_mm,
             "wall_thickness_mm": self.wall_thickness_mm,
             "door_width_mm": self.door_width_mm,
+            "window_width_mm": self.window_width_mm,
+            "window_height_mm": self.window_height_mm,
+            "window_sill_mm": self.window_sill_mm,
+            "doors": [
+                {
+                    "id": door.id,
+                    "room_a": door.room_a,
+                    "room_b": door.room_b,
+                    "offset_mm": door.offset_mm,
+                    "width_mm": door.width_mm,
+                }
+                for door in self.doors
+            ],
+            "windows": [
+                {
+                    "id": window.id,
+                    "room_id": window.room_id,
+                    "side": window.side,
+                    "offset_mm": window.offset_mm,
+                    "width_mm": window.width_mm,
+                }
+                for window in self.windows
+            ],
             "entry_room": self.entry_room,
             "boundary": {
                 "width": self.boundary.width_mm,

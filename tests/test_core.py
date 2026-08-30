@@ -1,8 +1,9 @@
 import unittest
 
-from layout_configurator.models import LayoutIR, SpecError
+from layout_configurator.models import LayoutIR, LayoutResult, Rect, SpecError
 from layout_configurator.solver import solve_layouts
 from layout_configurator.validation import validate_layout
+from layout_configurator.walls import build_wall_plan
 
 
 class CoreTests(unittest.TestCase):
@@ -55,6 +56,59 @@ class CoreTests(unittest.TestCase):
         )
         result = solve_layouts(spec, variants=1, time_limit_seconds=10)[0]
         self.assertTrue(validate_layout(spec, result).ok)
+
+    def test_wall_plan_has_real_band_and_door_gaps(self):
+        result = solve_layouts(self.spec, variants=1, time_limit_seconds=10)[0]
+        wall_plan = build_wall_plan(self.spec, result)
+        self.assertTrue(wall_plan.geometry.is_valid)
+        self.assertEqual(len(wall_plan.openings), 2)
+        self.assertGreater(wall_plan.geometry.area, 0)
+        for opening in wall_plan.openings:
+            self.assertLess(wall_plan.geometry.intersection(opening.centerline).length, 1e-6)
+
+    def test_fixed_room_keeps_position_while_solver_repacks_others(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 8000, "height": 4000},
+                "entry_room": "a",
+                "rooms": [
+                    {"id": "a", "target_area": 8, "required_adjacency": ["b"]},
+                    {"id": "b", "target_area": 8, "required_adjacency": ["a"]},
+                ],
+            }
+        )
+        fixed = Rect(0, 0, 2000, 4000)
+        result = solve_layouts(spec, variants=1, time_limit_seconds=10, fixed_rects={"a": fixed})[0]
+        self.assertEqual(result.placements["a"], fixed)
+        self.assertTrue(validate_layout(spec, result).ok)
+        self.assertGreaterEqual(result.placements["a"].shared_boundary(result.placements["b"]), spec.door_width_mm)
+
+    def test_explicit_openings_are_part_of_layout_ir_and_round_trip(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 6000, "height": 4000},
+                "entry_room": "a",
+                "rooms": [
+                    {"id": "a", "target_area": 12, "required_adjacency": ["b"]},
+                    {"id": "b", "target_area": 12, "required_adjacency": ["a"]},
+                ],
+                "doors": [{"id": "door-main", "room_a": "a", "room_b": "b", "offset_mm": 1000, "width_mm": 800}],
+                "windows": [{"id": "window-main", "room_id": "a", "side": "left", "offset_mm": 2000, "width_mm": 1000}],
+            }
+        )
+        result = LayoutResult(
+            variant=1,
+            placements={"a": Rect(0, 0, 3000, 4000), "b": Rect(3000, 0, 3000, 4000)},
+        )
+
+        report = validate_layout(spec, result)
+        wall_plan = build_wall_plan(spec, result)
+        round_tripped = LayoutIR.from_mapping(spec.to_dict())
+        self.assertTrue(report.ok, report.issues)
+        self.assertEqual(wall_plan.openings[0].id, "door-main")
+        self.assertEqual(wall_plan.windows[0].id, "window-main")
+        self.assertEqual(round_tripped.doors, spec.doors)
+        self.assertEqual(round_tripped.windows, spec.windows)
 
 
 if __name__ == "__main__":
