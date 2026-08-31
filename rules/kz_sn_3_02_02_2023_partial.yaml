@@ -54,3 +54,11 @@ rules:
       auxiliary_room_types: [veranda, terrace, loggia]
       main_room_types: [living_room, kitchen, bedroom]
       minimum_shared_boundary_mm: 1
+
+  - id: HEATED_ROOM_COVERAGE
+    title: Required residential rooms are marked heated
+    source: СН РК 3.02-02-2023, official edition PDF
+    clause: "8.19"
+    params:
+      # This is a LayoutIR declaration check, not a heating-system calculation.
+      required_room_types: [living_room, bedroom, kitchen]

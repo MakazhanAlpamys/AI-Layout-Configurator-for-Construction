@@ -63,6 +63,12 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #
 .summary dt { color: var(--muted); }
 .summary dd { margin: 0; font-weight: 800; }
 .issues { margin-top: 18px; padding: 11px; border-radius: 9px; background: #40282b; color: var(--danger); font-size: .78rem; line-height: 1.45; }
+.norms { margin-top: 18px; display: grid; gap: 7px; }
+.norms-head { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; }
+.norm { display: flex; justify-content: space-between; gap: 8px; padding: 8px 9px; border-radius: 8px; background: var(--panel-2); font-size: .75rem; }
+.norm-pass { color: var(--accent); }
+.norm-fail { color: var(--danger); }
+.norm-na { color: var(--muted); }
 .files { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 19px; }
 .files a { color: var(--accent); border: 1px solid #315b58; border-radius: 8px; padding: 7px 9px; text-decoration: none; font-size: .76rem; }
 .files a:hover { background: #203836; }

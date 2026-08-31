@@ -22,6 +22,7 @@ rooms:
     min_width: 3000
     min_depth: 3500
     needs_daylight: true
+    is_heated: true
     required_adjacency: [hall]
   - id: kitchen
     type: kitchen
@@ -29,6 +30,7 @@ rooms:
     min_width: 2400
     min_depth: 2500
     needs_daylight: true
+    is_heated: true
     required_adjacency: [hall]
   - id: bedroom
     type: bedroom
@@ -36,4 +38,5 @@ rooms:
     min_width: 2800
     min_depth: 3000
     needs_daylight: true
+    is_heated: true
     required_adjacency: [hall]

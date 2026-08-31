@@ -184,7 +184,9 @@ rules:
         fixed_spec = replace(
             spec,
             rooms=tuple(
-                replace(room, needs_daylight=True) if room.type == "kitchen" else room
+                replace(room, needs_daylight=True, is_heated=True)
+                if room.type in {"living_room", "kitchen", "bedroom"}
+                else room
                 for room in spec.rooms
             ),
         )
@@ -304,6 +306,38 @@ rules:
         self.assertFalse(detached_report.ok)
         self.assertEqual(attachment.status, "FAIL")
         self.assertIn("no shared boundary", attachment.evidence[0])
+
+    def test_kazakhstan_profile_checks_heated_room_declaration(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 6000, "height": 4000},
+                "entry_room": "living",
+                "rooms": [
+                    {"id": "living", "type": "living_room", "target_area": 12, "is_heated": True},
+                    {"id": "kitchen", "type": "kitchen", "target_area": 8, "is_heated": False},
+                ],
+            }
+        )
+        result = LayoutResult(
+            variant=1,
+            placements={"living": Rect(0, 0, 3000, 4000), "kitchen": Rect(3000, 0, 3000, 2600)},
+        )
+        ruleset = load_ruleset("rules/kz_sn_3_02_02_2023_partial.yaml")
+
+        failed = check_layout(spec, result, ruleset)
+        heating = next(item for item in failed.results if item.id == "HEATED_ROOM_COVERAGE")
+        self.assertEqual(heating.status, "FAIL")
+        self.assertIn("kitchen", heating.evidence[0])
+
+        passed = check_layout(
+            replace(
+                spec,
+                rooms=(replace(spec.rooms[0], is_heated=True), replace(spec.rooms[1], is_heated=True)),
+            ),
+            result,
+            ruleset,
+        )
+        self.assertEqual(next(item for item in passed.results if item.id == "HEATED_ROOM_COVERAGE").status, "PASS")
 
     def test_ruleset_inheritance_cycle_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

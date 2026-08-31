@@ -13,13 +13,15 @@ class UiTests(unittest.TestCase):
     def test_local_ui_serves_state_and_applies_typed_command(self):
         with tempfile.TemporaryDirectory() as directory:
             generated = UiSession.from_input(
-                "examples/basic.yaml",
+                "examples/kz_daylight.yaml",
                 Path(directory) / "exports",
                 solve_time_limit_seconds=10,
             )
             session = UiSession.from_input(
                 generated.output_dir / "layout_01.json",
                 Path(directory) / "loaded-exports",
+                rules_path="rules/kz_sn_3_02_02_2023_partial.yaml",
+                require_provenance=True,
             )
             server = create_ui_server(session)
             thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -28,7 +30,7 @@ class UiTests(unittest.TestCase):
             try:
                 with urlopen(f"{base_url}/api/state") as response:
                     state = json.load(response)
-                self.assertEqual(state["spec"]["project_name"], "Demo house")
+                self.assertEqual(state["spec"]["project_name"], "Kazakhstan daylight demo")
                 self.assertEqual(len(state["rooms"]), 4)
                 self.assertTrue(all(file["url"].startswith("/files/") for file in state["files"]))
 
@@ -49,6 +51,9 @@ class UiTests(unittest.TestCase):
                     changed = json.load(response)
                 self.assertEqual(changed["history"], ["MoveRoom"])
                 self.assertEqual(changed["validation"]["ok"], True)
+                self.assertIsNotNone(changed["norms"])
+                self.assertEqual(changed["norms"]["ruleset"]["jurisdiction"], "KZ")
+                self.assertTrue(changed["norms"]["ok"])
                 self.assertEqual(Path(directory, "loaded-exports", "layout_01.json").is_file(), True)
 
                 bad_command = Request(

@@ -67,6 +67,8 @@ def main(argv: list[str] | None = None) -> int:
     ui.add_argument("--output", "-o", type=Path, default=Path("out/ui"))
     ui.add_argument("--host", default="127.0.0.1")
     ui.add_argument("--port", type=int, default=8765)
+    ui.add_argument("--rules", type=Path, help="optional deterministic ruleset shown after each edit")
+    ui.add_argument("--require-provenance", action="store_true", help="require complete ruleset provenance")
     args = parser.parse_args(argv)
 
     if args.command == "generate":
@@ -245,7 +247,14 @@ def main(argv: list[str] | None = None) -> int:
         try:
             from .ui import serve_ui
 
-            return serve_ui(args.input, args.output, host=args.host, port=args.port)
+            return serve_ui(
+                args.input,
+                args.output,
+                host=args.host,
+                port=args.port,
+                rules_path=args.rules,
+                require_provenance=args.require_provenance,
+            )
         except (OSError, ValueError, KeyError, RuntimeError, InfeasibleLayout) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2

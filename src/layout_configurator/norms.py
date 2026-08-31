@@ -27,6 +27,7 @@ SUPPORTED_RULES = frozenset(
         "FORBIDDEN_TYPE_ADJACENCY",
         "ENTRY_VESTIBULE",
         "AUXILIARY_SPACE_ATTACHMENT",
+        "HEATED_ROOM_COVERAGE",
         "EGRESS_REACHABILITY",
         "MAX_EGRESS_DISTANCE",
     }
@@ -266,6 +267,7 @@ def _run_rule(rule: RuleDefinition, spec: LayoutIR, result: LayoutResult) -> Rul
         "FORBIDDEN_TYPE_ADJACENCY": _forbidden_type_adjacency,
         "ENTRY_VESTIBULE": _entry_vestibule,
         "AUXILIARY_SPACE_ATTACHMENT": _auxiliary_space_attachment,
+        "HEATED_ROOM_COVERAGE": _heated_room_coverage,
         "EGRESS_REACHABILITY": _egress_reachability,
         "MAX_EGRESS_DISTANCE": _max_egress_distance,
     }
@@ -479,6 +481,31 @@ def _auxiliary_space_attachment(
                 f"{auxiliary.id} ({auxiliary.type}) has no shared boundary with main room types "
                 + ", ".join(sorted(main_types))
             )
+    return ("FAIL", failures + evidence) if failures else ("PASS", evidence)
+
+
+def _heated_room_coverage(
+    params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult
+) -> tuple[RuleStatus, list[str]]:
+    required_types = _room_type_set(
+        params.get("required_room_types", ("living_room", "bedroom", "kitchen")),
+        "required_room_types",
+    )
+    applicable = [room for room in spec.rooms if room.type.lower() in required_types]
+    if not applicable:
+        return "NOT_APPLICABLE", [
+            "No room matched required heated types " + ", ".join(sorted(required_types))
+        ]
+
+    failures: list[str] = []
+    evidence: list[str] = []
+    for room in applicable:
+        if room.id not in result.placements:
+            failures.append(f"{room.id}: placement is missing")
+        elif room.is_heated:
+            evidence.append(f"{room.id} ({room.type}) is marked heated")
+        else:
+            failures.append(f"{room.id} ({room.type}) is not marked heated")
     return ("FAIL", failures + evidence) if failures else ("PASS", evidence)
 
 

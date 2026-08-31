@@ -32,6 +32,7 @@ from .export import export_bundle
 from .ifc import export_ifc
 from .io import load_result, load_spec, write_result
 from .models import LayoutIR, LayoutResult
+from .norms import RuleSet, check_layout, load_ruleset
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import validate_layout
 from .walls import build_wall_plan
@@ -57,6 +58,7 @@ class UiSession:
     output_dir: Path
     state: EditorState
     lock: threading.RLock
+    ruleset: RuleSet | None = None
 
     @classmethod
     def from_input(
@@ -66,7 +68,11 @@ class UiSession:
         *,
         solve_time_limit_seconds: float = 15,
         seed: int = 42,
+        rules_path: str | Path | None = None,
+        require_provenance: bool = False,
     ) -> "UiSession":
+        if require_provenance and not rules_path:
+            raise ValueError("--require-provenance requires --rules")
         source = Path(input_path)
         try:
             spec, result = load_result(source)
@@ -79,12 +85,18 @@ class UiSession:
                 seed=seed,
             )[0]
         state = EditorState.from_layout(spec, result)
+        ruleset = load_ruleset(rules_path) if rules_path else None
+        if ruleset and require_provenance:
+            issues = ruleset.provenance_issues()
+            if issues:
+                raise ValueError("ruleset provenance is incomplete: " + "; ".join(issues))
         session = cls(
             initial_spec=spec,
             initial_result=result,
             output_dir=Path(output_dir),
             state=state,
             lock=threading.RLock(),
+            ruleset=ruleset,
         )
         session._export()
         return session
@@ -111,6 +123,7 @@ class UiSession:
                         },
                     }
                 )
+            norms = check_layout(self.state.spec, self.state.result, self.ruleset) if self.ruleset else None
             return {
                 "spec": self.state.spec.to_dict(),
                 "layout": self.state.result.to_dict(),
@@ -128,6 +141,7 @@ class UiSession:
                         for issue in self.state.report.issues
                     ],
                 },
+                "norms": norms.to_dict() if norms else None,
                 "history": list(self.state.history),
                 "files": [
                     {"name": name, "url": f"/files/{name}"}
@@ -183,8 +197,15 @@ def serve_ui(
     *,
     host: str = "127.0.0.1",
     port: int = 8765,
+    rules_path: str | Path | None = None,
+    require_provenance: bool = False,
 ) -> int:
-    session = UiSession.from_input(input_path, output_dir)
+    session = UiSession.from_input(
+        input_path,
+        output_dir,
+        rules_path=rules_path,
+        require_provenance=require_provenance,
+    )
     server = create_ui_server(session, (host, port))
     print(f"UI editor: http://{host}:{server.server_port}/")
     print(f"exports: {session.output_dir}")

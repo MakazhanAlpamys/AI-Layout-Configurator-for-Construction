@@ -100,6 +100,11 @@ function render(data) {
   drawPlan(data);
   $("#summary").innerHTML = `<dt>Комнат</dt><dd>${data.rooms.length}</dd><dt>Вариант</dt><dd>${data.layout.variant}</dd><dt>История</dt><dd>${data.history.length || "—"}</dd><dt>Внешний вход</dt><dd>${data.spec.external_entry ? escapeHtml(data.spec.external_entry.id) : "—"}</dd>`;
   $("#issues").innerHTML = data.validation.issues.length ? `<div class="issues">${data.validation.issues.map((issue) => `<div>${escapeHtml(issue.code)}: ${escapeHtml(issue.message)}</div>`).join("")}</div>` : "";
+  if (data.norms) {
+    $("#norms").innerHTML = `<div class="norms"><div class="norms-head">${escapeHtml(data.norms.ruleset.name)} · ${escapeHtml(data.norms.ruleset.jurisdiction)}</div>${data.norms.results.map((rule) => { const statusClass = rule.status === "PASS" ? "norm-pass" : rule.status === "FAIL" ? "norm-fail" : "norm-na"; return `<div class="norm"><span>${escapeHtml(rule.id)}</span><strong class="${statusClass}">${escapeHtml(rule.status)}</strong></div>`; }).join("")}</div>`;
+  } else {
+    $("#norms").innerHTML = "";
+  }
   $("#files").innerHTML = data.files.map((file) => `<a href="${file.url}" download>${escapeHtml(file.name)}</a>`).join("");
   $("#legend").innerHTML = `<span><i class="swatch heated"></i> отапливаемая</span><span><i class="swatch unheated"></i> неотапливаемая</span><span><i class="swatch entry"></i> внешний вход</span><span><i class="swatch window"></i> окно</span>`;
   renderFields();
