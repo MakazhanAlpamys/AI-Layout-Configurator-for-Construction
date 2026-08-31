@@ -77,7 +77,7 @@ ruleset и JSON Schema boundary. IFC теперь содержит `IfcRelSpaceB
 `IfcWallType`/`IfcDoorType`/`IfcWindowType`, связанные через
 `IfcRelDefinesByType`; `LayoutIR` остаётся единственным источником геометрии.
 
-Проверено: 49 тестов проходят до следующего цикла; загрузчик ruleset теперь
+Проверено: 52 теста проходят до следующего цикла; загрузчик ruleset теперь
 поддерживает относительное `extends`, точечное переопределение правил и provenance
 источника; `check --require-provenance` умеет требовать полный audit-набор. KZ уже
 выбран и подтверждён по официальному PDF; профиль зафиксирован как частичный и
@@ -85,6 +85,10 @@ ruleset и JSON Schema boundary. IFC теперь содержит `IfcRelSpaceB
 producer канонического JSON. Для этой границы добавлена строгая CLI-нормализация
 `normalize`, которая отбрасывает generated data и координаты по JSON Schema.
 `generate --strict-input` использует ту же границу перед запуском CP-SAT.
+Визуальный DXF-аудит выполнен на свежих basic, KZ-entry и multi-floor файлах через
+нативный ezdxf SVG-рендерер: проверены двойные стены, зачистка углов, разрывы под
+двери/окна, дуги открывания и читаемость подписей. AutoCAD/LibreCAD/ODA Viewer в
+окружении отсутствуют, поэтому это не заменяет открытие файла в полноценном CAD.
 Найден и зафиксирован частичный KZ-профиль `rules/kz_sn_3_02_02_2023_partial.yaml`;
 он проверяет п. 7.8, п. 6.2.13, п. 6.2.8, п. 6.2.12 и п. 8.19 и намеренно не изображает полный code-check.
 Для положительного smoke-test добавлен `examples/kz_daylight.yaml`: generated

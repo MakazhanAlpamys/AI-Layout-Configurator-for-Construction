@@ -40,9 +40,10 @@ def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
 
     for room in spec.rooms:
         rect = result.placements[room.id]
+        label = f"{room.id} ({rect.area_m2:.2f} m2)"
         text = modelspace.add_text(
-            f"{room.id} ({rect.area_m2:.2f} m2)",
-            dxfattribs={"height": max(180, min(rect.width, rect.height) / 10), "layer": "A-TEXT"},
+            label,
+            dxfattribs={"height": _room_label_height(label, rect), "layer": "A-TEXT"},
         )
         text.set_placement(rect.center, align=TextEntityAlignment.MIDDLE_CENTER)
 
@@ -172,3 +173,17 @@ def _add_rect_polyline(modelspace, rect: Rect, layer: str, lineweight: int | Non
         close=True,
         dxfattribs=attribs,
     )
+
+
+def _room_label_height(label: str, rect: Rect) -> float:
+    """Keep a centered room label inside the clear room width.
+
+    DXF text width is font-dependent, so use a conservative average glyph-width
+    estimate.  This prevents long labels from colliding in narrow rooms while
+    preserving readable text in larger rooms.
+    """
+
+    natural_height = min(rect.width, rect.height) / 10
+    available_width = max(0.0, rect.width - 400)
+    fitted_height = available_width / (max(1, len(label)) * 0.78)
+    return max(80.0, min(natural_height, fitted_height))

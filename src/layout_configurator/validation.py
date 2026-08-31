@@ -105,7 +105,17 @@ def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
         from .walls import build_wall_plan
 
         try:
-            build_wall_plan(spec, result)
+            wall_plan = build_wall_plan(spec, result)
         except (KeyError, ValueError) as exc:
             issues.append(ValidationIssue("window_opening", f"Некорректное расположение оконного проёма: {exc}"))
+        else:
+            window_rooms = {window.room_id for window in wall_plan.windows}
+            for room in spec.rooms:
+                if room.needs_daylight and room.id not in window_rooms:
+                    issues.append(
+                        ValidationIssue(
+                            "daylight_opening",
+                            f"Комната {room.id} требует естественного освещения, но наружный оконный проём не выведен",
+                        )
+                    )
     return ValidationReport(tuple(issues))

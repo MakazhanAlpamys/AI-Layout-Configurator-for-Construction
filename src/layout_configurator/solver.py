@@ -84,6 +84,15 @@ def solve_layouts(
             model.Add(y == _fixed_grid_value(fixed.y, grid, room.id, "y"))
             model.Add(width == _fixed_grid_value(fixed.width, grid, room.id, "width"))
             model.Add(height == _fixed_grid_value(fixed.height, grid, room.id, "height"))
+        if room.needs_daylight:
+            _constrain_daylight_contact(
+                model,
+                _RoomVars(x=x, y=y, width=width, height=height, area=area),
+                spec,
+                boundary_width,
+                boundary_height,
+                room.id,
+            )
         model.AddMultiplicationEquality(area, [width, height])
 
         min_area = _area_to_grid2(room.min_area_m2, grid, ceil=True)
@@ -203,6 +212,53 @@ def _constrain_external_entry(model, room: _RoomVars, spec: LayoutIR, boundary_w
     else:
         model.Add(room.y == 0 if entry.side == "bottom" else room.y + room.height == boundary_height)
         model.Add(room.width >= minimum_span)
+
+
+def _constrain_daylight_contact(
+    model,
+    room: _RoomVars,
+    spec: LayoutIR,
+    boundary_width: int,
+    boundary_height: int,
+    room_id: str,
+) -> None:
+    """Require daylight rooms to touch the outer boundary or a cutout edge."""
+
+    contacts = [model.NewBoolVar(f"daylight_{room_id}_{side}") for side in ("left", "right", "bottom", "top")]
+    left, right, bottom, top = contacts
+    model.Add(room.x == 0).OnlyEnforceIf(left)
+    model.Add(room.x + room.width == boundary_width).OnlyEnforceIf(right)
+    model.Add(room.y == 0).OnlyEnforceIf(bottom)
+    model.Add(room.y + room.height == boundary_height).OnlyEnforceIf(top)
+
+    for index, cutout in enumerate(spec.boundary.cutouts):
+        cutout_x = _ceil_grid(cutout.x, spec.grid_mm)
+        cutout_y = _ceil_grid(cutout.y, spec.grid_mm)
+        cutout_right = _ceil_grid(cutout.right, spec.grid_mm)
+        cutout_top = _ceil_grid(cutout.top, spec.grid_mm)
+        cutout_width = cutout_right - cutout_x
+        cutout_height = cutout_top - cutout_y
+        cutout_contacts = {
+            "cutout_left": (room.x + room.width == cutout_x, room.y, room.height, cutout_y, cutout_height),
+            "cutout_right": (room.x == cutout_right, room.y, room.height, cutout_y, cutout_height),
+            "cutout_bottom": (room.y + room.height == cutout_y, room.x, room.width, cutout_x, cutout_width),
+            "cutout_top": (room.y == cutout_top, room.x, room.width, cutout_x, cutout_width),
+        }
+        for side, (edge_constraint, room_start, room_size, cutout_start, cutout_size) in cutout_contacts.items():
+            contact = model.NewBoolVar(f"daylight_{room_id}_{index}_{side}")
+            contacts.append(contact)
+            model.Add(edge_constraint).OnlyEnforceIf(contact)
+            _add_overlap(
+                model,
+                contact,
+                room_start,
+                room_size,
+                cutout_start,
+                cutout_size,
+                1,
+                f"daylight_{room_id}_{index}_{side}_overlap",
+            )
+    model.AddBoolOr(contacts)
 
 
 def _avoid_cutout(model, x, y, width, height, cutout, grid: int, name: str) -> None:

@@ -29,6 +29,47 @@ class CoreTests(unittest.TestCase):
             report = validate_layout(self.spec, layout)
             self.assertTrue(report.ok, report.issues)
 
+    def test_daylight_rooms_are_exterior_for_automatic_windows(self):
+        spec = load_spec("examples/basic.yaml")
+        result = solve_layouts(spec, variants=1, time_limit_seconds=10)[0]
+        wall_plan = build_wall_plan(spec, result)
+
+        self.assertEqual(
+            {window.room_id for window in wall_plan.windows},
+            {room.id for room in spec.rooms if room.needs_daylight},
+        )
+
+    def test_daylight_can_use_a_cutout_edge(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "project_name": "Cutout daylight",
+                "boundary": {"width": 6000, "height": 6000, "cutouts": [{"x": 3000, "y": 3000, "width": 3000, "height": 3000}]},
+                "rooms": [{"id": "room", "target_area": 4, "min_width": 1800, "min_depth": 1800, "needs_daylight": True}],
+            }
+        )
+        fixed = Rect(1000, 3500, 2000, 2000)
+        result = solve_layouts(spec, variants=1, time_limit_seconds=10, fixed_rects={"room": fixed})[0]
+        windows = build_wall_plan(spec, result).windows
+
+        self.assertEqual(len(windows), 1)
+        self.assertEqual(windows[0].orientation, "vertical")
+        self.assertEqual(windows[0].fixed, 3000)
+
+    def test_validation_rejects_daylight_room_without_window(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "project_name": "Missing daylight",
+                "boundary": {"width": 6000, "height": 6000},
+                "rooms": [{"id": "room", "target_area": 4, "needs_daylight": True}],
+            }
+        )
+        result = LayoutResult(variant=1, placements={"room": Rect(1000, 1000, 2000, 2000)})
+
+        report = validate_layout(spec, result)
+
+        self.assertFalse(report.ok)
+        self.assertIn("daylight_opening", {issue.code for issue in report.issues})
+
     def test_duplicate_room_ids_rejected(self):
         with self.assertRaises(SpecError):
             LayoutIR.from_mapping(

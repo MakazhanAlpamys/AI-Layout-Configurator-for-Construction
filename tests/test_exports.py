@@ -26,9 +26,18 @@ class ExportTests(unittest.TestCase):
             modelspace = document.modelspace()
             wall_entities = [entity for entity in modelspace if entity.dxf.layer == "A-WALL"]
             door_entities = [entity for entity in modelspace if entity.dxf.layer == "A-DOOR"]
+            room_text = [entity for entity in modelspace if entity.dxf.layer == "A-TEXT"]
             self.assertGreaterEqual(len(wall_entities), 2)
             self.assertEqual(len(door_entities), 3)
             self.assertTrue(all(entity.dxftype() == "LWPOLYLINE" for entity in wall_entities))
+            self.assertEqual(len(room_text), len(spec.rooms))
+            for entity in room_text:
+                room_id = entity.dxf.text.split(" ", 1)[0]
+                rect = result.placements[room_id]
+                self.assertLessEqual(
+                    len(entity.dxf.text) * entity.dxf.height * 0.78,
+                    rect.width - 400 + 1e-6,
+                )
             self.assertEqual(Path(pdf_path).read_bytes()[:8], b"%PDF-1.3")
 
     def test_ifc_round_trip_has_spatial_structure_and_quantities(self):
