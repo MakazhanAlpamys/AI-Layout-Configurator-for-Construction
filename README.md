@@ -47,8 +47,9 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 
 Ядро следует принципу solver-first: координаты выдаёт OR-Tools CP-SAT,
 геометрия независимо проверяется валидатором, а DXF/PDF являются производными
-представлениями `LayoutIR`. LLM, IFC/BIM и веб-редактор пока не реализованы;
-они идут после стабилизации ядра согласно [дорожной карте](docs/ROADMAP.md).
+представлениями `LayoutIR`. IFC/BIM уже покрывает базовую структуру, стены,
+проёмы, связи пространств и семантические типы; веб-редактор и LLM-парсер
+остаются следующими этапами согласно [дорожной карте](docs/ROADMAP.md).
 
 ## Ограничения MVP
 
@@ -59,8 +60,10 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 - стены экспортируются двойными линиями с толщиной и вырезами дверей;
 - окна для комнат с `needs_daylight` экспортируются автоматически; ручные окна
   можно добавить через `edit --add-window ROOM SIDE OFFSET_MM WIDTH_MM`;
-- IFC содержит пространственную структуру, комнаты, стены, двери и площади;
-  базовые property sets, материалы и IDS-шаблон уже есть; юрисдикционные
+- IFC содержит пространственную структуру, комнаты, непрерывные стены, двери,
+  окна и `IfcOpeningElement` с `IfcRelVoidsElement`/`IfcRelFillsElement`;
+  `IfcRelSpaceBoundary`, базовые property sets, материалы и IDS-шаблон уже есть;
+  юрисдикционные
   нормативные проверки будут отдельным этапом;
 - DXF/PDF — чертёжная выдача, не разрешение на строительство и не итоговая
   проверка строительных норм.
@@ -74,10 +77,22 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
   out\layout_01.json --rules rules\baseline.yaml
 ```
 
+Для CI-проверки источника нормативного профиля добавляется
+`--require-provenance`; он требует authority, edition, effective_date,
+source_url и document_hash.
+
 `rules/baseline.yaml` проверяет геометрию, минимальные площади по типам комнат,
 ширину коридора, окна для `needs_daylight`, достижимость от входа и максимальную
 длину маршрута. Результат содержит `PASS`/`FAIL`/`NOT_APPLICABLE`, источник,
 пункт ruleset и evidence по каждому правилу; `--json` выдаёт машинный отчёт.
+
+Юрисдикционный профиль можно держать отдельным YAML и наследовать от baseline
+через `extends: baseline.yaml`, переопределяя только нужные правила и пороги;
+вложенные `params` объединяются с базовыми.
+Для аудита профиль может хранить `provenance` с органом-источником, редакцией,
+датой действия, URL и hash исходного документа; эти данные попадают в JSON-отчёт.
+Профиль должен быть выбран и проверен человеком; без этого baseline остаётся
+проектной самопроверкой, а не строительным кодом.
 
 Это настраиваемый generic baseline для проектной самопроверки, а не универсальный
 строительный код и не решение о разрешении на строительство. Юрисдикционные
@@ -103,3 +118,20 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 
 `--raw` — граница будущего LLM-парсера. Парсер может выдавать только JSON по
 схеме; координаты, DXF и нормативный verdict ему не выдаются.
+
+Строгую нормализацию канонического JSON/YAML можно выполнить отдельно:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli normalize input.json `
+  --output canonical.json
+```
+
+Для готового примера используй `examples/basic_canonical.json`; обычный
+`examples/basic.yaml` остаётся shorthand для команды `generate`.
+
+Команда сначала проверяет схему, затем создаёт `LayoutIR`; результат солвера
+и координаты на этом input contract boundary не принимаются.
+
+Для прямого запуска солвера с этим же строгим входом используй
+`generate --strict-input`; shorthand без обязательных canonical-полей будет
+отклонён до запуска CP-SAT.

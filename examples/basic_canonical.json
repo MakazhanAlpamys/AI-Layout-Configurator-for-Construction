@@ -1,0 +1,73 @@
+{
+  "version": "0.1",
+  "project_name": "Demo house",
+  "tolerance": 0.04,
+  "grid_mm": 100,
+  "wall_thickness_mm": 200.0,
+  "door_width_mm": 900.0,
+  "window_width_mm": 1200.0,
+  "window_height_mm": 1500.0,
+  "window_sill_mm": 900.0,
+  "doors": [],
+  "windows": [],
+  "entry_room": "hall",
+  "boundary": {
+    "width": 12000.0,
+    "height": 9000.0,
+    "cutouts": []
+  },
+  "rooms": [
+    {
+      "id": "hall",
+      "type": "corridor",
+      "target_area": 12.0,
+      "min_area": 11.52,
+      "max_area": 12.48,
+      "min_width": 1800.0,
+      "min_depth": 1800.0,
+      "required_adjacency": ["living", "kitchen", "bedroom"],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "needs_daylight": false
+    },
+    {
+      "id": "living",
+      "type": "living_room",
+      "target_area": 24.0,
+      "min_area": 23.04,
+      "max_area": 24.96,
+      "min_width": 3000.0,
+      "min_depth": 3500.0,
+      "required_adjacency": ["hall"],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "needs_daylight": true
+    },
+    {
+      "id": "kitchen",
+      "type": "kitchen",
+      "target_area": 12.0,
+      "min_area": 11.52,
+      "max_area": 12.48,
+      "min_width": 2400.0,
+      "min_depth": 2500.0,
+      "required_adjacency": ["hall"],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "needs_daylight": false
+    },
+    {
+      "id": "bedroom",
+      "type": "bedroom",
+      "target_area": 16.0,
+      "min_area": 15.36,
+      "max_area": 16.64,
+      "min_width": 2800.0,
+      "min_depth": 3000.0,
+      "required_adjacency": ["hall"],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "needs_daylight": true
+    }
+  ]
+}

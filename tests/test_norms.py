@@ -1,4 +1,6 @@
+import tempfile
 import unittest
+from pathlib import Path
 
 from layout_configurator.io import load_spec
 from layout_configurator.models import LayoutIR, LayoutResult, Rect
@@ -83,6 +85,96 @@ class NormsTests(unittest.TestCase):
         self.assertFalse(report.ok)
         self.assertEqual(report.results[0].status, "FAIL")
         self.assertIn("entry -> far", report.results[0].evidence[0])
+
+    def test_ruleset_profile_can_extend_and_override_base(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "base.yaml").write_text(
+                """
+name: Base
+version: '1'
+jurisdiction: base
+provenance:
+  authority: Base authority
+  edition: Base edition
+  document_hash: base-hash
+rules:
+  - id: GEOMETRY_VALID
+    title: Geometry
+    source: base
+    clause: base.geometry
+  - id: MIN_CORRIDOR_WIDTH
+    title: Corridor
+    source: base
+    clause: base.corridor
+    params:
+      corridor_types: [corridor]
+      minimum_clear_width_mm: 1200
+""".strip(),
+                encoding="utf-8",
+            )
+            (root / "profile.yaml").write_text(
+                """
+name: Jurisdiction profile
+version: '2'
+jurisdiction: test-jurisdiction
+provenance:
+  authority: Test authority
+  effective_date: '2026-08-31'
+  source_url: https://example.test/code.pdf
+  document_hash: test-hash
+extends: base.yaml
+rules:
+  - id: MIN_CORRIDOR_WIDTH
+    params:
+      minimum_clear_width_mm: 1400
+""".strip(),
+                encoding="utf-8",
+            )
+
+            ruleset = load_ruleset(root / "profile.yaml")
+
+        self.assertEqual(ruleset.name, "Jurisdiction profile")
+        self.assertEqual(ruleset.jurisdiction, "test-jurisdiction")
+        self.assertEqual([rule.id for rule in ruleset.rules], ["GEOMETRY_VALID", "MIN_CORRIDOR_WIDTH"])
+        self.assertEqual(ruleset.rules[1].title, "Corridor")
+        self.assertEqual(ruleset.rules[1].source, "base")
+        self.assertEqual(ruleset.rules[1].params["corridor_types"], ["corridor"])
+        self.assertEqual(ruleset.rules[1].params["minimum_clear_width_mm"], 1400)
+        self.assertEqual(ruleset.provenance["authority"], "Test authority")
+        self.assertEqual(ruleset.provenance["edition"], "Base edition")
+        self.assertEqual(ruleset.provenance["effective_date"], "2026-08-31")
+        self.assertEqual(ruleset.provenance["source_url"], "https://example.test/code.pdf")
+        self.assertEqual(ruleset.provenance["document_hash"], "test-hash")
+        self.assertEqual(ruleset.provenance_issues(), ())
+
+    def test_strict_provenance_reports_missing_source_metadata(self):
+        ruleset = RuleSet.from_mapping(
+            {
+                "jurisdiction": "unconfirmed",
+                "rules": [{"id": "GEOMETRY_VALID"}],
+                "provenance": {"authority": "Only authority"},
+            }
+        )
+
+        self.assertEqual(
+            ruleset.provenance_issues(),
+            (
+                "provenance.edition is required",
+                "provenance.effective_date is required",
+                "provenance.source_url is required",
+                "provenance.document_hash is required",
+            ),
+        )
+
+    def test_ruleset_inheritance_cycle_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "a.yaml").write_text("extends: b.yaml\nrules: []\n", encoding="utf-8")
+            (root / "b.yaml").write_text("extends: a.yaml\nrules: []\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(ValueError, "inheritance cycle"):
+                load_ruleset(root / "a.yaml")
 
 
 if __name__ == "__main__":

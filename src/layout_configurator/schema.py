@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from .models import LayoutIR
 
 DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "layout_ir.schema.json"
 
@@ -52,6 +53,20 @@ def validate_spec(spec, schema_path: str | Path = DEFAULT_SCHEMA_PATH) -> tuple[
     return validate_mapping(spec.to_dict(), schema_path)
 
 
+def normalize_mapping(mapping: Mapping[str, Any], schema_path: str | Path = DEFAULT_SCHEMA_PATH) -> LayoutIR:
+    """Validate a canonical mapping before converting it to ``LayoutIR``.
+
+    This is the strict hand-off for a future text/LLM producer: unknown fields,
+    coordinates and generated layout data are rejected by the schema first.
+    """
+
+    issues = validate_mapping(mapping, schema_path)
+    if issues:
+        details = "; ".join(f"{issue.path}: {issue.message}" for issue in issues)
+        raise ValueError(f"Canonical LayoutIR does not match schema: {details}")
+    return LayoutIR.from_mapping(mapping)
+
+
 def load_mapping(path: str | Path) -> Mapping[str, Any]:
     """Load a raw JSON/YAML mapping without silently normalizing unknown fields."""
 
@@ -68,3 +83,9 @@ def load_mapping(path: str | Path) -> Mapping[str, Any]:
     if not isinstance(raw, Mapping):
         raise ValueError("Schema input root must be an object")
     return raw
+
+
+def load_canonical_spec(path: str | Path, schema_path: str | Path = DEFAULT_SCHEMA_PATH) -> LayoutIR:
+    """Load a file through the strict canonical LayoutIR boundary."""
+
+    return normalize_mapping(load_mapping(path), schema_path)

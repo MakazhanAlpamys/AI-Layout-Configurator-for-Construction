@@ -12,7 +12,7 @@ from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
 from .models import LayoutIR, LayoutResult, Rect
-from .walls import WallPlan, build_wall_plan
+from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
 
 
 IFC_HEIGHT_MM = 2_800
@@ -26,6 +26,30 @@ class IfcExportSummary:
     walls: int
     doors: int
     windows: int
+    openings: int = 0
+    space_boundaries: int = 0
+    voids: int = 0
+    fills: int = 0
+    wall_types: int = 0
+    door_types: int = 0
+    window_types: int = 0
+
+
+@dataclass(frozen=True)
+class _WallRecord:
+    element: object
+    orientation: str
+    fixed: float
+    start: float
+    end: float
+
+
+@dataclass(frozen=True)
+class _OpeningRecord:
+    source: DoorOpening | WindowOpening
+    element: object
+    filler: object
+    kind: str
 
 
 def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExportSummary:
@@ -96,6 +120,7 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
 
     elements = []
     spaces = []
+    spaces_by_id = {}
     for room in spec.rooms:
         rect = result.placements[room.id]
         space = document.create_entity(
@@ -120,12 +145,16 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
             },
         )
         spaces.append(space)
+        spaces_by_id[room.id] = space
         elements.append(space)
 
     wall_plan = build_wall_plan(spec, result)
-    walls = _make_walls(document, owner_history, context, storey_placement, spec, result, wall_plan)
+    walls, wall_records = _make_walls(document, owner_history, context, storey_placement, spec, result, wall_plan)
     doors = _make_doors(document, owner_history, context, storey_placement, wall_plan)
     windows = _make_windows(document, owner_history, context, storey_placement, spec, wall_plan)
+    opening_records = _make_openings(document, owner_history, context, storey_placement, spec, wall_plan, doors, windows)
+    type_records = _make_element_types(document, owner_history, spec, walls, doors, windows)
+    _add_bim_relationships(document, owner_history, spec, result, spaces_by_id, wall_records, opening_records)
     elements.extend(walls)
     elements.extend(doors)
     elements.extend(windows)
@@ -142,42 +171,55 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     document.write(str(output))
-    return IfcExportSummary(path=output, spaces=len(spaces), walls=len(walls), doors=len(doors), windows=len(windows))
+    return IfcExportSummary(
+        path=output,
+        spaces=len(spaces),
+        walls=len(walls),
+        doors=len(doors),
+        windows=len(windows),
+        openings=len(opening_records),
+        space_boundaries=len(document.by_type("IfcRelSpaceBoundary")),
+        voids=len(document.by_type("IfcRelVoidsElement")),
+        fills=len(document.by_type("IfcRelFillsElement")),
+        wall_types=len(type_records[0]),
+        door_types=len(type_records[1]),
+        window_types=len(type_records[2]),
+    )
 
 
 def _make_walls(document, owner_history, context, storey_placement, spec, result, wall_plan: WallPlan):
     segments = _unique_wall_segments(spec, result)
     walls = []
+    records = []
     for index, (orientation, fixed, start, end) in enumerate(segments):
-        fragments = _subtract_openings(orientation, fixed, start, end, wall_plan)
-        for fragment_index, (fragment_start, fragment_end) in enumerate(fragments):
-            length = fragment_end - fragment_start
-            if length <= 0:
-                continue
-            if orientation == "horizontal":
-                width, depth = length, spec.wall_thickness_mm
-                x, y = fragment_start, fixed - depth / 2
-            else:
-                width, depth = spec.wall_thickness_mm, length
-                x, y = fixed - width / 2, fragment_start
-            wall = document.create_entity(
-                "IfcWall",
-                GlobalId=_guid(spec, f"wall-{index}-{fragment_index}"),
-                OwnerHistory=owner_history,
-                Name=f"Wall {index + 1}.{fragment_index + 1}",
-                ObjectPlacement=_product_placement(document, storey_placement, x, y),
-                Representation=_box_representation(document, context, width, depth, IFC_HEIGHT_MM),
-                PredefinedType="PARTITIONING",
-            )
-            _add_properties(
-                document,
-                owner_history,
-                [wall],
-                "Pset_LayoutWall",
-                {"ThicknessMm": spec.wall_thickness_mm, "HeightMm": IFC_HEIGHT_MM},
-            )
-            walls.append(wall)
-    return walls
+        length = end - start
+        if length <= 0:
+            continue
+        if orientation == "horizontal":
+            width, depth = length, spec.wall_thickness_mm
+            x, y = start, fixed - depth / 2
+        else:
+            width, depth = spec.wall_thickness_mm, length
+            x, y = fixed - width / 2, start
+        wall = document.create_entity(
+            "IfcWall",
+            GlobalId=_guid(spec, f"wall-{index}"),
+            OwnerHistory=owner_history,
+            Name=f"Wall {index + 1}",
+            ObjectPlacement=_product_placement(document, storey_placement, x, y),
+            Representation=_box_representation(document, context, width, depth, IFC_HEIGHT_MM),
+            PredefinedType="PARTITIONING",
+        )
+        _add_properties(
+            document,
+            owner_history,
+            [wall],
+            "Pset_LayoutWall",
+            {"ThicknessMm": spec.wall_thickness_mm, "HeightMm": IFC_HEIGHT_MM},
+        )
+        walls.append(wall)
+        records.append(_WallRecord(wall, orientation, fixed, start, end))
+    return walls, records
 
 
 def _make_doors(document, owner_history, context, storey_placement, wall_plan: WallPlan):
@@ -226,7 +268,7 @@ def _make_windows(document, owner_history, context, storey_placement, spec, wall
             GlobalId=_guid_value(f"window-{index}-{opening.room_id}"),
             OwnerHistory=owner_history,
             Name=f"Window {opening.room_id}",
-            ObjectPlacement=_product_placement(document, storey_placement, x, y),
+            ObjectPlacement=_product_placement(document, storey_placement, x, y, spec.window_sill_mm),
             Representation=_box_representation(document, context, width, depth, spec.window_height_mm),
             OverallHeight=spec.window_height_mm,
             OverallWidth=opening.width,
@@ -241,6 +283,179 @@ def _make_windows(document, owner_history, context, storey_placement, spec, wall
         )
         windows.append(window)
     return windows
+
+
+def _make_openings(document, owner_history, context, storey_placement, spec, wall_plan: WallPlan, doors, windows):
+    records = []
+    for index, (opening, door) in enumerate(zip(wall_plan.openings, doors)):
+        width, depth, x, y = _opening_box(opening, spec.wall_thickness_mm)
+        element = document.create_entity(
+            "IfcOpeningElement",
+            GlobalId=_guid(spec, f"opening-door-{index}-{opening.id or index}"),
+            OwnerHistory=owner_history,
+            Name=f"Door opening {opening.room_a}-{opening.room_b}",
+            ObjectPlacement=_product_placement(document, storey_placement, x, y, 0),
+            Representation=_box_representation(document, context, width, depth, DOOR_HEIGHT_MM),
+            PredefinedType="OPENING",
+        )
+        _add_properties(
+            document,
+            owner_history,
+            [element],
+            "Pset_LayoutOpening",
+            {"OpeningKind": "DOOR", "ClearWidthMm": opening.width},
+        )
+        records.append(_OpeningRecord(opening, element, door, "DOOR"))
+    for index, (opening, window) in enumerate(zip(wall_plan.windows, windows)):
+        width, depth, x, y = _opening_box(opening, spec.wall_thickness_mm)
+        element = document.create_entity(
+            "IfcOpeningElement",
+            GlobalId=_guid(spec, f"opening-window-{index}-{opening.id or index}"),
+            OwnerHistory=owner_history,
+            Name=f"Window opening {opening.room_id}",
+            ObjectPlacement=_product_placement(document, storey_placement, x, y, spec.window_sill_mm),
+            Representation=_box_representation(document, context, width, depth, spec.window_height_mm),
+            PredefinedType="OPENING",
+        )
+        _add_properties(
+            document,
+            owner_history,
+            [element],
+            "Pset_LayoutOpening",
+            {"OpeningKind": "WINDOW", "ClearWidthMm": opening.width},
+        )
+        records.append(_OpeningRecord(opening, element, window, "WINDOW"))
+    return records
+
+
+def _add_bim_relationships(document, owner_history, spec, result, spaces_by_id, wall_records, opening_records):
+    for wall_index, record in enumerate(wall_records):
+        room_ids = _rooms_for_wall_segment(spec, result, record.orientation, record.fixed, record.start, record.end)
+        boundary_kind = "INTERNAL" if len(room_ids) > 1 else "EXTERNAL"
+        for room_id in room_ids:
+            document.create_entity(
+                "IfcRelSpaceBoundary",
+                GlobalId=_guid(spec, f"space-boundary-{wall_index}-{room_id}"),
+                OwnerHistory=owner_history,
+                Name=f"{room_id} boundary at {record.element.Name}",
+                RelatingSpace=spaces_by_id[room_id],
+                RelatedBuildingElement=record.element,
+                PhysicalOrVirtualBoundary="PHYSICAL",
+                InternalOrExternalBoundary=boundary_kind,
+            )
+
+    for opening_index, opening_record in enumerate(opening_records):
+        wall = _wall_for_opening(wall_records, opening_record.source)
+        if wall is None:
+            raise ValueError(f"No IFC wall found for {opening_record.kind.lower()} opening {opening_record.source.id}")
+        document.create_entity(
+            "IfcRelVoidsElement",
+            GlobalId=_guid(spec, f"voids-{opening_index}-{wall.element.GlobalId}-{opening_record.element.GlobalId}"),
+            OwnerHistory=owner_history,
+            RelatingBuildingElement=wall.element,
+            RelatedOpeningElement=opening_record.element,
+        )
+        document.create_entity(
+            "IfcRelFillsElement",
+            GlobalId=_guid(spec, f"fills-{opening_index}-{opening_record.element.GlobalId}-{opening_record.filler.GlobalId}"),
+            OwnerHistory=owner_history,
+            RelatingOpeningElement=opening_record.element,
+            RelatedBuildingElement=opening_record.filler,
+        )
+
+
+def _make_element_types(document, owner_history, spec, walls, doors, windows):
+    type_records = ([], [], [])
+    if walls:
+        wall_type = document.create_entity(
+            "IfcWallType",
+            GlobalId=_guid(spec, "wall-type-generic"),
+            OwnerHistory=owner_history,
+            Name="Generic partition wall",
+            ApplicableOccurrence="IfcWall",
+            ElementType="Generic partition wall",
+            PredefinedType="PARTITIONING",
+        )
+        _assign_type(document, owner_history, spec, walls, wall_type, "wall-type-assignment")
+        type_records[0].append(wall_type)
+    if doors:
+        door_type = document.create_entity(
+            "IfcDoorType",
+            GlobalId=_guid(spec, "door-type-generic"),
+            OwnerHistory=owner_history,
+            Name="Generic internal door",
+            ApplicableOccurrence="IfcDoor",
+            ElementType="Generic internal door",
+            PredefinedType="DOOR",
+            OperationType="NOTDEFINED",
+            ParameterTakesPrecedence=True,
+        )
+        _assign_type(document, owner_history, spec, doors, door_type, "door-type-assignment")
+        type_records[1].append(door_type)
+    if windows:
+        window_type = document.create_entity(
+            "IfcWindowType",
+            GlobalId=_guid(spec, "window-type-generic"),
+            OwnerHistory=owner_history,
+            Name="Generic window",
+            ApplicableOccurrence="IfcWindow",
+            ElementType="Generic window",
+            PredefinedType="WINDOW",
+            PartitioningType="NOTDEFINED",
+            ParameterTakesPrecedence=True,
+        )
+        _assign_type(document, owner_history, spec, windows, window_type, "window-type-assignment")
+        type_records[2].append(window_type)
+    return type_records
+
+
+def _assign_type(document, owner_history, spec, objects, type_element, suffix):
+    document.create_entity(
+        "IfcRelDefinesByType",
+        GlobalId=_guid(spec, suffix),
+        OwnerHistory=owner_history,
+        RelatedObjects=objects,
+        RelatingType=type_element,
+    )
+
+
+def _opening_box(opening: DoorOpening | WindowOpening, wall_thickness: float):
+    depth = wall_thickness + 2
+    if opening.orientation == "horizontal":
+        return opening.width, depth, opening.start, opening.fixed - depth / 2
+    return depth, opening.width, opening.fixed - depth / 2, opening.start
+
+
+def _wall_for_opening(wall_records, opening):
+    matches = [
+        record
+        for record in wall_records
+        if record.orientation == opening.orientation
+        and abs(record.fixed - opening.fixed) <= 1e-6
+        and opening.start + 1e-6 >= record.start
+        and opening.end - 1e-6 <= record.end
+    ]
+    return matches[0] if matches else None
+
+
+def _rooms_for_wall_segment(spec, result, orientation, fixed, start, end):
+    room_ids = []
+    for room in spec.rooms:
+        rect = result.placements[room.id]
+        edges = (
+            ("horizontal", rect.y, rect.x, rect.right),
+            ("vertical", rect.right, rect.y, rect.top),
+            ("horizontal", rect.top, rect.x, rect.right),
+            ("vertical", rect.x, rect.y, rect.top),
+        )
+        if any(
+            edge_orientation == orientation
+            and abs(edge_fixed - fixed) <= 1e-6
+            and min(end, edge_end) - max(start, edge_start) > 1e-6
+            for edge_orientation, edge_fixed, edge_start, edge_end in edges
+        ):
+            room_ids.append(room.id)
+    return tuple(room_ids)
 
 
 def _add_space_quantities(document, owner_history, space, rect: Rect) -> None:
@@ -347,11 +562,11 @@ def _box_representation(document, context, width: float, depth: float, height: f
     )
 
 
-def _product_placement(document, storey_placement, x: float, y: float):
+def _product_placement(document, storey_placement, x: float, y: float, z: float = 0):
     return document.create_entity(
         "IfcLocalPlacement",
         PlacementRelTo=storey_placement,
-        RelativePlacement=_axis_placement(document, (x, y, 0)),
+        RelativePlacement=_axis_placement(document, (x, y, z)),
     )
 
 
@@ -423,29 +638,6 @@ def _unique_wall_segments(spec: LayoutIR, result: LayoutResult):
             key = (orientation, round(fixed, 6), round(start, 6), round(end, 6))
             segments[key] = (orientation, fixed, start, end)
     return list(segments.values())
-
-
-def _subtract_openings(orientation, fixed, start, end, wall_plan: WallPlan):
-    intervals = []
-    for opening in (*wall_plan.openings, *wall_plan.windows):
-        if opening.orientation != orientation or abs(opening.fixed - fixed) > 1e-6:
-            continue
-        overlap_start = max(start, opening.start)
-        overlap_end = min(end, opening.end)
-        if overlap_end > overlap_start:
-            intervals.append((overlap_start, overlap_end))
-    if not intervals:
-        return [(start, end)]
-    intervals.sort()
-    fragments = []
-    cursor = start
-    for opening_start, opening_end in intervals:
-        if opening_start > cursor:
-            fragments.append((cursor, opening_start))
-        cursor = max(cursor, opening_end)
-    if cursor < end:
-        fragments.append((cursor, end))
-    return fragments
 
 
 def _guid(spec: LayoutIR, suffix: str) -> str:

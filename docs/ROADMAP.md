@@ -47,10 +47,13 @@ LLM подключается последним и никогда не выда�
   - CLI-правка сохранённого JSON и переэкспорт DXF/PDF
 - [ ] **3. IFC / BIM** ← *базовый IFC4-экспорт реализован 2026-08-30; IDS и полноценный BIM — далее*
   - `IfcProject` → `IfcSite` → `IfcBuilding` → `IfcBuildingStorey`
-  - `IfcSpace`/`IfcWall`/`IfcDoor`, геометрия, площади и CLI round-trip
+  - `IfcSpace`/`IfcWall`/`IfcDoor`/`IfcWindow`, геометрия, площади и CLI round-trip
+  - Реализовано: `IfcRelSpaceBoundary`, `IfcOpeningElement`, `IfcRelVoidsElement`
+    и `IfcRelFillsElement`; стены в IFC теперь непрерывные, проёмы связаны с хостом
   - Реализовано: окна для `needs_daylight`, property sets, базовые материалы
     и `ifctester`-проверка по `ids/layout_baseline.ids`
-  - Следом: полноценные BIM-типы и юрисдикционные IDS-профили
+  - Реализовано: семантические `IfcWallType`/`IfcDoorType`/`IfcWindowType` и
+    `IfcRelDefinesByType`; следом — юрисдикционные IDS-профили
 - [ ] **4. Нормы** — детерминированные проверки: мин. площади, ширина коридоров, эвакуация. Одна юрисдикция за раз
 - [ ] **5. LLM-парсер ТЗ + RAG по нормам** — текст → JSON со схемой; RAG цитирует пункт, решение принимает код
 - [ ] **6. Многоэтажность** — вертикальные ядра, соосность несущих стен, лестницы
@@ -61,7 +64,9 @@ LLM подключается последним и никогда не выда�
 `MIN_CORRIDOR_WIDTH`, `DAYLIGHT_OPENING`, `EGRESS_REACHABILITY` и
 `MAX_EGRESS_DISTANCE`. CLI-команда `check` выдаёт evidence для каждого правила
 и не выдаёт юридический verdict. Следующий шаг этого подпроекта — отдельный
-ruleset конкретной юрисдикции, когда она будет выбрана.
+ruleset конкретной юрисдикции, когда она будет выбрана; загрузчик уже поддерживает
+`extends`, точечное переопределение правил и provenance источника документа
+поверх baseline.
 
 До LLM-слоя подготовлен строгий JSON Schema boundary для канонического
 `LayoutIR` (`schemas/layout_ir.schema.json`) и CLI `schema --raw`; текстовый

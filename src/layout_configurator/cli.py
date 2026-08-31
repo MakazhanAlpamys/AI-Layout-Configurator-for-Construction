@@ -14,7 +14,7 @@ from .export import export_bundle
 from .ifc import export_ifc
 from .io import load_result, load_spec, write_result
 from .norms import check_layout, load_ruleset
-from .schema import validate_mapping, validate_spec, load_mapping
+from .schema import load_canonical_spec, normalize_mapping, validate_mapping, validate_spec, load_mapping
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import validate_layout
 
@@ -28,6 +28,8 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--variants", type=int, default=1)
     generate.add_argument("--time-limit", type=float, default=30)
     generate.add_argument("--seed", type=int, default=42)
+    generate.add_argument("--strict-input", action="store_true", help="require canonical LayoutIR input before solving")
+    generate.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
     edit = subparsers.add_parser("edit", help="apply typed edits to an existing layout JSON and re-export it")
     edit.add_argument("input", type=Path)
     edit.add_argument("--output", "-o", type=Path, default=Path("edited"))
@@ -44,17 +46,22 @@ def main(argv: list[str] | None = None) -> int:
     check = subparsers.add_parser("check", help="run deterministic design rules against a layout JSON")
     check.add_argument("input", type=Path)
     check.add_argument("--rules", type=Path, default=Path("rules/baseline.yaml"))
+    check.add_argument("--require-provenance", action="store_true", help="require auditable source metadata in the ruleset")
     check.add_argument("--json", action="store_true", dest="json_output", help="print a machine-readable report")
     schema = subparsers.add_parser("schema", help="validate a LayoutIR document against JSON Schema")
     schema.add_argument("input", type=Path)
     schema.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
     schema.add_argument("--raw", action="store_true", help="validate the file as-is, without LayoutIR normalization")
     schema.add_argument("--json", action="store_true", dest="json_output", help="print a machine-readable report")
+    normalize = subparsers.add_parser("normalize", help="strictly normalize canonical JSON/YAML into LayoutIR JSON")
+    normalize.add_argument("input", type=Path)
+    normalize.add_argument("--output", "-o", type=Path, help="write canonical JSON to this file; otherwise print it")
+    normalize.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
     args = parser.parse_args(argv)
 
     if args.command == "generate":
         try:
-            spec = load_spec(args.spec)
+            spec = load_canonical_spec(args.spec, args.schema) if args.strict_input else load_spec(args.spec)
             results = solve_layouts(spec, args.variants, args.time_limit, args.seed)
         except (OSError, ValueError, InfeasibleLayout, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
@@ -74,7 +81,28 @@ def main(argv: list[str] | None = None) -> int:
             ifc_path = args.output / f"layout_{result.variant:02d}.ifc"
             ifc_summary = export_ifc(ifc_path, spec, result)
             write_result(json_path, spec, result)
-            manifest["variants"].append({"variant": result.variant, "dxf": dxf_path.name, "pdf": pdf_path.name, "ifc": ifc_path.name, "ifc_entities": {"spaces": ifc_summary.spaces, "walls": ifc_summary.walls, "doors": ifc_summary.doors, "windows": ifc_summary.windows}, "json": json_path.name})
+            manifest["variants"].append(
+                {
+                    "variant": result.variant,
+                    "dxf": dxf_path.name,
+                    "pdf": pdf_path.name,
+                    "ifc": ifc_path.name,
+                    "ifc_entities": {
+                        "spaces": ifc_summary.spaces,
+                        "walls": ifc_summary.walls,
+                        "doors": ifc_summary.doors,
+                        "windows": ifc_summary.windows,
+                        "openings": ifc_summary.openings,
+                        "space_boundaries": ifc_summary.space_boundaries,
+                        "voids": ifc_summary.voids,
+                        "fills": ifc_summary.fills,
+                        "wall_types": ifc_summary.wall_types,
+                        "door_types": ifc_summary.door_types,
+                        "window_types": ifc_summary.window_types,
+                    },
+                    "json": json_path.name,
+                }
+            )
             print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {ifc_path}")
         (args.output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0
@@ -123,6 +151,13 @@ def main(argv: list[str] | None = None) -> int:
         try:
             spec, result = load_result(args.input)
             ruleset = load_ruleset(args.rules)
+            if args.require_provenance:
+                provenance_issues = ruleset.provenance_issues()
+                if provenance_issues:
+                    print("ERROR: ruleset provenance is incomplete", file=sys.stderr)
+                    for issue in provenance_issues:
+                        print(f"  - {issue}", file=sys.stderr)
+                    return 2
             report = check_layout(spec, result, ruleset)
         except (OSError, ValueError, KeyError, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
@@ -163,6 +198,20 @@ def main(argv: list[str] | None = None) -> int:
             mode = "raw" if args.raw else "normalized"
             print(f"PASS: {args.input} matches LayoutIR schema ({mode})")
         return 0 if not issues else 4
+    if args.command == "normalize":
+        try:
+            spec = normalize_mapping(load_mapping(args.input), args.schema)
+            payload = json.dumps(spec.to_dict(), ensure_ascii=False, indent=2)
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(payload + "\n", encoding="utf-8")
+                print(f"normalized: {args.input} -> {args.output}")
+            else:
+                print(payload)
+            return 0
+        except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
     return 1
 
 

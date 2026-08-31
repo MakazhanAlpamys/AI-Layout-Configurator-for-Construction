@@ -7,7 +7,7 @@ rule source and evidence so a human can audit why it passed or failed.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import heapq
 from pathlib import Path
 from typing import Any, Literal, Mapping
@@ -28,6 +28,7 @@ SUPPORTED_RULES = frozenset(
         "MAX_EGRESS_DISTANCE",
     }
 )
+REQUIRED_PROVENANCE = ("authority", "edition", "effective_date", "source_url", "document_hash")
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,7 @@ class RuleSet:
     version: str
     jurisdiction: str
     rules: tuple[RuleDefinition, ...]
+    provenance: Mapping[str, str] = field(default_factory=dict)
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "RuleSet":
@@ -100,6 +102,7 @@ class RuleSet:
             version=str(raw.get("version", "0.1")),
             jurisdiction=str(raw.get("jurisdiction", "unspecified")),
             rules=tuple(rules),
+            provenance=_provenance(raw.get("provenance", {})),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -107,6 +110,7 @@ class RuleSet:
             "name": self.name,
             "version": self.version,
             "jurisdiction": self.jurisdiction,
+            "provenance": dict(self.provenance),
             "rules": [
                 {
                     "id": rule.id,
@@ -119,6 +123,15 @@ class RuleSet:
             ],
         }
 
+    def provenance_issues(self) -> tuple[str, ...]:
+        """Return missing provenance fields required by strict profile checks."""
+
+        return tuple(
+            f"provenance.{key} is required"
+            for key in REQUIRED_PROVENANCE
+            if not str(self.provenance.get(key, "")).strip()
+        )
+
 
 @dataclass(frozen=True)
 class NormsReport:
@@ -126,6 +139,7 @@ class NormsReport:
     ruleset_version: str
     jurisdiction: str
     results: tuple[RuleResult, ...]
+    provenance: Mapping[str, str] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -137,6 +151,7 @@ class NormsReport:
                 "name": self.ruleset_name,
                 "version": self.ruleset_version,
                 "jurisdiction": self.jurisdiction,
+                "provenance": dict(self.provenance),
             },
             "ok": self.ok,
             "results": [result.to_dict() for result in self.results],
@@ -144,18 +159,99 @@ class NormsReport:
 
 
 def load_ruleset(path: str | Path) -> RuleSet:
-    source = Path(path)
+    """Load a ruleset, optionally resolving relative ``extends`` profiles.
+
+    A jurisdiction profile can override only the thresholds that differ from
+    the project baseline. The merged result is still a plain ``RuleSet`` so
+    the checker remains deterministic and auditable.
+    """
+
     import yaml
 
-    raw = yaml.safe_load(source.read_text(encoding="utf-8"))
-    return RuleSet.from_mapping(raw)
+    def load(source: Path, stack: tuple[Path, ...]) -> RuleSet:
+        source = source.resolve()
+        if source in stack:
+            chain = " -> ".join(str(item) for item in (*stack, source))
+            raise ValueError(f"Ruleset inheritance cycle: {chain}")
+        raw = yaml.safe_load(source.read_text(encoding="utf-8"))
+        if not isinstance(raw, Mapping):
+            raise ValueError("Ruleset root must be an object")
+
+        extends = raw.get("extends", ())
+        if isinstance(extends, str):
+            extends = (extends,)
+        elif isinstance(extends, (list, tuple)):
+            extends = tuple(extends)
+        elif extends is None:
+            extends = ()
+        else:
+            raise ValueError("Ruleset extends must be a path or a list of paths")
+
+        bases = [load(source.parent / str(reference), (*stack, source)) for reference in extends]
+        if not bases:
+            return RuleSet.from_mapping(raw)
+
+        merged: dict[str, Any] = bases[0].to_dict()
+        merged_rules: list[dict[str, Any]] = []
+        for base in bases:
+            merged_rules = _merge_rule_mappings(merged_rules, base.to_dict()["rules"])
+        merged_rules = _merge_rule_mappings(merged_rules, raw.get("rules", ()))
+        merged["rules"] = merged_rules
+        merged_provenance: dict[str, str] = {}
+        for base in bases:
+            merged_provenance.update(base.provenance)
+        raw_provenance = raw.get("provenance", {})
+        if raw_provenance is not None:
+            if not isinstance(raw_provenance, Mapping):
+                raise ValueError("Ruleset provenance must be an object")
+            merged_provenance.update({str(key): str(value) for key, value in raw_provenance.items()})
+        merged["provenance"] = merged_provenance
+        for key in ("name", "version", "jurisdiction"):
+            if key in raw:
+                merged[key] = raw[key]
+        return RuleSet.from_mapping(merged)
+
+    return load(Path(path), ())
+
+
+def _provenance(raw) -> dict[str, str]:
+    if raw is None:
+        return {}
+    if not isinstance(raw, Mapping):
+        raise ValueError("Ruleset provenance must be an object")
+    return {str(key): str(value) for key, value in raw.items()}
+
+
+def _merge_rule_mappings(base: list[dict[str, Any]], updates) -> list[dict[str, Any]]:
+    if updates is None:
+        return base
+    if not isinstance(updates, (list, tuple)):
+        raise ValueError("Ruleset rules must be a list")
+    merged = [dict(rule) for rule in base]
+    indexes = {str(rule.get("id", "")).strip().upper(): index for index, rule in enumerate(merged)}
+    for index, rule in enumerate(updates):
+        if not isinstance(rule, Mapping):
+            raise ValueError(f"rules[{index}] must be an object")
+        rule_copy = dict(rule)
+        rule_id = str(rule_copy.get("id", "")).strip().upper()
+        if rule_id in indexes:
+            inherited = merged[indexes[rule_id]]
+            combined = dict(inherited)
+            combined.update(rule_copy)
+            if isinstance(inherited.get("params"), Mapping) and isinstance(rule_copy.get("params"), Mapping):
+                combined["params"] = {**inherited["params"], **rule_copy["params"]}
+            merged[indexes[rule_id]] = combined
+        else:
+            indexes[rule_id] = len(merged)
+            merged.append(rule_copy)
+    return merged
 
 
 def check_layout(spec: LayoutIR, result: LayoutResult, ruleset: RuleSet) -> NormsReport:
     """Run every rule in a ruleset against one LayoutIR/LayoutResult pair."""
 
     results = tuple(_run_rule(rule, spec, result) for rule in ruleset.rules)
-    return NormsReport(ruleset.name, ruleset.version, ruleset.jurisdiction, results)
+    return NormsReport(ruleset.name, ruleset.version, ruleset.jurisdiction, results, ruleset.provenance)
 
 
 def _run_rule(rule: RuleDefinition, spec: LayoutIR, result: LayoutResult) -> RuleResult:

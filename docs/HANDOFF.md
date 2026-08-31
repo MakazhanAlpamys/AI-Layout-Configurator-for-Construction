@@ -65,3 +65,21 @@ MVP подпроекта 1, коммит `b9badb4`. Подход — CP-SAT rect
 5. CP-SAT за ~15–20 комнат начнёт тормозить. Для жилья нормально, для больницы нет
 6. Независимый расчёт этажей — несущие стены верхнего повиснут над пустотой.
    Все этажи считать в единой сетке осей
+
+## Current status — 2026-08-31
+
+После базового коммита добавлены реальная стеновая геометрия и editable CLI,
+ручные `DoorSpec`/`WindowSpec`, IFC4-экспорт, IDS baseline, deterministic
+ruleset и JSON Schema boundary. IFC теперь содержит `IfcRelSpaceBoundary`,
+`IfcOpeningElement`, `IfcRelVoidsElement`, `IfcRelFillsElement` и типы
+`IfcWallType`/`IfcDoorType`/`IfcWindowType`, связанные через
+`IfcRelDefinesByType`; `LayoutIR` остаётся единственным источником геометрии.
+
+Проверено: 30 тестов проходят до следующего цикла; загрузчик ruleset теперь
+поддерживает относительное `extends`, точечное переопределение правил и provenance
+источника; `check --require-provenance` умеет требовать полный audit-набор. Следующий
+незакрытый слой — выбрать и вручную подтвердить конкретную юрисдикцию и её
+источники; LLM-парсер ТЗ подключать только после этого контракта и только как
+producer канонического JSON. Для этой границы добавлена строгая CLI-нормализация
+`normalize`, которая отбрасывает generated data и координаты по JSON Schema.
+`generate --strict-input` использует ту же границу перед запуском CP-SAT.

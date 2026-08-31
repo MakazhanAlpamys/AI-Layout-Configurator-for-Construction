@@ -79,5 +79,22 @@
         </material>
       </requirements>
     </specification>
+    <specification name="Every generated opening has layout properties" ifcVersion="IFC4">
+      <applicability>
+        <entity>
+          <name><simpleValue>IFCOPENINGELEMENT</simpleValue></name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutOpening</simpleValue></propertySet>
+          <baseName><simpleValue>OpeningKind</simpleValue></baseName>
+        </property>
+        <property dataType="IFCREAL" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutOpening</simpleValue></propertySet>
+          <baseName><simpleValue>ClearWidthMm</simpleValue></baseName>
+        </property>
+      </requirements>
+    </specification>
   </specifications>
 </ids>
