@@ -85,9 +85,9 @@ undo/redo восстанавливают валидные снимки `EditorSt
 
 Ядро следует принципу solver-first: координаты выдаёт OR-Tools CP-SAT,
 геометрия независимо проверяется валидатором, а DXF/PDF являются производными
-представлениями `LayoutIR`. IFC/BIM уже покрывает базовую структуру, стены,
-проёмы, связи пространств и семантические типы; полноценная доводка UI и
-LLM-парсер остаются следующими этапами согласно [дорожной карте](docs/ROADMAP.md).
+представлениями `LayoutIR`. IFC/BIM покрывает структуру, стены, проёмы, связи
+пространств, семантические типы и multi-storey projection; UI и LLM-граница
+работают как отдельные слои согласно [дорожной карте](docs/ROADMAP.md).
 
 ## Ограничения MVP
 
@@ -230,6 +230,19 @@ source_url и document_hash.
 .venv\Scripts\python.exe -m layout_configurator.cli cite `
   естественное освещение кухни --rules rules\kz_sn_3_02_02_2023_partial.yaml
 ```
+
+При наличии внешнего OpenAI-compatible провайдера можно включить реальный
+LLM-вызов без передачи ему результата солвера или нормативного verdict:
+
+```powershell
+$env:LAYOUT_LLM_ENDPOINT = "https://provider.example/v1/chat/completions"
+$env:LAYOUT_LLM_MODEL = "your-model"
+$env:LAYOUT_LLM_API_KEY = "your-key"
+.venv\Scripts\python.exe -m layout_configurator.cli parse-llm `
+  examples\brief.txt --output out\llm_canonical.json
+```
+
+Ответ провайдера принимается только после `parse_llm_mapping` и JSON Schema.
 
 Для двух и более уровней используется общая осевая координация: повторяющиеся
 комнаты вертикального ядра фиксируются на одной прямоугольной сетке, а ширина

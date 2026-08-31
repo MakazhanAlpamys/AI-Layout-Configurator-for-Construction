@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, Remov
 from .editor import EditorState
 from .export import export_bundle
 from .ifc import export_ifc, export_multifloor_ifc
+from .llm import llm_settings_from_environment, parse_with_openai_compatible
 from .io import load_result, load_spec, write_result
 from .norms import check_layout, load_ruleset, retrieve_rule_citations
 from .multifloor import MultiFloorSpec, solve_multifloor
@@ -72,6 +74,13 @@ def main(argv: list[str] | None = None) -> int:
     cite.add_argument("query", nargs="+")
     cite.add_argument("--rules", type=Path, default=Path("rules/baseline.yaml"))
     cite.add_argument("--json", action="store_true", dest="json_output")
+    parse_llm = subparsers.add_parser("parse-llm", help="parse a text brief through an opt-in JSON-only LLM provider")
+    parse_llm.add_argument("input", type=Path)
+    parse_llm.add_argument("--output", "-o", type=Path)
+    parse_llm.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
+    parse_llm.add_argument("--endpoint", default=None, help="OpenAI-compatible chat completions endpoint; or LAYOUT_LLM_ENDPOINT")
+    parse_llm.add_argument("--model", default=None, help="provider model; or LAYOUT_LLM_MODEL")
+    parse_llm.add_argument("--api-key-env", default="LAYOUT_LLM_API_KEY", help="environment variable containing the provider key")
     multifloor = subparsers.add_parser("generate-multifloor", help="solve coordinated multi-floor layouts")
     multifloor.add_argument("spec", type=Path)
     multifloor.add_argument("--output", "-o", type=Path, default=Path("out/multifloor"))
@@ -291,6 +300,30 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print("No matching rule references")
         return 0
+    if args.command == "parse-llm":
+        try:
+            settings = llm_settings_from_environment()
+            endpoint = args.endpoint or settings["endpoint"]
+            model = args.model or settings["model"]
+            api_key = os.environ.get(args.api_key_env, "")
+            spec = parse_with_openai_compatible(
+                args.input.read_text(encoding="utf-8"),
+                endpoint=endpoint,
+                model=model,
+                api_key=api_key,
+                schema_path=args.schema,
+            )
+            payload = json.dumps(spec.to_dict(), ensure_ascii=False, indent=2)
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(payload + "\n", encoding="utf-8")
+                print(f"parsed by LLM: {args.input} -> {args.output}")
+            else:
+                print(payload)
+            return 0
+        except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
     if args.command == "generate-multifloor":
         try:
             import yaml
