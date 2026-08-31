@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ids xmlns="http://standards.buildingsmart.org/IDS"
+     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <info>
+    <title>Layout Configurator Kazakhstan residential exchange profile</title>
+    <version>0.1</version>
+    <description>Project BIM exchange profile for the KZ single-family residential LayoutIR projection. This IDS is an information contract, not a building-code verdict.</description>
+    <author>layout-configurator@example.com</author>
+    <purpose>Coordination and deterministic post-check hand-off</purpose>
+  </info>
+  <specifications>
+    <specification name="KZ rooms carry semantic heating and daylight declarations" ifcVersion="IFC4">
+      <applicability>
+        <entity>
+          <name><simpleValue>IFCSPACE</simpleValue></name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCLABEL" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutRoom</simpleValue></propertySet>
+          <baseName><simpleValue>RoomType</simpleValue></baseName>
+        </property>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutRoom</simpleValue></propertySet>
+          <baseName><simpleValue>NeedsDaylight</simpleValue></baseName>
+        </property>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutRoom</simpleValue></propertySet>
+          <baseName><simpleValue>IsHeated</simpleValue></baseName>
+        </property>
+      </requirements>
+    </specification>
+    <specification name="KZ doors carry external-entry classification" ifcVersion="IFC4">
+      <applicability>
+        <entity>
+          <name><simpleValue>IFCDOOR</simpleValue></name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCREAL" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutDoor</simpleValue></propertySet>
+          <baseName><simpleValue>ClearWidthMm</simpleValue></baseName>
+        </property>
+        <property dataType="IFCBOOLEAN" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutDoor</simpleValue></propertySet>
+          <baseName><simpleValue>IsExternal</simpleValue></baseName>
+        </property>
+      </requirements>
+    </specification>
+    <specification name="KZ windows carry opening dimensions" ifcVersion="IFC4">
+      <applicability>
+        <entity>
+          <name><simpleValue>IFCWINDOW</simpleValue></name>
+        </entity>
+      </applicability>
+      <requirements>
+        <property dataType="IFCREAL" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutWindow</simpleValue></propertySet>
+          <baseName><simpleValue>ClearWidthMm</simpleValue></baseName>
+        </property>
+        <property dataType="IFCREAL" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutWindow</simpleValue></propertySet>
+          <baseName><simpleValue>HeightMm</simpleValue></baseName>
+        </property>
+        <property dataType="IFCREAL" cardinality="required">
+          <propertySet><simpleValue>Pset_LayoutWindow</simpleValue></propertySet>
+          <baseName><simpleValue>SillMm</simpleValue></baseName>
+        </property>
+      </requirements>
+    </specification>
+  </specifications>
+</ids>

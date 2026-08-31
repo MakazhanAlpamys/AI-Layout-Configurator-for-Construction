@@ -1,6 +1,7 @@
 name: Kazakhstan single-family residential — verified geometry slice
 version: "2023.0-partial"
 jurisdiction: KZ
+extends: baseline.yaml
 provenance:
   authority: Committee for Construction and Housing and Communal Services of the Ministry of Industry and Construction of the Republic of Kazakhstan
   edition: СН РК 3.02-02-2023, official edition PDF (2024 print)
@@ -9,7 +10,8 @@ provenance:
   document_hash: 80db6203f81a2963033311b6bebc9616e2f05860b92cbaf67c698320f56b34da
   checked_at: "2026-08-31"
 
-# Partial profile: only directly mapped geometric requirements are encoded.
+# Partial profile: directly mapped KZ requirements are layered over the generic
+# design-aid baseline. Baseline thresholds remain project checks, not KZ law.
 # This is not a complete Kazakhstan building-code compliance verdict.
 rules:
   - id: GEOMETRY_VALID
@@ -21,6 +23,7 @@ rules:
     title: Living rooms and kitchens have natural-light openings
     source: СН РК 3.02-02-2023, official edition PDF
     clause: "7.8"
+    keywords: [естественное освещение, окна, кухня, спальня, жилые комнаты]
     params:
       require_for_needs_daylight: true
       # Project room-type mapping for «жилые комнаты и кухни (столовые)».
@@ -30,6 +33,7 @@ rules:
     title: Bath-laundry blocks are not adjacent to bedrooms
     source: СН РК 3.02-02-2023, official edition PDF
     clause: "6.2.13"
+    keywords: [банно-прачечный блок, спальня, соседство]
     params:
       # Project room-type mapping for «банно-прачечный блок» and «спальные
       # помещения». Other aliases require an explicit profile update.
@@ -41,6 +45,7 @@ rules:
     title: External entry has a vestibule before a heated room
     source: СН РК 3.02-02-2023, official edition PDF
     clause: "6.2.8"
+    keywords: [тамбур, внешний вход, отапливаемое помещение]
     params:
       vestibule_room_types: [vestibule, tambour, entry_lobby]
 
@@ -48,6 +53,7 @@ rules:
     title: Verandas, terraces and loggias are attached to main rooms
     source: СН РК 3.02-02-2023, official edition PDF
     clause: "6.2.12"
+    keywords: [веранда, терраса, лоджия, основные помещения]
     params:
       # Project room-type mapping for «веранда, терраса либо лоджия» and
       # «основные помещения дома». This mapping is intentionally explicit.
@@ -59,6 +65,7 @@ rules:
     title: Required residential rooms are marked heated
     source: СН РК 3.02-02-2023, official edition PDF
     clause: "8.19"
+    keywords: [отопление, отапливаемое помещение, микроклимат]
     params:
       # This is a LayoutIR declaration check, not a heating-system calculation.
       required_room_types: [living_room, bedroom, kitchen]

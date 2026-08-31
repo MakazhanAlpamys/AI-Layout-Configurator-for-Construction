@@ -5,7 +5,7 @@ from pathlib import Path
 
 from layout_configurator.io import load_spec
 from layout_configurator.models import LayoutIR, LayoutResult, Rect
-from layout_configurator.norms import RuleSet, check_layout, load_ruleset
+from layout_configurator.norms import RuleSet, check_layout, load_ruleset, retrieve_rule_citations
 from layout_configurator.solver import solve_layouts
 
 

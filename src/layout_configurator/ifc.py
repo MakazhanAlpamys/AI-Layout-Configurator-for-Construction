@@ -7,11 +7,12 @@ like DXF and PDF.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
 from .models import LayoutIR, LayoutResult, Rect
+from .multifloor import MultiFloorResult, MultiFloorSpec
 from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
 
 
@@ -34,6 +35,8 @@ class IfcExportSummary:
     door_types: int = 0
     window_types: int = 0
     external_entries: int = 0
+    storeys: int = 1
+    stairs: int = 0
 
 
 @dataclass(frozen=True)
@@ -187,6 +190,211 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
         door_types=len(type_records[1]),
         window_types=len(type_records[2]),
         external_entries=sum(1 for opening in wall_plan.openings if opening.external),
+    )
+
+
+def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: MultiFloorResult) -> IfcExportSummary:
+    """Write one IFC4 model containing all coordinated floors and stair cores."""
+
+    import ifcopenshell
+
+    if result.spec != multi_spec or len(result.floors) != len(multi_spec.floors):
+        raise ValueError("Multi-floor IFC result does not match its specification")
+    document = ifcopenshell.file(schema="IFC4")
+    owner_history = _owner_history(document)
+    context = _model_context(document)
+    units = _units(document)
+    origin = _axis_placement(document, (0, 0, 0))
+    project = document.create_entity(
+        "IfcProject",
+        GlobalId=_guid_value(f"{multi_spec.project_name}:multi-floor:project"),
+        OwnerHistory=owner_history,
+        Name=multi_spec.project_name,
+        RepresentationContexts=[context],
+        UnitsInContext=units,
+    )
+    site = document.create_entity(
+        "IfcSite",
+        GlobalId=_guid_value(f"{multi_spec.project_name}:multi-floor:site"),
+        OwnerHistory=owner_history,
+        Name=f"{multi_spec.project_name} site",
+        CompositionType="ELEMENT",
+        ObjectPlacement=document.create_entity("IfcLocalPlacement", RelativePlacement=origin),
+    )
+    building = document.create_entity(
+        "IfcBuilding",
+        GlobalId=_guid_value(f"{multi_spec.project_name}:multi-floor:building"),
+        OwnerHistory=owner_history,
+        Name=multi_spec.project_name,
+        CompositionType="ELEMENT",
+        ObjectPlacement=document.create_entity("IfcLocalPlacement", RelativePlacement=origin),
+    )
+    document.create_entity(
+        "IfcRelAggregates",
+        GlobalId=_guid_value(f"{multi_spec.project_name}:multi-floor:aggregate-project"),
+        OwnerHistory=owner_history,
+        RelatingObject=project,
+        RelatedObjects=[site],
+    )
+    document.create_entity(
+        "IfcRelAggregates",
+        GlobalId=_guid_value(f"{multi_spec.project_name}:multi-floor:aggregate-site"),
+        OwnerHistory=owner_history,
+        RelatingObject=site,
+        RelatedObjects=[building],
+    )
+    _add_properties(
+        document,
+        owner_history,
+        [building],
+        "Pset_LayoutBuilding",
+        {
+            "FloorCount": len(multi_spec.floors),
+            "FloorHeightMm": multi_spec.floor_height_mm,
+            "StructuralAxesX": ",".join(str(value) for value in multi_spec.structural_axes_x_mm),
+            "StructuralAxesY": ",".join(str(value) for value in multi_spec.structural_axes_y_mm),
+        },
+    )
+
+    core_by_room = {
+        (floor_index, room_id): core.id
+        for core in multi_spec.vertical_cores
+        for floor_index, room_id in enumerate(core.room_ids)
+    }
+    storeys = []
+    all_walls: list[object] = []
+    all_doors: list[object] = []
+    all_windows: list[object] = []
+    all_openings = 0
+    all_wall_types = 0
+    all_door_types = 0
+    all_window_types = 0
+    all_external_entries = 0
+    stairs = []
+
+    for floor_index, (floor, floor_result) in enumerate(zip(multi_spec.floors, result.floors)):
+        floor_layout = replace(floor.layout, project_name=f"{multi_spec.project_name} / level {floor.level}")
+        storey_placement = document.create_entity(
+            "IfcLocalPlacement",
+            RelativePlacement=_axis_placement(document, (0, 0, floor.elevation_mm)),
+        )
+        storey = document.create_entity(
+            "IfcBuildingStorey",
+            GlobalId=_guid_value(f"{multi_spec.project_name}:storey:{floor.level}"),
+            OwnerHistory=owner_history,
+            Name=f"Level {floor.level}",
+            CompositionType="ELEMENT",
+            ObjectPlacement=storey_placement,
+        )
+        storeys.append(storey)
+        spaces = []
+        spaces_by_id = {}
+        for room in floor_layout.rooms:
+            rect = floor_result.placements[room.id]
+            properties = {
+                "RoomType": room.type,
+                "TargetAreaM2": room.target_area_m2,
+                "NeedsDaylight": room.needs_daylight,
+                "IsHeated": room.is_heated,
+            }
+            core_id = core_by_room.get((floor_index, room.id))
+            if core_id:
+                properties["VerticalCoreId"] = core_id
+            space = document.create_entity(
+                "IfcSpace",
+                GlobalId=_guid(floor_layout, f"space-{room.id}"),
+                OwnerHistory=owner_history,
+                Name=room.id,
+                LongName=room.type,
+                ObjectPlacement=_product_placement(document, storey_placement, rect.x, rect.y),
+                Representation=_box_representation(document, context, rect.width, rect.height, IFC_HEIGHT_MM),
+            )
+            _add_space_quantities(document, owner_history, space, rect)
+            _add_properties(document, owner_history, [space], "Pset_LayoutRoom", properties)
+            spaces.append(space)
+            spaces_by_id[room.id] = space
+
+        wall_plan = build_wall_plan(floor_layout, floor_result)
+        walls, wall_records = _make_walls(document, owner_history, context, storey_placement, floor_layout, floor_result, wall_plan)
+        doors = _make_doors(document, owner_history, context, storey_placement, wall_plan)
+        windows = _make_windows(document, owner_history, context, storey_placement, floor_layout, wall_plan)
+        opening_records = _make_openings(document, owner_history, context, storey_placement, floor_layout, wall_plan, doors, windows)
+        type_records = _make_element_types(document, owner_history, floor_layout, walls, doors, windows)
+        _add_bim_relationships(document, owner_history, floor_layout, floor_result, spaces_by_id, wall_records, opening_records)
+        floor_elements = [*spaces, *walls, *doors, *windows]
+        document.create_entity(
+            "IfcRelContainedInSpatialStructure",
+            GlobalId=_guid(floor_layout, "containment-storey"),
+            OwnerHistory=owner_history,
+            RelatedElements=floor_elements,
+            RelatingStructure=storey,
+        )
+        all_walls.extend(walls)
+        all_doors.extend(doors)
+        all_windows.extend(windows)
+        all_openings += len(opening_records)
+        all_wall_types += len(type_records[0])
+        all_door_types += len(type_records[1])
+        all_window_types += len(type_records[2])
+        all_external_entries += sum(1 for opening in wall_plan.openings if opening.external)
+        for core in multi_spec.vertical_cores:
+            room_id = core.room_ids[floor_index]
+            rect = floor_result.placements[room_id]
+            stair = document.create_entity(
+                "IfcStair",
+                GlobalId=_guid(floor_layout, f"stair-{core.id}"),
+                OwnerHistory=owner_history,
+                Name=f"Stair {core.id} / level {floor.level}",
+                ObjectPlacement=_product_placement(document, storey_placement, rect.x, rect.y),
+                Representation=_box_representation(document, context, rect.width, rect.height, IFC_HEIGHT_MM),
+                PredefinedType="STRAIGHT_RUN_STAIR",
+            )
+            _add_properties(
+                document,
+                owner_history,
+                [stair],
+                "Pset_LayoutStair",
+                {"VerticalCoreId": core.id, "ClearWidthMm": core.stair_width_mm, "RunLengthMm": core.stair_run_length_mm},
+            )
+            stairs.append(stair)
+        if multi_spec.vertical_cores:
+            document.create_entity(
+                "IfcRelContainedInSpatialStructure",
+                GlobalId=_guid(floor_layout, "containment-stairs"),
+                OwnerHistory=owner_history,
+                RelatedElements=stairs[-len(multi_spec.vertical_cores):],
+                RelatingStructure=storey,
+            )
+
+    document.create_entity(
+        "IfcRelAggregates",
+        GlobalId=_guid_value(f"{multi_spec.project_name}:multi-floor:aggregate-building"),
+        OwnerHistory=owner_history,
+        RelatingObject=building,
+        RelatedObjects=storeys,
+    )
+    _associate_material(document, owner_history, all_walls, "Generic partition wall")
+    _associate_material(document, owner_history, all_doors, "Generic internal door")
+    _associate_material(document, owner_history, all_windows, "Generic window")
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    document.write(str(output))
+    return IfcExportSummary(
+        path=output,
+        spaces=len(document.by_type("IfcSpace")),
+        walls=len(all_walls),
+        doors=len(all_doors),
+        windows=len(all_windows),
+        openings=all_openings,
+        space_boundaries=len(document.by_type("IfcRelSpaceBoundary")),
+        voids=len(document.by_type("IfcRelVoidsElement")),
+        fills=len(document.by_type("IfcRelFillsElement")),
+        wall_types=all_wall_types,
+        door_types=all_door_types,
+        window_types=all_window_types,
+        external_entries=all_external_entries,
+        storeys=len(storeys),
+        stairs=len(stairs),
     )
 
 

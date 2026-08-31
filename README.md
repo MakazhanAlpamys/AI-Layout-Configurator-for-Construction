@@ -56,6 +56,14 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
   out\layout_01.ifc --ids ids\layout_baseline.ids
 ```
 
+Для KZ-проекции доступен отдельный IFC4 exchange-профиль (это контракт данных,
+не нормативный verdict):
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli validate `
+  out\kz_entry_pass\layout_01.ifc --ids ids\kz_layout_exchange.ids
+```
+
 Локальный браузерный редактор поверх тех же typed-команд:
 
 ```powershell
@@ -203,6 +211,38 @@ source_url и document_hash.
 
 Для готового примера используй `examples/basic_canonical.json`; обычный
 `examples/basic.yaml` остаётся shorthand для команды `generate`.
+
+Для текстового ТЗ есть локальный constrained-parser без доступа к координатам:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli parse-brief `
+  examples\brief.txt --output out\brief_canonical.json
+.venv\Scripts\python.exe -m layout_configurator.cli generate `
+  out\brief_canonical.json --output out\brief --strict-input
+```
+
+Будущий LLM-провайдер должен отдавать только такой canonical JSON; функция
+`parse_llm_mapping` сначала прогоняет его через JSON Schema и отклоняет
+координаты, generated data и неизвестные поля. Для RAG-слоя есть безопасный
+поиск ссылок без проверки планировки:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli cite `
+  естественное освещение кухни --rules rules\kz_sn_3_02_02_2023_partial.yaml
+```
+
+Для двух и более уровней используется общая осевая координация: повторяющиеся
+комнаты вертикального ядра фиксируются на одной прямоугольной сетке, а ширина
+лестницы и заявленные оси проверяются после решения:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate-multifloor `
+  examples\multifloor.yaml --output out\multifloor
+```
+
+Команда создаёт также общий `out\multifloor\multifloor.ifc` с несколькими
+`IfcBuildingStorey` и `IfcStair`; отдельные папки этажей сохраняются для
+локального редактирования и round-trip.
 
 Команда сначала проверяет схему, затем создаёт `LayoutIR`; результат солвера
 и координаты на этом input contract boundary не принимаются.

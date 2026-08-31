@@ -1,0 +1,8 @@
+Проект: Дом из текстового ТЗ
+Габариты: 12000 x 9000 мм
+Вход: hall
+Комнаты:
+- hall | corridor | 12 | living,kitchen,bedroom | heated
+- living | living_room | 24 | hall | daylight, heated
+- kitchen | kitchen | 12 | hall | daylight, heated
+- bedroom | bedroom | 16 | hall | daylight, heated

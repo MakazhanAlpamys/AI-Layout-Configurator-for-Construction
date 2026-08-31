@@ -102,6 +102,16 @@ class ExportTests(unittest.TestCase):
             self.assertTrue(report.ok)
             self.assertTrue(all(item.failed == 0 for item in report.specifications))
 
+    def test_ids_kz_exchange_profile_passes_exported_ifc(self):
+        spec = load_spec("examples/kz_entry_pass.yaml")
+        result = solve_layouts(spec, variants=1, time_limit_seconds=10)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            ifc_path = Path(directory) / "layout.ifc"
+            export_ifc(ifc_path, spec, result)
+            report = validate_ids(ifc_path, "ids/kz_layout_exchange.ids")
+            self.assertTrue(report.ok)
+            self.assertTrue(all(item.failed == 0 for item in report.specifications))
+
     def test_ifc_preserves_external_entry_and_heated_room_metadata(self):
         spec = load_spec("examples/kz_entry_pass.yaml")
         result = LayoutResult(

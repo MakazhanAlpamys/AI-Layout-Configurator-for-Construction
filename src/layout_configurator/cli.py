@@ -7,13 +7,15 @@ import json
 import sys
 from pathlib import Path
 
+from .brief import parse_text_brief
 from .compliance import validate_ids
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .editor import EditorState
 from .export import export_bundle
-from .ifc import export_ifc
+from .ifc import export_ifc, export_multifloor_ifc
 from .io import load_result, load_spec, write_result
-from .norms import check_layout, load_ruleset
+from .norms import check_layout, load_ruleset, retrieve_rule_citations
+from .multifloor import MultiFloorSpec, solve_multifloor
 from .schema import load_canonical_spec, normalize_mapping, validate_mapping, validate_spec, load_mapping
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import validate_layout
@@ -62,6 +64,19 @@ def main(argv: list[str] | None = None) -> int:
     normalize.add_argument("input", type=Path)
     normalize.add_argument("--output", "-o", type=Path, help="write canonical JSON to this file; otherwise print it")
     normalize.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
+    parse_brief = subparsers.add_parser("parse-brief", help="parse a constrained text brief into canonical LayoutIR JSON")
+    parse_brief.add_argument("input", type=Path)
+    parse_brief.add_argument("--output", "-o", type=Path)
+    parse_brief.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
+    cite = subparsers.add_parser("cite", help="retrieve rule references without evaluating a layout")
+    cite.add_argument("query", nargs="+")
+    cite.add_argument("--rules", type=Path, default=Path("rules/baseline.yaml"))
+    cite.add_argument("--json", action="store_true", dest="json_output")
+    multifloor = subparsers.add_parser("generate-multifloor", help="solve coordinated multi-floor layouts")
+    multifloor.add_argument("spec", type=Path)
+    multifloor.add_argument("--output", "-o", type=Path, default=Path("out/multifloor"))
+    multifloor.add_argument("--time-limit", type=float, default=30)
+    multifloor.add_argument("--seed", type=int, default=42)
     ui = subparsers.add_parser("ui", help="serve a local browser editor over typed commands")
     ui.add_argument("input", type=Path, help="existing layout JSON or a YAML/JSON specification")
     ui.add_argument("--output", "-o", type=Path, default=Path("out/ui"))
@@ -241,6 +256,77 @@ def main(argv: list[str] | None = None) -> int:
                 print(payload)
             return 0
         except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+    if args.command == "parse-brief":
+        try:
+            spec = parse_text_brief(args.input.read_text(encoding="utf-8"), str(args.schema))
+            payload = json.dumps(spec.to_dict(), ensure_ascii=False, indent=2)
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(payload + "\n", encoding="utf-8")
+                print(f"parsed brief: {args.input} -> {args.output}")
+            else:
+                print(payload)
+            return 0
+        except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+    if args.command == "cite":
+        try:
+            ruleset = load_ruleset(args.rules)
+            citations = retrieve_rule_citations(ruleset, " ".join(args.query))
+        except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        if args.json_output:
+            print(json.dumps({"query": " ".join(args.query), "citations": [item.to_dict() for item in citations]}, ensure_ascii=False, indent=2))
+        elif citations:
+            for citation in citations:
+                print(f"{citation.id}: {citation.title}")
+                print(f"  clause: {citation.clause}")
+                print(f"  source: {citation.source}")
+                if citation.source_url:
+                    print(f"  source_url: {citation.source_url}")
+        else:
+            print("No matching rule references")
+        return 0
+    if args.command == "generate-multifloor":
+        try:
+            import yaml
+
+            raw = yaml.safe_load(args.spec.read_text(encoding="utf-8"))
+            spec = MultiFloorSpec.from_mapping(raw)
+            result = solve_multifloor(spec, args.time_limit, args.seed)
+            args.output.mkdir(parents=True, exist_ok=True)
+            floors = []
+            for floor, layout in zip(spec.floors, result.floors):
+                floor_output = args.output / f"floor_{floor.level:02d}"
+                report = validate_layout(floor.layout, layout)
+                dxf_path, pdf_path = export_bundle(floor_output, floor.layout, layout, report)
+                ifc_path = floor_output / f"layout_{layout.variant:02d}.ifc"
+                export_ifc(ifc_path, floor.layout, layout)
+                json_path = floor_output / f"layout_{layout.variant:02d}.json"
+                write_result(json_path, floor.layout, layout)
+                floors.append({"level": floor.level, "elevation_mm": floor.elevation_mm, "output": str(floor_output), "json": str(json_path), "dxf": str(dxf_path), "pdf": str(pdf_path), "ifc": str(ifc_path)})
+            manifest = result.to_dict()
+            combined_ifc = args.output / "multifloor.ifc"
+            combined_summary = export_multifloor_ifc(combined_ifc, spec, result)
+            manifest["ifc"] = str(combined_ifc)
+            manifest["ifc_entities"] = {
+                "storeys": combined_summary.storeys,
+                "spaces": combined_summary.spaces,
+                "walls": combined_summary.walls,
+                "doors": combined_summary.doors,
+                "windows": combined_summary.windows,
+                "openings": combined_summary.openings,
+                "stairs": combined_summary.stairs,
+            }
+            manifest["floors"] = floors
+            (args.output / "multifloor.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"multi-floor: {len(floors)} floors -> {args.output}")
+            return 0
+        except (OSError, ValueError, InfeasibleLayout, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
     if args.command == "ui":

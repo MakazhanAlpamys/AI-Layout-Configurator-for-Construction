@@ -42,6 +42,7 @@ class RuleDefinition:
     source: str
     clause: str
     params: Mapping[str, Any]
+    keywords: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -100,7 +101,14 @@ class RuleSet:
             params = item.get("params", {})
             if not isinstance(params, Mapping):
                 raise ValueError(f"rules[{index}].params must be an object")
-            rules.append(RuleDefinition(rule_id, title, source, clause, dict(params)))
+            keywords_raw = item.get("keywords", ())
+            if isinstance(keywords_raw, str):
+                keywords = (keywords_raw,)
+            elif isinstance(keywords_raw, (list, tuple)):
+                keywords = tuple(str(value).strip() for value in keywords_raw if str(value).strip())
+            else:
+                raise ValueError(f"rules[{index}].keywords must be a string or a list")
+            rules.append(RuleDefinition(rule_id, title, source, clause, dict(params), keywords))
         return cls(
             name=str(raw.get("name", "Unnamed ruleset")),
             version=str(raw.get("version", "0.1")),
@@ -122,6 +130,7 @@ class RuleSet:
                     "source": rule.source,
                     "clause": rule.clause,
                     "params": dict(rule.params),
+                    "keywords": list(rule.keywords),
                 }
                 for rule in self.rules
             ],
@@ -256,6 +265,79 @@ def check_layout(spec: LayoutIR, result: LayoutResult, ruleset: RuleSet) -> Norm
 
     results = tuple(_run_rule(rule, spec, result) for rule in ruleset.rules)
     return NormsReport(ruleset.name, ruleset.version, ruleset.jurisdiction, results, ruleset.provenance)
+
+
+@dataclass(frozen=True)
+class RuleCitation:
+    """A retrieved rule reference; retrieval never evaluates the layout."""
+
+    id: str
+    title: str
+    clause: str
+    source: str
+    source_url: str
+    keywords: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "title": self.title,
+            "clause": self.clause,
+            "source": self.source,
+            "source_url": self.source_url,
+            "keywords": list(self.keywords),
+        }
+
+
+def retrieve_rule_citations(ruleset: RuleSet, query: str) -> tuple[RuleCitation, ...]:
+    """Retrieve auditable rule references without producing a compliance verdict."""
+
+    terms = tuple(term for term in _search_terms(query) if term)
+    scored: list[tuple[int, RuleCitation]] = []
+    source_url = str(ruleset.provenance.get("source_url", ""))
+    for rule in ruleset.rules:
+        haystack = " ".join(
+            (rule.id, rule.title, rule.source, rule.clause, *rule.keywords)
+        ).lower()
+        score = sum(1 for term in terms if term in haystack)
+        if score:
+            scored.append(
+                (
+                    score,
+                    RuleCitation(
+                        rule.id,
+                        rule.title,
+                        rule.clause,
+                        rule.source,
+                        source_url,
+                        rule.keywords,
+                    ),
+                )
+            )
+    return tuple(citation for _, citation in sorted(scored, key=lambda item: (-item[0], item[1].id)))
+
+
+def _search_terms(query: str) -> tuple[str, ...]:
+    normalized = str(query).lower().replace("ё", "е")
+    aliases = {
+        "освещ": ("daylight", "естествен", "свет", "окн"),
+        "окн": ("window", "daylight", "естествен"),
+        "тамбур": ("vestibule", "entry", "вход"),
+        "вход": ("entry", "vestibule", "тамбур"),
+        "отоп": ("heated", "heating", "отап"),
+        "эвакуац": ("egress", "reachability", "distance"),
+        "площад": ("area", "minimum"),
+        "коридор": ("corridor", "width"),
+        "террас": ("terrace", "attachment"),
+        "лодж": ("loggia", "attachment"),
+    }
+    tokens = set(normalized.split())
+    expanded = set(tokens)
+    for token in tuple(tokens):
+        for prefix, values in aliases.items():
+            if token.startswith(prefix):
+                expanded.update(values)
+    return tuple(sorted(expanded))
 
 
 def _run_rule(rule: RuleDefinition, spec: LayoutIR, result: LayoutResult) -> RuleResult:
