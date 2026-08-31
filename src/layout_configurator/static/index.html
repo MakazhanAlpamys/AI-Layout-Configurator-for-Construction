@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Layout Configurator — editor</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">SOLVER-FIRST EDITOR</p>
+      <h1>Редактор планировки</h1>
+      <p class="subtitle">Браузер отправляет typed-команды; геометрию пересчитывает CP-SAT.</p>
+    </div>
+    <button id="reset" class="secondary">Сбросить изменения</button>
+  </header>
+
+  <main class="shell">
+    <section class="canvas-card card">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">LAYOUTIR</p>
+          <h2 id="project-name">Загрузка…</h2>
+        </div>
+        <span id="status" class="status">…</span>
+      </div>
+      <div class="plan-wrap">
+        <svg id="plan" role="img" aria-label="Планировка"></svg>
+      </div>
+      <div id="legend" class="legend"></div>
+    </section>
+
+    <aside class="side-column">
+      <section class="card command-card">
+        <div class="section-head compact">
+          <div>
+            <p class="eyebrow">COMMAND API</p>
+            <h2>Typed-команда</h2>
+          </div>
+        </div>
+        <form id="command-form">
+          <label>Операция
+            <select id="operation">
+              <option value="move_room">Переместить комнату</option>
+              <option value="resize_room">Изменить размер</option>
+              <option value="add_door">Добавить дверь</option>
+              <option value="remove_door">Удалить явную дверь</option>
+              <option value="add_window">Добавить окно</option>
+              <option value="remove_window">Удалить окно</option>
+              <option value="set_external_entry">Задать внешний вход</option>
+              <option value="remove_external_entry">Удалить внешний вход</option>
+            </select>
+          </label>
+          <div id="fields"></div>
+          <button type="submit" class="primary">Применить команду</button>
+        </form>
+        <p id="command-error" class="error" hidden></p>
+      </section>
+
+      <section class="card details-card">
+        <div class="section-head compact">
+          <div>
+            <p class="eyebrow">STATE</p>
+            <h2>Состояние</h2>
+          </div>
+        </div>
+        <dl id="summary" class="summary"></dl>
+        <div id="issues"></div>
+        <div id="files" class="files"></div>
+      </section>
+    </aside>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -26,6 +26,7 @@ SUPPORTED_RULES = frozenset(
         "DAYLIGHT_OPENING",
         "FORBIDDEN_TYPE_ADJACENCY",
         "ENTRY_VESTIBULE",
+        "AUXILIARY_SPACE_ATTACHMENT",
         "EGRESS_REACHABILITY",
         "MAX_EGRESS_DISTANCE",
     }
@@ -264,6 +265,7 @@ def _run_rule(rule: RuleDefinition, spec: LayoutIR, result: LayoutResult) -> Rul
         "DAYLIGHT_OPENING": _daylight_opening,
         "FORBIDDEN_TYPE_ADJACENCY": _forbidden_type_adjacency,
         "ENTRY_VESTIBULE": _entry_vestibule,
+        "AUXILIARY_SPACE_ATTACHMENT": _auxiliary_space_attachment,
         "EGRESS_REACHABILITY": _egress_reachability,
         "MAX_EGRESS_DISTANCE": _max_egress_distance,
     }
@@ -422,6 +424,62 @@ def _entry_vestibule(params: Mapping[str, Any], spec: LayoutIR, result: LayoutRe
     return "FAIL", [
         f"External entry {entry.id} opens directly into heated room {room.id} ({room.type}); vestibule room is required"
     ]
+
+
+def _auxiliary_space_attachment(
+    params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult
+) -> tuple[RuleStatus, list[str]]:
+    auxiliary_types = _room_type_set(
+        params.get("auxiliary_room_types", ("veranda", "terrace", "loggia")),
+        "auxiliary_room_types",
+    )
+    main_types = _room_type_set(
+        params.get("main_room_types", ("living_room", "kitchen", "bedroom")),
+        "main_room_types",
+    )
+    minimum_shared_boundary = float(params.get("minimum_shared_boundary_mm", 1))
+    if minimum_shared_boundary < 0:
+        raise ValueError("AUXILIARY_SPACE_ATTACHMENT.minimum_shared_boundary_mm must be non-negative")
+
+    auxiliary_rooms = [room for room in spec.rooms if room.type.lower() in auxiliary_types]
+    if not auxiliary_rooms:
+        return "NOT_APPLICABLE", [
+            "No room matched auxiliary types " + ", ".join(sorted(auxiliary_types))
+        ]
+    main_rooms = [room for room in spec.rooms if room.type.lower() in main_types]
+    if not main_rooms:
+        return "FAIL", [
+            "No main room matched target types " + ", ".join(sorted(main_types))
+        ]
+
+    failures: list[str] = []
+    evidence: list[str] = []
+    for auxiliary in auxiliary_rooms:
+        auxiliary_rect = result.placements.get(auxiliary.id)
+        if auxiliary_rect is None:
+            failures.append(f"{auxiliary.id}: placement is missing")
+            continue
+        attached_to: list[str] = []
+        for main in main_rooms:
+            main_rect = result.placements.get(main.id)
+            if main_rect is None:
+                failures.append(f"{main.id}: placement is missing")
+                continue
+            shared_boundary = auxiliary_rect.shared_boundary(main_rect)
+            if shared_boundary + 1e-6 >= minimum_shared_boundary:
+                attached_to.append(f"{main.id} ({shared_boundary:.0f} mm)")
+        if attached_to:
+            evidence.append(
+                f"{auxiliary.id} ({auxiliary.type}) is attached to "
+                + ", ".join(attached_to)
+                + f"; minimum shared boundary {minimum_shared_boundary:.0f} mm"
+            )
+        else:
+            failures.append(
+                f"{auxiliary.id} ({auxiliary.type}) has no shared boundary with main room types "
+                + ", ".join(sorted(main_types))
+            )
+    return ("FAIL", failures + evidence) if failures else ("PASS", evidence)
 
 
 def _egress_reachability(params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult) -> tuple[RuleStatus, list[str]]:

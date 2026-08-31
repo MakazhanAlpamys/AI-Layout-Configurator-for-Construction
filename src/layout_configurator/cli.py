@@ -62,6 +62,11 @@ def main(argv: list[str] | None = None) -> int:
     normalize.add_argument("input", type=Path)
     normalize.add_argument("--output", "-o", type=Path, help="write canonical JSON to this file; otherwise print it")
     normalize.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
+    ui = subparsers.add_parser("ui", help="serve a local browser editor over typed commands")
+    ui.add_argument("input", type=Path, help="existing layout JSON or a YAML/JSON specification")
+    ui.add_argument("--output", "-o", type=Path, default=Path("out/ui"))
+    ui.add_argument("--host", default="127.0.0.1")
+    ui.add_argument("--port", type=int, default=8765)
     args = parser.parse_args(argv)
 
     if args.command == "generate":
@@ -234,6 +239,14 @@ def main(argv: list[str] | None = None) -> int:
                 print(payload)
             return 0
         except (OSError, ValueError, KeyError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+    if args.command == "ui":
+        try:
+            from .ui import serve_ui
+
+            return serve_ui(args.input, args.output, host=args.host, port=args.port)
+        except (OSError, ValueError, KeyError, RuntimeError, InfeasibleLayout) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
     return 1

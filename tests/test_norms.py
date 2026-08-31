@@ -272,6 +272,39 @@ rules:
         passed = check_layout(passing_spec, result, ruleset)
         self.assertTrue(passed.ok, passed.to_dict())
 
+    def test_kazakhstan_profile_checks_auxiliary_room_attachment(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 8000, "height": 4000},
+                "entry_room": "living",
+                "rooms": [
+                    {"id": "living", "type": "living_room", "target_area": 12},
+                    {"id": "bedroom", "type": "bedroom", "target_area": 12},
+                    {"id": "terrace", "type": "terrace", "target_area": 2},
+                ],
+            }
+        )
+        ruleset = load_ruleset("rules/kz_sn_3_02_02_2023_partial.yaml")
+        attached = LayoutResult(
+            variant=1,
+            placements={
+                "living": Rect(0, 0, 3000, 4000),
+                "bedroom": Rect(5000, 0, 3000, 4000),
+                "terrace": Rect(3000, 0, 2000, 1000),
+            },
+        )
+        attached_report = check_layout(spec, attached, ruleset)
+        attachment = next(item for item in attached_report.results if item.id == "AUXILIARY_SPACE_ATTACHMENT")
+        self.assertEqual(attachment.status, "PASS")
+        self.assertIn("living", attachment.evidence[0])
+
+        detached = replace(attached, placements={**attached.placements, "terrace": Rect(3500, 1000, 1000, 1000)})
+        detached_report = check_layout(spec, detached, ruleset)
+        attachment = next(item for item in detached_report.results if item.id == "AUXILIARY_SPACE_ATTACHMENT")
+        self.assertFalse(detached_report.ok)
+        self.assertEqual(attachment.status, "FAIL")
+        self.assertIn("no shared boundary", attachment.evidence[0])
+
     def test_ruleset_inheritance_cycle_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

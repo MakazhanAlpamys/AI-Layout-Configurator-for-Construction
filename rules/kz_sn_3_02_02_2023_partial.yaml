@@ -9,8 +9,8 @@ provenance:
   document_hash: 80db6203f81a2963033311b6bebc9616e2f05860b92cbaf67c698320f56b34da
   checked_at: "2026-08-31"
 
-# Partial profile: only the directly mapped natural-lighting requirement is
-# encoded. This is not a complete Kazakhstan building-code compliance verdict.
+# Partial profile: only directly mapped geometric requirements are encoded.
+# This is not a complete Kazakhstan building-code compliance verdict.
 rules:
   - id: GEOMETRY_VALID
     title: Layout geometry is valid
@@ -43,3 +43,14 @@ rules:
     clause: "6.2.8"
     params:
       vestibule_room_types: [vestibule, tambour, entry_lobby]
+
+  - id: AUXILIARY_SPACE_ATTACHMENT
+    title: Verandas, terraces and loggias are attached to main rooms
+    source: СН РК 3.02-02-2023, official edition PDF
+    clause: "6.2.12"
+    params:
+      # Project room-type mapping for «веранда, терраса либо лоджия» and
+      # «основные помещения дома». This mapping is intentionally explicit.
+      auxiliary_room_types: [veranda, terrace, loggia]
+      main_room_types: [living_room, kitchen, bedroom]
+      minimum_shared_boundary_mm: 1

@@ -56,6 +56,18 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
   out\layout_01.ifc --ids ids\layout_baseline.ids
 ```
 
+Локальный браузерный редактор поверх тех же typed-команд:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli ui out\layout_01.json `
+  --output out\ui --port 8765
+```
+
+Откройте `http://127.0.0.1:8765/`. UI показывает SVG-проекцию текущего
+`LayoutIR`, validation status и ссылки на переэкспортированные DXF/PDF/IFC/JSON;
+сервер принимает только известные команды (`MoveRoom`, `ResizeRoom`, двери,
+окна и внешний вход) и не принимает координаты как источник истины.
+
 Ядро следует принципу solver-first: координаты выдаёт OR-Tools CP-SAT,
 геометрия независимо проверяется валидатором, а DXF/PDF являются производными
 представлениями `LayoutIR`. IFC/BIM уже покрывает базовую структуру, стены,
@@ -97,7 +109,8 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 source_url и document_hash.
 
 Первый частичный профиль Казахстана (проверенные срезы естественного освещения
-по п. 7.8, запрещённого соседства по п. 6.2.13 и тамбура по п. 6.2.8
+по п. 7.8, запрещённого соседства по п. 6.2.13, тамбура по п. 6.2.8
+и связи вспомогательных помещений по п. 6.2.12
 СН РК 3.02-02-2023):
 
 ```powershell

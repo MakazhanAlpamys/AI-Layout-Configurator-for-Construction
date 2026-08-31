@@ -25,5 +25,8 @@ layout-configurator = "layout_configurator.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+layout_configurator = ["static/*.html", "static/*.js", "static/*.css"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
