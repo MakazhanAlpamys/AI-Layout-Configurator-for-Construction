@@ -31,7 +31,9 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 Доступны `--move-room ROOM DX DY`, `--resize-room ROOM WIDTH HEIGHT`,
 `--add-door ROOM_A ROOM_B`, `--add-door-at ROOM_A ROOM_B OFFSET_MM WIDTH_MM`,
 `--remove-door DOOR_ID`, `--add-window ROOM SIDE OFFSET_MM WIDTH_MM` и
-`--remove-window WINDOW_ID`. Для `--add-door-at` и ручного окна `OFFSET_MM` —
+`--remove-window WINDOW_ID`, `--set-external-entry ROOM SIDE OFFSET_MM WIDTH_MM`
+и `--remove-external-entry`. Для `--add-door-at`, внешнего входа и ручного окна
+`OFFSET_MM` —
 центр проёма от нижнего/левого края соответствующей грани. После команды
 изменённая геометрия фиксируется,
 остальные комнаты частично пересчитываются CP-SAT и проходят повторную
@@ -69,6 +71,10 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 - стены экспортируются двойными линиями с толщиной и вырезами дверей;
 - окна для комнат с `needs_daylight` экспортируются автоматически; ручные окна
   можно добавить через `edit --add-window ROOM SIDE OFFSET_MM WIDTH_MM`;
+- внешний вход задаётся через `external_entry`, фиксируется solver-ом на наружной
+  стороне комнаты и экспортируется как отдельный `IfcDoor`/проём;
+- `is_heated` хранится у комнаты и используется jurisdiction-проверками, но не
+  заменяет расчёт отопления или инженерных систем;
 - IFC содержит пространственную структуру, комнаты, непрерывные стены, двери,
   окна и `IfcOpeningElement` с `IfcRelVoidsElement`/`IfcRelFillsElement`;
   `IfcRelSpaceBoundary`, базовые property sets, материалы и IDS-шаблон уже есть;
@@ -91,7 +97,8 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 source_url и document_hash.
 
 Первый частичный профиль Казахстана (проверенные срезы естественного освещения
-по п. 7.8 и запрещённого соседства по п. 6.2.13 СН РК 3.02-02-2023):
+по п. 7.8, запрещённого соседства по п. 6.2.13 и тамбура по п. 6.2.8
+СН РК 3.02-02-2023):
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli check `
@@ -108,6 +115,23 @@ source_url и document_hash.
 .venv\Scripts\python.exe -m layout_configurator.cli check `
   out\kz_daylight\layout_01.json --rules rules\kz_sn_3_02_02_2023_partial.yaml `
   --require-provenance
+```
+
+Проверка требования тамбура по п. 6.2.8 демонстрируется отдельными примерами:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate `
+  examples\kz_entry_pass.yaml --output out\kz_entry_pass --variants 1
+.venv\Scripts\python.exe -m layout_configurator.cli check `
+  out\kz_entry_pass\layout_01.json --rules rules\kz_sn_3_02_02_2023_partial.yaml `
+  --require-provenance
+
+.venv\Scripts\python.exe -m layout_configurator.cli generate `
+  examples\kz_entry_fail.yaml --output out\kz_entry_fail --variants 1
+.venv\Scripts\python.exe -m layout_configurator.cli check `
+  out\kz_entry_fail\layout_01.json --rules rules\kz_sn_3_02_02_2023_partial.yaml `
+  --require-provenance
+# Ожидаемый код выхода последней команды: 4.
 ```
 
 `rules/baseline.yaml` проверяет геометрию, минимальные площади по типам комнат,

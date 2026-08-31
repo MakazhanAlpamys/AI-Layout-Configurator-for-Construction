@@ -33,6 +33,7 @@ class IfcExportSummary:
     wall_types: int = 0
     door_types: int = 0
     window_types: int = 0
+    external_entries: int = 0
 
 
 @dataclass(frozen=True)
@@ -142,6 +143,7 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
                 "RoomType": room.type,
                 "TargetAreaM2": room.target_area_m2,
                 "NeedsDaylight": room.needs_daylight,
+                "IsHeated": room.is_heated,
             },
         )
         spaces.append(space)
@@ -184,6 +186,7 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
         wall_types=len(type_records[0]),
         door_types=len(type_records[1]),
         window_types=len(type_records[2]),
+        external_entries=sum(1 for opening in wall_plan.openings if opening.external),
     )
 
 
@@ -236,7 +239,7 @@ def _make_doors(document, owner_history, context, storey_placement, wall_plan: W
             "IfcDoor",
             GlobalId=_guid_value(f"door-{index}-{opening.room_a}-{opening.room_b}"),
             OwnerHistory=owner_history,
-            Name=f"Door {opening.room_a}–{opening.room_b}",
+            Name=(f"External entry {opening.room_a}" if opening.external else f"Door {opening.room_a}–{opening.room_b}"),
             ObjectPlacement=_product_placement(document, storey_placement, x, y),
             Representation=_box_representation(document, context, width, depth, DOOR_HEIGHT_MM),
             OverallHeight=DOOR_HEIGHT_MM,
@@ -248,7 +251,13 @@ def _make_doors(document, owner_history, context, storey_placement, wall_plan: W
             owner_history,
             [door],
             "Pset_LayoutDoor",
-            {"RoomA": opening.room_a, "RoomB": opening.room_b, "ClearWidthMm": opening.width},
+            {
+                "RoomA": opening.room_a,
+                "RoomB": opening.room_b,
+                "ClearWidthMm": opening.width,
+                "IsExternal": opening.external,
+                **({"EntryId": opening.id} if opening.external else {}),
+            },
         )
         doors.append(door)
     return doors

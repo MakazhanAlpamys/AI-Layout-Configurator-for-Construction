@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from shapely.geometry import LineString
 from shapely.ops import unary_union
 
-from .models import DoorSpec, LayoutIR, LayoutResult, Rect, WindowSpec
+from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, WindowSpec
 
 
 @dataclass(frozen=True)
@@ -24,6 +24,7 @@ class DoorOpening:
     start: float
     end: float
     id: str = ""
+    external: bool = False
 
     @property
     def width(self) -> float:
@@ -123,7 +124,12 @@ def build_wall_plan(spec: LayoutIR, result: LayoutResult) -> WallPlan:
         for opening in [_door_opening(room_a, room_b, result.placements[room_a], result.placements[room_b], spec.door_width_mm)]
         if opening is not None
     )
-    openings = explicit_doors + automatic_doors
+    external_entry = (
+        (_external_entry_opening(spec.external_entry, result.placements[spec.external_entry.room_id], spec),)
+        if spec.external_entry is not None
+        else ()
+    )
+    openings = external_entry + explicit_doors + automatic_doors
     explicit_windows = tuple(_manual_window_opening(window, result.placements[window.room_id], spec) for window in spec.windows)
     explicit_rooms = {window.room_id for window in spec.windows}
     automatic_windows = tuple(
@@ -178,6 +184,34 @@ def _manual_door_opening(door: DoorSpec, a: Rect, b: Rect) -> DoorOpening:
             f"at offset {door.offset_mm:g} mm with width {door.width_mm:g} mm"
         )
     return DoorOpening(door.room_a, door.room_b, orientation, fixed, start, end, door.id)
+
+
+def _external_entry_opening(entry: ExternalEntrySpec, rect: Rect, spec: LayoutIR) -> DoorOpening:
+    edge_by_side = {
+        "left": ("vertical", rect.x),
+        "right": ("vertical", rect.right),
+        "bottom": ("horizontal", rect.y),
+        "top": ("horizontal", rect.top),
+    }
+    orientation, fixed = edge_by_side[entry.side]
+    candidates = [
+        candidate
+        for candidate in _exterior_edges(rect, spec)
+        if candidate[0] == orientation and abs(candidate[1] - fixed) <= 1e-6
+    ]
+    if not candidates:
+        raise ValueError(
+            f"External entry {entry.id} does not fit an exterior {entry.side} edge of room {entry.room_id}"
+        )
+    _, fixed, low, high = max(candidates, key=lambda edge: edge[3] - edge[2])
+    start = low + entry.offset_mm - entry.width_mm / 2
+    end = start + entry.width_mm
+    if start + 1e-6 < low or end - 1e-6 > high or end <= start:
+        raise ValueError(
+            f"External entry {entry.id} does not fit exterior {entry.side} edge of room {entry.room_id} "
+            f"at offset {entry.offset_mm:g} mm with width {entry.width_mm:g} mm"
+        )
+    return DoorOpening(entry.room_id, "EXTERIOR", orientation, fixed, start, end, entry.id, external=True)
 
 
 def _window_opening(room_id: str, rect: Rect, spec: LayoutIR) -> WindowOpening | None:

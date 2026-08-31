@@ -244,6 +244,34 @@ rules:
         separated_report = check_layout(spec, separated, ruleset)
         self.assertTrue(separated_report.ok, separated_report.to_dict())
 
+    def test_kazakhstan_profile_checks_external_entry_to_heated_room(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 5000, "height": 4000},
+                "entry_room": "hall",
+                "external_entry": {
+                    "id": "main_entry",
+                    "room_id": "hall",
+                    "side": "bottom",
+                    "offset_mm": 1000,
+                    "width_mm": 900,
+                },
+                "rooms": [{"id": "hall", "type": "corridor", "target_area": 6, "is_heated": True}],
+            }
+        )
+        result = LayoutResult(variant=1, placements={"hall": Rect(0, 0, 3000, 2000)})
+        ruleset = load_ruleset("rules/kz_sn_3_02_02_2023_partial.yaml")
+
+        failed = check_layout(spec, result, ruleset)
+        entry_rule = next(item for item in failed.results if item.id == "ENTRY_VESTIBULE")
+        self.assertFalse(failed.ok)
+        self.assertEqual(entry_rule.status, "FAIL")
+        self.assertIn("heated room hall", entry_rule.evidence[0])
+
+        passing_spec = replace(spec, rooms=(replace(spec.rooms[0], type="vestibule", is_heated=False),))
+        passed = check_layout(passing_spec, result, ruleset)
+        self.assertTrue(passed.ok, passed.to_dict())
+
     def test_ruleset_inheritance_cycle_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

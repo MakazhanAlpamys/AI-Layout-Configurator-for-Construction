@@ -9,6 +9,7 @@ from layout_configurator.compliance import validate_ids
 from layout_configurator.export import export_bundle
 from layout_configurator.ifc import export_ifc
 from layout_configurator.io import load_spec
+from layout_configurator.models import LayoutResult, Rect
 from layout_configurator.solver import solve_layouts
 from layout_configurator.validation import validate_layout
 
@@ -100,6 +101,46 @@ class ExportTests(unittest.TestCase):
             report = validate_ids(ifc_path, "ids/layout_baseline.ids")
             self.assertTrue(report.ok)
             self.assertTrue(all(item.failed == 0 for item in report.specifications))
+
+    def test_ifc_preserves_external_entry_and_heated_room_metadata(self):
+        spec = load_spec("examples/kz_entry_pass.yaml")
+        result = LayoutResult(
+            variant=1,
+            placements={
+                "tambour": Rect(0, 0, 3000, 2000),
+                "hall": Rect(3000, 0, 2000, 6000),
+                "living": Rect(5000, 0, 4800, 5000),
+                "kitchen": Rect(0, 2000, 3000, 4000),
+                "bedroom": Rect(0, 6000, 5000, 3200),
+            },
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            ifc_path = Path(directory) / "layout.ifc"
+            summary = export_ifc(ifc_path, spec, result)
+            model = ifcopenshell.open(ifc_path)
+
+            self.assertEqual(summary.external_entries, 1)
+            self.assertEqual(summary.doors, 5)
+            self.assertEqual(summary.openings, 8)
+            external_doors = [door for door in model.by_type("IfcDoor") if door.Name == "External entry tambour"]
+            self.assertEqual(len(external_doors), 1)
+            door_pset = next(
+                definition.RelatingPropertyDefinition
+                for definition in external_doors[0].IsDefinedBy
+                if definition.RelatingPropertyDefinition.Name == "Pset_LayoutDoor"
+            )
+            values = {prop.Name: prop.NominalValue.wrappedValue for prop in door_pset.HasProperties}
+            self.assertTrue(values["IsExternal"])
+            self.assertEqual(values["EntryId"], "main_entry")
+
+            hall = next(space for space in model.by_type("IfcSpace") if space.Name == "hall")
+            room_pset = next(
+                definition.RelatingPropertyDefinition
+                for definition in hall.IsDefinedBy
+                if definition.RelatingPropertyDefinition.Name == "Pset_LayoutRoom"
+            )
+            room_values = {prop.Name: prop.NominalValue.wrappedValue for prop in room_pset.HasProperties}
+            self.assertTrue(room_values["IsHeated"])
 
 
 if __name__ == "__main__":

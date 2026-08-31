@@ -1,5 +1,6 @@
 import unittest
 
+from layout_configurator.io import load_spec
 from layout_configurator.models import LayoutIR, LayoutResult, Rect, SpecError
 from layout_configurator.solver import solve_layouts
 from layout_configurator.validation import validate_layout
@@ -109,6 +110,23 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(wall_plan.windows[0].id, "window-main")
         self.assertEqual(round_tripped.doors, spec.doors)
         self.assertEqual(round_tripped.windows, spec.windows)
+
+    def test_external_entry_is_solved_on_requested_edge_and_round_trips(self):
+        spec = load_spec("examples/kz_entry_pass.yaml")
+        result = solve_layouts(spec, variants=1, time_limit_seconds=15)[0]
+        report = validate_layout(spec, result)
+        wall_plan = build_wall_plan(spec, result)
+
+        self.assertTrue(report.ok, report.issues)
+        self.assertEqual(result.placements["tambour"].y, 0)
+        self.assertEqual(wall_plan.openings[0].id, "main_entry")
+        self.assertTrue(wall_plan.openings[0].external)
+        self.assertEqual(wall_plan.openings[0].center, (1000, 0))
+        self.assertLess(wall_plan.geometry.intersection(wall_plan.openings[0].centerline).length, 1e-6)
+
+        round_tripped = LayoutIR.from_mapping(spec.to_dict())
+        self.assertEqual(round_tripped.external_entry, spec.external_entry)
+        self.assertTrue(round_tripped.room_by_id["hall"].is_heated)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,8 @@ class SchemaTests(unittest.TestCase):
     def test_normalized_sample_matches_layout_ir_schema(self):
         spec = load_spec("examples/basic.yaml")
         self.assertEqual(validate_spec(spec, "schemas/layout_ir.schema.json"), ())
+        kz_spec = load_spec("examples/kz_entry_pass.yaml")
+        self.assertEqual(validate_spec(kz_spec, "schemas/layout_ir.schema.json"), ())
 
     def test_raw_canonical_document_matches_schema(self):
         spec = load_spec("examples/basic.yaml")
@@ -103,7 +105,7 @@ class SchemaTests(unittest.TestCase):
             {
                 "boundary": {"width": 5000, "height": 4000},
                 "entry_room": "room",
-                "rooms": [{"id": "room", "type": "corridor", "target_area": 6}],
+                "rooms": [{"id": "room", "type": "vestibule", "target_area": 6, "is_heated": False}],
             }
         )
         result = LayoutResult(variant=1, placements={"room": Rect(0, 0, 3000, 2000)})
@@ -118,10 +120,11 @@ class SchemaTests(unittest.TestCase):
                     [
                         "edit",
                         str(input_path),
-                        "--move-room",
+                        "--set-external-entry",
                         "room",
-                        "100",
-                        "0",
+                        "bottom",
+                        "1000",
+                        "900",
                         "--output",
                         str(output),
                         "--rules",
@@ -135,6 +138,7 @@ class SchemaTests(unittest.TestCase):
             self.assertTrue((output / "layout_01.pdf").exists())
             self.assertTrue((output / "layout_01.ifc").exists())
             self.assertTrue((output / "layout_01.json").exists())
+            self.assertEqual(load_mapping(output / "layout_01.json")["spec"]["external_entry"]["room_id"], "room")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 """Deterministic residential layout generator."""
 
-from .models import DoorSpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
-from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveWindow, ResizeRoom
+from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
+from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .compliance import IdsSpecificationResult, IdsValidationReport, validate_ids
 from .editor import EditorState
 from .ifc import IfcExportSummary, export_ifc
@@ -18,6 +18,7 @@ __all__ = [
     "RoomSpec",
     "DoorSpec",
     "WindowSpec",
+    "ExternalEntrySpec",
     "AddDoor",
     "AddWindow",
     "EditError",
@@ -34,6 +35,8 @@ __all__ = [
     "ResizeRoom",
     "RemoveDoor",
     "RemoveWindow",
+    "SetExternalEntry",
+    "RemoveExternalEntry",
     "DoorOpening",
     "WallPlan",
     "WindowOpening",

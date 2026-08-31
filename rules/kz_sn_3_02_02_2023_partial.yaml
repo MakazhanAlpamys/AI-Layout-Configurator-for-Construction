@@ -1,4 +1,4 @@
-name: Kazakhstan single-family residential — verified daylight slice
+name: Kazakhstan single-family residential — verified geometry slice
 version: "2023.0-partial"
 jurisdiction: KZ
 provenance:
@@ -36,3 +36,10 @@ rules:
       source_room_types: [bath_laundry_block]
       target_room_types: [bedroom]
       minimum_shared_boundary_mm: 1
+
+  - id: ENTRY_VESTIBULE
+    title: External entry has a vestibule before a heated room
+    source: СН РК 3.02-02-2023, official edition PDF
+    clause: "6.2.8"
+    params:
+      vestibule_room_types: [vestibule, tambour, entry_lobby]

@@ -1,6 +1,6 @@
 import unittest
 
-from layout_configurator.commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveWindow, ResizeRoom
+from layout_configurator.commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from layout_configurator.editor import EditorState
 from layout_configurator.models import LayoutIR, LayoutResult, Rect
 from layout_configurator.walls import build_wall_plan
@@ -115,6 +115,27 @@ class EditorTests(unittest.TestCase):
         with self.assertRaises(EditError):
             state.apply(AddWindow("room", "left", 1500, 1000))
         self.assertEqual(state.spec.windows, ())
+
+    def test_external_entry_commands_update_wall_plan_atomically(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 5000, "height": 4000},
+                "entry_room": "room",
+                "rooms": [{"id": "room", "type": "vestibule", "target_area": 6}],
+            }
+        )
+        result = LayoutResult(variant=1, placements={"room": Rect(0, 0, 3000, 2000)})
+        state = EditorState.from_layout(spec, result)
+
+        added = state.apply(SetExternalEntry("room", "bottom", 1000, 900, "front-door"))
+        opening = build_wall_plan(added.spec, added.result).openings[0]
+        self.assertEqual(added.spec.external_entry.id, "front-door")
+        self.assertTrue(opening.external)
+        self.assertEqual(opening.width, 900)
+
+        removed = added.apply(RemoveExternalEntry())
+        self.assertIsNone(removed.spec.external_entry)
+        self.assertFalse(build_wall_plan(removed.spec, removed.result).openings)
 
 
 if __name__ == "__main__":

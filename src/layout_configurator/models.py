@@ -67,6 +67,7 @@ class RoomSpec:
     preferred_adjacency: tuple[str, ...] = ()
     forbidden_adjacency: tuple[str, ...] = ()
     needs_daylight: bool = False
+    is_heated: bool = False
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any], tolerance: float) -> "RoomSpec":
@@ -93,6 +94,7 @@ class RoomSpec:
             preferred_adjacency=_string_tuple(raw.get("preferred_adjacency", ())),
             forbidden_adjacency=_string_tuple(raw.get("forbidden_adjacency", ())),
             needs_daylight=bool(raw.get("needs_daylight", False)),
+            is_heated=bool(raw.get("is_heated", raw.get("heated", False))),
         )
 
 
@@ -158,6 +160,35 @@ class WindowSpec:
 
 
 @dataclass(frozen=True)
+class ExternalEntrySpec:
+    """External entrance door placed on an exterior edge of one room."""
+
+    id: str
+    room_id: str
+    side: Literal["left", "right", "bottom", "top"]
+    offset_mm: float
+    width_mm: float
+
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, Any]) -> "ExternalEntrySpec":
+        entry_id = str(raw.get("id", "entry_main")).strip()
+        room_id = str(raw.get("room_id", raw.get("room", ""))).strip()
+        side = str(raw.get("side", "")).strip().lower()
+        if not entry_id or not room_id:
+            raise SpecError("External entry must have id and room_id")
+        if side not in {"left", "right", "bottom", "top"}:
+            raise SpecError(f"External entry {entry_id} has unsupported side {side!r}")
+        try:
+            offset = float(raw.get("offset_mm", raw.get("offset")))
+            width = float(raw.get("width_mm", raw.get("width")))
+        except (TypeError, ValueError) as exc:
+            raise SpecError(f"External entry {entry_id} offset and width must be numbers") from exc
+        if offset < 0 or width <= 0:
+            raise SpecError(f"External entry {entry_id} must have non-negative offset and positive width")
+        return cls(entry_id, room_id, side, offset, width)
+
+
+@dataclass(frozen=True)
 class BoundarySpec:
     width_mm: float
     height_mm: float
@@ -189,6 +220,7 @@ class LayoutIR:
     boundary: BoundarySpec
     rooms: tuple[RoomSpec, ...]
     entry_room: str
+    external_entry: ExternalEntrySpec | None = None
     tolerance: float = 0.03
     grid_mm: int = 100
     wall_thickness_mm: float = 200
@@ -231,6 +263,16 @@ class LayoutIR:
         entry_room = str(payload.get("entry_room", rooms[0].id))
         if entry_room not in ids:
             raise SpecError(f"entry_room {entry_room!r} не найден среди комнат")
+        external_entry_raw = payload.get("external_entry")
+        external_entry = None
+        if external_entry_raw is not None:
+            if not isinstance(external_entry_raw, Mapping):
+                raise SpecError("external_entry must be an object")
+            external_entry = ExternalEntrySpec.from_mapping(external_entry_raw)
+            if external_entry.room_id not in ids:
+                raise SpecError(f"External entry references unknown room {external_entry.room_id}")
+            if external_entry.room_id != entry_room:
+                raise SpecError("external_entry.room_id must match entry_room")
         for room in rooms:
             for relation in (*room.required_adjacency, *room.preferred_adjacency, *room.forbidden_adjacency):
                 if relation not in ids:
@@ -275,6 +317,7 @@ class LayoutIR:
             boundary=BoundarySpec.from_mapping(payload.get("boundary", {})),
             rooms=rooms,
             entry_room=entry_room,
+            external_entry=external_entry,
             tolerance=tolerance,
             grid_mm=grid,
             wall_thickness_mm=wall_thickness,
@@ -331,6 +374,19 @@ class LayoutIR:
                 for window in self.windows
             ],
             "entry_room": self.entry_room,
+            **(
+                {
+                    "external_entry": {
+                        "id": self.external_entry.id,
+                        "room_id": self.external_entry.room_id,
+                        "side": self.external_entry.side,
+                        "offset_mm": self.external_entry.offset_mm,
+                        "width_mm": self.external_entry.width_mm,
+                    }
+                }
+                if self.external_entry is not None
+                else {}
+            ),
             "boundary": {
                 "width": self.boundary.width_mm,
                 "height": self.boundary.height_mm,
@@ -352,6 +408,7 @@ class LayoutIR:
                     "preferred_adjacency": list(r.preferred_adjacency),
                     "forbidden_adjacency": list(r.forbidden_adjacency),
                     "needs_daylight": r.needs_daylight,
+                    "is_heated": r.is_heated,
                 }
                 for r in self.rooms
             ],

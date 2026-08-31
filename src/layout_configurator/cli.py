@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from .compliance import validate_ids
-from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveWindow, ResizeRoom
+from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .editor import EditorState
 from .export import export_bundle
 from .ifc import export_ifc
@@ -40,6 +40,9 @@ def main(argv: list[str] | None = None) -> int:
     edit.add_argument("--remove-door", action="append", metavar="DOOR_ID")
     edit.add_argument("--add-window", nargs=4, action="append", metavar=("ROOM", "SIDE", "OFFSET_MM", "WIDTH_MM"))
     edit.add_argument("--remove-window", action="append", metavar="WINDOW_ID")
+    entry_group = edit.add_mutually_exclusive_group()
+    entry_group.add_argument("--set-external-entry", nargs=4, action="append", metavar=("ROOM", "SIDE", "OFFSET_MM", "WIDTH_MM"))
+    entry_group.add_argument("--remove-external-entry", action="store_true")
     edit.add_argument("--rules", type=Path, help="run deterministic rules after editing")
     edit.add_argument("--require-provenance", action="store_true", help="require auditable source metadata for --rules")
     validate = subparsers.add_parser("validate", help="validate an IFC file against an IDS requirements file")
@@ -101,6 +104,7 @@ def main(argv: list[str] | None = None) -> int:
                         "wall_types": ifc_summary.wall_types,
                         "door_types": ifc_summary.door_types,
                         "window_types": ifc_summary.window_types,
+                        "external_entries": ifc_summary.external_entries,
                     },
                     "json": json_path.name,
                 }
@@ -109,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
         (args.output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0
     if args.command == "edit":
-        if not any((args.move_room, args.resize_room, args.add_door, args.add_door_at, args.remove_door, args.add_window, args.remove_window)):
+        if not any((args.move_room, args.resize_room, args.add_door, args.add_door_at, args.remove_door, args.add_window, args.remove_window, args.set_external_entry, args.remove_external_entry)):
             print("ERROR: укажите хотя бы одну typed-команду правки", file=sys.stderr)
             return 2
         try:
@@ -129,6 +133,10 @@ def main(argv: list[str] | None = None) -> int:
                 state = state.apply(AddWindow(room_id, side, float(offset_mm), float(width_mm)))
             for window_id in args.remove_window or ():
                 state = state.apply(RemoveWindow(window_id))
+            for room_id, side, offset_mm, width_mm in args.set_external_entry or ():
+                state = state.apply(SetExternalEntry(room_id, side, float(offset_mm), float(width_mm)))
+            if args.remove_external_entry:
+                state = state.apply(RemoveExternalEntry())
             if args.require_provenance and args.rules is None:
                 raise EditError("--require-provenance requires --rules")
             ruleset = load_ruleset(args.rules) if args.rules else None

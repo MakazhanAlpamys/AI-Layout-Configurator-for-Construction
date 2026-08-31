@@ -30,6 +30,7 @@
     "window_height_mm": {"type": "number", "exclusiveMinimum": 0},
     "window_sill_mm": {"type": "number", "minimum": 0},
     "entry_room": {"$ref": "#/$defs/id"},
+    "external_entry": {"$ref": "#/$defs/externalEntry"},
     "boundary": {"$ref": "#/$defs/boundary"},
     "rooms": {
       "type": "array",
@@ -102,7 +103,20 @@
         "required_adjacency": {"$ref": "#/$defs/idList"},
         "preferred_adjacency": {"$ref": "#/$defs/idList"},
         "forbidden_adjacency": {"$ref": "#/$defs/idList"},
-        "needs_daylight": {"type": "boolean"}
+        "needs_daylight": {"type": "boolean"},
+        "is_heated": {"type": "boolean"}
+      }
+    },
+    "externalEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "room_id", "side", "offset_mm", "width_mm"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "room_id": {"$ref": "#/$defs/id"},
+        "side": {"enum": ["left", "right", "bottom", "top"]},
+        "offset_mm": {"$ref": "#/$defs/nonNegativeNumber"},
+        "width_mm": {"$ref": "#/$defs/positiveNumber"}
       }
     },
     "door": {

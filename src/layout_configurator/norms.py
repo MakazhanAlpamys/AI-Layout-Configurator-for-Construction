@@ -25,6 +25,7 @@ SUPPORTED_RULES = frozenset(
         "MIN_CORRIDOR_WIDTH",
         "DAYLIGHT_OPENING",
         "FORBIDDEN_TYPE_ADJACENCY",
+        "ENTRY_VESTIBULE",
         "EGRESS_REACHABILITY",
         "MAX_EGRESS_DISTANCE",
     }
@@ -262,6 +263,7 @@ def _run_rule(rule: RuleDefinition, spec: LayoutIR, result: LayoutResult) -> Rul
         "MIN_CORRIDOR_WIDTH": _min_corridor_width,
         "DAYLIGHT_OPENING": _daylight_opening,
         "FORBIDDEN_TYPE_ADJACENCY": _forbidden_type_adjacency,
+        "ENTRY_VESTIBULE": _entry_vestibule,
         "EGRESS_REACHABILITY": _egress_reachability,
         "MAX_EGRESS_DISTANCE": _max_egress_distance,
     }
@@ -395,6 +397,31 @@ def _room_type_set(value: Any, field_name: str) -> set[str]:
     if not normalized:
         raise ValueError(f"FORBIDDEN_TYPE_ADJACENCY.{field_name} must not be empty")
     return normalized
+
+
+def _entry_vestibule(params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult) -> tuple[RuleStatus, list[str]]:
+    del result
+    entry = spec.external_entry
+    if entry is None:
+        return "NOT_APPLICABLE", ["No external_entry is defined in LayoutIR"]
+    room = spec.room_by_id.get(entry.room_id)
+    if room is None:  # pragma: no cover - LayoutIR rejects this at the input boundary
+        return "FAIL", [f"External entry {entry.id} references missing room {entry.room_id}"]
+    vestibule_types = _room_type_set(
+        params.get("vestibule_room_types", ("vestibule", "tambour", "entry_lobby")),
+        "vestibule_room_types",
+    )
+    if room.type.lower() in vestibule_types:
+        return "PASS", [
+            f"External entry {entry.id} opens into vestibule room {room.id} ({room.type})"
+        ]
+    if not room.is_heated:
+        return "PASS", [
+            f"External entry {entry.id} opens into unheated room {room.id}; direct heated-room entry is not present"
+        ]
+    return "FAIL", [
+        f"External entry {entry.id} opens directly into heated room {room.id} ({room.type}); vestibule room is required"
+    ]
 
 
 def _egress_reachability(params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult) -> tuple[RuleStatus, list[str]]:

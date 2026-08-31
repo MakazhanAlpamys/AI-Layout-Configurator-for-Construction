@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Literal
 
-from .models import DoorSpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
+from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
 
 
 class EditError(ValueError):
@@ -150,7 +150,42 @@ class RemoveWindow:
         return tuple(result.placements)
 
 
-Command = MoveRoom | ResizeRoom | AddDoor | RemoveDoor | AddWindow | RemoveWindow
+@dataclass(frozen=True)
+class SetExternalEntry:
+    room_id: str
+    side: Literal["left", "right", "bottom", "top"]
+    offset_mm: float
+    width_mm: float
+    entry_id: str = ""
+
+    def apply(self, spec: LayoutIR, result: LayoutResult) -> tuple[LayoutIR, LayoutResult]:
+        _room_rect(result, self.room_id)
+        if self.room_id != spec.entry_room:
+            raise EditError("External entry room must match entry_room")
+        if self.side not in {"left", "right", "bottom", "top"}:
+            raise EditError(f"Unknown external entry side: {self.side}")
+        if self.offset_mm < 0 or self.width_mm <= 0:
+            raise EditError("External entry offset must be non-negative and width must be positive")
+        entry_id = self.entry_id.strip() or (spec.external_entry.id if spec.external_entry else "entry_main")
+        entry = ExternalEntrySpec(entry_id, self.room_id, self.side, self.offset_mm, self.width_mm)
+        return replace(spec, external_entry=entry), result
+
+    def locked_room_ids(self, spec: LayoutIR, result: LayoutResult) -> tuple[str, ...]:
+        return tuple(result.placements)
+
+
+@dataclass(frozen=True)
+class RemoveExternalEntry:
+    def apply(self, spec: LayoutIR, result: LayoutResult) -> tuple[LayoutIR, LayoutResult]:
+        if spec.external_entry is None:
+            raise EditError("External entry is not defined")
+        return replace(spec, external_entry=None), result
+
+    def locked_room_ids(self, spec: LayoutIR, result: LayoutResult) -> tuple[str, ...]:
+        return tuple(result.placements)
+
+
+Command = MoveRoom | ResizeRoom | AddDoor | RemoveDoor | AddWindow | RemoveWindow | SetExternalEntry | RemoveExternalEntry
 
 
 def _room_rect(result: LayoutResult, room_id: str) -> Rect:

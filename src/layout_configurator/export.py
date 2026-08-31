@@ -55,13 +55,14 @@ def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
         (-800, boundary.height_mm / 2), align=TextEntityAlignment.MIDDLE_CENTER
     )
 
-    if "DOOR_900" not in document.blocks:
-        block = document.blocks.new("DOOR_900")
-        block.add_line((0, 0), (spec.door_width_mm, 0))
-        block.add_arc((0, 0), spec.door_width_mm, 0, 90)
     for opening in wall_plan.openings:
+        block_name = f"DOOR_{opening.width:.0f}"
+        if block_name not in document.blocks:
+            block = document.blocks.new(block_name)
+            block.add_line((0, 0), (opening.width, 0))
+            block.add_arc((0, 0), opening.width, 0, 90)
         x, y = (opening.fixed, opening.start) if opening.orientation == "vertical" else (opening.start, opening.fixed)
-        insert = modelspace.add_blockref("DOOR_900", (x, y), dxfattribs={"layer": "A-DOOR"})
+        insert = modelspace.add_blockref(block_name, (x, y), dxfattribs={"layer": "A-DOOR"})
         if opening.orientation == "vertical":
             insert.dxf.rotation = 90
     for opening in wall_plan.windows:

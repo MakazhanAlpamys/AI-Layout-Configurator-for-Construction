@@ -89,6 +89,9 @@ def solve_layouts(
         for index, cutout in enumerate(spec.boundary.cutouts):
             _avoid_cutout(model, x, y, width, height, cutout, grid, f"{room.id}_cutout_{index}")
 
+    if spec.external_entry is not None:
+        _constrain_external_entry(model, room_vars[spec.external_entry.room_id], spec, boundary_width, boundary_height)
+
     model.AddNoOverlap2D(x_intervals, y_intervals)
     minimum_shared = max(1, _ceil_grid(spec.door_width_mm, grid))
     for room_a, room_b in spec.relation_pairs("required_adjacency"):
@@ -165,6 +168,23 @@ def _add_forbidden_adjacency(model, a: _RoomVars, b: _RoomVars, name: str) -> No
     model.Add(b.x + b.width + 1 <= a.x).OnlyEnforceIf(right)
     model.Add(a.y + a.height + 1 <= b.y).OnlyEnforceIf(below)
     model.Add(b.y + b.height + 1 <= a.y).OnlyEnforceIf(above)
+
+
+def _constrain_external_entry(model, room: _RoomVars, spec: LayoutIR, boundary_width: int, boundary_height: int) -> None:
+    entry = spec.external_entry
+    if entry is None:  # pragma: no cover - guarded by the caller
+        return
+    grid = spec.grid_mm
+    required_span = entry.offset_mm + entry.width_mm / 2
+    if entry.offset_mm < entry.width_mm / 2 - 1e-6:
+        raise InfeasibleLayout(f"External entry {entry.id} offset is smaller than half its width")
+    minimum_span = _ceil_grid(required_span, grid)
+    if entry.side in {"left", "right"}:
+        model.Add(room.x == 0 if entry.side == "left" else room.x + room.width == boundary_width)
+        model.Add(room.height >= minimum_span)
+    else:
+        model.Add(room.y == 0 if entry.side == "bottom" else room.y + room.height == boundary_height)
+        model.Add(room.width >= minimum_span)
 
 
 def _avoid_cutout(model, x, y, width, height, cutout, grid: int, name: str) -> None:

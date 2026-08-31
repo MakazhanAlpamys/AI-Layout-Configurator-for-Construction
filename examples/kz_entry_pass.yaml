@@ -1,0 +1,56 @@
+version: "0.1"
+project_name: "Kazakhstan entry pass"
+boundary:
+  width: 14000
+  height: 10000
+  cutouts: []
+grid_mm: 100
+tolerance: 0.04
+wall_thickness_mm: 200
+door_width_mm: 900
+entry_room: tambour
+external_entry:
+  id: main_entry
+  room_id: tambour
+  side: bottom
+  offset_mm: 1000
+  width_mm: 900
+rooms:
+  - id: tambour
+    type: vestibule
+    target_area: 6
+    min_width: 1800
+    min_depth: 1800
+    is_heated: false
+    required_adjacency: [hall]
+  - id: hall
+    type: corridor
+    target_area: 12
+    min_width: 1800
+    min_depth: 1800
+    is_heated: true
+    required_adjacency: [tambour, living, kitchen, bedroom]
+  - id: living
+    type: living_room
+    target_area: 24
+    min_width: 3000
+    min_depth: 3500
+    is_heated: true
+    needs_daylight: true
+    required_adjacency: [hall]
+  - id: kitchen
+    type: kitchen
+    target_area: 12
+    min_width: 2400
+    min_depth: 2500
+    is_heated: true
+    needs_daylight: true
+    required_adjacency: [hall]
+  - id: bedroom
+    type: bedroom
+    target_area: 16
+    min_width: 2800
+    min_depth: 3000
+    is_heated: true
+    needs_daylight: true
+    required_adjacency: [hall]

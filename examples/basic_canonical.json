@@ -28,7 +28,8 @@
       "required_adjacency": ["living", "kitchen", "bedroom"],
       "preferred_adjacency": [],
       "forbidden_adjacency": [],
-      "needs_daylight": false
+      "needs_daylight": false,
+      "is_heated": true
     },
     {
       "id": "living",
@@ -41,7 +42,8 @@
       "required_adjacency": ["hall"],
       "preferred_adjacency": [],
       "forbidden_adjacency": [],
-      "needs_daylight": true
+      "needs_daylight": true,
+      "is_heated": true
     },
     {
       "id": "kitchen",
@@ -54,7 +56,8 @@
       "required_adjacency": ["hall"],
       "preferred_adjacency": [],
       "forbidden_adjacency": [],
-      "needs_daylight": false
+      "needs_daylight": false,
+      "is_heated": true
     },
     {
       "id": "bedroom",
@@ -67,7 +70,8 @@
       "required_adjacency": ["hall"],
       "preferred_adjacency": [],
       "forbidden_adjacency": [],
-      "needs_daylight": true
+      "needs_daylight": true,
+      "is_heated": true
     }
   ]
 }
