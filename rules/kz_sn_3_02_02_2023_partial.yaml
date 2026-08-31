@@ -1,0 +1,38 @@
+name: Kazakhstan single-family residential — verified daylight slice
+version: "2023.0-partial"
+jurisdiction: KZ
+provenance:
+  authority: Committee for Construction and Housing and Communal Services of the Ministry of Industry and Construction of the Republic of Kazakhstan
+  edition: СН РК 3.02-02-2023, official edition PDF (2024 print)
+  effective_date: "2023-06-16"
+  source_url: https://new-shop.ksm.kz/media/egfntd/ntdgo/3_02_02_2023.pdf
+  document_hash: 80db6203f81a2963033311b6bebc9616e2f05860b92cbaf67c698320f56b34da
+  checked_at: "2026-08-31"
+
+# Partial profile: only the directly mapped natural-lighting requirement is
+# encoded. This is not a complete Kazakhstan building-code compliance verdict.
+rules:
+  - id: GEOMETRY_VALID
+    title: Layout geometry is valid
+    source: LayoutIR geometry contract
+    clause: internal.geometry
+
+  - id: DAYLIGHT_OPENING
+    title: Living rooms and kitchens have natural-light openings
+    source: СН РК 3.02-02-2023, official edition PDF
+    clause: "7.8"
+    params:
+      require_for_needs_daylight: true
+      # Project room-type mapping for «жилые комнаты и кухни (столовые)».
+      required_room_types: [living_room, bedroom, kitchen]
+
+  - id: FORBIDDEN_TYPE_ADJACENCY
+    title: Bath-laundry blocks are not adjacent to bedrooms
+    source: СН РК 3.02-02-2023, official edition PDF
+    clause: "6.2.13"
+    params:
+      # Project room-type mapping for «банно-прачечный блок» and «спальные
+      # помещения». Other aliases require an explicit profile update.
+      source_room_types: [bath_laundry_block]
+      target_room_types: [bedroom]
+      minimum_shared_boundary_mm: 1

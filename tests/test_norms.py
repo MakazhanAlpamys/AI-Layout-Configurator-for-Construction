@@ -1,5 +1,6 @@
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from layout_configurator.io import load_spec
@@ -166,6 +167,82 @@ rules:
                 "provenance.document_hash is required",
             ),
         )
+
+    def test_kazakhstan_profile_checks_living_rooms_and_kitchens_for_daylight(self):
+        spec = load_spec("examples/basic.yaml")
+        result = solve_layouts(spec, variants=1, time_limit_seconds=10)[0]
+        ruleset = load_ruleset("rules/kz_sn_3_02_02_2023_partial.yaml")
+
+        report = check_layout(spec, result, ruleset)
+        daylight = next(item for item in report.results if item.id == "DAYLIGHT_OPENING")
+        self.assertFalse(report.ok)
+        self.assertEqual(daylight.status, "FAIL")
+        self.assertIn("kitchen", daylight.evidence[0])
+        self.assertEqual(daylight.clause, "7.8")
+        self.assertEqual(ruleset.provenance_issues(), ())
+
+        fixed_spec = replace(
+            spec,
+            rooms=tuple(
+                replace(room, needs_daylight=True) if room.type == "kitchen" else room
+                for room in spec.rooms
+            ),
+        )
+        fixed_report = check_layout(fixed_spec, result, ruleset)
+        self.assertTrue(fixed_report.ok, fixed_report.to_dict())
+
+    def test_forbidden_type_adjacency_reports_direct_shared_boundary(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 6000, "height": 4000},
+                "entry_room": "hall",
+                "rooms": [
+                    {"id": "hall", "type": "corridor", "target_area": 8},
+                    {"id": "bath", "type": "bath_laundry_block", "target_area": 8},
+                    {"id": "bedroom", "type": "bedroom", "target_area": 8},
+                ],
+            }
+        )
+        result = LayoutResult(
+            variant=1,
+            placements={
+                "hall": Rect(0, 0, 2000, 4000),
+                "bath": Rect(2000, 0, 2000, 4000),
+                "bedroom": Rect(4000, 0, 2000, 4000),
+            },
+        )
+        ruleset = RuleSet.from_mapping(
+            {
+                "rules": [
+                    {
+                        "id": "FORBIDDEN_TYPE_ADJACENCY",
+                        "source": "test",
+                        "clause": "test.adjacency",
+                        "params": {
+                            "source_room_types": ["bath_laundry_block"],
+                            "target_room_types": ["bedroom"],
+                            "minimum_shared_boundary_mm": 1,
+                        },
+                    }
+                ]
+            }
+        )
+
+        report = check_layout(spec, result, ruleset)
+        self.assertFalse(report.ok)
+        self.assertEqual(report.results[0].status, "FAIL")
+        self.assertIn("shared boundary 4000 mm", report.results[0].evidence[0])
+
+        separated = LayoutResult(
+            variant=1,
+            placements={
+                "hall": Rect(0, 0, 2000, 4000),
+                "bath": Rect(2000, 0, 2000, 2000),
+                "bedroom": Rect(4000, 2000, 2000, 2000),
+            },
+        )
+        separated_report = check_layout(spec, separated, ruleset)
+        self.assertTrue(separated_report.ok, separated_report.to_dict())
 
     def test_ruleset_inheritance_cycle_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

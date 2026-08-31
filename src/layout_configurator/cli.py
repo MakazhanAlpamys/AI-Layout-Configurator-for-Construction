@@ -40,6 +40,8 @@ def main(argv: list[str] | None = None) -> int:
     edit.add_argument("--remove-door", action="append", metavar="DOOR_ID")
     edit.add_argument("--add-window", nargs=4, action="append", metavar=("ROOM", "SIDE", "OFFSET_MM", "WIDTH_MM"))
     edit.add_argument("--remove-window", action="append", metavar="WINDOW_ID")
+    edit.add_argument("--rules", type=Path, help="run deterministic rules after editing")
+    edit.add_argument("--require-provenance", action="store_true", help="require auditable source metadata for --rules")
     validate = subparsers.add_parser("validate", help="validate an IFC file against an IDS requirements file")
     validate.add_argument("ifc", type=Path)
     validate.add_argument("--ids", type=Path, default=Path("ids/layout_baseline.ids"))
@@ -127,12 +129,26 @@ def main(argv: list[str] | None = None) -> int:
                 state = state.apply(AddWindow(room_id, side, float(offset_mm), float(width_mm)))
             for window_id in args.remove_window or ():
                 state = state.apply(RemoveWindow(window_id))
+            if args.require_provenance and args.rules is None:
+                raise EditError("--require-provenance requires --rules")
+            ruleset = load_ruleset(args.rules) if args.rules else None
+            if ruleset and args.require_provenance:
+                provenance_issues = ruleset.provenance_issues()
+                if provenance_issues:
+                    details = "; ".join(provenance_issues)
+                    raise EditError(f"ruleset provenance is incomplete: {details}")
             dxf_path, pdf_path = export_bundle(args.output, state.spec, state.result, state.report)
             ifc_path = args.output / f"layout_{state.result.variant:02d}.ifc"
             export_ifc(ifc_path, state.spec, state.result)
             json_path = args.output / f"layout_{state.result.variant:02d}.json"
             write_result(json_path, state.spec, state.result)
             print(f"edited ({', '.join(state.history)}): {dxf_path} | {pdf_path} | {ifc_path} | {json_path}")
+            if ruleset:
+                norms_report = check_layout(state.spec, state.result, ruleset)
+                print(f"rules: {norms_report.ruleset_name} {norms_report.ruleset_version} [{norms_report.jurisdiction}]")
+                for rule in norms_report.results:
+                    print(f"  {rule.status}: {rule.id} ({rule.clause})")
+                return 0 if norms_report.ok else 4
             return 0
         except (OSError, ValueError, EditError, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)

@@ -4,7 +4,8 @@ import unittest
 from pathlib import Path
 
 from layout_configurator.cli import main
-from layout_configurator.io import load_spec
+from layout_configurator.io import load_spec, write_result
+from layout_configurator.models import LayoutIR, LayoutResult, Rect
 from layout_configurator.schema import load_canonical_spec, load_mapping, normalize_mapping, validate_mapping, validate_spec
 
 
@@ -96,6 +97,44 @@ class SchemaTests(unittest.TestCase):
                 ),
                 2,
             )
+
+    def test_edit_can_run_rules_after_export(self):
+        spec = LayoutIR.from_mapping(
+            {
+                "boundary": {"width": 5000, "height": 4000},
+                "entry_room": "room",
+                "rooms": [{"id": "room", "type": "corridor", "target_area": 6}],
+            }
+        )
+        result = LayoutResult(variant=1, placements={"room": Rect(0, 0, 3000, 2000)})
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            input_path = root / "layout.json"
+            output = root / "edited"
+            write_result(input_path, spec, result)
+
+            self.assertEqual(
+                main(
+                    [
+                        "edit",
+                        str(input_path),
+                        "--move-room",
+                        "room",
+                        "100",
+                        "0",
+                        "--output",
+                        str(output),
+                        "--rules",
+                        "rules/kz_sn_3_02_02_2023_partial.yaml",
+                        "--require-provenance",
+                    ]
+                ),
+                0,
+            )
+            self.assertTrue((output / "layout_01.dxf").exists())
+            self.assertTrue((output / "layout_01.pdf").exists())
+            self.assertTrue((output / "layout_01.ifc").exists())
+            self.assertTrue((output / "layout_01.json").exists())
 
 
 if __name__ == "__main__":

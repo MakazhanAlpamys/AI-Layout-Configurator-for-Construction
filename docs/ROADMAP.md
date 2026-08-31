@@ -45,6 +45,7 @@ LLM подключается последним и никогда не выда�
 - [ ] **2. Редактор** ← *MVP команд и частичный CP-SAT пересчёт реализованы 2026-08-30; UI — далее*
   - Типизированные `MoveRoom`, `ResizeRoom`, `AddDoor`, явные `DoorSpec`, `RemoveDoor`, `AddWindow`, `RemoveWindow` с атомарной валидацией
   - CLI-правка сохранённого JSON и переэкспорт DXF/PDF
+  - опциональный нормативный post-check через `edit --rules` с кодом выхода 4 при FAIL
 - [ ] **3. IFC / BIM** ← *базовый IFC4-экспорт реализован 2026-08-30; IDS и полноценный BIM — далее*
   - `IfcProject` → `IfcSite` → `IfcBuilding` → `IfcBuildingStorey`
   - `IfcSpace`/`IfcWall`/`IfcDoor`/`IfcWindow`, геометрия, площади и CLI round-trip
@@ -63,10 +64,12 @@ LLM подключается последним и никогда не выда�
 Реализован generic baseline ruleset: `GEOMETRY_VALID`, `MIN_ROOM_AREA`,
 `MIN_CORRIDOR_WIDTH`, `DAYLIGHT_OPENING`, `EGRESS_REACHABILITY` и
 `MAX_EGRESS_DISTANCE`. CLI-команда `check` выдаёт evidence для каждого правила
-и не выдаёт юридический verdict. Следующий шаг этого подпроекта — отдельный
-ruleset конкретной юрисдикции, когда она будет выбрана; загрузчик уже поддерживает
-`extends`, точечное переопределение правил и provenance источника документа
-поверх baseline.
+и не выдаёт юридический verdict. Загрузчик поддерживает отдельные ruleset-файлы
+конкретных юрисдикций, `extends`, точечное переопределение правил и provenance
+источника документа поверх baseline. Добавлен первый частичный профиль KZ: п. 7.8 и п. 6.2.13 СН РК
+3.02-02-2023, без заявления о полной нормативной проверке.
+Добавлен проходящий smoke-test `examples/kz_daylight.yaml`; базовый demo с кухней
+без `needs_daylight` намеренно показывает FAIL по тому же правилу.
 
 До LLM-слоя подготовлен строгий JSON Schema boundary для канонического
 `LayoutIR` (`schemas/layout_ir.schema.json`) и CLI `schema --raw`; текстовый

@@ -24,6 +24,7 @@ SUPPORTED_RULES = frozenset(
         "MIN_ROOM_AREA",
         "MIN_CORRIDOR_WIDTH",
         "DAYLIGHT_OPENING",
+        "FORBIDDEN_TYPE_ADJACENCY",
         "EGRESS_REACHABILITY",
         "MAX_EGRESS_DISTANCE",
     }
@@ -260,6 +261,7 @@ def _run_rule(rule: RuleDefinition, spec: LayoutIR, result: LayoutResult) -> Rul
         "MIN_ROOM_AREA": _min_room_area,
         "MIN_CORRIDOR_WIDTH": _min_corridor_width,
         "DAYLIGHT_OPENING": _daylight_opening,
+        "FORBIDDEN_TYPE_ADJACENCY": _forbidden_type_adjacency,
         "EGRESS_REACHABILITY": _egress_reachability,
         "MAX_EGRESS_DISTANCE": _max_egress_distance,
     }
@@ -314,8 +316,20 @@ def _min_corridor_width(params: Mapping[str, Any], spec: LayoutIR, result: Layou
 def _daylight_opening(params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult) -> tuple[RuleStatus, list[str]]:
     if not bool(params.get("require_for_needs_daylight", True)):
         return "NOT_APPLICABLE", ["Rule disabled by ruleset parameters"]
-    daylight_rooms = [room for room in spec.rooms if room.needs_daylight]
+    raw_required_types = params.get("required_room_types", ())
+    if isinstance(raw_required_types, str):
+        required_types = {raw_required_types.lower()}
+    elif isinstance(raw_required_types, (list, tuple, set, frozenset)):
+        required_types = {str(room_type).lower() for room_type in raw_required_types}
+    else:
+        raise ValueError("DAYLIGHT_OPENING.required_room_types must be a string or a list")
+    daylight_rooms = [room for room in spec.rooms if room.needs_daylight or room.type.lower() in required_types]
     if not daylight_rooms:
+        if required_types:
+            return "NOT_APPLICABLE", [
+                "No room declares needs_daylight=true or matches required room types: "
+                + ", ".join(sorted(required_types))
+            ]
         return "NOT_APPLICABLE", ["No room declares needs_daylight=true"]
     if not set(room.id for room in spec.rooms).issubset(result.placements):
         return "FAIL", ["Cannot derive openings: result is missing one or more rooms"]
@@ -323,6 +337,64 @@ def _daylight_opening(params: Mapping[str, Any], spec: LayoutIR, result: LayoutR
     failures = [f"{room.id}: no exterior window opening was derived" for room in daylight_rooms if room.id not in windows_by_room]
     evidence = [f"{room.id}: exterior window opening derived" for room in daylight_rooms if room.id in windows_by_room]
     return ("FAIL", failures + evidence) if failures else ("PASS", evidence)
+
+
+def _forbidden_type_adjacency(
+    params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult
+) -> tuple[RuleStatus, list[str]]:
+    source_types = _room_type_set(params.get("source_room_types", ()), "source_room_types")
+    target_types = _room_type_set(params.get("target_room_types", ()), "target_room_types")
+    minimum_shared_boundary = float(params.get("minimum_shared_boundary_mm", 1))
+    if minimum_shared_boundary < 0:
+        raise ValueError("FORBIDDEN_TYPE_ADJACENCY.minimum_shared_boundary_mm must be non-negative")
+
+    source_rooms = [room for room in spec.rooms if room.type.lower() in source_types]
+    target_rooms = [room for room in spec.rooms if room.type.lower() in target_types]
+    if not source_rooms or not target_rooms:
+        return "NOT_APPLICABLE", [
+            "No room pair matched source types "
+            + ", ".join(sorted(source_types))
+            + " and target types "
+            + ", ".join(sorted(target_types))
+        ]
+
+    failures: list[str] = []
+    evidence: list[str] = []
+    for source in source_rooms:
+        source_rect = result.placements.get(source.id)
+        if source_rect is None:
+            failures.append(f"{source.id}: placement is missing")
+            continue
+        for target in target_rooms:
+            if source.id == target.id:
+                continue
+            target_rect = result.placements.get(target.id)
+            if target_rect is None:
+                failures.append(f"{target.id}: placement is missing")
+                continue
+            shared_boundary = source_rect.shared_boundary(target_rect)
+            message = (
+                f"{source.id} ({source.type}) - {target.id} ({target.type}): "
+                f"shared boundary {shared_boundary:.0f} mm; forbidden threshold "
+                f"{minimum_shared_boundary:.0f} mm"
+            )
+            (failures if shared_boundary + 1e-6 >= minimum_shared_boundary else evidence).append(message)
+    if failures:
+        return "FAIL", failures + evidence
+    return "PASS", evidence or ["No forbidden type adjacency was found"]
+
+
+def _room_type_set(value: Any, field_name: str) -> set[str]:
+    if isinstance(value, str):
+        values = (value,)
+    elif isinstance(value, (list, tuple, set, frozenset)):
+        values = value
+    else:
+        raise ValueError(f"FORBIDDEN_TYPE_ADJACENCY.{field_name} must be a string or a list")
+    normalized = {str(item).strip().lower() for item in values if str(item).strip()}
+    if not normalized:
+        raise ValueError(f"FORBIDDEN_TYPE_ADJACENCY.{field_name} must not be empty")
+    return normalized
 
 
 def _egress_reachability(params: Mapping[str, Any], spec: LayoutIR, result: LayoutResult) -> tuple[RuleStatus, list[str]]:

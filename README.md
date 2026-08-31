@@ -38,6 +38,15 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 проверку; при нарушении ограничений команда отклоняется, исходный JSON не
 перезаписывается.
 
+После правки можно сразу прогнать ruleset; результаты экспорта сохраняются даже
+при нормативном FAIL, а код выхода `4` позволяет использовать команду в CI:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli edit out\layout_01.json `
+  --move-room hall 100 0 --output edited `
+  --rules rules\baseline.yaml
+```
+
 Проверка IFC по IDS-шаблону:
 
 ```powershell
@@ -80,6 +89,26 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
 Для CI-проверки источника нормативного профиля добавляется
 `--require-provenance`; он требует authority, edition, effective_date,
 source_url и document_hash.
+
+Первый частичный профиль Казахстана (проверенные срезы естественного освещения
+по п. 7.8 и запрещённого соседства по п. 6.2.13 СН РК 3.02-02-2023):
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli check `
+  out\layout_01.json --rules rules\kz_sn_3_02_02_2023_partial.yaml `
+  --require-provenance
+```
+
+Для демонстрации проходящего профиля используйте пример, где кухня тоже
+помечена как требующая естественного освещения:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate `
+  examples\kz_daylight.yaml --output out\kz_daylight --variants 1
+.venv\Scripts\python.exe -m layout_configurator.cli check `
+  out\kz_daylight\layout_01.json --rules rules\kz_sn_3_02_02_2023_partial.yaml `
+  --require-provenance
+```
 
 `rules/baseline.yaml` проверяет геометрию, минимальные площади по типам комнат,
 ширину коридора, окна для `needs_daylight`, достижимость от входа и максимальную
