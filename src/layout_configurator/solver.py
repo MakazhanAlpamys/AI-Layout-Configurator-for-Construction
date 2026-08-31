@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from .models import LayoutIR, LayoutResult, Rect
@@ -28,8 +28,11 @@ def solve_layouts(
     time_limit_seconds: float = 30,
     seed: int = 42,
     fixed_rects: Mapping[str, Rect] | None = None,
+    axis_aligned_room_ids: Iterable[str] | None = None,
+    structural_axes_x_mm: Iterable[float] | None = None,
+    structural_axes_y_mm: Iterable[float] | None = None,
 ) -> list[LayoutResult]:
-    """Solve one or more grid-snapped layouts, optionally locking room rectangles."""
+    """Solve grid-snapped layouts with optional fixed rectangles and axes."""
 
     if variants < 1:
         raise ValueError("variants должен быть не меньше 1")
@@ -42,6 +45,10 @@ def solve_layouts(
     unknown_fixed = set(fixed_rects) - {room.id for room in spec.rooms}
     if unknown_fixed:
         raise InfeasibleLayout(f"Нельзя зафиксировать неизвестные комнаты: {', '.join(sorted(unknown_fixed))}")
+    axis_room_ids = set(axis_aligned_room_ids or ())
+    unknown_axis_rooms = axis_room_ids - {room.id for room in spec.rooms}
+    if unknown_axis_rooms:
+        raise InfeasibleLayout(f"Нельзя привязать к осям неизвестные комнаты: {', '.join(sorted(unknown_axis_rooms))}")
 
     model = cp_model.CpModel()
     grid = spec.grid_mm
@@ -60,6 +67,17 @@ def solve_layouts(
         area = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area")
         model.Add(x + width <= boundary_width)
         model.Add(y + height <= boundary_height)
+        if room.id in axis_room_ids:
+            if structural_axes_x_mm is not None:
+                model.AddAllowedAssignments(
+                    [x, width],
+                    _axis_pairs(structural_axes_x_mm, boundary_width, grid, room.id, "x"),
+                )
+            if structural_axes_y_mm is not None:
+                model.AddAllowedAssignments(
+                    [y, height],
+                    _axis_pairs(structural_axes_y_mm, boundary_height, grid, room.id, "y"),
+                )
         if room.id in fixed_rects:
             fixed = fixed_rects[room.id]
             model.Add(x == _fixed_grid_value(fixed.x, grid, room.id, "x"))
@@ -226,3 +244,20 @@ def _fixed_grid_value(value: float, grid: int, room_id: str, field_name: str) ->
     if abs(value - grid_value * grid) > 1e-6:
         raise InfeasibleLayout(f"Комната {room_id}: {field_name}={value} не попадает на сетку {grid} мм")
     return int(grid_value)
+
+
+def _axis_pairs(axes: Iterable[float], boundary: int, grid: int, room_id: str, axis_name: str) -> list[list[int]]:
+    values = []
+    for index, axis in enumerate(axes):
+        values.append(_fixed_grid_value(float(axis), grid, room_id, f"{axis_name}-axis[{index}]"))
+    pairs = sorted(
+        {
+            (left, right - left)
+            for left in values
+            for right in values
+            if 0 <= left < right <= boundary
+        }
+    )
+    if not pairs:
+        raise InfeasibleLayout(f"Для комнаты {room_id} нет допустимой пары {axis_name}-осей на границе")
+    return [list(pair) for pair in pairs]

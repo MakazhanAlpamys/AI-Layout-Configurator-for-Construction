@@ -34,13 +34,20 @@ def validate_ids(ifc_path: str | Path, ids_path: str | Path) -> IdsValidationRep
     ifc_file = ifcopenshell.open(str(ifc_path))
     ids_file.validate(ifc_file, should_filter_version=True, filepath=str(ids_path))
     specifications = tuple(
-        IdsSpecificationResult(
-            name=specification.name,
-            applicable=len(specification.applicable_entities),
-            passed=len(specification.passed_entities),
-            failed=len(specification.failed_entities),
-            ok=bool(specification.status),
-        )
+        _specification_result(specification)
         for specification in ids_file.specifications
     )
     return IdsValidationReport(ids_path=Path(ids_path), ifc_path=Path(ifc_path), specifications=specifications)
+
+
+def _specification_result(specification) -> IdsSpecificationResult:
+    """Treat a specification with no applicable entities as vacuously passing."""
+
+    applicable = len(specification.applicable_entities)
+    return IdsSpecificationResult(
+        name=specification.name,
+        applicable=applicable,
+        passed=len(specification.passed_entities),
+        failed=len(specification.failed_entities),
+        ok=applicable == 0 or bool(specification.status),
+    )

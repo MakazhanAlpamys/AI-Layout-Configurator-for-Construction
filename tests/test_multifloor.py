@@ -1,4 +1,5 @@
 import unittest
+import tempfile
 from pathlib import Path
 
 import yaml
@@ -22,21 +23,27 @@ class MultiFloorTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertTrue(result.to_dict()["validation"]["ok"])
 
-        with self.subTest("combined IFC"):
-            output = Path("out") / "test_multifloor.ifc"
-            try:
-                summary = export_multifloor_ifc(output, spec, result)
-                model = ifcopenshell.open(output)
-                self.assertEqual(summary.storeys, 2)
-                self.assertEqual(summary.stairs, 2)
-                self.assertEqual(len(model.by_type("IfcBuildingStorey")), 2)
-                self.assertEqual(len(model.by_type("IfcSpace")), 6)
-                self.assertEqual(len(model.by_type("IfcStair")), 2)
-                ids_report = validate_ids(output, "ids/kz_layout_exchange.ids")
-                self.assertTrue(ids_report.ok, ids_report)
-            finally:
-                if output.exists():
-                    output.unlink()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "multifloor.ifc"
+            summary = export_multifloor_ifc(output, spec, result)
+            model = ifcopenshell.open(output)
+            self.assertEqual(summary.storeys, 2)
+            self.assertEqual(summary.stairs, 2)
+            self.assertEqual(len(model.by_type("IfcBuildingStorey")), 2)
+            self.assertEqual(len(model.by_type("IfcSpace")), 6)
+            self.assertEqual(len(model.by_type("IfcStair")), 2)
+            ids_report = validate_ids(output, "ids/kz_layout_exchange.ids")
+            self.assertTrue(ids_report.ok, ids_report)
+
+    def test_declared_structural_axes_are_hard_solver_constraints(self):
+        raw = yaml.safe_load(Path("examples/multifloor.yaml").read_text(encoding="utf-8"))
+        raw["structural_axes_x_mm"] = [1000, 3000, 12000]
+        spec = MultiFloorSpec.from_mapping(raw)
+        result = solve_multifloor(spec, time_limit_seconds=10)
+
+        stair = result.floors[0].placements["stair_0"]
+        self.assertIn(stair.x, {1000, 3000})
+        self.assertIn(stair.right, {1000, 3000, 12000})
 
     def test_multifloor_rejects_mismatched_boundary(self):
         raw = yaml.safe_load(Path("examples/multifloor.yaml").read_text(encoding="utf-8"))

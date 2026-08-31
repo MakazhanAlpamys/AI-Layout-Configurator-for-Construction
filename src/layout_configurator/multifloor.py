@@ -199,12 +199,16 @@ def solve_multifloor(
                 if first_room_id not in first_result.placements:
                     raise InfeasibleLayout(f"Vertical core {core.id} is missing on the first floor")
                 fixed[room_id] = first_result.placements[first_room_id]
+        core_room_ids = {core.room_ids[index] for core in spec.vertical_cores}
         result = solve_layouts(
             floor.layout,
             variants=1,
             time_limit_seconds=time_limit_seconds,
             seed=seed + index,
             fixed_rects=fixed,
+            axis_aligned_room_ids=core_room_ids,
+            structural_axes_x_mm=spec.structural_axes_x_mm or None,
+            structural_axes_y_mm=spec.structural_axes_y_mm or None,
         )[0]
         if first_result is None:
             first_result = result
