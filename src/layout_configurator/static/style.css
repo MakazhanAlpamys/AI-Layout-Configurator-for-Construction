@@ -17,6 +17,7 @@ body { margin: 0; background: radial-gradient(circle at 10% 0%, #202a31 0, var(-
 button, input, select { font: inherit; }
 button { cursor: pointer; }
 .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; max-width: 1440px; margin: 0 auto; padding: 34px 32px 20px; }
+.toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 h1, h2, p { margin: 0; }
 h1 { font-size: clamp(1.7rem, 3vw, 2.7rem); letter-spacing: -0.04em; }
 h2 { font-size: 1.12rem; letter-spacing: -0.02em; }
@@ -62,6 +63,7 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #
 .primary:hover { background: #8ae5d7; }
 .secondary { color: var(--text); background: transparent; border: 1px solid var(--line); }
 .secondary:hover { border-color: var(--accent); }
+.secondary:disabled { cursor: not-allowed; opacity: .42; }
 .error { margin-top: 13px; color: var(--danger); line-height: 1.4; font-size: .82rem; }
 .summary { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 0; font-size: .84rem; }
 .summary dt { color: var(--muted); }
@@ -77,8 +79,18 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #
 .files a { color: var(--accent); border: 1px solid #315b58; border-radius: 8px; padding: 7px 9px; text-decoration: none; font-size: .76rem; }
 .files a:hover { background: #203836; }
 .history { color: var(--muted); font-size: .76rem; line-height: 1.5; margin-top: 18px; }
+.journal { margin-top: 18px; }
+.journal-title { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+.journal-list { display: grid; gap: 6px; padding: 0; margin: 0; list-style: none; }
+.journal-entry { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 7px 9px; border-radius: 8px; background: var(--panel-2); font-size: .74rem; }
+.journal-entry span { color: var(--text); font-weight: 800; }
+.journal-entry code { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.journal-empty { color: var(--muted); font-size: .76rem; }
+.preview-dimension { fill: var(--accent); font-size: 150px; font-weight: 800; text-anchor: middle; pointer-events: none; }
+.preview-grid { stroke: #354047; stroke-width: 5; vector-effect: non-scaling-stroke; }
 @media (max-width: 980px) {
   .topbar { padding: 26px 18px 16px; }
   .shell { grid-template-columns: 1fr; padding: 0 18px 28px; }
   .canvas-card { min-height: 0; }
+  .toolbar { justify-content: flex-start; }
 }

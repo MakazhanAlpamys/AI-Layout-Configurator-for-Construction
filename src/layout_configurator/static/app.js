@@ -1,4 +1,4 @@
-const state = { current: null };
+const state = { current: null, interaction: null, busy: false, selectedRoomId: null };
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value)
@@ -86,8 +86,9 @@ function drawPlan(data, preview = null) {
   const svg = $("#plan");
   const width = data.boundary.width;
   const height = data.boundary.height;
+  const grid = Number(data.spec.grid_mm) || 100;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.innerHTML = `<rect class="boundary" x="0" y="0" width="${width}" height="${height}"></rect>`;
+  svg.innerHTML = `<defs><pattern id="grid-pattern" width="${grid}" height="${grid}" patternUnits="userSpaceOnUse"><path class="preview-grid" d="M ${grid} 0 L 0 0 0 ${grid}"></path></pattern></defs><rect x="0" y="0" width="${width}" height="${height}" fill="url(#grid-pattern)"></rect><rect class="boundary" x="0" y="0" width="${width}" height="${height}"></rect>`;
   for (const room of data.rooms) {
     const r = preview && preview.roomId === room.id ? preview.rect : room.rect;
     const y = height - r.y - r.height;
@@ -101,6 +102,15 @@ function drawPlan(data, preview = null) {
       svg.insertAdjacentHTML("beforeend", `<rect class="resize-handle" data-resize-room="${escapeHtml(room.id)}" x="${r.x + r.width - handle / 2}" y="${height - r.y - handle / 2}" width="${handle}" height="${handle}" rx="35"></rect>`);
     }
     svg.insertAdjacentHTML("beforeend", "</g>");
+  }
+  if (preview) {
+    const r = preview.rect;
+    const y = height - r.y - r.height;
+    const label = preview.kind === "move"
+      ? `Δ ${Math.round(r.x - preview.initial.x)}, ${Math.round(r.y - preview.initial.y)} мм`
+      : `${Math.round(r.width)} × ${Math.round(r.height)} мм`;
+    const labelY = y > 220 ? y - 90 : y + r.height + 210;
+    svg.insertAdjacentHTML("beforeend", `<text class="preview-dimension" x="${r.x + r.width / 2}" y="${labelY}">${escapeHtml(label)}</text>`);
   }
   for (const opening of data.openings) {
     const coords = opening.orientation === "horizontal"
@@ -155,7 +165,7 @@ function canvasPointerMove(event) {
       height: Math.max(grid, snap(point.y - interaction.initial.y, grid)),
     };
   }
-  drawPlan(state.current, { roomId: interaction.roomId, rect: interaction.preview });
+  drawPlan(state.current, { roomId: interaction.roomId, rect: interaction.preview, initial: interaction.initial, kind: interaction.kind });
   const status = $("#status");
   status.textContent = interaction.kind === "move" ? "PREVIEW · отпустите" : "RESIZE · отпустите";
   status.classList.remove("bad");
@@ -206,6 +216,8 @@ function render(data) {
   const status = $("#status");
   status.textContent = data.validation.ok ? "VALID" : `${data.validation.issues.length} issue(s)`;
   status.classList.toggle("bad", !data.validation.ok);
+  $("#undo").disabled = !data.can_undo;
+  $("#redo").disabled = !data.can_redo;
   drawPlan(data);
   $("#summary").innerHTML = `<dt>Комнат</dt><dd>${data.rooms.length}</dd><dt>Вариант</dt><dd>${data.layout.variant}</dd><dt>История</dt><dd>${data.history.length || "—"}</dd><dt>Внешний вход</dt><dd>${data.spec.external_entry ? escapeHtml(data.spec.external_entry.id) : "—"}</dd>`;
   $("#issues").innerHTML = data.validation.issues.length ? `<div class="issues">${data.validation.issues.map((issue) => `<div>${escapeHtml(issue.code)}: ${escapeHtml(issue.message)}</div>`).join("")}</div>` : "";
@@ -214,6 +226,10 @@ function render(data) {
   } else {
     $("#norms").innerHTML = "";
   }
+  const journal = data.journal || [];
+  $("#journal").innerHTML = journal.length
+    ? `<div class="journal-title">Журнал операций</div><ol class="journal-list">${journal.slice().reverse().map((entry) => { const label = entry.action === "command" ? entry.type : entry.action === "undo" ? "Отмена" : "Повтор"; const detail = entry.payload ? JSON.stringify(entry.payload) : ""; return `<li class="journal-entry"><span>${escapeHtml(label)}</span><code>${escapeHtml(detail)}</code></li>`; }).join("")}</ol>`
+    : `<div class="journal-title">Журнал операций</div><p class="journal-empty">Изменений пока нет.</p>`;
   $("#files").innerHTML = data.files.map((file) => `<a href="${file.url}" download>${escapeHtml(file.name)}</a>`).join("");
   $("#legend").innerHTML = `<span><i class="swatch heated"></i> отапливаемая</span><span><i class="swatch unheated"></i> неотапливаемая</span><span><i class="swatch entry"></i> внешний вход</span><span><i class="swatch window"></i> окно</span>`;
   renderFields();
@@ -239,6 +255,14 @@ $("#command-form").addEventListener("submit", async (event) => {
 
 $("#reset").addEventListener("click", async () => {
   try { render(await request("/api/reset", { method: "POST" })); } catch (err) { $("#command-error").textContent = err.message; $("#command-error").hidden = false; }
+});
+
+$("#undo").addEventListener("click", async () => {
+  try { render(await request("/api/undo", { method: "POST" })); } catch (err) { if (err.state) render(err.state); $("#command-error").textContent = err.message; $("#command-error").hidden = false; }
+});
+
+$("#redo").addEventListener("click", async () => {
+  try { render(await request("/api/redo", { method: "POST" })); } catch (err) { if (err.state) render(err.state); $("#command-error").textContent = err.message; $("#command-error").hidden = false; }
 });
 
 request("/api/state").then(render).catch((err) => { $("#command-error").textContent = err.message; $("#command-error").hidden = false; });

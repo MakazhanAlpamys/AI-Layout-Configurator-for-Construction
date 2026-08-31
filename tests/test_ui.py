@@ -33,14 +33,21 @@ class UiTests(unittest.TestCase):
                 self.assertEqual(state["spec"]["project_name"], "Kazakhstan daylight demo")
                 self.assertEqual(len(state["rooms"]), 4)
                 self.assertTrue(all(file["url"].startswith("/files/") for file in state["files"]))
+                self.assertFalse(state["can_undo"])
+                self.assertFalse(state["can_redo"])
+                self.assertEqual(state["journal"], [])
 
                 with urlopen(f"{base_url}/") as response:
                     self.assertIn(b"Typed", response.read())
                 with urlopen(f"{base_url}/app.js") as response:
                     app_js = response.read()
                 self.assertIn(b"/api/command", app_js)
+                self.assertIn(b"/api/undo", app_js)
+                self.assertIn(b"/api/redo", app_js)
                 self.assertIn(b"pointerdown", app_js)
                 self.assertIn(b"resize_room", app_js)
+                self.assertIn(b"grid-pattern", app_js)
+                self.assertIn(b"journal", app_js)
 
                 command = Request(
                     f"{base_url}/api/command",
@@ -57,6 +64,9 @@ class UiTests(unittest.TestCase):
                 self.assertIsNotNone(changed["norms"])
                 self.assertEqual(changed["norms"]["ruleset"]["jurisdiction"], "KZ")
                 self.assertTrue(changed["norms"]["ok"])
+                self.assertTrue(changed["can_undo"])
+                self.assertFalse(changed["can_redo"])
+                self.assertEqual(changed["journal"][0]["type"], "MoveRoom")
                 self.assertEqual(Path(directory, "loaded-exports", "layout_01.json").is_file(), True)
 
                 hall = next(room for room in changed["rooms"] if room["id"] == "hall")
@@ -77,6 +87,22 @@ class UiTests(unittest.TestCase):
                 with urlopen(resize_command) as response:
                     resized = json.load(response)
                 self.assertEqual(resized["history"], ["MoveRoom", "ResizeRoom"])
+                self.assertTrue(resized["can_undo"])
+                self.assertFalse(resized["can_redo"])
+
+                with urlopen(Request(f"{base_url}/api/undo", method="POST")) as response:
+                    undone = json.load(response)
+                self.assertEqual(undone["history"], ["MoveRoom"])
+                self.assertTrue(undone["can_undo"])
+                self.assertTrue(undone["can_redo"])
+                self.assertEqual(undone["journal"][-1]["action"], "undo")
+
+                with urlopen(Request(f"{base_url}/api/redo", method="POST")) as response:
+                    redone = json.load(response)
+                self.assertEqual(redone["history"], ["MoveRoom", "ResizeRoom"])
+                self.assertTrue(redone["can_undo"])
+                self.assertFalse(redone["can_redo"])
+                self.assertEqual(redone["journal"][-1]["action"], "redo")
 
                 bad_command = Request(
                     f"{base_url}/api/command",
@@ -89,6 +115,7 @@ class UiTests(unittest.TestCase):
                 self.assertEqual(raised.exception.code, 400)
                 error_state = json.load(raised.exception)
                 self.assertEqual(error_state["state"]["history"], ["MoveRoom", "ResizeRoom"])
+                self.assertFalse(error_state["state"]["can_redo"])
             finally:
                 server.shutdown()
                 server.server_close()

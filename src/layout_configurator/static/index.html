@@ -13,7 +13,11 @@
       <h1>Редактор планировки</h1>
       <p class="subtitle">Браузер отправляет typed-команды; геометрию пересчитывает CP-SAT.</p>
     </div>
-    <button id="reset" class="secondary">Сбросить изменения</button>
+    <div class="toolbar">
+      <button id="undo" class="secondary" disabled>↶ Отменить</button>
+      <button id="redo" class="secondary" disabled>↷ Повторить</button>
+      <button id="reset" class="secondary">Сбросить изменения</button>
+    </div>
   </header>
 
   <main class="shell">
@@ -28,7 +32,7 @@
       <div class="plan-wrap">
         <svg id="plan" role="img" aria-label="Планировка"></svg>
       </div>
-      <p class="canvas-help">Кликните комнату и потяните для перемещения. Нижний правый маркер меняет размер. Отпускание отправляет одну typed-команду.</p>
+      <p class="canvas-help">Кликните комнату и потяните для перемещения. Нижний правый маркер меняет размер. Сетка и размеры привязаны к ТЗ. Отпускание отправляет одну typed-команду.</p>
       <div id="legend" class="legend"></div>
     </section>
 
@@ -69,6 +73,7 @@
         <dl id="summary" class="summary"></dl>
         <div id="issues"></div>
         <div id="norms"></div>
+        <div id="journal" class="journal"></div>
         <div id="files" class="files"></div>
       </section>
     </aside>

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from pathlib import Path
@@ -59,6 +59,9 @@ class UiSession:
     state: EditorState
     lock: threading.RLock
     ruleset: RuleSet | None = None
+    past: list[EditorState] = field(default_factory=list)
+    future: list[EditorState] = field(default_factory=list)
+    journal: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
     def from_input(
@@ -143,6 +146,9 @@ class UiSession:
                 },
                 "norms": norms.to_dict() if norms else None,
                 "history": list(self.state.history),
+                "journal": list(self.journal),
+                "can_undo": bool(self.past),
+                "can_redo": bool(self.future),
                 "files": [
                     {"name": name, "url": f"/files/{name}"}
                     for name in self._file_names()
@@ -152,13 +158,46 @@ class UiSession:
     def apply_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
         command = command_from_payload(payload)
         with self.lock:
-            self.state = self.state.apply(command)
+            new_state = self.state.apply(command)
+            self.past.append(self.state)
+            self.future.clear()
+            self.state = new_state
+            self.journal.append(
+                {
+                    "action": "command",
+                    "type": type(command).__name__,
+                    "payload": dict(payload),
+                }
+            )
+            self._export()
+            return self.snapshot()
+
+    def undo(self) -> dict[str, Any]:
+        with self.lock:
+            if not self.past:
+                raise EditError("Нет изменений для отмены")
+            self.future.append(self.state)
+            self.state = self.past.pop()
+            self.journal.append({"action": "undo", "type": "Undo"})
+            self._export()
+            return self.snapshot()
+
+    def redo(self) -> dict[str, Any]:
+        with self.lock:
+            if not self.future:
+                raise EditError("Нет изменений для повтора")
+            self.past.append(self.state)
+            self.state = self.future.pop()
+            self.journal.append({"action": "redo", "type": "Redo"})
             self._export()
             return self.snapshot()
 
     def reset(self) -> dict[str, Any]:
         with self.lock:
             self.state = EditorState.from_layout(self.initial_spec, self.initial_result)
+            self.past.clear()
+            self.future.clear()
+            self.journal.clear()
             self._export()
             return self.snapshot()
 
@@ -253,16 +292,18 @@ class _UiHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
         route = urlsplit(self.path).path
-        if route not in {"/api/command", "/api/reset"}:
+        if route not in {"/api/command", "/api/reset", "/api/undo", "/api/redo"}:
             self._send_json(404, {"error": "not found"})
             return
         try:
-            payload = self._read_json() if route == "/api/command" else {}
-            snapshot = (
-                self.current_session.apply_payload(payload)
-                if route == "/api/command"
-                else self.current_session.reset()
-            )
+            if route == "/api/command":
+                snapshot = self.current_session.apply_payload(self._read_json())
+            elif route == "/api/undo":
+                snapshot = self.current_session.undo()
+            elif route == "/api/redo":
+                snapshot = self.current_session.redo()
+            else:
+                snapshot = self.current_session.reset()
         except (EditError, KeyError, TypeError, ValueError, InfeasibleLayout, RuntimeError) as exc:
             self._send_json(400, {"error": str(exc), "state": self.current_session.snapshot()})
             return
