@@ -32,8 +32,11 @@ h2 { font-size: 1.12rem; letter-spacing: -0.02em; }
 .status { padding: 7px 11px; border-radius: 999px; font-size: .76rem; font-weight: 800; background: #27342f; color: var(--accent); }
 .status.bad { background: #40282b; color: var(--danger); }
 .plan-wrap { min-height: 520px; margin-top: 18px; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: #11151a; }
-#plan { display: block; width: 100%; height: 520px; }
-.room { stroke: #aeb8c8; stroke-width: 7; vector-effect: non-scaling-stroke; }
+#plan { display: block; width: 100%; height: 520px; touch-action: none; user-select: none; }
+.room { stroke: #aeb8c8; stroke-width: 7; vector-effect: non-scaling-stroke; cursor: grab; }
+.room:active { cursor: grabbing; }
+.room.selected { stroke: var(--accent); stroke-width: 12; }
+.resize-handle { fill: var(--accent); stroke: #10211f; stroke-width: 18; vector-effect: non-scaling-stroke; cursor: nwse-resize; }
 .room.heated { fill: #2d4b52; }
 .room.unheated { fill: #4d4231; }
 .room-label { fill: #eef3fa; text-anchor: middle; font-size: 180px; font-weight: 700; pointer-events: none; }
@@ -42,6 +45,7 @@ h2 { font-size: 1.12rem; letter-spacing: -0.02em; }
 .opening.external { stroke: var(--accent); stroke-width: 40; }
 .window { stroke: #88b9ff; stroke-width: 34; vector-effect: non-scaling-stroke; }
 .boundary { fill: none; stroke: #697386; stroke-width: 4; stroke-dasharray: 18 14; vector-effect: non-scaling-stroke; }
+.canvas-help { margin: 13px 2px 0; color: var(--muted); font-size: .78rem; }
 .legend { display: flex; flex-wrap: wrap; gap: 16px; padding: 15px 2px 0; color: var(--muted); font-size: .78rem; }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
 .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }

@@ -49,6 +49,7 @@ LLM подключается последним и никогда не выда�
   - внешний вход `external_entry`, признак `is_heated`, solver-привязка и IFC-метаданные
   - локальный браузерный UI с SVG-планом, typed-командами и переэкспортом
   - опциональный ruleset post-check в UI после каждой команды
+  - drag/resize на SVG с preview и отправкой одной `MoveRoom`/`ResizeRoom` на отпускание
 - [ ] **3. IFC / BIM** ← *базовый IFC4-экспорт реализован 2026-08-30; IDS и полноценный BIM — далее*
   - `IfcProject` → `IfcSite` → `IfcBuilding` → `IfcBuildingStorey`
   - `IfcSpace`/`IfcWall`/`IfcDoor`/`IfcWindow`, геометрия, площади и CLI round-trip

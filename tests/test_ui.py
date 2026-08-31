@@ -37,7 +37,10 @@ class UiTests(unittest.TestCase):
                 with urlopen(f"{base_url}/") as response:
                     self.assertIn(b"Typed", response.read())
                 with urlopen(f"{base_url}/app.js") as response:
-                    self.assertIn(b"/api/command", response.read())
+                    app_js = response.read()
+                self.assertIn(b"/api/command", app_js)
+                self.assertIn(b"pointerdown", app_js)
+                self.assertIn(b"resize_room", app_js)
 
                 command = Request(
                     f"{base_url}/api/command",
@@ -56,6 +59,25 @@ class UiTests(unittest.TestCase):
                 self.assertTrue(changed["norms"]["ok"])
                 self.assertEqual(Path(directory, "loaded-exports", "layout_01.json").is_file(), True)
 
+                hall = next(room for room in changed["rooms"] if room["id"] == "hall")
+                resize_command = Request(
+                    f"{base_url}/api/command",
+                    data=json.dumps(
+                        {
+                            "type": "resize_room",
+                            "room_id": "hall",
+                            "width_mm": hall["rect"]["width"],
+                            "height_mm": hall["rect"]["height"],
+                            "anchor": "bottom_left",
+                        }
+                    ).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urlopen(resize_command) as response:
+                    resized = json.load(response)
+                self.assertEqual(resized["history"], ["MoveRoom", "ResizeRoom"])
+
                 bad_command = Request(
                     f"{base_url}/api/command",
                     data=b'{"type":"not_a_command"}',
@@ -66,7 +88,7 @@ class UiTests(unittest.TestCase):
                     urlopen(bad_command)
                 self.assertEqual(raised.exception.code, 400)
                 error_state = json.load(raised.exception)
-                self.assertEqual(error_state["state"]["history"], ["MoveRoom"])
+                self.assertEqual(error_state["state"]["history"], ["MoveRoom", "ResizeRoom"])
             finally:
                 server.shutdown()
                 server.server_close()

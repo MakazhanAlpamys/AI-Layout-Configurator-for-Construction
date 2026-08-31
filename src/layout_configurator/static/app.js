@@ -64,18 +64,43 @@ function formPayload() {
   return payload;
 }
 
-function drawPlan(data) {
+function modelPoint(event) {
+  const svg = $("#plan");
+  const bounds = svg.getBoundingClientRect();
+  const width = state.current.boundary.width;
+  const height = state.current.boundary.height;
+  const scale = Math.min(bounds.width / width, bounds.height / height);
+  const offsetX = (bounds.width - width * scale) / 2;
+  const offsetY = (bounds.height - height * scale) / 2;
+  return {
+    x: (event.clientX - bounds.left - offsetX) / scale,
+    y: height - (event.clientY - bounds.top - offsetY) / scale,
+  };
+}
+
+function snap(value, grid) {
+  return Math.round(value / grid) * grid;
+}
+
+function drawPlan(data, preview = null) {
   const svg = $("#plan");
   const width = data.boundary.width;
   const height = data.boundary.height;
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.innerHTML = `<rect class="boundary" x="0" y="0" width="${width}" height="${height}"></rect>`;
   for (const room of data.rooms) {
-    const r = room.rect;
+    const r = preview && preview.roomId === room.id ? preview.rect : room.rect;
     const y = height - r.y - r.height;
+    const selected = state.selectedRoomId === room.id;
     const cls = room.is_heated ? "room heated" : "room unheated";
-    svg.insertAdjacentHTML("beforeend", `<rect class="${cls}" x="${r.x}" y="${y}" width="${r.width}" height="${r.height}" rx="35"></rect>`);
-    svg.insertAdjacentHTML("beforeend", `<text class="room-label" x="${r.x + r.width / 2}" y="${y + r.height / 2 - 30}">${escapeHtml(room.id)}</text><text class="room-area" x="${r.x + r.width / 2}" y="${y + r.height / 2 + 140}">${r.area_m2.toFixed(1)} m²</text>`);
+    svg.insertAdjacentHTML("beforeend", `<g class="room-group" data-room-id="${escapeHtml(room.id)}"><rect class="${cls}${selected ? " selected" : ""}" data-room-id="${escapeHtml(room.id)}" x="${r.x}" y="${y}" width="${r.width}" height="${r.height}" rx="35"></rect>`);
+    const area = (r.width * r.height / 1000000).toFixed(1);
+    svg.insertAdjacentHTML("beforeend", `<text class="room-label" x="${r.x + r.width / 2}" y="${y + r.height / 2 - 30}">${escapeHtml(room.id)}</text><text class="room-area" x="${r.x + r.width / 2}" y="${y + r.height / 2 + 140}">${area} m²</text>`);
+    if (selected) {
+      const handle = Math.min(500, Math.max(180, Math.min(r.width, r.height) * 0.05));
+      svg.insertAdjacentHTML("beforeend", `<rect class="resize-handle" data-resize-room="${escapeHtml(room.id)}" x="${r.x + r.width - handle / 2}" y="${height - r.y - handle / 2}" width="${handle}" height="${handle}" rx="35"></rect>`);
+    }
+    svg.insertAdjacentHTML("beforeend", "</g>");
   }
   for (const opening of data.openings) {
     const coords = opening.orientation === "horizontal"
@@ -89,6 +114,90 @@ function drawPlan(data) {
       : [opening.fixed, height - opening.start, opening.fixed, height - opening.end];
     svg.insertAdjacentHTML("beforeend", `<line class="window" x1="${coords[0]}" y1="${coords[1]}" x2="${coords[2]}" y2="${coords[3]}"></line>`);
   }
+}
+
+function canvasPointerDown(event) {
+  if (!state.current || state.busy) return;
+  const handle = event.target.closest("[data-resize-room]");
+  const roomNode = event.target.closest("[data-room-id]");
+  if (!roomNode) return;
+  const roomId = handle ? handle.dataset.resizeRoom : roomNode.dataset.roomId;
+  const room = state.current.rooms.find((item) => item.id === roomId);
+  if (!room) return;
+  state.selectedRoomId = roomId;
+  state.interaction = {
+    kind: handle ? "resize" : "move",
+    roomId,
+    start: modelPoint(event),
+    initial: { ...room.rect },
+    preview: { ...room.rect },
+  };
+  $("#plan").setPointerCapture(event.pointerId);
+  drawPlan(state.current);
+  event.preventDefault();
+}
+
+function canvasPointerMove(event) {
+  const interaction = state.interaction;
+  if (!interaction) return;
+  const point = modelPoint(event);
+  const grid = Number(state.current.spec.grid_mm) || 100;
+  if (interaction.kind === "move") {
+    interaction.preview = {
+      ...interaction.initial,
+      x: interaction.initial.x + snap(point.x - interaction.start.x, grid),
+      y: interaction.initial.y + snap(point.y - interaction.start.y, grid),
+    };
+  } else {
+    interaction.preview = {
+      ...interaction.initial,
+      width: Math.max(grid, snap(point.x - interaction.initial.x, grid)),
+      height: Math.max(grid, snap(point.y - interaction.initial.y, grid)),
+    };
+  }
+  drawPlan(state.current, { roomId: interaction.roomId, rect: interaction.preview });
+  const status = $("#status");
+  status.textContent = interaction.kind === "move" ? "PREVIEW · отпустите" : "RESIZE · отпустите";
+  status.classList.remove("bad");
+  event.preventDefault();
+}
+
+async function canvasPointerUp(event) {
+  const interaction = state.interaction;
+  if (!interaction) return;
+  state.interaction = null;
+  try { $("#plan").releasePointerCapture(event.pointerId); } catch (_) { /* pointer capture may already be released */ }
+  const initial = interaction.initial;
+  const preview = interaction.preview;
+  const changed = interaction.kind === "move"
+    ? preview.x !== initial.x || preview.y !== initial.y
+    : preview.width !== initial.width || preview.height !== initial.height;
+  drawPlan(state.current);
+  if (!changed) {
+    render(state.current);
+    return;
+  }
+  const payload = interaction.kind === "move"
+    ? { type: "move_room", room_id: interaction.roomId, dx_mm: preview.x - initial.x, dy_mm: preview.y - initial.y }
+    : { type: "resize_room", room_id: interaction.roomId, width_mm: preview.width, height_mm: preview.height, anchor: "bottom_left" };
+  state.busy = true;
+  $("#command-error").hidden = true;
+  try {
+    render(await request("/api/command", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }));
+  } catch (err) {
+    if (err.state) render(err.state);
+    $("#command-error").textContent = err.message;
+    $("#command-error").hidden = false;
+  } finally {
+    state.busy = false;
+  }
+}
+
+function canvasPointerCancel(event) {
+  if (!state.interaction) return;
+  state.interaction = null;
+  try { $("#plan").releasePointerCapture(event.pointerId); } catch (_) { /* no-op */ }
+  render(state.current);
 }
 
 function render(data) {
@@ -111,6 +220,10 @@ function render(data) {
 }
 
 $("#operation").addEventListener("change", renderFields);
+$("#plan").addEventListener("pointerdown", canvasPointerDown);
+$("#plan").addEventListener("pointermove", canvasPointerMove);
+$("#plan").addEventListener("pointerup", canvasPointerUp);
+$("#plan").addEventListener("pointercancel", canvasPointerCancel);
 $("#command-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const error = $("#command-error");
