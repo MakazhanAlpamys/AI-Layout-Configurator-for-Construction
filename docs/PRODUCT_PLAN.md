@@ -219,8 +219,8 @@ production, близкий к показанному примеру:
 
 ## 11. Первый запуск после утверждения плана
 
-Циклы A и базовая часть B уже реализованы: есть canonical `BuildingIR`, плотный
-single-floor pilot, deterministic equipment packing, clearance/collision checks и
-первичная DXF/PDF projection оборудования. Следующий кодовый шаг — не менять
-координатную модель, а расширить её до flow routing и независимого отчёта
-инфраструктурных конфликтов; затем перейти к полноценному drawing-профилю цикла D.
+Циклы A и базовая часть B, а также первый срез C уже реализованы: есть canonical
+`BuildingIR`, плотный single-floor pilot, deterministic equipment packing,
+clearance/collision checks, room-graph flow routing и первичная DXF/PDF projection
+оборудования и потоков. Следующий кодовый шаг — сделать route planner обходящим
+препятствия и вынести полноценный drawing-профиль цикла D.

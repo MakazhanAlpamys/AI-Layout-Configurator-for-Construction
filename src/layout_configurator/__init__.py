@@ -11,6 +11,7 @@ from .equipment import (
     place_equipment,
     validate_equipment_layout,
 )
+from .flows import FlowRoute, FlowRoutingResult, FlowValidationIssue, FlowValidationReport, route_flows, validate_flow_routes
 from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
 from .brief import parse_llm_mapping, parse_text_brief
 from .multifloor import MultiFloorResult, MultiFloorSpec, MultiFloorValidationReport, VerticalCoreSpec, solve_multifloor, validate_multifloor
@@ -40,6 +41,12 @@ __all__ = [
     "clearance_rect",
     "place_equipment",
     "validate_equipment_layout",
+    "FlowRoute",
+    "FlowRoutingResult",
+    "FlowValidationIssue",
+    "FlowValidationReport",
+    "route_flows",
+    "validate_flow_routes",
     "LayoutIR",
     "LayoutResult",
     "Rect",

@@ -13,8 +13,9 @@ from .building import BuildingSpecError
 from .compliance import validate_ids
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .editor import EditorState
-from .equipment import EquipmentPlacementError, place_equipment
+from .equipment import EquipmentPlacementError, place_equipment, validate_equipment_layout
 from .export import export_building_bundle, export_bundle
+from .flows import route_flows, validate_flow_routes
 from .ifc import export_ifc, export_multifloor_ifc
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
 from .io import load_building, load_result, load_spec, write_building_result, write_result
@@ -172,23 +173,45 @@ def main(argv: list[str] | None = None) -> int:
                 return 3
             try:
                 equipment = place_equipment(building, result)
+                equipment_report = validate_equipment_layout(building, result, equipment)
+                if not equipment_report.ok:
+                    raise EquipmentPlacementError(
+                        "; ".join(issue.message for issue in equipment_report.issues)
+                    )
+                flow_routes = route_flows(building, result, equipment)
+                flow_report = validate_flow_routes(building, result, flow_routes, equipment)
             except (EquipmentPlacementError, ValueError, RuntimeError) as exc:
                 print(f"ERROR: оборудование в варианте {result.variant} не размещено: {exc}", file=sys.stderr)
                 return 3
-            dxf_path, pdf_path = export_building_bundle(args.output, building, result, equipment, report)
+            dxf_path, pdf_path = export_building_bundle(
+                args.output,
+                building,
+                result,
+                equipment,
+                report,
+                flow_routes,
+                flow_report,
+            )
             json_path = args.output / f"building_{result.variant:02d}.json"
-            write_building_result(json_path, building, result, equipment)
+            write_building_result(json_path, building, result, equipment, flow_routes, flow_report)
             manifest["variants"].append(
                 {
                     "variant": result.variant,
                     "rooms": len(result.placements),
                     "equipment": len(equipment.placements),
+                    "flows": len(flow_routes.routes),
+                    "flow_issues": len(flow_report.issues),
                     "dxf": dxf_path.name,
                     "pdf": pdf_path.name,
                     "json": json_path.name,
                 }
             )
             print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {json_path}")
+            if flow_report.issues:
+                print(
+                    f"  flow validation: {len(flow_report.issues)} issue(s); see {json_path.name} -> flow_validation",
+                    file=sys.stderr,
+                )
         (args.output / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
         )

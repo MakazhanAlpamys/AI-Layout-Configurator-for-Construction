@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .building import BuildingIR, EquipmentSpec
 from .equipment import EquipmentLayoutResult, clearance_rect
+from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
 from .validation import ValidationReport
 from .walls import build_wall_plan
@@ -24,6 +25,7 @@ LAYERS = (
     "A-TITLE",
     "A-EQUIP",
     "A-CLEARANCE",
+    "A-FLOW",
 )
 
 
@@ -33,6 +35,7 @@ def export_dxf(
     result: LayoutResult,
     equipment: EquipmentLayoutResult | None = None,
     equipment_specs: Iterable[EquipmentSpec] | None = None,
+    flows: FlowRoutingResult | None = None,
 ) -> None:
     import ezdxf
     from ezdxf.enums import TextEntityAlignment
@@ -51,6 +54,7 @@ def export_dxf(
         ("A-TITLE", 4),
         ("A-EQUIP", 1),
         ("A-CLEARANCE", 6),
+        ("A-FLOW", 5),
     ):
         document.layers.get(name).dxf.color = color
 
@@ -110,6 +114,8 @@ def export_dxf(
 
     if equipment is not None:
         _draw_equipment_dxf(document, modelspace, equipment, equipment_specs or ())
+    if flows is not None:
+        _draw_flows_dxf(modelspace, flows)
 
     title_x = boundary.width_mm - 3_000
     title_y = boundary.height_mm + 1_000
@@ -126,10 +132,11 @@ def export_building_dxf(
     building: BuildingIR,
     result: LayoutResult,
     equipment: EquipmentLayoutResult,
+    flows: FlowRoutingResult | None = None,
 ) -> None:
     """Export a building result with equipment blocks and service envelopes."""
 
-    export_dxf(path, building.layout, result, equipment, building.equipment)
+    export_dxf(path, building.layout, result, equipment, building.equipment, flows)
 
 
 def export_pdf(
@@ -139,6 +146,8 @@ def export_pdf(
     report: ValidationReport | None = None,
     equipment: EquipmentLayoutResult | None = None,
     equipment_specs: Iterable[EquipmentSpec] | None = None,
+    flows: FlowRoutingResult | None = None,
+    flow_report: FlowValidationReport | None = None,
 ) -> None:
     from reportlab.lib.pagesizes import A3, landscape
     from reportlab.pdfgen import canvas
@@ -195,13 +204,16 @@ def export_pdf(
 
     if equipment is not None:
         _draw_equipment_pdf(pdf, point, equipment, equipment_specs or ())
+    if flows is not None:
+        _draw_flows_pdf(pdf, point, flows)
 
     pdf.setStrokeColorRGB(0.2, 0.2, 0.2)
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(margin, page_height - margin + 5, spec.project_name)
     pdf.setFont("Helvetica", 8)
     status = "VALID" if report is None or report.ok else f"INVALID ({len(report.issues)} issues)"
-    pdf.drawRightString(page_width - margin, page_height - margin + 5, f"Variant {result.variant} | {status}")
+    flow_status = "" if flow_report is None else (" | FLOW OK" if flow_report.ok else f" | FLOW ({len(flow_report.issues)} issues)")
+    pdf.drawRightString(page_width - margin, page_height - margin + 5, f"Variant {result.variant} | {status}{flow_status}")
     pdf.setFont("Helvetica", 7)
     pdf.drawString(margin, 20, "Design aid — not a permit or code-compliance verdict")
     pdf.save()
@@ -213,10 +225,12 @@ def export_building_pdf(
     result: LayoutResult,
     equipment: EquipmentLayoutResult,
     report: ValidationReport | None = None,
+    flows: FlowRoutingResult | None = None,
+    flow_report: FlowValidationReport | None = None,
 ) -> None:
     """Export a building result with vector equipment and clearance overlays."""
 
-    export_pdf(path, building.layout, result, report, equipment, building.equipment)
+    export_pdf(path, building.layout, result, report, equipment, building.equipment, flows, flow_report)
 
 
 def export_bundle(directory: str | Path, spec: LayoutIR, result: LayoutResult, report: ValidationReport | None = None) -> tuple[Path, Path]:
@@ -236,6 +250,8 @@ def export_building_bundle(
     result: LayoutResult,
     equipment: EquipmentLayoutResult,
     report: ValidationReport | None = None,
+    flows: FlowRoutingResult | None = None,
+    flow_report: FlowValidationReport | None = None,
 ) -> tuple[Path, Path]:
     """Export the complete drawing projection for one BuildingIR variant."""
 
@@ -244,8 +260,8 @@ def export_building_bundle(
     stem = f"building_{result.variant:02d}"
     dxf_path = output / f"{stem}.dxf"
     pdf_path = output / f"{stem}.pdf"
-    export_building_dxf(dxf_path, building, result, equipment)
-    export_building_pdf(pdf_path, building, result, equipment, report)
+    export_building_dxf(dxf_path, building, result, equipment, flows)
+    export_building_pdf(pdf_path, building, result, equipment, report, flows, flow_report)
     return dxf_path, pdf_path
 
 
@@ -287,6 +303,20 @@ def _draw_equipment_dxf(document, modelspace, equipment: EquipmentLayoutResult, 
         modelspace.add_blockref(block_name, (placement.rect.x, placement.rect.y), dxfattribs={"layer": "A-EQUIP"})
 
 
+def _draw_flows_dxf(modelspace, flows: FlowRoutingResult) -> None:
+    for route in flows.routes:
+        if len(route.points) < 2:
+            continue
+        modelspace.add_lwpolyline(
+            route.points,
+            dxfattribs={"layer": "A-FLOW", "linetype": "DASHED", "lineweight": 18},
+        )
+        modelspace.add_text(
+            f"FLOW {route.flow_id}",
+            dxfattribs={"height": 90, "layer": "A-FLOW"},
+        ).set_placement(route.points[0])
+
+
 def _draw_equipment_pdf(pdf, point, equipment: EquipmentLayoutResult, equipment_specs: Iterable[EquipmentSpec]) -> None:
     specs = {item.id: item for item in equipment_specs}
     for placement in equipment.placements:
@@ -316,6 +346,24 @@ def _draw_equipment_pdf(pdf, point, equipment: EquipmentLayoutResult, equipment_
             spec.id,
         )
         pdf.setFillColorRGB(0.0, 0.0, 0.0)
+
+
+def _draw_flows_pdf(pdf, point, flows: FlowRoutingResult) -> None:
+    pdf.setStrokeColorRGB(0.9, 0.45, 0.05)
+    pdf.setLineWidth(1.0)
+    pdf.setDash(5, 3)
+    pdf.setFont("Helvetica", 5)
+    for route in flows.routes:
+        if len(route.points) < 2:
+            continue
+        path = pdf.beginPath()
+        first_x, first_y = point(*route.points[0])
+        path.moveTo(first_x, first_y)
+        for x, y in route.points[1:]:
+            path.lineTo(*point(x, y))
+        pdf.drawPath(path, stroke=1, fill=0)
+        pdf.drawString(first_x + 2, first_y + 2, f"FLOW {route.flow_id}")
+    pdf.setDash()
 
 
 def _equipment_block_name(equipment_id: str) -> str:
