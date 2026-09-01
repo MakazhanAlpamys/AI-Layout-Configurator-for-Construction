@@ -12,8 +12,8 @@ layout:
   window_sill_mm: 900
   entry_room: receiving
   boundary:
-    width: 30000
-    height: 18000
+    width: 42000
+    height: 22000
     cutouts: []
   rooms:
     - id: receiving
@@ -133,6 +133,8 @@ equipment:
     clearance_right_mm: 900
     rotation_allowed: false
     fixed: true
+    anchor_side: top
+    anchor_offset_mm: 1000
   - id: packaging_line_01
     type: packaging_line
     room_id: packaging
@@ -180,7 +182,7 @@ flows:
     minimum_clear_width_mm: 1200
 
 structural_grid:
-  axes_x_mm: [0, 6000, 12000, 18000, 24000, 30000]
-  axes_y_mm: [0, 6000, 12000, 18000]
-  labels_x: [A, B, C, D, E, F]
-  labels_y: [1, 2, 3, 4]
+  axes_x_mm: [0, 6000, 12000, 18000, 24000, 30000, 36000, 42000]
+  axes_y_mm: [0, 6000, 12000, 18000, 22000]
+  labels_x: [A, B, C, D, E, F, G, H]
+  labels_y: [1, 2, 3, 4, 5]

@@ -8,12 +8,13 @@ class BuildingIRTests(unittest.TestCase):
     def test_commercial_pilot_contains_program_objects(self):
         building = BuildingIR.from_mapping(_load_pilot())
 
-        self.assertEqual(building.layout.boundary.width_mm, 30000)
+        self.assertEqual(building.layout.project_name, "Commercial production pilot")
+        self.assertEqual(building.layout.boundary.width_mm, 42000)
         self.assertEqual(len(building.layout.rooms), 10)
         self.assertEqual(len(building.zones), 3)
         self.assertEqual(len(building.equipment), 5)
         self.assertEqual(len(building.flows), 4)
-        self.assertEqual(building.structural_grid.axes_x_mm[-1], 30000)
+        self.assertEqual(building.structural_grid.axes_x_mm[-1], 42000)
 
     def test_canonical_building_round_trip_and_schema(self):
         building = BuildingIR.from_mapping(_load_pilot())

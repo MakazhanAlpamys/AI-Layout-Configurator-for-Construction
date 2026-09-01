@@ -41,7 +41,7 @@
     "equipment": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "width_mm", "depth_mm", "clearance_front_mm", "clearance_back_mm", "clearance_left_mm", "clearance_right_mm", "rotation_allowed", "fixed"],
+      "required": ["id", "type", "width_mm", "depth_mm", "clearance_front_mm", "clearance_back_mm", "clearance_left_mm", "clearance_right_mm", "rotation_allowed", "fixed", "anchor_offset_mm"],
       "anyOf": [{"required": ["room_id"]}, {"required": ["zone_id"]}],
       "properties": {
         "id": {"$ref": "#/$defs/id"},
@@ -55,7 +55,9 @@
         "clearance_left_mm": {"$ref": "#/$defs/nonNegativeNumber"},
         "clearance_right_mm": {"$ref": "#/$defs/nonNegativeNumber"},
         "rotation_allowed": {"type": "boolean"},
-        "fixed": {"type": "boolean"}
+        "fixed": {"type": "boolean"},
+        "anchor_side": {"enum": ["left", "right", "bottom", "top"]},
+        "anchor_offset_mm": {"$ref": "#/$defs/nonNegativeNumber"}
       }
     },
     "flow": {

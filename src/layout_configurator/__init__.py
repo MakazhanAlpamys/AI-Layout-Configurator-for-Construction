@@ -1,6 +1,16 @@
 """Deterministic building layout generator."""
 
 from .building import BuildingIR, BuildingSpecError, EquipmentSpec, FlowSpec, StructuralGridSpec, ZoneSpec
+from .equipment import (
+    EquipmentLayoutResult,
+    EquipmentPlacement,
+    EquipmentPlacementError,
+    EquipmentValidationIssue,
+    EquipmentValidationReport,
+    clearance_rect,
+    place_equipment,
+    validate_equipment_layout,
+)
 from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
 from .brief import parse_llm_mapping, parse_text_brief
 from .multifloor import MultiFloorResult, MultiFloorSpec, MultiFloorValidationReport, VerticalCoreSpec, solve_multifloor, validate_multifloor
@@ -22,6 +32,14 @@ __all__ = [
     "EquipmentSpec",
     "FlowSpec",
     "StructuralGridSpec",
+    "EquipmentLayoutResult",
+    "EquipmentPlacement",
+    "EquipmentPlacementError",
+    "EquipmentValidationIssue",
+    "EquipmentValidationReport",
+    "clearance_rect",
+    "place_equipment",
+    "validate_equipment_layout",
     "LayoutIR",
     "LayoutResult",
     "Rect",

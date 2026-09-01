@@ -9,13 +9,15 @@ import sys
 from pathlib import Path
 
 from .brief import parse_text_brief
+from .building import BuildingSpecError
 from .compliance import validate_ids
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .editor import EditorState
+from .equipment import EquipmentPlacementError, place_equipment
 from .export import export_bundle
 from .ifc import export_ifc, export_multifloor_ifc
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
-from .io import load_result, load_spec, write_result
+from .io import load_building, load_result, load_spec, write_building_result, write_result
 from .norms import check_layout, load_ruleset, retrieve_rule_citations
 from .multifloor import MultiFloorSpec, solve_multifloor
 from .schema import load_canonical_spec, normalize_mapping, validate_mapping, validate_spec, load_mapping
@@ -34,6 +36,14 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--seed", type=int, default=42)
     generate.add_argument("--strict-input", action="store_true", help="require canonical LayoutIR input before solving")
     generate.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
+    generate_building = subparsers.add_parser(
+        "generate-building", help="solve a dense-building program and place equipment"
+    )
+    generate_building.add_argument("spec", type=Path)
+    generate_building.add_argument("--output", "-o", type=Path, default=Path("out/building"))
+    generate_building.add_argument("--variants", type=int, default=1)
+    generate_building.add_argument("--time-limit", type=float, default=30)
+    generate_building.add_argument("--seed", type=int, default=42)
     edit = subparsers.add_parser("edit", help="apply typed edits to an existing layout JSON and re-export it")
     edit.add_argument("input", type=Path)
     edit.add_argument("--output", "-o", type=Path, default=Path("edited"))
@@ -142,6 +152,43 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {ifc_path}")
         (args.output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+        return 0
+    if args.command == "generate-building":
+        try:
+            building = load_building(args.spec)
+            results = solve_layouts(building.layout, args.variants, args.time_limit, args.seed)
+        except (OSError, ValueError, BuildingSpecError, InfeasibleLayout, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+
+        args.output.mkdir(parents=True, exist_ok=True)
+        manifest = {"project": building.layout.project_name, "variants": []}
+        for result in results:
+            report = validate_layout(building.layout, result)
+            if not report.ok:
+                print(f"ERROR: вариант {result.variant} не прошёл валидацию", file=sys.stderr)
+                for issue in report.issues:
+                    print(f"  - {issue.code}: {issue.message}", file=sys.stderr)
+                return 3
+            try:
+                equipment = place_equipment(building, result)
+            except (EquipmentPlacementError, ValueError, RuntimeError) as exc:
+                print(f"ERROR: оборудование в варианте {result.variant} не размещено: {exc}", file=sys.stderr)
+                return 3
+            json_path = args.output / f"building_{result.variant:02d}.json"
+            write_building_result(json_path, building, result, equipment)
+            manifest["variants"].append(
+                {
+                    "variant": result.variant,
+                    "rooms": len(result.placements),
+                    "equipment": len(equipment.placements),
+                    "json": json_path.name,
+                }
+            )
+            print(f"variant {result.variant}: {json_path}")
+        (args.output / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         return 0
     if args.command == "edit":
         if not any((args.move_room, args.resize_room, args.add_door, args.add_door_at, args.remove_door, args.add_window, args.remove_window, args.set_external_entry, args.remove_external_entry)):

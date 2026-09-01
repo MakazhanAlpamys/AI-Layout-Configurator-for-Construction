@@ -6,7 +6,10 @@ import json
 from pathlib import Path
 from typing import Any
 
+from .building import BuildingIR
+from .equipment import EquipmentLayoutResult
 from .models import LayoutIR, LayoutResult, Rect
+from .schema import load_mapping
 
 
 def load_spec(path: str | Path) -> LayoutIR:
@@ -21,6 +24,12 @@ def load_spec(path: str | Path) -> LayoutIR:
     else:
         raise ValueError("Файл спецификации должен иметь расширение .json, .yaml или .yml")
     return LayoutIR.from_mapping(raw)
+
+
+def load_building(path: str | Path) -> BuildingIR:
+    """Load an extended dense-building program without normalizing shorthand."""
+
+    return BuildingIR.from_mapping(load_mapping(path))
 
 
 def write_result(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
@@ -46,3 +55,19 @@ def load_result(path: str | Path) -> tuple[LayoutIR, LayoutResult]:
         placements=placements,
         objective_value=layout.get("objective_value"),
     )
+
+
+def write_building_result(
+    path: str | Path,
+    building: BuildingIR,
+    result: LayoutResult,
+    equipment: EquipmentLayoutResult,
+) -> None:
+    """Write room and equipment solver outputs without converting to drawing data."""
+
+    payload = {
+        "spec": building.to_dict(),
+        "layout": result.to_dict(),
+        **equipment.to_dict(building),
+    }
+    Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Literal
 
 from .models import LayoutIR
 
@@ -77,6 +77,8 @@ class EquipmentSpec:
     clearance_right_mm: float = 0.0
     rotation_allowed: bool = True
     fixed: bool = False
+    anchor_side: Literal["left", "right", "bottom", "top"] | None = None
+    anchor_offset_mm: float = 0.0
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any], index: int) -> "EquipmentSpec":
@@ -87,6 +89,15 @@ class EquipmentSpec:
         zone_id = None if zone_value in (None, "") else _required_id(zone_value, f"equipment[{equipment_id}].zone_id")
         if room_id is None and zone_id is None:
             raise BuildingSpecError(f"Equipment {equipment_id} must reference room_id or zone_id")
+        anchor_value = raw.get("anchor_side", raw.get("anchor"))
+        anchor_side = None if anchor_value in (None, "") else str(anchor_value).strip().lower()
+        if anchor_side not in {None, "left", "right", "bottom", "top"}:
+            raise BuildingSpecError(f"Equipment {equipment_id} has unsupported anchor_side {anchor_side!r}")
+        fixed = _bool(raw.get("fixed", False))
+        if fixed and (room_id is None or anchor_side is None):
+            raise BuildingSpecError(
+                f"Fixed equipment {equipment_id} must reference room_id and anchor_side"
+            )
 
         shared_clearance = raw.get("clearance_mm")
         if shared_clearance is not None:
@@ -105,7 +116,12 @@ class EquipmentSpec:
             clearance_left_mm=_non_negative(raw.get("clearance_left_mm", shared), f"equipment[{equipment_id}].clearance_left_mm"),
             clearance_right_mm=_non_negative(raw.get("clearance_right_mm", shared), f"equipment[{equipment_id}].clearance_right_mm"),
             rotation_allowed=_bool(raw.get("rotation_allowed", True)),
-            fixed=_bool(raw.get("fixed", False)),
+            fixed=fixed,
+            anchor_side=anchor_side,
+            anchor_offset_mm=_non_negative(
+                raw.get("anchor_offset_mm", raw.get("anchor_offset", 0)),
+                f"equipment[{equipment_id}].anchor_offset_mm",
+            ),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -120,11 +136,14 @@ class EquipmentSpec:
             "clearance_right_mm": self.clearance_right_mm,
             "rotation_allowed": self.rotation_allowed,
             "fixed": self.fixed,
+            "anchor_offset_mm": self.anchor_offset_mm,
         }
         if self.room_id is not None:
             payload["room_id"] = self.room_id
         if self.zone_id is not None:
             payload["zone_id"] = self.zone_id
+        if self.anchor_side is not None:
+            payload["anchor_side"] = self.anchor_side
         return payload
 
 
@@ -235,6 +254,8 @@ class BuildingIR:
         layout_raw = payload.get("layout", payload)
         if not isinstance(layout_raw, Mapping):
             raise BuildingSpecError("building.layout must be an object")
+        if "project_name" not in layout_raw and payload.get("project_name"):
+            layout_raw = {**layout_raw, "project_name": payload["project_name"]}
         layout = LayoutIR.from_mapping(layout_raw)
 
         zones = _parse_list(payload.get("zones", ()), ZoneSpec.from_mapping, "zones")

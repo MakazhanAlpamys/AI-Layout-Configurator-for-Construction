@@ -103,6 +103,18 @@ undo/redo восстанавливают валидные снимки `EditorSt
 текущий `generate` по-прежнему работает с `LayoutIR`. Координаты оборудования
 и помещений будут выдаваться будущим solver-ом, а не входным JSON или LLM.
 
+Первый вычислительный проход уже доступен отдельно: он решает комнаты текущим
+CP-SAT, затем размещает оборудование на сетке с учётом clearance и пишет
+`building_01.json`:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate-building `
+  examples\commercial_pilot.yaml --output out\commercial_pilot --variants 1
+```
+
+Это пока program/solver output без графических символов оборудования в DXF;
+их добавление относится к следующему drawing-циклу.
+
 ## Ограничения MVP
 
 - один этаж и ортогональные прямоугольные комнаты;
