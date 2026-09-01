@@ -3,6 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import ezdxf
+
 from layout_configurator.building import BuildingIR
 from layout_configurator.cli import main
 from layout_configurator.equipment import (
@@ -160,6 +162,18 @@ class EquipmentTests(unittest.TestCase):
             payload = json.loads((output / "building_01.json").read_text(encoding="utf-8"))
             self.assertEqual(len(payload["equipment"]), 1)
             self.assertEqual(payload["equipment"][0]["equipment_id"], "machine")
+            document = ezdxf.readfile(output / "building_01.dxf")
+            modelspace = document.modelspace()
+            equipment_entities = [entity for entity in modelspace if entity.dxf.layer == "A-EQUIP"]
+            clearance_entities = [entity for entity in modelspace if entity.dxf.layer == "A-CLEARANCE"]
+            self.assertEqual(len(equipment_entities), 1)
+            self.assertEqual(equipment_entities[0].dxftype(), "INSERT")
+            self.assertEqual(len(clearance_entities), 1)
+            self.assertEqual(clearance_entities[0].dxftype(), "LWPOLYLINE")
+            self.assertEqual((output / "building_01.pdf").read_bytes()[:8], b"%PDF-1.3")
+            manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+            self.assertEqual(manifest["variants"][0]["dxf"], "building_01.dxf")
+            self.assertEqual(manifest["variants"][0]["pdf"], "building_01.pdf")
 
 
 def _building(equipment, *, room_width=6000, room_height=5000, zones=()):

@@ -112,8 +112,9 @@ CP-SAT, затем размещает оборудование на сетке �
   examples\commercial_pilot.yaml --output out\commercial_pilot --variants 1
 ```
 
-Это пока program/solver output без графических символов оборудования в DXF;
-их добавление относится к следующему drawing-циклу.
+`generate-building` выпускает program/solver output и drawing-проекции: editable DXF
+с блоками оборудования на `A-EQUIP` и пунктирными service-clearance на `A-CLEARANCE`,
+а также векторный PDF. IFC для оборудования остаётся отдельным следующим циклом.
 
 ## Ограничения MVP
 

@@ -14,7 +14,7 @@ from .compliance import validate_ids
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .editor import EditorState
 from .equipment import EquipmentPlacementError, place_equipment
-from .export import export_bundle
+from .export import export_building_bundle, export_bundle
 from .ifc import export_ifc, export_multifloor_ifc
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
 from .io import load_building, load_result, load_spec, write_building_result, write_result
@@ -175,6 +175,7 @@ def main(argv: list[str] | None = None) -> int:
             except (EquipmentPlacementError, ValueError, RuntimeError) as exc:
                 print(f"ERROR: оборудование в варианте {result.variant} не размещено: {exc}", file=sys.stderr)
                 return 3
+            dxf_path, pdf_path = export_building_bundle(args.output, building, result, equipment, report)
             json_path = args.output / f"building_{result.variant:02d}.json"
             write_building_result(json_path, building, result, equipment)
             manifest["variants"].append(
@@ -182,10 +183,12 @@ def main(argv: list[str] | None = None) -> int:
                     "variant": result.variant,
                     "rooms": len(result.placements),
                     "equipment": len(equipment.placements),
+                    "dxf": dxf_path.name,
+                    "pdf": pdf_path.name,
                     "json": json_path.name,
                 }
             )
-            print(f"variant {result.variant}: {json_path}")
+            print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {json_path}")
         (args.output / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
         )

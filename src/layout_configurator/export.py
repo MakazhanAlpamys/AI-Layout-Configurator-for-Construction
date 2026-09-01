@@ -2,17 +2,38 @@
 
 from __future__ import annotations
 
+import re
+from collections.abc import Iterable
 from pathlib import Path
 
+from .building import BuildingIR, EquipmentSpec
+from .equipment import EquipmentLayoutResult, clearance_rect
 from .models import LayoutIR, LayoutResult, Rect
 from .validation import ValidationReport
 from .walls import build_wall_plan
 
 
-LAYERS = ("A-WALL", "A-ROOM", "A-DOOR", "A-WINDOW", "A-DIMS", "A-HATCH", "A-TEXT", "A-TITLE")
+LAYERS = (
+    "A-WALL",
+    "A-ROOM",
+    "A-DOOR",
+    "A-WINDOW",
+    "A-DIMS",
+    "A-HATCH",
+    "A-TEXT",
+    "A-TITLE",
+    "A-EQUIP",
+    "A-CLEARANCE",
+)
 
 
-def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
+def export_dxf(
+    path: str | Path,
+    spec: LayoutIR,
+    result: LayoutResult,
+    equipment: EquipmentLayoutResult | None = None,
+    equipment_specs: Iterable[EquipmentSpec] | None = None,
+) -> None:
     import ezdxf
     from ezdxf.enums import TextEntityAlignment
 
@@ -21,7 +42,16 @@ def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
     for name in LAYERS:
         if name not in document.layers:
             document.layers.add(name)
-    for name, color in (("A-WALL", 7), ("A-ROOM", 8), ("A-DOOR", 3), ("A-DIMS", 2), ("A-TEXT", 7), ("A-TITLE", 4)):
+    for name, color in (
+        ("A-WALL", 7),
+        ("A-ROOM", 8),
+        ("A-DOOR", 3),
+        ("A-DIMS", 2),
+        ("A-TEXT", 7),
+        ("A-TITLE", 4),
+        ("A-EQUIP", 1),
+        ("A-CLEARANCE", 6),
+    ):
         document.layers.get(name).dxf.color = color
 
     modelspace = document.modelspace()
@@ -78,6 +108,9 @@ def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
         if opening.orientation == "vertical":
             insert.dxf.rotation = 90
 
+    if equipment is not None:
+        _draw_equipment_dxf(document, modelspace, equipment, equipment_specs or ())
+
     title_x = boundary.width_mm - 3_000
     title_y = boundary.height_mm + 1_000
     modelspace.add_text(spec.project_name, dxfattribs={"height": 250, "layer": "A-TITLE"}).set_placement((title_x, title_y))
@@ -88,7 +121,25 @@ def export_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
     document.saveas(path)
 
 
-def export_pdf(path: str | Path, spec: LayoutIR, result: LayoutResult, report: ValidationReport | None = None) -> None:
+def export_building_dxf(
+    path: str | Path,
+    building: BuildingIR,
+    result: LayoutResult,
+    equipment: EquipmentLayoutResult,
+) -> None:
+    """Export a building result with equipment blocks and service envelopes."""
+
+    export_dxf(path, building.layout, result, equipment, building.equipment)
+
+
+def export_pdf(
+    path: str | Path,
+    spec: LayoutIR,
+    result: LayoutResult,
+    report: ValidationReport | None = None,
+    equipment: EquipmentLayoutResult | None = None,
+    equipment_specs: Iterable[EquipmentSpec] | None = None,
+) -> None:
     from reportlab.lib.pagesizes import A3, landscape
     from reportlab.pdfgen import canvas
 
@@ -142,6 +193,9 @@ def export_pdf(path: str | Path, spec: LayoutIR, result: LayoutResult, report: V
         else:
             pdf.line(*point(opening.start, opening.fixed), *point(opening.end, opening.fixed))
 
+    if equipment is not None:
+        _draw_equipment_pdf(pdf, point, equipment, equipment_specs or ())
+
     pdf.setStrokeColorRGB(0.2, 0.2, 0.2)
     pdf.setFont("Helvetica-Bold", 12)
     pdf.drawString(margin, page_height - margin + 5, spec.project_name)
@@ -151,6 +205,18 @@ def export_pdf(path: str | Path, spec: LayoutIR, result: LayoutResult, report: V
     pdf.setFont("Helvetica", 7)
     pdf.drawString(margin, 20, "Design aid — not a permit or code-compliance verdict")
     pdf.save()
+
+
+def export_building_pdf(
+    path: str | Path,
+    building: BuildingIR,
+    result: LayoutResult,
+    equipment: EquipmentLayoutResult,
+    report: ValidationReport | None = None,
+) -> None:
+    """Export a building result with vector equipment and clearance overlays."""
+
+    export_pdf(path, building.layout, result, report, equipment, building.equipment)
 
 
 def export_bundle(directory: str | Path, spec: LayoutIR, result: LayoutResult, report: ValidationReport | None = None) -> tuple[Path, Path]:
@@ -164,10 +230,115 @@ def export_bundle(directory: str | Path, spec: LayoutIR, result: LayoutResult, r
     return dxf_path, pdf_path
 
 
-def _add_rect_polyline(modelspace, rect: Rect, layer: str, lineweight: int | None = None) -> None:
+def export_building_bundle(
+    directory: str | Path,
+    building: BuildingIR,
+    result: LayoutResult,
+    equipment: EquipmentLayoutResult,
+    report: ValidationReport | None = None,
+) -> tuple[Path, Path]:
+    """Export the complete drawing projection for one BuildingIR variant."""
+
+    output = Path(directory)
+    output.mkdir(parents=True, exist_ok=True)
+    stem = f"building_{result.variant:02d}"
+    dxf_path = output / f"{stem}.dxf"
+    pdf_path = output / f"{stem}.pdf"
+    export_building_dxf(dxf_path, building, result, equipment)
+    export_building_pdf(pdf_path, building, result, equipment, report)
+    return dxf_path, pdf_path
+
+
+def _draw_equipment_dxf(document, modelspace, equipment: EquipmentLayoutResult, equipment_specs: Iterable[EquipmentSpec]) -> None:
+    specs = {item.id: item for item in equipment_specs}
+    for placement in equipment.placements:
+        spec = specs.get(placement.equipment_id)
+        if spec is None:
+            raise ValueError(f"Equipment placement references unknown equipment {placement.equipment_id}")
+        clearance = clearance_rect(spec, placement.rect, placement.rotated)
+        _add_rect_polyline(modelspace, clearance, "A-CLEARANCE", lineweight=13, linetype="DASHED")
+
+        block_name = _equipment_block_name(spec.id)
+        if block_name not in document.blocks:
+            block = document.blocks.new(block_name)
+            block.add_lwpolyline(
+                [(0, 0), (placement.rect.width, 0), (placement.rect.width, placement.rect.height), (0, placement.rect.height)],
+                close=True,
+                dxfattribs={"layer": "A-EQUIP", "lineweight": 25},
+            )
+            block.add_line(
+                (0, 0),
+                (placement.rect.width, placement.rect.height),
+                dxfattribs={"layer": "A-EQUIP"},
+            )
+            block.add_line(
+                (0, placement.rect.height),
+                (placement.rect.width, 0),
+                dxfattribs={"layer": "A-EQUIP"},
+            )
+            block.add_text(
+                spec.id,
+                dxfattribs={"height": _equipment_label_height(placement.rect), "layer": "A-EQUIP"},
+            ).set_placement(placement.rect.center)
+            block.add_text(
+                spec.type,
+                dxfattribs={"height": max(45.0, _equipment_label_height(placement.rect) * 0.7), "layer": "A-EQUIP"},
+            ).set_placement((placement.rect.center[0], placement.rect.center[1] - _equipment_label_height(placement.rect)))
+        modelspace.add_blockref(block_name, (placement.rect.x, placement.rect.y), dxfattribs={"layer": "A-EQUIP"})
+
+
+def _draw_equipment_pdf(pdf, point, equipment: EquipmentLayoutResult, equipment_specs: Iterable[EquipmentSpec]) -> None:
+    specs = {item.id: item for item in equipment_specs}
+    for placement in equipment.placements:
+        spec = specs.get(placement.equipment_id)
+        if spec is None:
+            raise ValueError(f"Equipment placement references unknown equipment {placement.equipment_id}")
+        clearance = clearance_rect(spec, placement.rect, placement.rotated)
+        pdf.setStrokeColorRGB(0.35, 0.35, 0.75)
+        pdf.setLineWidth(0.45)
+        pdf.setDash(3, 2)
+        x, y = point(clearance.x, clearance.y)
+        right_x, top_y = point(clearance.right, clearance.top)
+        pdf.rect(x, y, right_x - x, top_y - y)
+        pdf.setDash()
+
+        pdf.setStrokeColorRGB(0.05, 0.25, 0.65)
+        pdf.setLineWidth(0.8)
+        physical_x, physical_y = point(placement.rect.x, placement.rect.y)
+        physical_right, physical_top = point(placement.rect.right, placement.rect.top)
+        pdf.rect(physical_x, physical_y, physical_right - physical_x, physical_top - physical_y)
+        pdf.setFillColorRGB(0.05, 0.25, 0.65)
+        font_size = max(3.5, min(7.0, placement.rect.height * (top_y - y) / max(clearance.height, 1.0) / 3.0))
+        pdf.setFont("Helvetica-Bold", font_size)
+        pdf.drawCentredString(
+            (physical_x + physical_right) / 2,
+            (physical_y + physical_top) / 2,
+            spec.id,
+        )
+        pdf.setFillColorRGB(0.0, 0.0, 0.0)
+
+
+def _equipment_block_name(equipment_id: str) -> str:
+    safe_id = re.sub(r"[^A-Za-z0-9_]+", "_", equipment_id).strip("_") or "EQUIPMENT"
+    return f"EQUIP_{safe_id}"
+
+
+def _equipment_label_height(rect: Rect) -> float:
+    return max(60.0, min(180.0, min(rect.width, rect.height) / 5.0))
+
+
+def _add_rect_polyline(
+    modelspace,
+    rect: Rect,
+    layer: str,
+    lineweight: int | None = None,
+    linetype: str | None = None,
+) -> None:
     attribs = {"layer": layer}
     if lineweight is not None:
         attribs["lineweight"] = lineweight
+    if linetype is not None:
+        attribs["linetype"] = linetype
     modelspace.add_lwpolyline(
         [(rect.x, rect.y), (rect.right, rect.y), (rect.right, rect.top), (rect.x, rect.top)],
         close=True,
