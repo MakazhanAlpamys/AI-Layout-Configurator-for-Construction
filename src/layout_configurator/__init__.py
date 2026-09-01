@@ -1,5 +1,6 @@
-"""Deterministic residential layout generator."""
+"""Deterministic building layout generator."""
 
+from .building import BuildingIR, BuildingSpecError, EquipmentSpec, FlowSpec, StructuralGridSpec, ZoneSpec
 from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
 from .brief import parse_llm_mapping, parse_text_brief
 from .multifloor import MultiFloorResult, MultiFloorSpec, MultiFloorValidationReport, VerticalCoreSpec, solve_multifloor, validate_multifloor
@@ -15,6 +16,12 @@ from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
 
 __all__ = [
     "InfeasibleLayout",
+    "BuildingIR",
+    "BuildingSpecError",
+    "ZoneSpec",
+    "EquipmentSpec",
+    "FlowSpec",
+    "StructuralGridSpec",
     "LayoutIR",
     "LayoutResult",
     "Rect",

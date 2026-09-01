@@ -1,0 +1,186 @@
+version: "0.2"
+project_name: "Commercial production pilot"
+
+layout:
+  version: "0.1"
+  tolerance: 0.05
+  grid_mm: 100
+  wall_thickness_mm: 200
+  door_width_mm: 900
+  window_width_mm: 1200
+  window_height_mm: 1500
+  window_sill_mm: 900
+  entry_room: receiving
+  boundary:
+    width: 30000
+    height: 18000
+    cutouts: []
+  rooms:
+    - id: receiving
+      type: receiving
+      target_area: 48
+      min_area: 40
+      max_area: 60
+      min_width: 5000
+      min_depth: 6000
+      required_adjacency: [raw_storage]
+    - id: raw_storage
+      type: storage_raw
+      target_area: 72
+      min_area: 60
+      max_area: 90
+      min_width: 6000
+      min_depth: 8000
+      required_adjacency: [receiving, preparation]
+    - id: preparation
+      type: preparation
+      target_area: 80
+      min_area: 65
+      max_area: 95
+      min_width: 7000
+      min_depth: 8000
+      required_adjacency: [raw_storage, production]
+    - id: production
+      type: clean_production
+      target_area: 160
+      min_area: 140
+      max_area: 190
+      min_width: 10000
+      min_depth: 10000
+      required_adjacency: [preparation, packaging]
+    - id: packaging
+      type: packaging
+      target_area: 90
+      min_area: 75
+      max_area: 110
+      min_width: 7000
+      min_depth: 9000
+      required_adjacency: [production, finished_storage]
+    - id: finished_storage
+      type: storage_finished
+      target_area: 70
+      min_area: 55
+      max_area: 85
+      min_width: 6000
+      min_depth: 8000
+      required_adjacency: [packaging, dispatch]
+    - id: dispatch
+      type: dispatch
+      target_area: 42
+      min_area: 35
+      max_area: 55
+      min_width: 4000
+      min_depth: 6000
+      required_adjacency: [finished_storage]
+    - id: staff_changing
+      type: changing_room
+      target_area: 36
+      min_area: 30
+      max_area: 45
+      min_width: 4000
+      min_depth: 5000
+      required_adjacency: [staff_corridor]
+    - id: staff_corridor
+      type: corridor
+      target_area: 54
+      min_area: 45
+      max_area: 65
+      min_width: 1800
+      min_depth: 1800
+      required_adjacency: [staff_changing, production, office]
+    - id: office
+      type: office
+      target_area: 32
+      min_area: 25
+      max_area: 40
+      min_width: 4000
+      min_depth: 5000
+      needs_daylight: true
+      required_adjacency: [staff_corridor]
+
+zones:
+  - id: logistics
+    type: logistics
+    room_ids: [receiving, raw_storage, finished_storage, dispatch]
+    required_adjacency: [production_zone]
+  - id: production_zone
+    type: production
+    room_ids: [preparation, production, packaging]
+    required_adjacency: [logistics]
+  - id: staff_zone
+    type: staff
+    room_ids: [staff_changing, staff_corridor, office]
+    required_adjacency: [production_zone]
+
+equipment:
+  - id: mixer_01
+    type: mixer
+    room_id: preparation
+    width_mm: 1800
+    depth_mm: 1400
+    clearance_front_mm: 1200
+    clearance_left_mm: 600
+    clearance_right_mm: 600
+    rotation_allowed: false
+  - id: production_line_01
+    type: production_line
+    room_id: production
+    width_mm: 9000
+    depth_mm: 2200
+    clearance_front_mm: 1800
+    clearance_back_mm: 1200
+    clearance_left_mm: 900
+    clearance_right_mm: 900
+    rotation_allowed: false
+    fixed: true
+  - id: packaging_line_01
+    type: packaging_line
+    room_id: packaging
+    width_mm: 6000
+    depth_mm: 1800
+    clearance_front_mm: 1500
+    clearance_back_mm: 900
+    clearance_left_mm: 600
+    clearance_right_mm: 600
+  - id: cold_store_01
+    type: cold_store
+    room_id: raw_storage
+    width_mm: 2800
+    depth_mm: 3200
+    clearance_mm: 900
+    rotation_allowed: false
+  - id: loading_dock_01
+    type: loading_dock
+    room_id: receiving
+    width_mm: 3000
+    depth_mm: 2500
+    clearance_front_mm: 2500
+    rotation_allowed: false
+
+flows:
+  - id: material_in
+    type: material
+    from_ids: [receiving]
+    to_ids: [raw_storage]
+    minimum_clear_width_mm: 1800
+  - id: material_to_production
+    type: material
+    from_ids: [raw_storage]
+    to_ids: [preparation, production]
+    minimum_clear_width_mm: 1800
+  - id: finished_goods
+    type: finished_goods
+    from_ids: [packaging]
+    to_ids: [finished_storage, dispatch]
+    minimum_clear_width_mm: 1800
+  - id: staff_access
+    type: people
+    from_ids: [staff_changing]
+    to_ids: [production]
+    minimum_clear_width_mm: 1200
+
+structural_grid:
+  axes_x_mm: [0, 6000, 12000, 18000, 24000, 30000]
+  axes_y_mm: [0, 6000, 12000, 18000]
+  labels_x: [A, B, C, D, E, F]
+  labels_y: [1, 2, 3, 4]

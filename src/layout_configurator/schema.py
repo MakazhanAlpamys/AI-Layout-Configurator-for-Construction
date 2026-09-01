@@ -1,4 +1,4 @@
-"""JSON Schema boundary for canonical ``LayoutIR`` documents."""
+"""JSON Schema boundaries for canonical ``LayoutIR`` and ``BuildingIR`` documents."""
 
 from __future__ import annotations
 
@@ -7,9 +7,11 @@ import json
 from pathlib import Path
 from typing import Any, Mapping
 
+from .building import BuildingIR
 from .models import LayoutIR
 
 DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "layout_ir.schema.json"
+DEFAULT_BUILDING_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "building_ir.schema.json"
 
 
 @dataclass(frozen=True)
@@ -89,3 +91,29 @@ def load_canonical_spec(path: str | Path, schema_path: str | Path = DEFAULT_SCHE
     """Load a file through the strict canonical LayoutIR boundary."""
 
     return normalize_mapping(load_mapping(path), schema_path)
+
+
+def validate_building(building: BuildingIR, schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH) -> tuple[SchemaIssue, ...]:
+    """Validate the normalized serialization emitted by ``BuildingIR.to_dict``."""
+
+    return validate_mapping(building.to_dict(), schema_path)
+
+
+def normalize_building_mapping(
+    mapping: Mapping[str, Any], schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH
+) -> BuildingIR:
+    """Validate an extended building program before converting it to ``BuildingIR``."""
+
+    issues = validate_mapping(mapping, schema_path)
+    if issues:
+        details = "; ".join(f"{issue.path}: {issue.message}" for issue in issues)
+        raise ValueError(f"Canonical BuildingIR does not match schema: {details}")
+    return BuildingIR.from_mapping(mapping)
+
+
+def load_canonical_building(
+    path: str | Path, schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH
+) -> BuildingIR:
+    """Load a file through the strict canonical ``BuildingIR`` boundary."""
+
+    return normalize_building_mapping(load_mapping(path), schema_path)

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/building-ir-0.2.json",
+  "title": "BuildingIR 0.2",
+  "description": "Canonical dense-building program. Coordinates are solver output and are not accepted here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "project_name", "layout", "zones", "equipment", "flows"],
+  "properties": {
+    "version": {"type": "string", "minLength": 1},
+    "project_name": {"type": "string", "minLength": 1},
+    "layout": {"type": "object", "minProperties": 1},
+    "zones": {"type": "array", "items": {"$ref": "#/$defs/zone"}},
+    "equipment": {"type": "array", "items": {"$ref": "#/$defs/equipment"}},
+    "flows": {"type": "array", "items": {"$ref": "#/$defs/flow"}},
+    "structural_grid": {"$ref": "#/$defs/structuralGrid"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1},
+    "positiveNumber": {"type": "number", "exclusiveMinimum": 0},
+    "nonNegativeNumber": {"type": "number", "minimum": 0},
+    "idList": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/id"}
+    },
+    "zone": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "room_ids", "required_adjacency", "preferred_adjacency", "forbidden_adjacency"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "type": {"$ref": "#/$defs/id"},
+        "room_ids": {"$ref": "#/$defs/idList"},
+        "parent_zone_id": {"$ref": "#/$defs/id"},
+        "required_adjacency": {"$ref": "#/$defs/idList"},
+        "preferred_adjacency": {"$ref": "#/$defs/idList"},
+        "forbidden_adjacency": {"$ref": "#/$defs/idList"}
+      }
+    },
+    "equipment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "width_mm", "depth_mm", "clearance_front_mm", "clearance_back_mm", "clearance_left_mm", "clearance_right_mm", "rotation_allowed", "fixed"],
+      "anyOf": [{"required": ["room_id"]}, {"required": ["zone_id"]}],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "type": {"$ref": "#/$defs/id"},
+        "room_id": {"$ref": "#/$defs/id"},
+        "zone_id": {"$ref": "#/$defs/id"},
+        "width_mm": {"$ref": "#/$defs/positiveNumber"},
+        "depth_mm": {"$ref": "#/$defs/positiveNumber"},
+        "clearance_front_mm": {"$ref": "#/$defs/nonNegativeNumber"},
+        "clearance_back_mm": {"$ref": "#/$defs/nonNegativeNumber"},
+        "clearance_left_mm": {"$ref": "#/$defs/nonNegativeNumber"},
+        "clearance_right_mm": {"$ref": "#/$defs/nonNegativeNumber"},
+        "rotation_allowed": {"type": "boolean"},
+        "fixed": {"type": "boolean"}
+      }
+    },
+    "flow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "from_ids", "to_ids", "minimum_clear_width_mm", "required"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "type": {"$ref": "#/$defs/id"},
+        "from_ids": {"$ref": "#/$defs/idList"},
+        "to_ids": {"$ref": "#/$defs/idList"},
+        "minimum_clear_width_mm": {"$ref": "#/$defs/positiveNumber"},
+        "required": {"type": "boolean"}
+      }
+    },
+    "structuralGrid": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["axes_x_mm", "axes_y_mm"],
+      "properties": {
+        "axes_x_mm": {"type": "array", "items": {"$ref": "#/$defs/nonNegativeNumber"}, "minItems": 1, "uniqueItems": true},
+        "axes_y_mm": {"type": "array", "items": {"$ref": "#/$defs/nonNegativeNumber"}, "minItems": 1, "uniqueItems": true},
+        "labels_x": {"$ref": "#/$defs/idList"},
+        "labels_y": {"$ref": "#/$defs/idList"}
+      }
+    }
+  }
+}
