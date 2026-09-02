@@ -172,7 +172,12 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  - {issue.code}: {issue.message}", file=sys.stderr)
                 return 3
             try:
-                equipment = place_equipment(building, result)
+                equipment = place_equipment(
+                    building,
+                    result,
+                    time_limit_seconds=args.time_limit,
+                    seed=args.seed,
+                )
                 equipment_report = validate_equipment_layout(building, result, equipment)
                 if not equipment_report.ok:
                     raise EquipmentPlacementError(

@@ -73,44 +73,142 @@ class EquipmentValidationReport:
         return not self.issues
 
 
-def place_equipment(building: BuildingIR, layout: LayoutResult) -> EquipmentLayoutResult:
-    """Place equipment on the construction grid using deterministic first-fit packing.
+def place_equipment(
+    building: BuildingIR,
+    layout: LayoutResult,
+    *,
+    time_limit_seconds: float = 10.0,
+    seed: int = 42,
+) -> EquipmentLayoutResult:
+    """Place equipment with a CP-SAT rectangle packer.
 
-    The room solver owns room coordinates.  This second-stage packer only chooses
-    equipment coordinates inside those rooms, respecting wall thickness,
-    service clearances, anchors and already placed equipment.
+    Room coordinates are already fixed by the room solver.  This second-stage
+    solver chooses one host room and orientation for every equipment item, then
+    packs its *clearance rectangle* with ``NoOverlap2D``.  Equipment coordinates
+    remain solver output; the independent validator below is still the final
+    authority for the returned result.
     """
 
-    placements: list[EquipmentPlacement] = []
-    occupied: list[tuple[EquipmentPlacement, Rect]] = []
-    ordered = sorted(building.equipment, key=lambda item: (not item.fixed, item.id))
+    if time_limit_seconds <= 0:
+        raise ValueError("Equipment placement time limit must be positive")
+    try:
+        from ortools.sat.python import cp_model
+    except ImportError as exc:  # pragma: no cover - dependency is declared in pyproject.toml
+        raise RuntimeError("Install project dependencies: pip install -e .") from exc
 
-    for item in ordered:
-        candidate_rooms = _candidate_rooms(building, item)
-        placed: EquipmentPlacement | None = None
-        for room_id in candidate_rooms:
+    ordered = sorted(building.equipment, key=lambda item: (not item.fixed, item.id))
+    scale = 1_000
+    grid = building.layout.grid_mm * scale
+    boundary_width = _solver_units(building.layout.boundary.width_mm, scale)
+    boundary_height = _solver_units(building.layout.boundary.height_mm, scale)
+    model = cp_model.CpModel()
+    clearance_x_intervals = []
+    clearance_y_intervals = []
+    variables: dict[str, tuple[object, object, list[tuple[object, str, bool]]]] = {}
+
+    for index, item in enumerate(ordered):
+        x = model.NewIntVar(0, boundary_width, f"equipment_{item.id}_x")
+        y = model.NewIntVar(0, boundary_height, f"equipment_{item.id}_y")
+        options: list[tuple[object, str, bool]] = []
+        for room_id in _candidate_rooms(building, item):
             room_rect = layout.placements.get(room_id)
             if room_rect is None:
                 continue
             usable = _usable_room_rect(room_rect, building.layout.wall_thickness_mm)
             for rotated in _orientations(item):
-                for physical, clearance in _candidate_rects(item, usable, rotated, building.layout.grid_mm):
-                    if any(clearance.intersection_area(other_clearance) > 1e-6 for _, other_clearance in occupied):
-                        continue
-                    candidate = EquipmentPlacement(item.id, room_id, physical, rotated)
-                    placed = candidate
-                    occupied.append((candidate, clearance))
-                    placements.append(candidate)
-                    break
-                if placed is not None:
-                    break
-            if placed is not None:
-                break
-        if placed is None:
-            room_text = ", ".join(candidate_rooms) or "no eligible room"
+                option = _equipment_option(item, usable, rotated)
+                if option is None:
+                    continue
+                width, depth, left, right, bottom, top, x_min, x_max, y_min, y_max = option
+                choice = model.NewBoolVar(f"equipment_{item.id}_{room_id}_{int(rotated)}")
+                options.append((choice, room_id, rotated))
+                model.Add(x >= _ceil_solver_units(x_min, scale)).OnlyEnforceIf(choice)
+                model.Add(x <= _floor_solver_units(x_max, scale)).OnlyEnforceIf(choice)
+                model.Add(y >= _ceil_solver_units(y_min, scale)).OnlyEnforceIf(choice)
+                model.Add(y <= _floor_solver_units(y_max, scale)).OnlyEnforceIf(choice)
+                if item.anchor_side is not None:
+                    anchor_x, anchor_y = _anchor_position(item, usable, rotated)
+                    model.Add(x == _solver_units(anchor_x, scale)).OnlyEnforceIf(choice)
+                    model.Add(y == _solver_units(anchor_y, scale)).OnlyEnforceIf(choice)
+
+                clearance_width = _solver_units(width + left + right, scale)
+                clearance_height = _solver_units(depth + bottom + top, scale)
+                clearance_x_start = x - _solver_units(left, scale)
+                clearance_y_start = y - _solver_units(bottom, scale)
+                clearance_x_end = clearance_x_start + clearance_width
+                clearance_y_end = clearance_y_start + clearance_height
+                clearance_x_intervals.append(
+                    model.NewOptionalIntervalVar(
+                        clearance_x_start,
+                        clearance_width,
+                        clearance_x_end,
+                        choice,
+                        f"equipment_{item.id}_{room_id}_{int(rotated)}_clearance_x",
+                    )
+                )
+                clearance_y_intervals.append(
+                    model.NewOptionalIntervalVar(
+                        clearance_y_start,
+                        clearance_height,
+                        clearance_y_end,
+                        choice,
+                        f"equipment_{item.id}_{room_id}_{int(rotated)}_clearance_y",
+                    )
+                )
+
+        if not options:
+            room_text = ", ".join(_candidate_rooms(building, item)) or "no eligible room"
             raise EquipmentPlacementError(
-                f"Equipment {item.id} cannot be placed with its footprint and clearance; candidates: {room_text}"
+                f"Equipment {item.id} cannot fit its footprint and clearance in any eligible room; candidates: {room_text}"
             )
+        model.AddExactlyOne([choice for choice, _, _ in options])
+        if item.anchor_side is None:
+            x_remainder = model.NewIntVar(0, max(0, grid - 1), f"equipment_{item.id}_x_grid_remainder")
+            y_remainder = model.NewIntVar(0, max(0, grid - 1), f"equipment_{item.id}_y_grid_remainder")
+            model.AddModuloEquality(x_remainder, x, grid)
+            model.AddModuloEquality(y_remainder, y, grid)
+            model.Add(x_remainder == 0)
+            model.Add(y_remainder == 0)
+        variables[item.id] = (x, y, options)
+
+    model.AddNoOverlap2D(clearance_x_intervals, clearance_y_intervals)
+    # Keep placement reproducible and compact.  The option rank only breaks
+    # ties; position is the primary objective, so the solver still has freedom
+    # to use a different room/orientation when the first choice is infeasible.
+    position_terms = []
+    option_terms = []
+    for index, item in enumerate(ordered):
+        x, y, options = variables[item.id]
+        position_terms.append((len(ordered) - index) * (x + y))
+        for option_index, (choice, _, rotated) in enumerate(options):
+            option_terms.append(choice * (option_index + (1 if rotated else 0)))
+    model.Minimize(sum(position_terms) * 100 + sum(option_terms))
+
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = float(time_limit_seconds)
+    solver.parameters.random_seed = int(seed)
+    solver.parameters.num_search_workers = 1
+    solver.parameters.log_search_progress = False
+    status = solver.Solve(model)
+    if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+        raise EquipmentPlacementError(
+            "Equipment solver found no placement satisfying all footprints, clearances and room assignments"
+        )
+
+    placements: list[EquipmentPlacement] = []
+    for item in ordered:
+        x, y, options = variables[item.id]
+        selected = next((room_id, rotated) for choice, room_id, rotated in options if solver.Value(choice))
+        room_id, rotated = selected
+        width, depth, *_ = _oriented_dimensions(item, rotated)
+        placements.append(
+            EquipmentPlacement(
+                item.id,
+                room_id,
+                Rect(solver.Value(x) / scale, solver.Value(y) / scale, width, depth),
+                rotated,
+            )
+        )
 
     result = EquipmentLayoutResult(tuple(placements))
     report = validate_equipment_layout(building, layout, result)
@@ -283,38 +381,38 @@ def _orientations(item: EquipmentSpec) -> tuple[bool, ...]:
     return (False, True) if item.rotation_allowed and item.width_mm != item.depth_mm else (False,)
 
 
-def _candidate_rects(item: EquipmentSpec, usable: Rect, rotated: bool, grid: int):
+def _equipment_option(item: EquipmentSpec, usable: Rect, rotated: bool):
+    """Return dimensions and legal coordinate bounds for one room/orientation."""
+
     width, depth, left, right, bottom, top = _oriented_dimensions(item, rotated)
     x_min = usable.x + left
     x_max = usable.right - right - width
     y_min = usable.y + bottom
     y_max = usable.top - top - depth
     if x_min > x_max + 1e-6 or y_min > y_max + 1e-6:
-        return
+        return None
 
     if item.anchor_side is not None:
-        if item.anchor_side == "left":
-            x_values = (x_min,)
-            y_values = (y_min + item.anchor_offset_mm,)
-        elif item.anchor_side == "right":
-            x_values = (x_max,)
-            y_values = (y_min + item.anchor_offset_mm,)
-        elif item.anchor_side == "bottom":
-            x_values = (x_min + item.anchor_offset_mm,)
-            y_values = (y_min,)
-        else:
-            x_values = (x_min + item.anchor_offset_mm,)
-            y_values = (y_max,)
-    else:
-        x_values = _grid_values(x_min, x_max, grid)
-        y_values = _grid_values(y_min, y_max, grid)
+        anchor_x, anchor_y = _anchor_position(item, usable, rotated)
+        if not (x_min - 1e-6 <= anchor_x <= x_max + 1e-6 and y_min - 1e-6 <= anchor_y <= y_max + 1e-6):
+            return None
 
-    for y in y_values:
-        for x in x_values:
-            physical = Rect(float(x), float(y), width, depth)
-            clearance = clearance_rect(item, physical, rotated)
-            if _contains(usable, clearance):
-                yield physical, clearance
+    return width, depth, left, right, bottom, top, x_min, x_max, y_min, y_max
+
+
+def _anchor_position(item: EquipmentSpec, usable: Rect, rotated: bool) -> tuple[float, float]:
+    width, depth, left, right, bottom, top = _oriented_dimensions(item, rotated)
+    x_min = usable.x + left
+    x_max = usable.right - right - width
+    y_min = usable.y + bottom
+    y_max = usable.top - top - depth
+    if item.anchor_side == "left":
+        return x_min, y_min + item.anchor_offset_mm
+    if item.anchor_side == "right":
+        return x_max, y_min + item.anchor_offset_mm
+    if item.anchor_side == "bottom":
+        return x_min + item.anchor_offset_mm, y_min
+    return x_min + item.anchor_offset_mm, y_max
 
 
 def _oriented_dimensions(item: EquipmentSpec, rotated: bool):
@@ -345,12 +443,16 @@ def _usable_room_rect(room: Rect, wall_thickness_mm: float) -> Rect:
     return Rect(room.x + inset, room.y + inset, room.width - 2 * inset, room.height - 2 * inset)
 
 
-def _grid_values(low: float, high: float, grid: int) -> tuple[float, ...]:
-    first = math.ceil((low - 1e-9) / grid) * grid
-    last = math.floor((high + 1e-9) / grid) * grid
-    if first > last:
-        return ()
-    return tuple(float(value) for value in range(int(first), int(last) + 1, grid))
+def _solver_units(value: float, scale: int) -> int:
+    return int(round(value * scale))
+
+
+def _ceil_solver_units(value: float, scale: int) -> int:
+    return math.ceil(value * scale - 1e-9)
+
+
+def _floor_solver_units(value: float, scale: int) -> int:
+    return math.floor(value * scale + 1e-9)
 
 
 def _contains(container: Rect, candidate: Rect) -> bool:

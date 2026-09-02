@@ -12,13 +12,14 @@ from layout_configurator.equipment import (
     EquipmentLayoutResult,
     EquipmentPlacement,
     place_equipment,
+    EquipmentPlacementError,
     validate_equipment_layout,
 )
 from layout_configurator.models import LayoutResult, Rect
 
 
 class EquipmentTests(unittest.TestCase):
-    def test_first_fit_respects_wall_inset_and_clearance(self):
+    def test_cp_sat_respects_wall_inset_and_clearance(self):
         building = _building(
             [
                 {
@@ -44,6 +45,35 @@ class EquipmentTests(unittest.TestCase):
         self.assertGreaterEqual(clearance["x"], 100)
         self.assertGreaterEqual(clearance["y"], 100)
         self.assertTrue(validate_equipment_layout(building, _rooms(), result).ok)
+
+    def test_cp_sat_packs_multiple_equipment_without_clearance_collisions(self):
+        building = _building(
+            [
+                {"id": "press", "type": "machine", "room_id": "production", "width_mm": 2200, "depth_mm": 1800, "clearance_mm": 400},
+                {"id": "packer", "type": "machine", "room_id": "production", "width_mm": 2200, "depth_mm": 1800, "clearance_mm": 400},
+                {"id": "bench", "type": "bench", "room_id": "production", "width_mm": 1000, "depth_mm": 1000, "clearance_mm": 300},
+            ],
+            room_width=6000,
+            room_height=5000,
+        )
+
+        result = place_equipment(building, _rooms(), seed=7)
+
+        self.assertEqual({item.equipment_id for item in result.placements}, {"press", "packer", "bench"})
+        self.assertTrue(validate_equipment_layout(building, _rooms(), result).ok)
+
+    def test_cp_sat_rejects_infeasible_clearance_program(self):
+        building = _building(
+            [
+                {"id": "a", "type": "machine", "room_id": "production", "width_mm": 2500, "depth_mm": 2500, "clearance_mm": 500},
+                {"id": "b", "type": "machine", "room_id": "production", "width_mm": 2500, "depth_mm": 2500, "clearance_mm": 500},
+            ],
+            room_width=6000,
+            room_height=5000,
+        )
+
+        with self.assertRaises(EquipmentPlacementError):
+            place_equipment(building, _rooms(), time_limit_seconds=2)
 
     def test_rotates_when_only_rotated_footprint_fits(self):
         building = _building(
