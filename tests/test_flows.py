@@ -102,8 +102,11 @@ class FlowRoutingTests(unittest.TestCase):
             )
             document = ezdxf.readfile(dxf_path)
             flow_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-FLOW"]
+            axis_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-AXIS"]
             self.assertEqual(len([entity for entity in flow_entities if entity.dxftype() == "LWPOLYLINE"]), 1)
             self.assertEqual(len([entity for entity in flow_entities if entity.dxftype() == "TEXT"]), 1)
+            self.assertEqual(len([entity for entity in axis_entities if entity.dxftype() == "LINE"]), 5)
+            self.assertEqual(len([entity for entity in axis_entities if entity.dxftype() == "TEXT"]), 5)
             self.assertEqual(Path(pdf_path).read_bytes()[:8], b"%PDF-1.3")
 
 
@@ -151,6 +154,12 @@ def _building(*, minimum_width, equipment=()):
                     "minimum_clear_width_mm": minimum_width,
                 }
             ],
+            "structural_grid": {
+                "axes_x_mm": [0, 3000, 6000],
+                "axes_y_mm": [0, 3000],
+                "labels_x": ["A", "B", "C"],
+                "labels_y": ["1", "2"],
+            },
         }
     )
 

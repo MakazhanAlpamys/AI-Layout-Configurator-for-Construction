@@ -6,7 +6,7 @@ import re
 from collections.abc import Iterable
 from pathlib import Path
 
-from .building import BuildingIR, EquipmentSpec
+from .building import BuildingIR, EquipmentSpec, StructuralGridSpec
 from .equipment import EquipmentLayoutResult, clearance_rect
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
@@ -26,6 +26,7 @@ LAYERS = (
     "A-EQUIP",
     "A-CLEARANCE",
     "A-FLOW",
+    "A-AXIS",
 )
 
 
@@ -36,6 +37,7 @@ def export_dxf(
     equipment: EquipmentLayoutResult | None = None,
     equipment_specs: Iterable[EquipmentSpec] | None = None,
     flows: FlowRoutingResult | None = None,
+    structural_grid: StructuralGridSpec | None = None,
 ) -> None:
     import ezdxf
     from ezdxf.enums import TextEntityAlignment
@@ -55,6 +57,7 @@ def export_dxf(
         ("A-EQUIP", 1),
         ("A-CLEARANCE", 6),
         ("A-FLOW", 5),
+        ("A-AXIS", 9),
     ):
         document.layers.get(name).dxf.color = color
 
@@ -116,6 +119,8 @@ def export_dxf(
         _draw_equipment_dxf(document, modelspace, equipment, equipment_specs or ())
     if flows is not None:
         _draw_flows_dxf(modelspace, flows)
+    if structural_grid is not None:
+        _draw_structural_grid_dxf(modelspace, spec, structural_grid)
 
     title_x = boundary.width_mm - 3_000
     title_y = boundary.height_mm + 1_000
@@ -136,7 +141,7 @@ def export_building_dxf(
 ) -> None:
     """Export a building result with equipment blocks and service envelopes."""
 
-    export_dxf(path, building.layout, result, equipment, building.equipment, flows)
+    export_dxf(path, building.layout, result, equipment, building.equipment, flows, building.structural_grid)
 
 
 def export_pdf(
@@ -148,6 +153,7 @@ def export_pdf(
     equipment_specs: Iterable[EquipmentSpec] | None = None,
     flows: FlowRoutingResult | None = None,
     flow_report: FlowValidationReport | None = None,
+    structural_grid: StructuralGridSpec | None = None,
 ) -> None:
     from reportlab.lib.pagesizes import A3, landscape
     from reportlab.pdfgen import canvas
@@ -206,6 +212,8 @@ def export_pdf(
         _draw_equipment_pdf(pdf, point, equipment, equipment_specs or ())
     if flows is not None:
         _draw_flows_pdf(pdf, point, flows)
+    if structural_grid is not None:
+        _draw_structural_grid_pdf(pdf, point, spec, structural_grid)
 
     pdf.setStrokeColorRGB(0.2, 0.2, 0.2)
     pdf.setFont("Helvetica-Bold", 12)
@@ -230,7 +238,7 @@ def export_building_pdf(
 ) -> None:
     """Export a building result with vector equipment and clearance overlays."""
 
-    export_pdf(path, building.layout, result, report, equipment, building.equipment, flows, flow_report)
+    export_pdf(path, building.layout, result, report, equipment, building.equipment, flows, flow_report, building.structural_grid)
 
 
 def export_bundle(directory: str | Path, spec: LayoutIR, result: LayoutResult, report: ValidationReport | None = None) -> tuple[Path, Path]:
@@ -317,6 +325,29 @@ def _draw_flows_dxf(modelspace, flows: FlowRoutingResult) -> None:
         ).set_placement(route.points[0])
 
 
+def _draw_structural_grid_dxf(modelspace, spec: LayoutIR, grid: StructuralGridSpec) -> None:
+    x_labels = grid.labels_x or tuple(str(index + 1) for index in range(len(grid.axes_x_mm)))
+    y_labels = grid.labels_y or tuple(str(index + 1) for index in range(len(grid.axes_y_mm)))
+    for axis, label in zip(grid.axes_x_mm, x_labels):
+        modelspace.add_line(
+            (axis, -600),
+            (axis, spec.boundary.height_mm + 600),
+            dxfattribs={"layer": "A-AXIS", "linetype": "DASHED"},
+        )
+        modelspace.add_text(label, dxfattribs={"height": 140, "layer": "A-AXIS"}).set_placement(
+            (axis, spec.boundary.height_mm + 800)
+        )
+    for axis, label in zip(grid.axes_y_mm, y_labels):
+        modelspace.add_line(
+            (-600, axis),
+            (spec.boundary.width_mm + 600, axis),
+            dxfattribs={"layer": "A-AXIS", "linetype": "DASHED"},
+        )
+        modelspace.add_text(label, dxfattribs={"height": 140, "layer": "A-AXIS"}).set_placement(
+            (-800, axis)
+        )
+
+
 def _draw_equipment_pdf(pdf, point, equipment: EquipmentLayoutResult, equipment_specs: Iterable[EquipmentSpec]) -> None:
     specs = {item.id: item for item in equipment_specs}
     for placement in equipment.placements:
@@ -364,6 +395,26 @@ def _draw_flows_pdf(pdf, point, flows: FlowRoutingResult) -> None:
         pdf.drawPath(path, stroke=1, fill=0)
         pdf.drawString(first_x + 2, first_y + 2, f"FLOW {route.flow_id}")
     pdf.setDash()
+
+
+def _draw_structural_grid_pdf(pdf, point, spec: LayoutIR, grid: StructuralGridSpec) -> None:
+    x_labels = grid.labels_x or tuple(str(index + 1) for index in range(len(grid.axes_x_mm)))
+    y_labels = grid.labels_y or tuple(str(index + 1) for index in range(len(grid.axes_y_mm)))
+    pdf.setStrokeColorRGB(0.65, 0.65, 0.65)
+    pdf.setFillColorRGB(0.35, 0.35, 0.35)
+    pdf.setLineWidth(0.35)
+    pdf.setDash(2, 2)
+    pdf.setFont("Helvetica", 6)
+    for axis, label in zip(grid.axes_x_mm, x_labels):
+        pdf.line(*point(axis, 0), *point(axis, spec.boundary.height_mm))
+        label_x, label_y = point(axis, spec.boundary.height_mm)
+        pdf.drawCentredString(label_x, label_y + 3, label)
+    for axis, label in zip(grid.axes_y_mm, y_labels):
+        pdf.line(*point(0, axis), *point(spec.boundary.width_mm, axis))
+        label_x, label_y = point(0, axis)
+        pdf.drawRightString(label_x - 3, label_y, label)
+    pdf.setDash()
+    pdf.setFillColorRGB(0.0, 0.0, 0.0)
 
 
 def _equipment_block_name(equipment_id: str) -> str:
