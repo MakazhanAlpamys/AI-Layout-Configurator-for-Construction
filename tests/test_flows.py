@@ -50,6 +50,43 @@ class FlowRoutingTests(unittest.TestCase):
 
         self.assertIn("equipment_clearance_collision", {issue.code for issue in report.issues})
 
+    def test_routes_around_clearance_when_free_room_space_exists(self):
+        building = _building(
+            minimum_width=800,
+            equipment=[
+                {
+                    "id": "source_machine",
+                    "type": "machine",
+                    "room_id": "source",
+                    "width_mm": 500,
+                    "depth_mm": 500,
+                    "clearance_mm": 100,
+                },
+                {
+                    "id": "obstacle",
+                    "type": "machine",
+                    "room_id": "source",
+                    "width_mm": 400,
+                    "depth_mm": 400,
+                    "clearance_mm": 100,
+                },
+            ],
+        )
+        payload = building.to_dict()
+        payload["flows"][0]["from_ids"] = ["source_machine"]
+        building = BuildingIR.from_mapping(payload)
+        equipment = EquipmentLayoutResult(
+            (
+                EquipmentPlacement("source_machine", "source", Rect(700, 1200, 500, 500)),
+                EquipmentPlacement("obstacle", "source", Rect(1600, 1000, 400, 400)),
+            )
+        )
+        routes = route_flows(building, _layout(), equipment)
+        report = validate_flow_routes(building, _layout(), routes, equipment)
+
+        self.assertNotIn("equipment_clearance_collision", {issue.code for issue in report.issues})
+        self.assertGreater(len(routes.routes[0].points), 3)
+
     def test_exports_flow_route_as_editable_dxf_and_vector_pdf_geometry(self):
         building = _building(minimum_width=800)
         layout = _layout()

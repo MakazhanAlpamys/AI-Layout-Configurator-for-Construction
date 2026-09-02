@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass
+import math
 from typing import Iterable
 
 from shapely.geometry import LineString, box
@@ -111,6 +112,8 @@ def route_flows(
                     target,
                     layout,
                     flow.minimum_clear_width_mm,
+                    building,
+                    equipment,
                 )
                 routes.append(
                     FlowRoute(
@@ -310,6 +313,8 @@ def _route_points(
     target: _Endpoint,
     layout: LayoutResult,
     minimum_clear_width_mm: float,
+    building: BuildingIR,
+    equipment: EquipmentLayoutResult | None,
 ) -> tuple[tuple[float, float], ...]:
     if len(room_path) == 1:
         start = source.point or layout.placements[room_path[0]].center
@@ -319,15 +324,31 @@ def _route_points(
     portal_offset = max(500.0, minimum_clear_width_mm / 2 + 50.0)
     points: list[tuple[float, float]] = []
     for index, room_id in enumerate(room_path):
+        room_points: list[tuple[float, float]] = []
         if index == 0:
-            points.append(source.point or _inward_point(layout.placements[room_id], openings[0], portal_offset))
+            room_points.append(source.point or _inward_point(layout.placements[room_id], openings[0], portal_offset))
         else:
-            points.append(openings[index - 1].center)
+            room_points.append(openings[index - 1].center)
         if index < len(room_path) - 1:
-            points.append(_inward_point(layout.placements[room_id], openings[index], portal_offset))
-            points.append(openings[index].center)
+            room_points.append(_inward_point(layout.placements[room_id], openings[index], portal_offset))
         else:
-            points.append(target.point or _inward_point(layout.placements[room_id], openings[index - 1], portal_offset))
+            room_points.append(target.point or _inward_point(layout.placements[room_id], openings[index - 1], portal_offset))
+        room_obstacles = _room_clearance_obstacles(
+            room_id,
+            building,
+            equipment,
+            excluded={source.source_id, target.source_id},
+        )
+        room_route = _route_around_obstacles(
+            room_points[0],
+            room_points[1],
+            layout.placements[room_id],
+            room_obstacles,
+            minimum_clear_width_mm,
+        )
+        points.extend(room_route)
+        if index < len(room_path) - 1:
+            points.append(openings[index].center)
     return _deduplicate_points(points)
 
 
@@ -346,6 +367,104 @@ def _graph_opening(graph, room_a: str, room_b: str) -> DoorOpening | None:
         if neighbor == room_b:
             return opening
     return None
+
+
+def _room_clearance_obstacles(
+    room_id: str,
+    building: BuildingIR,
+    equipment: EquipmentLayoutResult | None,
+    *,
+    excluded: set[str],
+) -> tuple[Rect, ...]:
+    if equipment is None:
+        return ()
+    specs = {item.id: item for item in building.equipment}
+    return tuple(
+        clearance_rect(specs[placement.equipment_id], placement.rect, placement.rotated)
+        for placement in equipment.placements
+        if placement.room_id == room_id
+        and placement.equipment_id not in excluded
+        and placement.equipment_id in specs
+    )
+
+
+def _route_around_obstacles(
+    start: tuple[float, float],
+    end: tuple[float, float],
+    room: Rect,
+    obstacles: tuple[Rect, ...],
+    width_mm: float,
+) -> tuple[tuple[float, float], ...]:
+    """Find a shortest visible polyline whose swept corridor avoids obstacles."""
+
+    if not obstacles or _segment_is_clear(start, end, obstacles, width_mm):
+        return (start, end)
+
+    half_width = width_mm / 2
+    nodes: list[tuple[float, float]] = [start, end]
+    for obstacle in obstacles:
+        margin = half_width
+        expanded = Rect(
+            obstacle.x - margin,
+            obstacle.y - margin,
+            obstacle.width + 2 * margin,
+            obstacle.height + 2 * margin,
+        )
+        for candidate in (
+            (expanded.x, expanded.y),
+            (expanded.right, expanded.y),
+            (expanded.right, expanded.top),
+            (expanded.x, expanded.top),
+        ):
+            if (
+                room.x + half_width <= candidate[0] <= room.right - half_width
+                and room.y + half_width <= candidate[1] <= room.top - half_width
+            ):
+                nodes.append(candidate)
+    nodes = list(dict.fromkeys(nodes))
+    if len(nodes) <= 2:
+        return (start, end)
+
+    edges: dict[int, list[tuple[int, float]]] = {index: [] for index in range(len(nodes))}
+    for left in range(len(nodes)):
+        for right in range(left + 1, len(nodes)):
+            if not _segment_is_clear(nodes[left], nodes[right], obstacles, width_mm):
+                continue
+            distance = math.dist(nodes[left], nodes[right])
+            edges[left].append((right, distance))
+            edges[right].append((left, distance))
+
+    best: dict[int, tuple[float, tuple[int, ...]]] = {0: (0.0, (0,))}
+    pending = {0}
+    while pending:
+        current = min(pending, key=lambda index: (best[index][0], best[index][1]))
+        pending.remove(current)
+        if current == 1:
+            break
+        distance, path = best[current]
+        for neighbor, edge_distance in sorted(edges[current]):
+            candidate = (distance + edge_distance, path + (neighbor,))
+            if neighbor not in best or candidate < best[neighbor]:
+                best[neighbor] = candidate
+                pending.add(neighbor)
+    if 1 not in best:
+        return (start, end)
+    return tuple(nodes[index] for index in best[1][1])
+
+
+def _segment_is_clear(
+    start: tuple[float, float],
+    end: tuple[float, float],
+    obstacles: tuple[Rect, ...],
+    width_mm: float,
+) -> bool:
+    if start == end:
+        return True
+    corridor = LineString([start, end]).buffer(width_mm / 2, cap_style=2, join_style=2)
+    return all(
+        corridor.intersection(box(obstacle.x, obstacle.y, obstacle.right, obstacle.top)).area <= 1e-6
+        for obstacle in obstacles
+    )
 
 
 def _deduplicate_points(points: Iterable[tuple[float, float]]) -> tuple[tuple[float, float], ...]:
