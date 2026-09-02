@@ -18,7 +18,7 @@ from .multifloor import MultiFloorResult, MultiFloorSpec, MultiFloorValidationRe
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .compliance import IdsSpecificationResult, IdsValidationReport, validate_ids
 from .editor import EditorState
-from .ifc import IfcExportSummary, export_ifc, export_multifloor_ifc
+from .ifc import IfcExportSummary, export_building_ifc, export_ifc, export_multifloor_ifc
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
 from .norms import NormsReport, RuleCitation, RuleDefinition, RuleResult, RuleSet, RuleStatus, check_layout, load_ruleset, retrieve_rule_citations
 from .solver import InfeasibleLayout, solve_layouts
@@ -78,6 +78,7 @@ __all__ = [
     "ValidationReport",
     "build_wall_plan",
     "export_ifc",
+    "export_building_ifc",
     "export_multifloor_ifc",
     "parse_with_openai_compatible",
     "llm_settings_from_environment",

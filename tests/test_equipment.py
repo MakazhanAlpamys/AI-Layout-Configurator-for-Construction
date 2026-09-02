@@ -4,6 +4,7 @@ import unittest
 from pathlib import Path
 
 import ezdxf
+import ifcopenshell
 
 from layout_configurator.building import BuildingIR
 from layout_configurator.cli import main
@@ -171,9 +172,21 @@ class EquipmentTests(unittest.TestCase):
             self.assertEqual(len(clearance_entities), 1)
             self.assertEqual(clearance_entities[0].dxftype(), "LWPOLYLINE")
             self.assertEqual((output / "building_01.pdf").read_bytes()[:8], b"%PDF-1.3")
+            model = ifcopenshell.open(output / "building_01.ifc")
+            proxies = model.by_type("IfcBuildingElementProxy")
+            self.assertEqual(len(proxies), 1)
+            self.assertEqual(proxies[0].Name, "machine")
+            psets = {
+                definition.RelatingPropertyDefinition.Name
+                for definition in proxies[0].IsDefinedBy
+                if definition.RelatingPropertyDefinition.is_a("IfcPropertySet")
+            }
+            self.assertEqual(psets, {"Pset_LayoutEquipment", "Pset_LayoutClearance"})
             manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
             self.assertEqual(manifest["variants"][0]["dxf"], "building_01.dxf")
             self.assertEqual(manifest["variants"][0]["pdf"], "building_01.pdf")
+            self.assertEqual(manifest["variants"][0]["ifc"], "building_01.ifc")
+            self.assertEqual(manifest["variants"][0]["ifc_entities"]["equipment"], 1)
 
 
 def _building(equipment, *, room_width=6000, room_height=5000, zones=()):

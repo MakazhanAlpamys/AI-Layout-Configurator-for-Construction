@@ -222,5 +222,7 @@ production, близкий к показанному примеру:
 Циклы A и базовая часть B, а также первый срез C уже реализованы: есть canonical
 `BuildingIR`, плотный single-floor pilot, deterministic equipment packing,
 clearance/collision checks, room-graph flow routing с детерминированным обходом
-прямоугольных препятствий и первичная DXF/PDF projection оборудования и потоков.
-Следующий кодовый шаг — вынести полноценный drawing-профиль цикла D.
+прямоугольных препятствий, первичная DXF/PDF projection оборудования и потоков
+и IFC equipment proxies с размерами/clearance property sets. Следующий кодовый
+шаг — вынести полноценный drawing-профиль цикла D и добавить IFC-представление
+потоков/коллизий.

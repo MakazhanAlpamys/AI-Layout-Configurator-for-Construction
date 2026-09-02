@@ -7,10 +7,13 @@ like DXF and PDF.
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
+from .building import BuildingIR, EquipmentSpec
+from .equipment import EquipmentLayoutResult, clearance_rect
 from .models import LayoutIR, LayoutResult, Rect
 from .multifloor import MultiFloorResult, MultiFloorSpec
 from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
@@ -18,6 +21,7 @@ from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
 
 IFC_HEIGHT_MM = 2_800
 DOOR_HEIGHT_MM = 2_100
+EQUIPMENT_PROXY_HEIGHT_MM = 1_000
 
 
 @dataclass(frozen=True)
@@ -35,6 +39,8 @@ class IfcExportSummary:
     door_types: int = 0
     window_types: int = 0
     external_entries: int = 0
+    equipment: int = 0
+    equipment_types: int = 0
     storeys: int = 1
     stairs: int = 0
 
@@ -56,7 +62,13 @@ class _OpeningRecord:
     kind: str
 
 
-def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExportSummary:
+def export_ifc(
+    path: str | Path,
+    spec: LayoutIR,
+    result: LayoutResult,
+    equipment_layout: EquipmentLayoutResult | None = None,
+    equipment_specs: Iterable[EquipmentSpec] | None = None,
+) -> IfcExportSummary:
     """Write a small, readable IFC4 model and return entity counts."""
 
     import ifcopenshell
@@ -159,10 +171,20 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
     windows = _make_windows(document, owner_history, context, storey_placement, spec, wall_plan)
     opening_records = _make_openings(document, owner_history, context, storey_placement, spec, wall_plan, doors, windows)
     type_records = _make_element_types(document, owner_history, spec, walls, doors, windows)
+    equipment_elements, equipment_types = _make_equipment(
+        document,
+        owner_history,
+        context,
+        storey_placement,
+        spec,
+        equipment_layout,
+        equipment_specs or (),
+    )
     _add_bim_relationships(document, owner_history, spec, result, spaces_by_id, wall_records, opening_records)
     elements.extend(walls)
     elements.extend(doors)
     elements.extend(windows)
+    elements.extend(equipment_elements)
     _associate_material(document, owner_history, walls, "Generic partition wall")
     _associate_material(document, owner_history, doors, "Generic internal door")
     _associate_material(document, owner_history, windows, "Generic window")
@@ -190,7 +212,20 @@ def export_ifc(path: str | Path, spec: LayoutIR, result: LayoutResult) -> IfcExp
         door_types=len(type_records[1]),
         window_types=len(type_records[2]),
         external_entries=sum(1 for opening in wall_plan.openings if opening.external),
+        equipment=len(equipment_elements),
+        equipment_types=len(equipment_types),
     )
+
+
+def export_building_ifc(
+    path: str | Path,
+    building: BuildingIR,
+    result: LayoutResult,
+    equipment: EquipmentLayoutResult,
+) -> IfcExportSummary:
+    """Export a BuildingIR result with equipment as BIM proxy elements."""
+
+    return export_ifc(path, building.layout, result, equipment, building.equipment)
 
 
 def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: MultiFloorResult) -> IfcExportSummary:
@@ -396,6 +431,98 @@ def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: 
         storeys=len(storeys),
         stairs=len(stairs),
     )
+
+
+def _make_equipment(
+    document,
+    owner_history,
+    context,
+    storey_placement,
+    spec: LayoutIR,
+    equipment_layout: EquipmentLayoutResult | None,
+    equipment_specs: Iterable[EquipmentSpec],
+):
+    if equipment_layout is None:
+        return [], []
+    specs = {item.id: item for item in equipment_specs}
+    placements = equipment_layout.placements
+    if len({placement.equipment_id for placement in placements}) != len(placements):
+        raise ValueError("IFC equipment projection cannot contain duplicate equipment placements")
+    missing = sorted(set(specs) - {placement.equipment_id for placement in placements})
+    if missing:
+        raise ValueError(f"IFC equipment projection is missing placements: {', '.join(missing)}")
+
+    elements = []
+    by_type: dict[str, list[object]] = {}
+    for placement in placements:
+        item = specs.get(placement.equipment_id)
+        if item is None:
+            raise ValueError(f"IFC equipment projection references unknown equipment {placement.equipment_id}")
+        clearance = clearance_rect(item, placement.rect, placement.rotated)
+        element = document.create_entity(
+            "IfcBuildingElementProxy",
+            GlobalId=_guid(spec, f"equipment-{item.id}"),
+            OwnerHistory=owner_history,
+            Name=item.id,
+            Description=item.type,
+            ObjectPlacement=_product_placement(document, storey_placement, placement.rect.x, placement.rect.y),
+            Representation=_box_representation(
+                document,
+                context,
+                placement.rect.width,
+                placement.rect.height,
+                EQUIPMENT_PROXY_HEIGHT_MM,
+            ),
+        )
+        _add_properties(
+            document,
+            owner_history,
+            [element],
+            "Pset_LayoutEquipment",
+            {
+                "EquipmentId": item.id,
+                "EquipmentType": item.type,
+                "RoomId": placement.room_id,
+                "WidthMm": placement.rect.width,
+                "DepthMm": placement.rect.height,
+                "Rotated": placement.rotated,
+                "Fixed": item.fixed,
+                "RotationAllowed": item.rotation_allowed,
+                "RepresentationKind": "2D footprint proxy; vertical height is not specified in BuildingIR 0.2",
+            },
+        )
+        _add_properties(
+            document,
+            owner_history,
+            [element],
+            "Pset_LayoutClearance",
+            {
+                "ClearanceLeftMm": item.clearance_left_mm,
+                "ClearanceRightMm": item.clearance_right_mm,
+                "ClearanceBackMm": item.clearance_back_mm,
+                "ClearanceFrontMm": item.clearance_front_mm,
+                "ClearanceX": clearance.x,
+                "ClearanceY": clearance.y,
+                "ClearanceWidthMm": clearance.width,
+                "ClearanceDepthMm": clearance.height,
+            },
+        )
+        elements.append(element)
+        by_type.setdefault(item.type, []).append(element)
+
+    types = []
+    for type_name in sorted(by_type):
+        type_element = document.create_entity(
+            "IfcBuildingElementProxyType",
+            GlobalId=_guid(spec, f"equipment-type-{type_name}"),
+            OwnerHistory=owner_history,
+            Name=f"Equipment {type_name}",
+            ApplicableOccurrence="IfcBuildingElementProxy",
+            ElementType=type_name,
+        )
+        _assign_type(document, owner_history, spec, by_type[type_name], type_element, f"equipment-type-assignment-{type_name}")
+        types.append(type_element)
+    return elements, types
 
 
 def _make_walls(document, owner_history, context, storey_placement, spec, result, wall_plan: WallPlan):

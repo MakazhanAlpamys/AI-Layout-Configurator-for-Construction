@@ -16,7 +16,7 @@ from .editor import EditorState
 from .equipment import EquipmentPlacementError, place_equipment, validate_equipment_layout
 from .export import export_building_bundle, export_bundle
 from .flows import route_flows, validate_flow_routes
-from .ifc import export_ifc, export_multifloor_ifc
+from .ifc import export_building_ifc, export_ifc, export_multifloor_ifc
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
 from .io import load_building, load_result, load_spec, write_building_result, write_result
 from .norms import check_layout, load_ruleset, retrieve_rule_citations
@@ -180,6 +180,8 @@ def main(argv: list[str] | None = None) -> int:
                     )
                 flow_routes = route_flows(building, result, equipment)
                 flow_report = validate_flow_routes(building, result, flow_routes, equipment)
+                ifc_path = args.output / f"building_{result.variant:02d}.ifc"
+                ifc_summary = export_building_ifc(ifc_path, building, result, equipment)
             except (EquipmentPlacementError, ValueError, RuntimeError) as exc:
                 print(f"ERROR: оборудование в варианте {result.variant} не размещено: {exc}", file=sys.stderr)
                 return 3
@@ -203,10 +205,20 @@ def main(argv: list[str] | None = None) -> int:
                     "flow_issues": len(flow_report.issues),
                     "dxf": dxf_path.name,
                     "pdf": pdf_path.name,
+                    "ifc": ifc_path.name,
+                    "ifc_entities": {
+                        "spaces": ifc_summary.spaces,
+                        "walls": ifc_summary.walls,
+                        "doors": ifc_summary.doors,
+                        "windows": ifc_summary.windows,
+                        "equipment": ifc_summary.equipment,
+                        "equipment_types": ifc_summary.equipment_types,
+                        "openings": ifc_summary.openings,
+                    },
                     "json": json_path.name,
                 }
             )
-            print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {json_path}")
+            print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {ifc_path} | {json_path}")
             if flow_report.issues:
                 print(
                     f"  flow validation: {len(flow_report.issues)} issue(s); see {json_path.name} -> flow_validation",
