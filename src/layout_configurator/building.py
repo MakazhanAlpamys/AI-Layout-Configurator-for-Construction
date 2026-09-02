@@ -1,4 +1,4 @@
-"""Extended domain model for dense commercial and production layouts.
+"""Extended domain model for regulated and industrial facility layouts.
 
 ``LayoutIR`` remains the stable single-floor room-program contract.  This
 module adds the non-geometric program objects needed by the next solver layer:
@@ -235,7 +235,7 @@ class StructuralGridSpec:
 
 @dataclass(frozen=True)
 class BuildingIR:
-    """Extended canonical program for a dense single-floor building pilot."""
+    """Extended canonical program for a dense single-floor facility pilot."""
 
     layout: LayoutIR
     zones: tuple[ZoneSpec, ...] = ()

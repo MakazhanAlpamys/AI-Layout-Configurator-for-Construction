@@ -1,4 +1,4 @@
-"""Deterministic building layout generator."""
+"""Solver-first layout compiler for regulated facilities."""
 
 from .building import BuildingIR, BuildingSpecError, EquipmentSpec, FlowSpec, StructuralGridSpec, ZoneSpec
 from .equipment import (

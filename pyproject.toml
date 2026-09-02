@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "layout-configurator"
 version = "0.1.0"
-description = "Deterministic floor-plan layout generator with DXF and vector PDF export"
+description = "Solver-first facility layout compiler for regulated and industrial planning"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

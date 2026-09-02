@@ -5,10 +5,10 @@ from layout_configurator.schema import validate_building
 
 
 class BuildingIRTests(unittest.TestCase):
-    def test_commercial_pilot_contains_program_objects(self):
+    def test_pharmaceutical_clean_production_pilot_contains_program_objects(self):
         building = BuildingIR.from_mapping(_load_pilot())
 
-        self.assertEqual(building.layout.project_name, "Commercial production pilot")
+        self.assertEqual(building.layout.project_name, "Pharmaceutical clean-production pilot")
         self.assertEqual(building.layout.boundary.width_mm, 42000)
         self.assertEqual(len(building.layout.rooms), 10)
         self.assertEqual(len(building.zones), 3)

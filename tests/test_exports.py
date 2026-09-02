@@ -61,6 +61,10 @@ class ExportTests(unittest.TestCase):
             self.assertEqual(summary.windows, 2)
             self.assertEqual(len(model.by_type("IfcProject")), 1)
             self.assertEqual(len(model.by_type("IfcBuildingStorey")), 1)
+            application = model.by_type("IfcApplication")[0]
+            self.assertEqual(application.ApplicationFullName, "Facility Layout Compiler")
+            self.assertEqual(application.ApplicationIdentifier, "FACILITY-LAYOUT-COMPILER")
+            self.assertEqual(application.ApplicationDeveloper.Name, "Facility Layout Compiler")
             self.assertEqual(len(model.by_type("IfcElementQuantity")), len(spec.rooms))
             self.assertGreaterEqual(len(model.by_type("IfcPropertySet")), len(spec.rooms) + summary.walls + summary.doors + summary.windows)
             self.assertEqual(len(model.by_type("IfcMaterial")), 3)

@@ -932,15 +932,15 @@ def _units(document):
 
 
 def _owner_history(document):
-    organization = document.create_entity("IfcOrganization", Identification="LC", Name="Layout Configurator")
+    organization = document.create_entity("IfcOrganization", Identification="FLC", Name="Facility Layout Compiler")
     person = document.create_entity("IfcPerson", Identification="layout-configurator", FamilyName="Generator")
     user = document.create_entity("IfcPersonAndOrganization", ThePerson=person, TheOrganization=organization)
     application = document.create_entity(
         "IfcApplication",
         ApplicationDeveloper=organization,
         Version="0.1.0",
-        ApplicationFullName="AI Layout Configurator",
-        ApplicationIdentifier="LAYOUT-CONFIGURATOR",
+        ApplicationFullName="Facility Layout Compiler",
+        ApplicationIdentifier="FACILITY-LAYOUT-COMPILER",
     )
     return document.create_entity(
         "IfcOwnerHistory",

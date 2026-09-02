@@ -27,7 +27,7 @@ from .validation import validate_layout
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="layout-configurator", description="Deterministic residential layout generator")
+    parser = argparse.ArgumentParser(prog="layout-configurator", description="Solver-first facility layout compiler")
     subparsers = parser.add_subparsers(dest="command", required=True)
     generate = subparsers.add_parser("generate", help="solve a JSON/YAML specification and export DXF/PDF")
     generate.add_argument("spec", type=Path)
