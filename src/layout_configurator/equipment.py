@@ -62,11 +62,17 @@ class EquipmentValidationIssue:
     code: str
     message: str
     equipment_id: str | None = None
+    related_equipment_id: str | None = None
+    overlap_area_mm2: float | None = None
 
     def to_dict(self) -> dict[str, object]:
         payload: dict[str, object] = {"code": self.code, "message": self.message}
         if self.equipment_id is not None:
             payload["equipment_id"] = self.equipment_id
+        if self.related_equipment_id is not None:
+            payload["related_equipment_id"] = self.related_equipment_id
+        if self.overlap_area_mm2 is not None:
+            payload["overlap_area_mm2"] = self.overlap_area_mm2
         return payload
 
 
@@ -322,12 +328,15 @@ def validate_equipment_layout(
             if right_spec is None:
                 continue
             right_clearance = clearance_rect(right_spec, right.rect, right.rotated)
-            if left_clearance.intersection_area(right_clearance) > 1e-6:
+            overlap_area = left_clearance.intersection_area(right_clearance)
+            if overlap_area > 1e-6:
                 issues.append(
                     EquipmentValidationIssue(
                         "clearance_collision",
                         f"Clearance zones of {left.equipment_id} and {right.equipment_id} overlap",
                         left.equipment_id,
+                        right.equipment_id,
+                        overlap_area,
                     )
                 )
     return EquipmentValidationReport(tuple(issues))

@@ -75,6 +75,27 @@ class EquipmentTests(unittest.TestCase):
         with self.assertRaises(EquipmentPlacementError):
             place_equipment(building, _rooms(), time_limit_seconds=2)
 
+    def test_cp_sat_is_repeatable_for_the_same_seed(self):
+        building = _building(
+            [
+                {"id": "a", "type": "machine", "room_id": "production", "width_mm": 1800, "depth_mm": 1200, "clearance_mm": 300},
+                {"id": "b", "type": "machine", "room_id": "production", "width_mm": 1200, "depth_mm": 1800, "clearance_mm": 300},
+            ]
+        )
+
+        first = place_equipment(building, _rooms(), seed=91)
+        second = place_equipment(building, _rooms(), seed=91)
+
+        self.assertEqual(first, second)
+
+    def test_cp_sat_accepts_an_empty_equipment_program(self):
+        building = _building([])
+
+        result = place_equipment(building, _rooms())
+
+        self.assertEqual(result.placements, ())
+        self.assertTrue(validate_equipment_layout(building, _rooms(), result).ok)
+
     def test_rotates_when_only_rotated_footprint_fits(self):
         building = _building(
             [
@@ -152,7 +173,11 @@ class EquipmentTests(unittest.TestCase):
         report = validate_equipment_layout(building, _rooms(), equipment_layout, check_walls=False)
 
         self.assertFalse(report.ok)
-        self.assertIn("clearance_collision", {issue.code for issue in report.issues})
+        collision = next(issue for issue in report.issues if issue.code == "clearance_collision")
+        self.assertEqual(collision.equipment_id, "a")
+        self.assertEqual(collision.related_equipment_id, "b")
+        self.assertGreater(collision.overlap_area_mm2 or 0, 0)
+        self.assertEqual(collision.to_dict()["related_equipment_id"], "b")
 
     def test_independent_validation_reports_wall_collision(self):
         building = _building(
