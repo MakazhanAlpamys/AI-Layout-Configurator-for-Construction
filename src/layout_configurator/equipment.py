@@ -63,6 +63,12 @@ class EquipmentValidationIssue:
     message: str
     equipment_id: str | None = None
 
+    def to_dict(self) -> dict[str, object]:
+        payload: dict[str, object] = {"code": self.code, "message": self.message}
+        if self.equipment_id is not None:
+            payload["equipment_id"] = self.equipment_id
+        return payload
+
 
 @dataclass(frozen=True)
 class EquipmentValidationReport:
@@ -71,6 +77,9 @@ class EquipmentValidationReport:
     @property
     def ok(self) -> bool:
         return not self.issues
+
+    def to_dict(self) -> dict[str, object]:
+        return {"ok": self.ok, "issues": [issue.to_dict() for issue in self.issues]}
 
 
 def place_equipment(

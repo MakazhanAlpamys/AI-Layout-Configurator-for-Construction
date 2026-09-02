@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .building import BuildingIR
-from .equipment import EquipmentLayoutResult
+from .equipment import EquipmentLayoutResult, EquipmentValidationReport
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
 from .schema import load_mapping
@@ -65,6 +65,8 @@ def write_building_result(
     equipment: EquipmentLayoutResult,
     flow_routes: FlowRoutingResult | None = None,
     flow_report: FlowValidationReport | None = None,
+    *,
+    equipment_report: EquipmentValidationReport | None = None,
 ) -> None:
     """Write room and equipment solver outputs without converting to drawing data."""
 
@@ -77,4 +79,6 @@ def write_building_result(
         payload["flow_routes"] = flow_routes.to_dict()
     if flow_report is not None:
         payload["flow_validation"] = flow_report.to_dict()
+    if equipment_report is not None:
+        payload["equipment_validation"] = equipment_report.to_dict()
     Path(path).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

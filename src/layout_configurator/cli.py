@@ -200,12 +200,21 @@ def main(argv: list[str] | None = None) -> int:
                 flow_report,
             )
             json_path = args.output / f"building_{result.variant:02d}.json"
-            write_building_result(json_path, building, result, equipment, flow_routes, flow_report)
+            write_building_result(
+                json_path,
+                building,
+                result,
+                equipment,
+                flow_routes,
+                flow_report,
+                equipment_report=equipment_report,
+            )
             manifest["variants"].append(
                 {
                     "variant": result.variant,
                     "rooms": len(result.placements),
                     "equipment": len(equipment.placements),
+                    "equipment_issues": len(equipment_report.issues),
                     "flows": len(flow_routes.routes),
                     "flow_issues": len(flow_report.issues),
                     "dxf": dxf_path.name,

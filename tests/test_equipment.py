@@ -193,6 +193,7 @@ class EquipmentTests(unittest.TestCase):
             payload = json.loads((output / "building_01.json").read_text(encoding="utf-8"))
             self.assertEqual(len(payload["equipment"]), 1)
             self.assertEqual(payload["equipment"][0]["equipment_id"], "machine")
+            self.assertEqual(payload["equipment_validation"], {"ok": True, "issues": []})
             document = ezdxf.readfile(output / "building_01.dxf")
             modelspace = document.modelspace()
             equipment_entities = [entity for entity in modelspace if entity.dxf.layer == "A-EQUIP"]
@@ -217,6 +218,7 @@ class EquipmentTests(unittest.TestCase):
             self.assertEqual(manifest["variants"][0]["pdf"], "building_01.pdf")
             self.assertEqual(manifest["variants"][0]["ifc"], "building_01.ifc")
             self.assertEqual(manifest["variants"][0]["ifc_entities"]["equipment"], 1)
+            self.assertEqual(manifest["variants"][0]["equipment_issues"], 0)
 
 
 def _building(equipment, *, room_width=6000, room_height=5000, zones=()):

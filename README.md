@@ -115,7 +115,7 @@ CP-SAT, затем размещает оборудование на сетке �
 `generate-building` выпускает program/solver output и drawing-проекции: editable DXF
 с блоками оборудования на `A-EQUIP` и пунктирными service-clearance на `A-CLEARANCE`,
 а также векторный PDF. В `building_01.json` дополнительно сохраняются derived
-`flow_routes` и независимый `flow_validation`; IFC для оборудования отдельно
+`equipment_validation`, derived `flow_routes` и независимый `flow_validation`; IFC для оборудования отдельно
 представлен как `IfcBuildingElementProxy` с двумя property sets, а маршруты
 потоков пока остаются в JSON/DXF/PDF projection.
 
