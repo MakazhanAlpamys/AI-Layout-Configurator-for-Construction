@@ -165,7 +165,8 @@ pressure ordering; это project policies, а не GMP, healthcare, HSE, ISO и
 а также векторный PDF. В `building_01.json` дополнительно сохраняются
 `equipment_validation`, derived `flow_routes`, независимый `flow_validation` и
 единый `facility_validation` с профилем, статусами и evidence. Необязательные
-потоки (`required: false`) не делают результат FAIL при отсутствии маршрута.
+потоки (`required: false`) не делают результат FAIL при отсутствии маршрута;
+если маршрут построен, он проходит те же геометрические проверки.
 Рядом с ним команда сохраняет `building_01.coordination.json` — явный
 `FLC-BCF-like-json` sidecar со стабильными issue ID, severity, source,
 endpoint’ами и координатой маршрута, если проблема относится к flow. DXF/PDF

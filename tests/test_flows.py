@@ -33,6 +33,17 @@ class FlowRoutingTests(unittest.TestCase):
 
         self.assertIn("opening_too_narrow", {issue.code for issue in report.issues})
 
+    def test_optional_flow_with_existing_route_is_validated(self):
+        payload = _building(minimum_width=800).to_dict()
+        payload["flows"][0]["required"] = False
+        building = BuildingIR.from_mapping(payload)
+
+        routes = route_flows(building, _layout())
+        report = validate_flow_routes(building, _layout(), routes)
+
+        self.assertTrue(report.ok, report.issues)
+        self.assertEqual(len(routes.routes), 1)
+
     def test_reports_flow_intersection_with_unrelated_equipment_clearance(self):
         building = _building(
             minimum_width=800,

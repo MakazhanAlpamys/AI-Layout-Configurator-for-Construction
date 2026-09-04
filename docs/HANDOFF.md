@@ -141,8 +141,8 @@ forbidden adjacency-группами, обязательные потоки ав
 проверяемые точки доступа. `generate-building` сохраняет единый
 `facility_validation` report; `check-building` пересчитывает его независимо из
 сохранённого результата. Коммерческий pilot содержит явные process stages и
-waste branch; строгий pharma profile может вернуть проверяемый FAIL до review
-маршрутов, сохраняя весь комплект артефактов;
+waste branch; cold-store anchor preserves a service aisle for waste routing,
+and the generated example passes the deterministic facility/bundle QA checks;
 IFC теперь содержит derived flow route proxies с `Pset_LayoutFlow` и статусом
 проверки. Каждый вариант также получает `*.coordination.json` с BCF-like issue
 records и `*.bcf` с BCF-XML 2.1 topics/viewpoints и внешними ссылками на

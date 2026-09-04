@@ -97,8 +97,9 @@ DXF + vector PDF + IFC + JSON evidence bundle
 - `check-building` round-trip validation command;
 - пример `examples/commercial_pilot.yaml`, теперь обозначенный как
   pharmaceutical clean-production pilot with explicit process stages and a
-  waste branch; строгий profile может честно вернуть FAIL/UNKNOWN до review
-  маршрутов.
+  waste branch; cold-store placement preserves a service aisle for the waste
+  route, and the generated pilot now passes the deterministic facility/bundle
+  QA checks.
 
 Это ещё не готовая фармацевтическая или медицинская система. Текущие комнаты
 прямоугольные, flow routing ограничен 2D pilot-логикой, а rule packs не заменяют

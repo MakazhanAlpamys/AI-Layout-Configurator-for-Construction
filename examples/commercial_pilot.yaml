@@ -151,6 +151,8 @@ equipment:
     depth_mm: 3200
     clearance_mm: 900
     rotation_allowed: false
+    anchor_side: bottom
+    anchor_offset_mm: 1900
   - id: loading_dock_01
     type: loading_dock
     room_id: receiving

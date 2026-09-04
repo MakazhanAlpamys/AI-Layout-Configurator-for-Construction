@@ -155,8 +155,7 @@ def validate_flow_routes(
             issues.append(FlowValidationIssue("endpoint_unplaced", f"Flow {flow.id} has no placed target endpoint", flow.id))
         for source in sources:
             for target in targets:
-                if flow.required:
-                    expected[(flow.id, source.source_id, target.source_id, source.room_id, target.room_id)] = flow
+                expected[(flow.id, source.source_id, target.source_id, source.room_id, target.room_id)] = flow
 
     seen: set[tuple[str, str, str, str, str]] = set()
     for route in routes.routes:
@@ -212,7 +211,7 @@ def validate_flow_routes(
                 )
 
     for key, flow in expected.items():
-        if key not in seen:
+        if flow.required and key not in seen:
             issues.append(
                 FlowValidationIssue(
                     "no_route",
