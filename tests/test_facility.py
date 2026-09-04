@@ -59,6 +59,85 @@ class FacilityTests(unittest.TestCase):
                 self.assertTrue(rule.evidence)
                 self.assertEqual(rule.to_dict()["source"], rule.source)
 
+    def test_all_domain_profiles_pass_minimal_reference_scenarios(self):
+        scenarios = {
+            "cleanroom_pilot.yaml": ["clean_material", "dirty_material", "people", "waste"],
+            "pharma_clean_production.yaml": ["material", "people", "finished_goods", "waste"],
+            "laboratory_pilot.yaml": ["specimen", "people", "clean_supply", "waste"],
+            "hospital_pilot.yaml": ["patients", "people", "clean_supply", "dirty_supply", "waste"],
+            "industrial_pilot.yaml": [
+                "material",
+                "people",
+                "vehicle",
+                "hazardous_material",
+                "maintenance",
+                "waste",
+            ],
+        }
+        for filename, flow_types in scenarios.items():
+            flows = [
+                {
+                    "id": f"{flow_type}_flow",
+                    "type": flow_type,
+                    "from_ids": ["source"],
+                    "to_ids": ["target"],
+                    "minimum_clear_width_mm": 800,
+                }
+                for flow_type in flow_types
+            ]
+            if filename == "pharma_clean_production.yaml":
+                flows = _pharma_reference_flows()
+            zones = []
+            if filename == "cleanroom_pilot.yaml":
+                zones = [
+                    {
+                        "id": "clean_parent",
+                        "type": "cleanroom",
+                        "room_ids": ["source"],
+                        "cleanroom_class": "ISO 7",
+                        "pressure_pa": 20,
+                    },
+                    {
+                        "id": "clean_child",
+                        "type": "cleanroom",
+                        "room_ids": ["target"],
+                        "parent_zone_id": "clean_parent",
+                        "cleanroom_class": "ISO 8",
+                        "pressure_pa": 10,
+                    },
+                    {
+                        "id": "material_airlock",
+                        "type": "airlock",
+                        "cleanroom_class": "gateway",
+                        "pressure_pa": 15,
+                        "parent_zone_id": "clean_parent",
+                        "airlock": True,
+                    },
+                ]
+            building = _building(zones=zones, flows=flows)
+            result = LayoutResult(
+                1,
+                {
+                    "source": Rect(0, 0, 3000, 3000),
+                    "target": Rect(3000, 0, 3000, 3000),
+                },
+            )
+            routes = route_flows(building, result)
+            report = validate_building(
+                building,
+                result,
+                EquipmentLayoutResult(()),
+                routes,
+                validate_flow_routes(building, result, routes),
+                profile=load_facility_profile(Path("rules") / filename),
+            )
+
+            self.assertTrue(report.ok, f"{filename}: {report.to_dict()}")
+            self.assertTrue(
+                all(check.source and check.edition and check.effective_date for check in report.checks if check.rule_id),
+                report.to_dict(),
+            )
+
     def test_yaml_loader_rejects_rule_without_provenance(self):
         raw = yaml.safe_load(Path("rules/pharma_clean_production.yaml").read_text(encoding="utf-8"))
         del raw["rules"][0]["source"]
@@ -511,6 +590,58 @@ class FacilityTests(unittest.TestCase):
             self.assertEqual(summary.open_topics, 0)
             self.assertEqual(summary.resolved_topics, len(report.issues))
             self.assertTrue(all(topic.status == "Closed" for topic in summary.topics))
+
+
+def _pharma_reference_flows():
+    return [
+        {
+            "id": "raw_material_flow",
+            "type": "material",
+            "stage": "raw_material",
+            "from_ids": ["source"],
+            "to_ids": ["target"],
+            "minimum_clear_width_mm": 800,
+        },
+        {
+            "id": "production_flow",
+            "type": "material",
+            "stage": "production",
+            "from_ids": ["target"],
+            "to_ids": ["source"],
+            "minimum_clear_width_mm": 800,
+        },
+        {
+            "id": "packaging_flow",
+            "type": "material",
+            "stage": "packaging",
+            "from_ids": ["source"],
+            "to_ids": ["target"],
+            "minimum_clear_width_mm": 800,
+        },
+        {
+            "id": "finished_goods_flow",
+            "type": "finished_goods",
+            "stage": "finished_goods",
+            "from_ids": ["target"],
+            "to_ids": ["source"],
+            "minimum_clear_width_mm": 800,
+        },
+        {
+            "id": "personnel_flow",
+            "type": "people",
+            "from_ids": ["source"],
+            "to_ids": ["target"],
+            "minimum_clear_width_mm": 800,
+        },
+        {
+            "id": "waste_flow",
+            "type": "waste",
+            "stage": "waste",
+            "from_ids": ["source"],
+            "to_ids": ["target"],
+            "minimum_clear_width_mm": 800,
+        },
+    ]
 
 
 def _building(*, zones=(), flows=()):
