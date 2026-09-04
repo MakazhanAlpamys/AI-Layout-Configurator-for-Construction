@@ -70,6 +70,7 @@ class UiTests(unittest.TestCase):
                 self.assertIn(b"grid-pattern", app_js)
                 self.assertIn(b"journal", app_js)
                 self.assertIn(b"facility-review", app_js)
+                self.assertIn(b"flowLabelAnchor", app_js)
                 self.assertIn(b"selectCoordinationIssue", app_js)
                 self.assertIn(b"issue_history", app_js)
                 self.assertIn(b"data-issue-filter", app_js)

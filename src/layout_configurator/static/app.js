@@ -159,6 +159,23 @@ async function submitIssueAction(action) {
   }
 }
 
+function flowLabelAnchor(flow, index) {
+  const points = flow.points || [];
+  const middleIndex = Math.floor(points.length / 2);
+  const anchor = points[middleIndex] || points[0] || { x: 0, y: 0 };
+  const previous = points[Math.max(0, middleIndex - 1)] || anchor;
+  const following = points[Math.min(points.length - 1, middleIndex + 1)] || anchor;
+  const dx = Number(following.x) - Number(previous.x);
+  const dy = Number(following.y) - Number(previous.y);
+  const length = Math.hypot(dx, dy) || 1;
+  const side = index % 2 === 0 ? 1 : -1;
+  const offset = 260 + (index % 3) * 120;
+  return {
+    x: Number(anchor.x) - (dy / length) * offset * side,
+    y: Number(anchor.y) + (dx / length) * offset * side,
+  };
+}
+
 function drawFacilityOverlay(svg, data, height) {
   if (data.mode !== "facility-review") return;
   const currentIssues = data.facility?.issues || data.validation?.issues || [];
@@ -174,15 +191,16 @@ function drawFacilityOverlay(svg, data, height) {
       svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="0" y1="${height - y}" x2="${data.boundary.width}" y2="${height - y}"></line><text class="structural-label" x="180" y="${height - y - 70}">${escapeHtml(label)}</text>`);
     }
   }
-  for (const flow of data.flows || []) {
+  for (const [index, flow] of (data.flows || []).entries()) {
     const points = (flow.points || []).map((point) => `${point.x},${height - point.y}`).join(" ");
     if (!points) continue;
     const labelPoint = flow.points[Math.floor(flow.points.length / 2)] || flow.points[0];
+    const labelAnchor = flowLabelAnchor(flow, index);
     const label = `${flow.flow_id} · ${flow.type || "flow"}`;
     const selected = state.selectedCoordinationTarget?.kind === "flow" && state.selectedCoordinationTarget.id === flow.flow_id;
     const conflicts = openIssues.filter((issue) => issue.flow_id === flow.flow_id);
     const conflictClass = conflicts.length ? " conflict" : "";
-    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${escapeHtml(flowClass(flow.type))}${conflictClass}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" x="${labelPoint.x}" y="${height - labelPoint.y - 90}">${escapeHtml(label)}${conflicts.length ? ` · ${conflicts.length} conflict` : ""}</text>`);
+    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${escapeHtml(flowClass(flow.type))}${conflictClass}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" x="${labelAnchor.x}" y="${height - labelAnchor.y - 90}">${escapeHtml(label)}${conflicts.length ? ` · ${conflicts.length} conflict` : ""}</text>`);
     for (const issue of conflicts) {
       const location = issueLocation(issue) || labelPoint;
       svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="280"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);

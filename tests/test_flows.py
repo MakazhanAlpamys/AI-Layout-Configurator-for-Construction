@@ -7,7 +7,7 @@ import ifcopenshell
 
 from layout_configurator.building import BuildingIR
 from layout_configurator.equipment import EquipmentLayoutResult, EquipmentPlacement
-from layout_configurator.export import export_building_bundle
+from layout_configurator.export import _flow_label_anchor, export_building_bundle
 from layout_configurator.facility import FacilityDrawingProfile
 from layout_configurator.flows import route_flows, validate_flow_routes
 from layout_configurator.ifc import export_building_ifc, validate_ifc_roundtrip
@@ -15,6 +15,16 @@ from layout_configurator.models import LayoutResult, Rect
 
 
 class FlowRoutingTests(unittest.TestCase):
+    def test_flow_label_anchors_are_offset_and_alternated(self):
+        points = ((0.0, 0.0), (1000.0, 0.0), (2000.0, 0.0))
+
+        first = _flow_label_anchor(points, 0)
+        second = _flow_label_anchor(points, 1)
+
+        self.assertNotEqual(first, points[1])
+        self.assertGreater(first[1], 0.0)
+        self.assertLess(second[1], 0.0)
+
     def test_routes_through_generated_door_and_passes_when_width_fits(self):
         building = _building(minimum_width=800)
         layout = _layout()

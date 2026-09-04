@@ -406,7 +406,7 @@ def _draw_flows_dxf(
     *,
     show_labels: bool = True,
 ) -> None:
-    for route in flows.routes:
+    for index, route in enumerate(flows.routes):
         if len(route.points) < 2:
             continue
         modelspace.add_lwpolyline(
@@ -417,7 +417,7 @@ def _draw_flows_dxf(
             modelspace.add_text(
                 f"FLOW {route.flow_id} [{flow_types.get(route.flow_id, 'unspecified')}] / {route.minimum_clear_width_mm:.0f} mm",
                 dxfattribs={"height": 90, "layer": "A-FLOW"},
-            ).set_placement(route.points[0])
+            ).set_placement(_flow_label_anchor(route.points, index))
 
 
 def _draw_facility_legend_dxf(
@@ -534,7 +534,7 @@ def _draw_flows_pdf(
     pdf.setLineWidth(1.0)
     pdf.setDash(5, 3)
     pdf.setFont("Helvetica", 5)
-    for route in flows.routes:
+    for index, route in enumerate(flows.routes):
         if len(route.points) < 2:
             continue
         path = pdf.beginPath()
@@ -544,12 +544,34 @@ def _draw_flows_pdf(
             path.lineTo(*point(x, y))
         pdf.drawPath(path, stroke=1, fill=0)
         if show_labels:
+            label_x, label_y = point(*_flow_label_anchor(route.points, index))
             pdf.drawString(
-                first_x + 2,
-                first_y + 2,
+                label_x + 2,
+                label_y + 2,
                 f"FLOW {route.flow_id} [{flow_types.get(route.flow_id, 'unspecified')}] / {route.minimum_clear_width_mm:.0f} mm",
             )
     pdf.setDash()
+
+
+def _flow_label_anchor(points: Iterable[tuple[float, float]], index: int) -> tuple[float, float]:
+    """Return a deterministic offset anchor so nearby route labels remain legible."""
+
+    points = tuple(points)
+    if not points:
+        return (0.0, 0.0)
+    middle_index = len(points) // 2
+    anchor = points[middle_index]
+    previous = points[max(0, middle_index - 1)]
+    following = points[min(len(points) - 1, middle_index + 1)]
+    dx = float(following[0]) - float(previous[0])
+    dy = float(following[1]) - float(previous[1])
+    length = (dx * dx + dy * dy) ** 0.5 or 1.0
+    side = 1.0 if index % 2 == 0 else -1.0
+    offset = 260.0 + (index % 3) * 120.0
+    return (
+        float(anchor[0]) - (dy / length) * offset * side,
+        float(anchor[1]) + (dx / length) * offset * side,
+    )
 
 
 def _draw_structural_grid_pdf(pdf, point, spec: LayoutIR, grid: StructuralGridSpec) -> None:
