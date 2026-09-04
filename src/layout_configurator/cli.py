@@ -105,6 +105,12 @@ def main(argv: list[str] | None = None) -> int:
     qa_building_set.add_argument("--variants", type=int, default=None)
     qa_building_set.add_argument("--profile", type=Path, default=None)
     qa_building_set.add_argument("--json", action="store_true", dest="json_output")
+    qa_building_set.add_argument(
+        "--report",
+        type=Path,
+        default=None,
+        help="write the machine-readable QA evidence report to this JSON file",
+    )
     edit = subparsers.add_parser("edit", help="apply typed edits to an existing layout JSON and re-export it")
     edit.add_argument("input", type=Path)
     edit.add_argument("--output", "-o", type=Path, default=Path("edited"))
@@ -434,6 +440,12 @@ def main(argv: list[str] | None = None) -> int:
                 expected_variants=args.variants,
                 profile=profile,
             )
+            if args.report:
+                args.report.parent.mkdir(parents=True, exist_ok=True)
+                args.report.write_text(
+                    json.dumps(qa_report.to_dict(), ensure_ascii=False, indent=2) + "\n",
+                    encoding="utf-8",
+                )
         except (OSError, KeyError, TypeError, ValueError, RuntimeError) as exc:
             print(f"ERROR: building set QA failed: {exc}", file=sys.stderr)
             return 2

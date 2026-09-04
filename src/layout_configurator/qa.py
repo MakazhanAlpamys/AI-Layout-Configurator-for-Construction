@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -58,6 +59,7 @@ class BuildingSetQAReport:
     variant_reports: tuple[BundleQAReport, ...]
     consistency: BundleQACheck
     expected_variants: int | None = None
+    artifact_hashes: tuple[dict[str, Any], ...] = ()
 
     @property
     def ok(self) -> bool:
@@ -70,6 +72,7 @@ class BuildingSetQAReport:
             "variant_count": len(self.variant_reports),
             "variants": [report.to_dict() for report in self.variant_reports],
             "consistency": self.consistency.to_dict(),
+            "artifact_hashes": list(self.artifact_hashes),
         }
         if self.expected_variants is not None:
             payload["expected_variants"] = self.expected_variants
@@ -229,7 +232,9 @@ def validate_building_set(
         else "Cross-variant identity checks failed",
         details,
     )
-    return BuildingSetQAReport(root, tuple(reports), consistency, expected_variants)
+    artifact_hashes = tuple(_variant_artifact_hashes(root, path) for path in variant_paths)
+    artifact_hashes += ({"shared": [_artifact_hash(root / "manifest.json")]},)
+    return BuildingSetQAReport(root, tuple(reports), consistency, expected_variants, artifact_hashes)
 
 
 _VARIANT_JSON_RE = re.compile(r"building_(\d+)\.json$")
@@ -303,6 +308,34 @@ def _id_tuple(items: Any) -> tuple[str, ...]:
     if not isinstance(items, (list, tuple)):
         raise ValueError("Expected a list of objects with IDs")
     return tuple(sorted(str(item["id"]) for item in items if isinstance(item, dict) and "id" in item))
+
+
+def _variant_artifact_hashes(root: Path, path: Path) -> dict[str, Any]:
+    expected = (
+        (path, True),
+        (root / f"{path.stem}.dxf", True),
+        (root / f"{path.stem}.pdf", True),
+        (root / f"{path.stem}.ifc", True),
+        (root / f"{path.stem}.bcf", True),
+        (root / f"{path.stem}.coordination.json", True),
+        (root / f"{path.stem}.issue-management.json", False),
+    )
+    variant_number = int(_VARIANT_JSON_RE.fullmatch(path.name).group(1))
+    return {
+        "variant": variant_number,
+        "files": [_artifact_hash(item, required=required) for item, required in expected],
+    }
+
+
+def _artifact_hash(path: Path, *, required: bool = True) -> dict[str, Any]:
+    record: dict[str, Any] = {"name": path.name, "required": required, "exists": path.is_file()}
+    if not path.is_file():
+        record["sha256"] = None
+        return record
+    data = path.read_bytes()
+    record["bytes"] = len(data)
+    record["sha256"] = hashlib.sha256(data).hexdigest()
+    return record
 
 
 def _profile_from_payload(payload: dict[str, Any]) -> FacilityProfile:

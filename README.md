@@ -223,12 +223,16 @@ facility validation report.
   --profile rules\pharma_clean_production.yaml
 .venv\Scripts\python.exe -m layout_configurator.cli qa-building-set `
   out\commercial_pilot_acceptance --variants 3 `
-  --profile rules\pharma_clean_production.yaml --json
+  --profile rules\pharma_clean_production.yaml `
+  --report out\commercial_pilot_acceptance\acceptance-report.json --json
 ```
 
 `qa-building-set` запускает полный bundle QA для каждого `building_XX` и проверяет
 совпадение semantic room/equipment/flow IDs, топологии маршрутов, IFC read-back
 идентификаторов и BCF 2.1 topic identities между вариантами.
+При указании `--report` дополнительно сохраняются SHA-256 и размеры каждого
+required variant/shared-артефакта; optional issue-management sidecars также
+отмечаются, если присутствуют.
 
 Для read-only viewer можно передать весь acceptance-каталог и выбрать вариант:
 
