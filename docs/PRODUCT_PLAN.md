@@ -243,6 +243,6 @@ BCF-XML 2.1 exchange уже формируется поверх экспорти
 каждый вариант получает ZIP с topics/viewpoints и внешними ссылками на модели,
 а BCF-like JSON sidecar и YAML-driven drawing profile остаются локальными
 машиночитаемыми проекциями. `--bcf-input` сохраняет исчезнувшие topics как
-`Closed` при следующей итерации. Следующий шаг — viewer QA на конкретных
-regulated facility шаблонах; для read-only проверки полного комплекта уже есть
-`qa-building`.
+`Closed` при следующей итерации. Read-only viewer QA уже показывает derived flow
+и equipment conflicts, статусы `OPEN`/`RESOLVED`, фильтр issues и BCF history;
+для проверки полного комплекта также есть `qa-building`.

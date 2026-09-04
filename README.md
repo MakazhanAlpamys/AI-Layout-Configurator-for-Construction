@@ -213,6 +213,16 @@ sets. Derived flow routes также экспортируются как `IfcBui
 Команда сверяет JSON sidecar, DXF, PDF, IFC read-back и BCF 2.1 с текущим
 facility validation report.
 
+### Facility review и BCF issue history
+
+Команда `ui` автоматически открывает существующий `building_01.json` как
+read-only facility review. SVG показывает производные маршруты, service
+clearance оборудования и автоматически подсвечивает текущие flow/equipment
+конфликты. Боковая панель отображает статусы `OPEN`/`RESOLVED`, фильтр issues,
+текущий список конфликтов и историю BCF topics; закрытые viewpoints отмечаются
+на плане по координатам BCF. Изменения выполняются через повторную генерацию
+`BuildingIR` и `--bcf-input`; edit/undo/redo/reset в review возвращают HTTP 405.
+
 ## Ограничения MVP
 
 - один этаж и ортогональные прямоугольные комнаты;

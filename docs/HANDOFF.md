@@ -158,9 +158,13 @@ topics в новый BCF как `Closed`, сохраняя issue history без 
 facility validation report.
 Добавлена команда `qa-building`: она в read-only режиме сверяет JSON sidecar,
 DXF/PDF, IFC read-back и BCF 2.1 с текущим `BuildingIR` result.
-Следующий крупный шаг — viewer QA и BCF issue-management workflow на этих
-regulated-facility шаблонах, затем расширение правил только с подтверждённым
-источником, версией и областью применимости.
+Viewer QA и BCF issue-management workflow добавлены в read-only facility review:
+открытые flow/equipment conflicts автоматически подсвечиваются на SVG, BCF
+topics нормализуются в `OPEN`/`RESOLVED`, а текущие issues и закрытая history
+отображаются через фильтры статуса. BCF viewpoint coordinates восстанавливаются
+для визуальной отметки закрытых issues; edit/undo/redo/reset остаются HTTP 405.
+Следующий крупный шаг — расширение правил только с подтверждённым источником,
+версией и областью применимости.
 ### Facility review surface
 
-The `ui` command now auto-detects a generated `BuildingIR` result (`building_01.json`) and opens a read-only facility review. The server independently recomputes equipment, flow, and facility validation; the SVG projection overlays equipment footprints, service-clearance envelopes, and derived flow routes, while the side panel shows profile evidence, coordination issues, and available JSON/DXF/PDF/IFC/BCF artifacts. Edit, undo, redo, and reset endpoints return HTTP 405 in this mode.
+The `ui` command now auto-detects a generated `BuildingIR` result (`building_01.json`) and opens a read-only facility review. The server independently recomputes equipment, flow, and facility validation; the SVG projection overlays equipment footprints, service-clearance envelopes, derived flow routes, open conflict markers, and resolved BCF viewpoints. The side panel shows profile evidence, `OPEN`/`RESOLVED` filters, current coordination issues, BCF issue history, and JSON/DXF/PDF/IFC/BCF artifacts. Edit, undo, redo, and reset endpoints return HTTP 405 in this mode.

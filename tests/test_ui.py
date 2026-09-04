@@ -7,7 +7,9 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from layout_configurator.building import BuildingIR
+from layout_configurator.bcf import write_bcf_package
 from layout_configurator.equipment import place_equipment
+from layout_configurator.facility import CoordinationIssue, FacilityValidationReport
 from layout_configurator.io import write_building_result
 from layout_configurator.solver import solve_layouts
 from layout_configurator.ui import FacilityReviewSession, UiSession, create_ui_server
@@ -54,6 +56,10 @@ class UiTests(unittest.TestCase):
                 self.assertIn(b"journal", app_js)
                 self.assertIn(b"facility-review", app_js)
                 self.assertIn(b"selectCoordinationIssue", app_js)
+                self.assertIn(b"issue_history", app_js)
+                self.assertIn(b"data-issue-filter", app_js)
+                with urlopen(f"{base_url}/style.css") as response:
+                    self.assertIn(b"issue-marker-resolved", response.read())
 
                 command = Request(
                     f"{base_url}/api/command",
@@ -179,6 +185,7 @@ class UiTests(unittest.TestCase):
                 with urlopen(f"{base_url}/api/state") as response:
                     served = json.load(response)
                 self.assertEqual(served["mode"], "facility-review")
+                self.assertEqual(served["issue_history"], [])
                 readonly_command = Request(
                     f"{base_url}/api/command",
                     data=b'{"type":"move_room","room_id":"production","dx_mm":100,"dy_mm":0}',
@@ -194,6 +201,67 @@ class UiTests(unittest.TestCase):
                 server.shutdown()
                 server.server_close()
                 thread.join(timeout=5)
+
+    def test_facility_review_exposes_bcf_statuses_and_resolved_history(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            building = BuildingIR.from_mapping(
+                {
+                    "project_name": "BCF history review",
+                    "boundary": {"width": 10000, "height": 8000},
+                    "rooms": [
+                        {
+                            "id": "source",
+                            "type": "room",
+                            "target_area": 40,
+                            "min_area": 30,
+                            "max_area": 60,
+                            "min_width": 5000,
+                            "min_depth": 5000,
+                        }
+                    ],
+                    "equipment": [],
+                    "flows": [],
+                }
+            )
+            result = solve_layouts(building.layout, variants=1, time_limit_seconds=5, seed=42)[0]
+            equipment = place_equipment(building, result, time_limit_seconds=5, seed=42)
+            input_path = root / "building_01.json"
+            write_building_result(input_path, building, result, equipment)
+            first_session = FacilityReviewSession.from_input(input_path, root)
+            historical = CoordinationIssue(
+                issue_id="FLC-OLD-ROUTE",
+                code="FLOW_TYPE_SEPARATION",
+                title="Resolved route conflict",
+                message="The route was separated in a later revision",
+                severity="WARNING",
+                source="TEST_HISTORY",
+                status="OPEN",
+                location=(2500, 3000),
+            )
+            previous_report = FacilityValidationReport(
+                profile=first_session.profile,
+                checks=first_session.facility_report.checks,
+                issues=(historical,),
+            )
+            previous_path = root / "previous.bcf"
+            write_bcf_package(previous_path, previous_report, project_name="BCF history review")
+            write_bcf_package(
+                root / "building_01.bcf",
+                first_session.facility_report,
+                project_name="BCF history review",
+                variant=1,
+                previous=previous_path,
+            )
+
+            session = FacilityReviewSession.from_input(input_path, root)
+            snapshot = session.snapshot()
+            self.assertEqual(snapshot["bcf"]["version"], "2.1")
+            self.assertEqual(snapshot["bcf"]["resolved_topics"], 1)
+            records = {item["issue_id"]: item for item in snapshot["issue_history"]}
+            self.assertEqual(records["FLC-OLD-ROUTE"]["status"], "RESOLVED")
+            self.assertEqual(records["FLC-OLD-ROUTE"]["record_type"], "bcf")
+            self.assertEqual(records["FLC-OLD-ROUTE"]["location"], {"x": 2500.0, "y": 3000.0})
 
 
 if __name__ == "__main__":

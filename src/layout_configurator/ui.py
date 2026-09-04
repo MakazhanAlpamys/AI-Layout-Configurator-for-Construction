@@ -28,6 +28,7 @@ from .commands import (
     ResizeRoom,
     SetExternalEntry,
 )
+from .bcf import BcfPackageSummary, read_bcf_package
 from .building import BuildingIR
 from .editor import EditorState
 from .equipment import EquipmentLayoutResult, EquipmentValidationReport, validate_equipment_layout
@@ -71,6 +72,8 @@ class FacilityReviewSession:
     lock: threading.RLock
     profile: FacilityProfile
     read_only: bool = True
+    bcf_summary: BcfPackageSummary | None = None
+    issue_history: tuple[dict[str, Any], ...] = ()
 
     @classmethod
     def from_input(
@@ -95,6 +98,7 @@ class FacilityReviewSession:
             profile=profile,
             equipment_report=equipment_report,
         )
+        bcf_summary = _load_bcf_summary(source)
         return cls(
             input_path=source.resolve(),
             building=building,
@@ -109,6 +113,8 @@ class FacilityReviewSession:
             output_dir=source.parent,
             lock=threading.RLock(),
             profile=profile,
+            bcf_summary=bcf_summary,
+            issue_history=_issue_history(facility_report.issues, bcf_summary),
         )
 
     def snapshot(self) -> dict[str, Any]:
@@ -198,6 +204,8 @@ class FacilityReviewSession:
                     "issues": [issue.to_dict() for issue in self.facility_report.issues],
                 },
                 "facility": facility,
+                "bcf": self.bcf_summary.to_dict() if self.bcf_summary else None,
+                "issue_history": list(self.issue_history),
                 "norms": None,
                 "history": [],
                 "journal": [],
@@ -253,6 +261,41 @@ def _facility_profile_for_result(source: Path, profile_path: str | Path | None) 
         return default_facility_profile()
     raw = payload.get("facility_validation", {}).get("profile") if isinstance(payload, dict) else None
     return FacilityProfile.from_mapping(raw) if isinstance(raw, dict) else default_facility_profile()
+
+
+def _load_bcf_summary(source: Path) -> BcfPackageSummary | None:
+    """Read the sibling BCF package when one exists, without blocking review."""
+
+    bcf_path = source.with_suffix(".bcf")
+    if not bcf_path.is_file():
+        return None
+    try:
+        return read_bcf_package(bcf_path)
+    except (OSError, ValueError, RuntimeError):
+        return None
+
+
+def _issue_history(
+    current: tuple[Any, ...],
+    bcf_summary: BcfPackageSummary | None,
+) -> tuple[dict[str, Any], ...]:
+    """Merge recomputed current issues with the BCF package's resolved topics."""
+
+    records: list[dict[str, Any]] = []
+    current_ids: set[str] = set()
+    for issue in current:
+        payload = issue.to_dict()
+        payload["record_type"] = "current"
+        records.append(payload)
+        current_ids.add(issue.issue_id)
+    if bcf_summary is not None:
+        for topic in bcf_summary.topics:
+            if topic.issue_id and topic.issue_id in current_ids:
+                continue
+            payload = topic.to_dict()
+            payload["record_type"] = "bcf"
+            records.append(payload)
+    return tuple(records)
 
 
 def _asset(name: str) -> str:

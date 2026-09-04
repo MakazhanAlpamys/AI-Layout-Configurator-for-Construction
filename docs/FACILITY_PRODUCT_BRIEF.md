@@ -149,7 +149,8 @@ Pharma/cleanroom, laboratory, hospital и industrial profiles версионир
    pharma, cleanroom, laboratory, hospital и industrial уже реализованы; до
    такого review они остаются project policies, а не нормативными verdicts.
 2. **Coordination exchange.** Повторное чтение IFC flow proxies, BCF-XML 2.1
-   topics/viewpoints и viewer QA.
+   topics/viewpoints и read-only viewer QA: конфликтные маршруты/оборудование
+   подсвечиваются, `OPEN`/`RESOLVED` фильтруются, а BCF history видна на плане.
 3. **Confirmed domain packs.** Расширять YAML-профили отдельными spec →
    implementation → review циклами только вместе с domain experts и
    подтверждёнными источниками норм.

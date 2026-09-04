@@ -42,6 +42,30 @@ class BcfTopicSummary:
     code: str | None = None
     message: str = ""
     severity: str = "WARNING"
+    source: str = "BCF"
+    location: tuple[float, float] | None = None
+
+    @property
+    def normalized_status(self) -> str:
+        return "RESOLVED" if self.status.lower() in {"closed", "resolved"} else "OPEN"
+
+    def to_dict(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "issue_id": self.issue_id,
+            "code": self.code or "BCF_TOPIC",
+            "title": self.title,
+            "message": self.message,
+            "severity": self.severity,
+            "source": self.source,
+            "status": self.normalized_status,
+            "bcf_status": self.status,
+            "topic_id": self.topic_id,
+            "viewpoint_id": self.viewpoint_id,
+            "has_snapshot": self.has_snapshot,
+        }
+        if self.location is not None:
+            payload["location"] = {"x": self.location[0], "y": self.location[1]}
+        return payload
 
 
 @dataclass(frozen=True)
@@ -59,6 +83,15 @@ class BcfPackageSummary:
     @property
     def resolved_topics(self) -> int:
         return sum(topic.status.lower() in {"closed", "resolved"} for topic in self.topics)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "path": self.path.name,
+            "version": self.version,
+            "topic_count": len(self.topics),
+            "open_topics": self.open_topics,
+            "resolved_topics": self.resolved_topics,
+        }
 
 
 def merge_bcf_history(
@@ -89,6 +122,7 @@ def merge_bcf_history(
                 severity=topic.severity if topic.severity in {"ERROR", "WARNING", "INFO"} else "WARNING",
                 source="BCF_HISTORY",
                 status="RESOLVED",
+                location=topic.location,
             )
         )
     if not historical:
@@ -193,6 +227,7 @@ def read_bcf_package(path: str | Path) -> BcfPackageSummary:
                 raise ValueError(f"BCF topic GUID mismatch: {markup_name}")
             viewpoint = root.find("Viewpoints")
             viewpoint_id = None if viewpoint is None else viewpoint.attrib.get("Guid")
+            location = None
             if viewpoint is not None:
                 if not viewpoint_id or not _GUID_RE.match(viewpoint_id):
                     raise ValueError(f"BCF viewpoint has an invalid GUID: {markup_name}")
@@ -205,6 +240,15 @@ def read_bcf_package(path: str | Path) -> BcfPackageSummary:
                         raise ValueError(f"BCF viewpoint has an unexpected root element: {viewpoint_file}")
                     if viewpoint_root.attrib.get("Guid", "").lower() != viewpoint_id.lower():
                         raise ValueError(f"BCF viewpoint GUID mismatch: {viewpoint_file}")
+                    point = viewpoint_root.find("./OrthogonalCamera/CameraViewPoint")
+                    if point is not None:
+                        try:
+                            location = (
+                                float(point.findtext("X", "")) * 1000.0,
+                                float(point.findtext("Y", "")) * 1000.0,
+                            )
+                        except ValueError:
+                            location = None
                 snapshot_file = viewpoint.findtext("Snapshot")
                 if snapshot_file and f"{topic_dir}/{snapshot_file}" not in names:
                     raise ValueError(f"BCF snapshot file is missing: {snapshot_file}")
@@ -223,6 +267,8 @@ def read_bcf_package(path: str | Path) -> BcfPackageSummary:
                     code=code,
                     message=topic.findtext("Description", ""),
                     severity={"High": "ERROR", "Normal": "WARNING", "Low": "INFO"}.get(priority, "WARNING"),
+                    source=topic.attrib.get("TopicType", "BCF") or "BCF",
+                    location=location,
                 )
             )
     return BcfPackageSummary(path=source, version=version, topics=tuple(topics))

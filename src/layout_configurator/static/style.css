@@ -92,7 +92,9 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #
 .flow-route.flow-people { stroke: #6fd6ff; }
 .flow-route.flow-material { stroke: #f5b971; }
 .flow-route.flow-waste { stroke: #ff8f8f; stroke-dasharray: 18 12; }
+.flow-route.conflict { stroke: #ff687d; stroke-width: 180; opacity: 1; filter: drop-shadow(0 0 14px #ff687d88); }
 .flow-route.selected { stroke: #ffffff; stroke-width: 190; opacity: 1; filter: drop-shadow(0 0 18px #ffffffaa); }
+.flow-route.conflict.selected { stroke: #ffffff; }
 .flow-route.flow-service { stroke: #b99cff; }
 .flow-route.flow-service.selected { stroke: #ffffff; }
 .flow-label { fill: #f4f7fb; font-size: 145px; font-weight: 800; paint-order: stroke; stroke: #101216; stroke-width: 30px; stroke-linejoin: round; pointer-events: none; }
@@ -100,9 +102,14 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #
 .structural-label { fill: #b6aaff; font-size: 150px; font-weight: 900; pointer-events: none; }
 .equipment-clearance { fill: #f5b9711c; stroke: #f5b971; stroke-width: 25; stroke-dasharray: 80 45; vector-effect: non-scaling-stroke; pointer-events: none; }
 .equipment-clearance.selected { fill: #ffffff18; stroke: #ffffff; stroke-width: 40; opacity: 1; }
+.equipment-clearance.equipment-conflict { fill: #ff687d24; stroke: #ff687d; stroke-width: 38; }
 .equipment { fill: #b99cff; stroke: #f2eaff; stroke-width: 24; vector-effect: non-scaling-stroke; pointer-events: none; }
 .equipment.selected { fill: #ffffff; stroke: #68d5c5; stroke-width: 45; }
+.equipment.equipment-conflict { fill: #ff687d; stroke: #ffd6dc; }
 .equipment-label { fill: #171321; text-anchor: middle; font-size: 125px; font-weight: 900; pointer-events: none; }
+.issue-marker { vector-effect: non-scaling-stroke; pointer-events: none; }
+.issue-marker-open { fill: #ff687d; stroke: #fff1f3; stroke-width: 20; }
+.issue-marker-resolved { fill: #68d5c5; fill-opacity: .25; stroke: #68d5c5; stroke-width: 18; stroke-dasharray: 18 12; }
 .flow-route + .flow-label { dominant-baseline: middle; }
 .issues-title { margin-bottom: 8px; font-weight: 800; }
 .issue-row { display: grid; gap: 3px; padding: 8px 0; border-top: 1px solid #713f45; }
@@ -110,8 +117,25 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #
 .issue-row.interactive:hover, .issue-row.interactive:focus { background: #58353b; outline: 1px solid #ffb4b4; }
 .issue-row strong { font-size: .72rem; }
 .issue-row span { color: #ffd4d4; }
+.issue-row.issue-resolved { border-top-color: #36574f; background: #202c2b; }
+.issue-row.issue-resolved span { color: #b9ddd6; }
+.issue-row .issue-title { color: var(--text); font-weight: 700; }
+.issue-status { font-size: .66rem; letter-spacing: .06em; }
+.status-open { color: var(--danger); }
+.status-resolved { color: var(--accent); }
 .issues-pass { display: grid; gap: 4px; background: #27342f; color: var(--accent); }
 .issues-pass span { color: #b9ddd6; }
+.issues-empty { display: grid; gap: 4px; color: var(--muted); background: var(--panel-2); }
+.issues-empty strong { color: var(--text); }
+.issue-controls { margin-top: 18px; padding: 11px; border-radius: 9px; background: var(--panel-2); }
+.issue-filter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.issue-filter button { border: 1px solid var(--line); border-radius: 7px; padding: 7px 6px; color: var(--muted); background: transparent; font-size: .74rem; font-weight: 800; }
+.issue-filter button:hover, .issue-filter button.active { color: #10211f; border-color: var(--accent); background: var(--accent); }
+.issue-history { margin-top: 18px; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: #171b21; font-size: .78rem; line-height: 1.45; }
+.issue-history .issue-row { margin-left: -4px; margin-right: -4px; padding-left: 4px; padding-right: 4px; }
+.issue-history-counts { display: flex; gap: 12px; margin-bottom: 5px; font-size: .72rem; font-weight: 800; }
+.issue-history-empty { color: var(--muted); }
+.issue-history-empty p { margin: 0; }
 .facility-checks { gap: 6px; }
 .facility-check { padding: 8px 9px; border-radius: 8px; background: var(--panel-2); font-size: .75rem; }
 .facility-check summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }

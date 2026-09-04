@@ -1,4 +1,4 @@
-const state = { current: null, interaction: null, busy: false, selectedRoomId: null, selectedCoordinationTarget: null };
+const state = { current: null, interaction: null, busy: false, selectedRoomId: null, selectedCoordinationTarget: null, issueFilter: "ALL" };
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value)
@@ -86,8 +86,34 @@ function flowClass(type) {
   return String(type || "flow").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
 }
 
+function issueStatus(issue) {
+  return ["RESOLVED", "CLOSED"].includes(String(issue?.status || "OPEN").toUpperCase()) ? "RESOLVED" : "OPEN";
+}
+
+function issueStatusClass(issue) {
+  return issueStatus(issue) === "RESOLVED" ? "issue-resolved" : "issue-open";
+}
+
+function issueMatchesFilter(issue) {
+  return state.issueFilter === "ALL" || issueStatus(issue) === state.issueFilter;
+}
+
+function issueTarget(issue) {
+  if (issue?.flow_id) return { kind: "flow", id: issue.flow_id };
+  if (issue?.equipment_id) return { kind: "equipment", id: issue.equipment_id };
+  return null;
+}
+
+function issueLocation(issue) {
+  const x = Number(issue?.location?.x);
+  const y = Number(issue?.location?.y);
+  return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+}
+
 function drawFacilityOverlay(svg, data, height) {
   if (data.mode !== "facility-review") return;
+  const currentIssues = data.facility?.issues || data.validation?.issues || [];
+  const openIssues = currentIssues.filter((issue) => issueStatus(issue) === "OPEN");
   const structuralGrid = data.structural_grid;
   if (structuralGrid) {
     for (const [index, x] of (structuralGrid.axes_x_mm || []).entries()) {
@@ -105,17 +131,35 @@ function drawFacilityOverlay(svg, data, height) {
     const labelPoint = flow.points[Math.floor(flow.points.length / 2)] || flow.points[0];
     const label = `${flow.flow_id} · ${flow.type || "flow"}`;
     const selected = state.selectedCoordinationTarget?.kind === "flow" && state.selectedCoordinationTarget.id === flow.flow_id;
-    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${escapeHtml(flowClass(flow.type))}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" x="${labelPoint.x}" y="${height - labelPoint.y - 90}">${escapeHtml(label)}</text>`);
+    const conflicts = openIssues.filter((issue) => issue.flow_id === flow.flow_id);
+    const conflictClass = conflicts.length ? " conflict" : "";
+    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${escapeHtml(flowClass(flow.type))}${conflictClass}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" x="${labelPoint.x}" y="${height - labelPoint.y - 90}">${escapeHtml(label)}${conflicts.length ? ` · ${conflicts.length} conflict` : ""}</text>`);
+    for (const issue of conflicts) {
+      const location = issueLocation(issue) || labelPoint;
+      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="280"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
+    }
   }
   for (const item of data.equipment || []) {
     const clearance = item.clearance;
     const selected = state.selectedCoordinationTarget?.kind === "equipment" && state.selectedCoordinationTarget.id === item.equipment_id;
+    const conflicts = openIssues.filter((issue) => issue.equipment_id === item.equipment_id);
+    const conflictClass = conflicts.length ? " equipment-conflict" : "";
     if (clearance) {
       const clearanceY = height - clearance.y - clearance.depth;
-      svg.insertAdjacentHTML("beforeend", `<rect class="equipment-clearance${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${clearance.x}" y="${clearanceY}" width="${clearance.width}" height="${clearance.depth}" rx="24"></rect>`);
+      svg.insertAdjacentHTML("beforeend", `<rect class="equipment-clearance${conflictClass}${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${clearance.x}" y="${clearanceY}" width="${clearance.width}" height="${clearance.depth}" rx="24"></rect>`);
     }
     const y = height - item.y - item.depth;
-    svg.insertAdjacentHTML("beforeend", `<rect class="equipment${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${item.x}" y="${y}" width="${item.width}" height="${item.depth}" rx="18"></rect><text class="equipment-label" x="${item.x + item.width / 2}" y="${y + item.depth / 2 + 45}">${escapeHtml(item.equipment_id)}</text>`);
+    svg.insertAdjacentHTML("beforeend", `<rect class="equipment${conflictClass}${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${item.x}" y="${y}" width="${item.width}" height="${item.depth}" rx="18"></rect><text class="equipment-label" x="${item.x + item.width / 2}" y="${y + item.depth / 2 + 45}">${escapeHtml(item.equipment_id)}${conflicts.length ? ` · ${conflicts.length}` : ""}</text>`);
+    for (const issue of conflicts) {
+      const location = issueLocation(issue) || { x: item.x + item.width / 2, y: item.y + item.depth / 2 };
+      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="280"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
+    }
+  }
+  for (const issue of data.issue_history || []) {
+    if (issueStatus(issue) !== "RESOLVED" || issue.record_type !== "bcf") continue;
+    const location = issueLocation(issue);
+    if (!location) continue;
+    svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-resolved" cx="${location.x}" cy="${height - location.y}" r="230"><title>${escapeHtml(issue.code || "Resolved issue")}</title></circle>`);
   }
 }
 
@@ -248,19 +292,43 @@ function canvasPointerCancel(event) {
   render(state.current);
 }
 
+function issueRow(issue) {
+  const target = issueTarget(issue);
+  const interactive = Boolean(target && issue.issue_id);
+  const status = issueStatus(issue);
+  const targetLabel = target ? ` · focus ${escapeHtml(target.id)}` : "";
+  const source = issue.source ? ` · ${escapeHtml(issue.source)}` : "";
+  return `<div class="issue-row ${issueStatusClass(issue)}${interactive ? " interactive" : ""}" data-issue-id="${escapeHtml(issue.issue_id || "")}" data-target-kind="${target?.kind || ""}" data-target-id="${escapeHtml(target?.id || "")}" role="${interactive ? "button" : "status"}" tabindex="${interactive ? "0" : "-1"}"><strong><span class="issue-status ${status === "RESOLVED" ? "status-resolved" : "status-open"}">${status}</span> · ${escapeHtml(issue.severity || "WARNING")} · ${escapeHtml(issue.code || "BCF_TOPIC")}${targetLabel}</strong><span class="issue-title">${escapeHtml(issue.title || issue.code || "Issue")}</span><span>${escapeHtml(issue.message || "")}${source}</span></div>`;
+}
+
 function renderFacilityReview(data) {
   const facility = data.facility || {};
   const checks = facility.checks || [];
   const issues = facility.issues || data.validation.issues || [];
+  const history = data.issue_history || issues;
+  const visibleIssues = issues.filter(issueMatchesFilter);
+  const visibleHistory = history.filter(issueMatchesFilter);
+  const openCount = history.filter((issue) => issueStatus(issue) === "OPEN").length;
+  const resolvedCount = history.filter((issue) => issueStatus(issue) === "RESOLVED").length;
   const equipmentCount = (data.equipment || []).length;
   const flowCount = (data.flow_declarations || []).length;
   const routedCount = (data.flows || []).length;
   const passCount = checks.filter((check) => check.status === "PASS").length;
   const profile = facility.profile || {};
-  $("#summary").innerHTML = `<dt>Rooms</dt><dd>${data.rooms.length}</dd><dt>Equipment</dt><dd>${equipmentCount}</dd><dt>Flow declarations</dt><dd>${flowCount} / ${routedCount} routed</dd><dt>Checks</dt><dd>${passCount} / ${checks.length} pass</dd><dt>Profile</dt><dd>${escapeHtml(profile.domain || "facility")}</dd><dt>Sheet</dt><dd>${escapeHtml((profile.drawing || {}).sheet_id || "A-101")}</dd>`;
-  $("#issues").innerHTML = issues.length
-    ? `<div class="issues"><div class="issues-title">Coordination issues (${issues.length})</div>${issues.map((issue) => { const kind = issue.flow_id ? "flow" : issue.equipment_id ? "equipment" : ""; const target = issue.flow_id || issue.equipment_id || ""; const interactive = kind ? " interactive" : ""; return `<div class="issue-row${interactive}" data-issue-id="${escapeHtml(issue.issue_id || "")}" data-target-kind="${kind}" data-target-id="${escapeHtml(target)}" role="${kind ? "button" : "status"}" tabindex="${kind ? "0" : "-1"}"><strong>${escapeHtml(issue.severity || "ERROR")} · ${escapeHtml(issue.code)}${kind ? ` · focus ${escapeHtml(target)}` : ""}</strong><span>${escapeHtml(issue.message)}</span></div>`; }).join("")}</div>`
-    : `<div class="issues issues-pass"><strong>Coordination clean</strong><span>All deterministic facility checks passed.</span></div>`;
+  $("#summary").innerHTML = `<dt>Rooms</dt><dd>${data.rooms.length}</dd><dt>Equipment</dt><dd>${equipmentCount}</dd><dt>Flow declarations</dt><dd>${flowCount} / ${routedCount} routed</dd><dt>Checks</dt><dd>${passCount} / ${checks.length} pass</dd><dt>Issues</dt><dd><span class="status-open">${openCount} open</span> · <span class="status-resolved">${resolvedCount} resolved</span></dd><dt>Profile</dt><dd>${escapeHtml(profile.domain || "facility")}</dd><dt>Sheet</dt><dd>${escapeHtml((profile.drawing || {}).sheet_id || "A-101")}</dd>`;
+  $("#issue-controls").hidden = false;
+  for (const button of document.querySelectorAll("[data-issue-filter]")) {
+    button.classList.toggle("active", button.dataset.issueFilter === state.issueFilter);
+  }
+  $("#issues").innerHTML = visibleIssues.length
+    ? `<div class="issues"><div class="issues-title">Current conflicts (${visibleIssues.length})</div>${visibleIssues.map(issueRow).join("")}</div>`
+    : issues.length && state.issueFilter !== "ALL"
+      ? `<div class="issues issues-empty"><strong>No ${state.issueFilter.toLowerCase()} current conflicts</strong><span>Change the issue filter to inspect another status.</span></div>`
+      : `<div class="issues issues-pass"><strong>Coordination clean</strong><span>All deterministic facility checks passed.</span></div>`;
+  const bcfLabel = data.bcf ? `BCF ${escapeHtml(data.bcf.version)} · ${escapeHtml(data.bcf.path)}` : "No BCF package loaded";
+  $("#issue-history").innerHTML = visibleHistory.length
+    ? `<div class="issue-history"><div class="issues-title">Issue history · ${bcfLabel}</div><div class="issue-history-counts"><span class="status-open">${openCount} open</span><span class="status-resolved">${resolvedCount} resolved</span></div>${visibleHistory.map(issueRow).join("")}</div>`
+    : `<div class="issue-history issue-history-empty"><div class="issues-title">Issue history</div><p>No issues match the selected filter.</p></div>`;
   $("#norms").innerHTML = checks.length
     ? `<div class="norms facility-checks"><div class="norms-head">Facility evidence · ${escapeHtml(profile.name || "selected profile")}</div>${checks.map((check) => { const statusClass = check.status === "PASS" ? "norm-pass" : check.status === "FAIL" ? "norm-fail" : "norm-na"; return `<details class="facility-check"><summary><span>${escapeHtml(check.id)}</span><strong class="${statusClass}">${escapeHtml(check.status)}</strong></summary><p>${escapeHtml((check.evidence || []).join("; "))}</p></details>`; }).join("")}</div>`
     : "";
@@ -290,6 +358,7 @@ function render(data) {
   $("#redo").disabled = review || !data.can_redo;
   $("#reset").disabled = review;
   $(".command-card").hidden = review;
+  $("#issue-controls").hidden = !review;
   $(".canvas-help").textContent = review
     ? "Read-only facility review: flows, equipment footprints, service clearances and deterministic checks are projected from the generated BuildingIR bundle."
     : "Перетащите комнату или resize-маркер; отпускание отправляет одну typed-команду.";
@@ -298,6 +367,8 @@ function render(data) {
     renderFacilityReview(data);
     return;
   }
+  $("#issue-controls").hidden = true;
+  $("#issue-history").innerHTML = "";
   $("#summary").innerHTML = `<dt>Комнат</dt><dd>${data.rooms.length}</dd><dt>Вариант</dt><dd>${data.layout.variant}</dd><dt>История</dt><dd>${data.history.length || "—"}</dd><dt>Внешний вход</dt><dd>${data.spec.external_entry ? escapeHtml(data.spec.external_entry.id) : "—"}</dd>`;
   $("#issues").innerHTML = data.validation.issues.length ? `<div class="issues">${data.validation.issues.map((issue) => `<div>${escapeHtml(issue.code)}: ${escapeHtml(issue.message)}</div>`).join("")}</div>` : "";
   if (data.norms) {
@@ -325,6 +396,23 @@ $("#issues").addEventListener("keydown", (event) => {
   if (!row) return;
   event.preventDefault();
   selectCoordinationIssue(row.dataset.issueId);
+});
+$("#issue-history").addEventListener("click", (event) => {
+  const row = event.target.closest("[data-issue-id]");
+  if (row) selectCoordinationIssue(row.dataset.issueId);
+});
+$("#issue-history").addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const row = event.target.closest("[data-issue-id]");
+  if (!row) return;
+  event.preventDefault();
+  selectCoordinationIssue(row.dataset.issueId);
+});
+$("#issue-controls").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-issue-filter]");
+  if (!button) return;
+  state.issueFilter = button.dataset.issueFilter || "ALL";
+  if (state.current?.mode === "facility-review") renderFacilityReview(state.current);
 });
 $("#plan").addEventListener("pointerdown", canvasPointerDown);
 $("#plan").addEventListener("pointermove", canvasPointerMove);
