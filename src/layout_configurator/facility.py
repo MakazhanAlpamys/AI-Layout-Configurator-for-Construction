@@ -29,6 +29,7 @@ FacilityRuleKind = Literal[
     "required_zone_fields",
     "airlock_presence",
     "pressure_cascade",
+    "zone_classification",
 ]
 _FACILITY_RULE_KINDS = frozenset(
     {
@@ -38,6 +39,7 @@ _FACILITY_RULE_KINDS = frozenset(
         "required_zone_fields",
         "airlock_presence",
         "pressure_cascade",
+        "zone_classification",
     }
 )
 DEFAULT_FACILITY_PROFILE_PATH = Path(__file__).resolve().parents[2] / "rules" / "default_facility.yaml"
@@ -391,7 +393,7 @@ def validate_building(
         (rule for rule in profile.rules if rule.kind == "flow_separation"),
         None,
     )
-    profile_checks = list(_profile_rule_checks(building, profile))
+    profile_checks = list(_profile_rule_checks(building, profile, flow_routes))
     checks = [
         _geometry_check(geometry_report),
         _zone_check(building, layout),
@@ -674,7 +676,11 @@ def _applicable_zones(building: BuildingIR, zone_types: tuple[str, ...] | None) 
     return tuple(zone for zone in building.zones if zone.type.strip().lower() in allowed)
 
 
-def _profile_rule_checks(building: BuildingIR, profile: FacilityProfile) -> tuple[FacilityCheckResult, ...]:
+def _profile_rule_checks(
+    building: BuildingIR,
+    profile: FacilityProfile,
+    flow_routes: FlowRoutingResult | None = None,
+) -> tuple[FacilityCheckResult, ...]:
     checks: list[FacilityCheckResult] = []
     for rule in profile.rules:
         if rule.kind == "flow_separation":
@@ -682,13 +688,15 @@ def _profile_rule_checks(building: BuildingIR, profile: FacilityProfile) -> tupl
         if rule.kind == "required_flow_types":
             checks.append(_required_flow_types_check(building, rule))
         elif rule.kind == "process_sequence":
-            checks.append(_process_sequence_check(building, rule))
+            checks.append(_process_sequence_check(building, rule, flow_routes))
         elif rule.kind == "required_zone_fields":
             checks.append(_required_zone_fields_check(building, rule))
         elif rule.kind == "airlock_presence":
             checks.append(_airlock_presence_check(building, rule))
         elif rule.kind == "pressure_cascade":
             checks.append(_pressure_cascade_check(building, rule))
+        elif rule.kind == "zone_classification":
+            checks.append(_zone_classification_check(building, rule))
     return tuple(checks)
 
 
@@ -714,7 +722,11 @@ def _required_flow_types_check(building: BuildingIR, rule: FacilityRule) -> Faci
     )
 
 
-def _process_sequence_check(building: BuildingIR, rule: FacilityRule) -> FacilityCheckResult:
+def _process_sequence_check(
+    building: BuildingIR,
+    rule: FacilityRule,
+    flow_routes: FlowRoutingResult | None = None,
+) -> FacilityCheckResult:
     stages, stage_error = _rule_string_list(rule, "sequence")
     if stage_error:
         return _rule_check(rule, "UNKNOWN", (stage_error,))
@@ -752,6 +764,66 @@ def _process_sequence_check(building: BuildingIR, rule: FacilityRule) -> Facilit
         )
 
     failures: list[str] = []
+    unknown: list[str] = []
+    stage_flow_types_raw = rule.parameters.get("stage_flow_types")
+    stage_flow_types: dict[str, tuple[str, ...]] = {}
+    if stage_flow_types_raw is not None:
+        if not isinstance(stage_flow_types_raw, Mapping):
+            return _rule_check(rule, "UNKNOWN", ("Rule parameter 'stage_flow_types' must be an object",))
+        for raw_stage, raw_types in stage_flow_types_raw.items():
+            stage = str(raw_stage).strip().lower()
+            if not stage:
+                return _rule_check(rule, "UNKNOWN", ("Rule parameter 'stage_flow_types' contains an empty stage",))
+            if not isinstance(raw_types, (list, tuple)):
+                return _rule_check(
+                    rule,
+                    "UNKNOWN",
+                    (f"Rule parameter 'stage_flow_types.{stage}' must be a list",),
+                )
+            values = tuple(str(item).strip().lower() for item in raw_types if str(item).strip())
+            if not values:
+                return _rule_check(
+                    rule,
+                    "UNKNOWN",
+                    (f"Rule parameter 'stage_flow_types.{stage}' must not be empty",),
+                )
+            stage_flow_types[stage] = values
+
+    try:
+        require_required_flows = _profile_bool(rule.parameters.get("require_required_flows", False))
+        require_routed = _profile_bool(rule.parameters.get("require_routed", False))
+    except ValueError as exc:
+        return _rule_check(rule, "UNKNOWN", (str(exc),))
+
+    route_ids = {route.flow_id for route in (flow_routes.routes if flow_routes else ())}
+    if require_routed and flow_routes is None:
+        unknown.append("Derived flow routes are required to evaluate this process sequence")
+
+    for stage in referenced_stages:
+        stage_flows = flows_by_stage[stage]
+        expected_types = stage_flow_types.get(stage)
+        if stage_flow_types_raw is not None and expected_types is None:
+            failures.append(f"Process stage {stage} has no declared stage_flow_types contract")
+            continue
+        matching = (
+            [flow for flow in stage_flows if flow.type.strip().lower() in expected_types]
+            if expected_types is not None
+            else stage_flows
+        )
+        if expected_types is not None and not matching:
+            failures.append(
+                f"Process stage {stage} has no flow with declared type(s): {', '.join(expected_types)}"
+            )
+            continue
+        if require_required_flows and not any(flow.required for flow in matching):
+            failures.append(f"Process stage {stage} has no required flow declaration")
+        if require_routed and flow_routes is not None:
+            unrouted = tuple(flow.id for flow in matching if flow.required and flow.id not in route_ids)
+            if unrouted:
+                failures.append(
+                    f"Required process flow(s) for stage {stage} have no derived route: {', '.join(unrouted)}"
+                )
+
     for left_stage, right_stage in connections:
         connected = any(
             set(left.to_ids) & set(right.from_ids)
@@ -763,7 +835,9 @@ def _process_sequence_check(building: BuildingIR, rule: FacilityRule) -> Facilit
                 f"Process stages {left_stage} and {right_stage} have no declared endpoint transition"
             )
     if failures:
-        return _rule_check(rule, "FAIL", tuple(failures))
+        return _rule_check(rule, "FAIL", tuple(failures + unknown))
+    if unknown:
+        return _rule_check(rule, "UNKNOWN", tuple(unknown))
     return _rule_check(
         rule,
         "PASS",
@@ -833,6 +907,13 @@ def _airlock_presence_check(building: BuildingIR, rule: FacilityRule) -> Facilit
         return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_count' must be non-negative",))
     zones = _applicable_zones(building, zone_types)
     airlocks = tuple(zone.id for zone in zones if zone.airlock)
+    required_types, required_types_error = _optional_rule_string_list(rule, "required_types")
+    if required_types_error:
+        return _rule_check(rule, "UNKNOWN", (required_types_error,))
+    try:
+        require_parent_zone = _profile_bool(rule.parameters.get("require_parent_zone", False))
+    except ValueError as exc:
+        return _rule_check(rule, "UNKNOWN", (str(exc),))
     if len(airlocks) < minimum_count:
         return _rule_check(
             rule,
@@ -842,10 +923,33 @@ def _airlock_presence_check(building: BuildingIR, rule: FacilityRule) -> Facilit
                 "Airlock zones found: " + (", ".join(airlocks) or "none"),
             ),
         )
+    failures: list[str] = []
+    if required_types is not None:
+        for required_type in required_types:
+            matches = tuple(
+                zone.id
+                for zone in zones
+                if zone.type.strip().lower() == required_type and zone.airlock
+            )
+            if not matches:
+                failures.append(f"No declared airlock zone has required role type {required_type}")
+    if require_parent_zone:
+        unparented = tuple(
+            zone.id for zone in zones if zone.airlock and zone.parent_zone_id is None
+        )
+        if unparented:
+            failures.append("Airlock zone(s) have no parent cleanroom zone: " + ", ".join(unparented))
+    if failures:
+        return _rule_check(rule, "FAIL", tuple(failures))
+    detail = f"Declared airlock zone count {len(airlocks)} meets project requirement {minimum_count}"
+    if required_types is not None:
+        detail += "; required roles present: " + ", ".join(required_types)
+    if require_parent_zone:
+        detail += "; all airlocks have parent zones"
     return _rule_check(
         rule,
         "PASS",
-        (f"Declared airlock zone count {len(airlocks)} meets project requirement {minimum_count}",),
+        (detail,),
     )
 
 
@@ -899,6 +1003,75 @@ def _pressure_cascade_check(building: BuildingIR, rule: FacilityRule) -> Facilit
         rule,
         "PASS",
         (f"Validated pressure ordering on {len(edges)} parent-child zone edge(s)",),
+    )
+
+
+def _zone_classification_check(building: BuildingIR, rule: FacilityRule) -> FacilityCheckResult:
+    zone_types, type_error = _optional_rule_string_list(rule, "zone_types")
+    allowed_classes, class_error = _rule_string_list(rule, "allowed_classes")
+    if type_error or class_error:
+        return _rule_check(
+            rule,
+            "UNKNOWN",
+            tuple(error for error in (type_error, class_error) if error),
+        )
+    if len(set(allowed_classes)) != len(allowed_classes):
+        return _rule_check(rule, "UNKNOWN", ("Rule parameter 'allowed_classes' must be unique",))
+    zones = _applicable_zones(building, zone_types)
+    if not zones:
+        return _rule_check(rule, "UNKNOWN", ("No zones match the rule's declared zone_types",))
+    missing = tuple(zone.id for zone in zones if not zone.cleanroom_class)
+    if missing:
+        return _rule_check(
+            rule,
+            "UNKNOWN",
+            ("Class evidence is missing for zone(s): " + ", ".join(missing),),
+        )
+    class_rank = {value: index for index, value in enumerate(allowed_classes)}
+    invalid = tuple(
+        f"{zone.id}={zone.cleanroom_class}"
+        for zone in zones
+        if zone.cleanroom_class.strip().lower() not in class_rank
+    )
+    if invalid:
+        return _rule_check(
+            rule,
+            "FAIL",
+            (
+                "Zone class is outside the declared project vocabulary: " + ", ".join(invalid),
+                "Declared classes: " + ", ".join(allowed_classes),
+            ),
+        )
+    direction = str(rule.parameters.get("direction", "parent_cleaner_or_equal")).strip().lower()
+    if direction not in {"parent_cleaner_or_equal", "parent_dirtier_or_equal"}:
+        return _rule_check(
+            rule,
+            "UNKNOWN",
+            ("Rule parameter 'direction' must be parent_cleaner_or_equal or parent_dirtier_or_equal",),
+        )
+    zone_by_id = {zone.id: zone for zone in zones}
+    failures: list[str] = []
+    for child in zones:
+        if child.parent_zone_id not in zone_by_id:
+            continue
+        parent = zone_by_id[child.parent_zone_id]
+        parent_rank = class_rank[parent.cleanroom_class.strip().lower()]
+        child_rank = class_rank[child.cleanroom_class.strip().lower()]
+        ordered = parent_rank <= child_rank if direction == "parent_cleaner_or_equal" else parent_rank >= child_rank
+        if not ordered:
+            failures.append(
+                f"Zone class ordering {direction} is violated on {parent.id}->{child.id}: "
+                f"parent={parent.cleanroom_class}, child={child.cleanroom_class}"
+            )
+    if failures:
+        return _rule_check(rule, "FAIL", tuple(failures))
+    return _rule_check(
+        rule,
+        "PASS",
+        (
+            f"Validated declared class vocabulary on {len(zones)} zone(s) and "
+            f"parent-child ordering on {sum(child.parent_zone_id in zone_by_id for child in zones)} edge(s)",
+        ),
     )
 
 

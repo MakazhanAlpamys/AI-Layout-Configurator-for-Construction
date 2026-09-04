@@ -1,5 +1,5 @@
 name: Cleanroom process pilot
-version: "0.1"
+version: "0.2"
 domain: cleanroom
 jurisdiction: project-profile-not-a-regulatory-verdict
 provenance:
@@ -30,8 +30,22 @@ rules:
       - ISO 14644-1:2015 addresses classification of air cleanliness in cleanrooms and clean zones.
       - The project must provide the class label and pressure evidence for each applicable zone before automated comparison.
     parameters:
-      zone_types: [cleanroom, clean_zone, airlock]
+      zone_types: [cleanroom, clean_zone, airlock, personnel_airlock, material_airlock]
       fields: [cleanroom_class, pressure_pa]
+
+  - id: CLEANROOM_ZONE_CLASSIFICATION
+    kind: zone_classification
+    title: Cleanroom classes use the declared project vocabulary and parent ordering
+    source: https://www.iso.org/standard/53394.html
+    edition: ISO 14644-1:2015
+    effective_date: "2015-12"
+    evidence:
+      - ISO 14644-1:2015 defines classification of air cleanliness in cleanrooms and clean zones by airborne particle concentration.
+      - This rule validates only the declared class vocabulary and project hierarchy; it does not calculate particle concentration or certify a cleanroom.
+    parameters:
+      zone_types: [cleanroom, clean_zone]
+      allowed_classes: [ISO 1, ISO 2, ISO 3, ISO 4, ISO 5, ISO 6, ISO 7, ISO 8, ISO 9]
+      direction: parent_cleaner_or_equal
 
   - id: CLEANROOM_AIRLOCK_PRESENCE
     kind: airlock_presence
@@ -40,11 +54,13 @@ rules:
     edition: EU GMP Annex 1 (2022 revision)
     effective_date: "2024-08-25"
     evidence:
-      - EU GMP Annex 1 places facility and process design under Quality Risk Management.
-      - This project rule requires the gateway to be explicitly modelled; it does not claim that one gateway is a universal regulatory minimum.
+      - EU GMP Annex 1 sections 4.1 and 4.12 describe cleanroom entry through personnel and material airlocks and recommend separating those movements wherever possible.
+      - This project rule requires the gateway roles and parent cleanroom relationship to be explicitly modelled; it does not claim that one fixed arrangement is a universal regulatory minimum.
     parameters:
       zone_types: [airlock, personnel_airlock, material_airlock]
-      required: true
+      minimum_count: 1
+      required_types: [personnel_airlock, material_airlock]
+      require_parent_zone: true
 
   - id: CLEANROOM_PRESSURE_CASCADE
     kind: pressure_cascade
@@ -53,11 +69,12 @@ rules:
     edition: EU GMP Annex 1 (2022 revision)
     effective_date: "2024-08-25"
     evidence:
-      - EU GMP Annex 1 requires facility and process design decisions to be managed through documented Quality Risk Management.
-      - This check verifies only the direction declared by the project profile; no pressure differential is invented when the profile omits it.
+      - EU GMP Annex 1 section 4.14 describes positive pressure/airflow relative to a lower-grade background and gives 10 Pascals as a guidance value for adjacent rooms of different grades.
+      - This check verifies the project-declared direction and sourced guidance value; containment scenarios may require a different justified strategy.
     parameters:
-      zone_types: [cleanroom, clean_zone, airlock]
+      zone_types: [cleanroom, clean_zone, airlock, personnel_airlock, material_airlock]
       direction: parent_gt_child
+      minimum_delta_pa: 10
 
   - id: FLOW_TYPE_SEPARATION
     kind: flow_separation
@@ -66,6 +83,7 @@ rules:
     edition: EU GMP Annex 1 (2022 revision)
     effective_date: "2024-08-25"
     evidence:
+      - EU GMP Annex 1 sections 4.11 and 4.12 describe separate or controlled transfer processes for materials, personnel and waste to reduce contamination risk.
       - The profile turns contamination-control design intent into an explicit, reviewable project coordination check.
       - A failed check is a coordination issue for human review, not a regulatory finding.
     parameters:

@@ -28,6 +28,7 @@ class FacilityTests(unittest.TestCase):
         profile = load_facility_profile("rules/pharma_clean_production.yaml")
 
         self.assertEqual(profile.domain, "pharma-clean-production")
+        self.assertEqual(profile.version, "0.2")
         self.assertIn(("material", "waste"), profile.incompatible_flow_type_pairs)
         self.assertEqual(
             {rule.id for rule in profile.rules},
@@ -106,10 +107,18 @@ class FacilityTests(unittest.TestCase):
                         "pressure_pa": 10,
                     },
                     {
+                        "id": "personnel_airlock",
+                        "type": "personnel_airlock",
+                        "cleanroom_class": "ISO 8",
+                        "pressure_pa": 10,
+                        "parent_zone_id": "clean_parent",
+                        "airlock": True,
+                    },
+                    {
                         "id": "material_airlock",
-                        "type": "airlock",
+                        "type": "material_airlock",
                         "cleanroom_class": "gateway",
-                        "pressure_pa": 15,
+                        "pressure_pa": 10,
                         "parent_zone_id": "clean_parent",
                         "airlock": True,
                     },
@@ -305,6 +314,15 @@ class FacilityTests(unittest.TestCase):
                         "parameters": {
                             "sequence": ["raw_material", "production", "packaging", "finished_goods"],
                             "branches": [["production", "waste"]],
+                            "stage_flow_types": {
+                                "raw_material": ["material"],
+                                "production": ["material"],
+                                "packaging": ["material"],
+                                "finished_goods": ["finished_goods"],
+                                "waste": ["waste"],
+                            },
+                            "require_required_flows": True,
+                            "require_routed": True,
                         },
                     }
                 ],
@@ -331,17 +349,208 @@ class FacilityTests(unittest.TestCase):
         self.assertEqual(check.status, "PASS", report.to_dict())
         self.assertIn("transition", " ".join(check.evidence))
 
+    def test_pharma_stage_contract_rejects_wrong_declared_flow_type(self):
+        flows = _pharma_reference_flows()
+        flows[2]["type"] = "waste"
+        building = _building(flows=flows)
+        result = LayoutResult(
+            1,
+            {
+                "source": Rect(0, 0, 3000, 3000),
+                "target": Rect(3000, 0, 3000, 3000),
+            },
+        )
+        routes = route_flows(building, result)
+        report = validate_building(
+            building,
+            result,
+            EquipmentLayoutResult(()),
+            routes,
+            validate_flow_routes(building, result, routes),
+            profile=load_facility_profile("rules/pharma_clean_production.yaml"),
+        )
+
+        check = next(item for item in report.checks if item.id == "PHARMA_PROCESS_SEQUENCE")
+        self.assertEqual(check.status, "FAIL", report.to_dict())
+        self.assertTrue(any("packaging" in item for item in check.evidence))
+
+    def test_pharma_stage_contract_is_unknown_without_derived_routes(self):
+        building = _building(flows=_pharma_reference_flows())
+        result = LayoutResult(
+            1,
+            {
+                "source": Rect(0, 0, 3000, 3000),
+                "target": Rect(3000, 0, 3000, 3000),
+            },
+        )
+        report = validate_building(
+            building,
+            result,
+            EquipmentLayoutResult(()),
+            None,
+            None,
+            profile=load_facility_profile("rules/pharma_clean_production.yaml"),
+        )
+
+        check = next(item for item in report.checks if item.id == "PHARMA_PROCESS_SEQUENCE")
+        self.assertEqual(check.status, "UNKNOWN", report.to_dict())
+        self.assertIn("Derived flow routes", " ".join(check.evidence))
+
+    def test_cleanroom_classification_rejects_invalid_parent_order(self):
+        building = _building(
+            zones=_cleanroom_reference_zones(parent_class="ISO 8", child_class="ISO 7"),
+            flows=_cleanroom_reference_flows(),
+        )
+        result = LayoutResult(
+            1,
+            {
+                "source": Rect(0, 0, 3000, 3000),
+                "target": Rect(3000, 0, 3000, 3000),
+            },
+        )
+        routes = route_flows(building, result)
+        report = validate_building(
+            building,
+            result,
+            EquipmentLayoutResult(()),
+            routes,
+            validate_flow_routes(building, result, routes),
+            profile=load_facility_profile("rules/cleanroom_pilot.yaml"),
+        )
+
+        check = next(item for item in report.checks if item.id == "CLEANROOM_ZONE_CLASSIFICATION")
+        self.assertEqual(check.status, "FAIL", report.to_dict())
+        self.assertIn("clean_parent->clean_child", " ".join(check.evidence))
+
+    def test_cleanroom_classification_is_unknown_when_class_evidence_is_missing(self):
+        zones = _cleanroom_reference_zones()
+        zones[1]["cleanroom_class"] = None
+        building = _building(zones=zones, flows=_cleanroom_reference_flows())
+        result = LayoutResult(
+            1,
+            {
+                "source": Rect(0, 0, 3000, 3000),
+                "target": Rect(3000, 0, 3000, 3000),
+            },
+        )
+        routes = route_flows(building, result)
+        report = validate_building(
+            building,
+            result,
+            EquipmentLayoutResult(()),
+            routes,
+            validate_flow_routes(building, result, routes),
+            profile=load_facility_profile("rules/cleanroom_pilot.yaml"),
+        )
+
+        check = next(item for item in report.checks if item.id == "CLEANROOM_ZONE_CLASSIFICATION")
+        self.assertEqual(check.status, "UNKNOWN", report.to_dict())
+        self.assertIn("clean_child", " ".join(check.evidence))
+
+    def test_cleanroom_pressure_guidance_value_rejects_small_delta(self):
+        zones = _cleanroom_reference_zones(child_pressure=15)
+        building = _building(zones=zones, flows=_cleanroom_reference_flows())
+        result = LayoutResult(
+            1,
+            {
+                "source": Rect(0, 0, 3000, 3000),
+                "target": Rect(3000, 0, 3000, 3000),
+            },
+        )
+        routes = route_flows(building, result)
+        report = validate_building(
+            building,
+            result,
+            EquipmentLayoutResult(()),
+            routes,
+            validate_flow_routes(building, result, routes),
+            profile=load_facility_profile("rules/cleanroom_pilot.yaml"),
+        )
+
+        check = next(item for item in report.checks if item.id == "CLEANROOM_PRESSURE_CASCADE")
+        self.assertEqual(check.status, "FAIL", report.to_dict())
+        self.assertIn("delta >= 10 Pa", " ".join(check.evidence))
+
+    def test_cleanroom_airlock_roles_and_parent_are_required(self):
+        zones = _cleanroom_reference_zones()
+        zones[2]["parent_zone_id"] = None
+        building = _building(zones=zones, flows=_cleanroom_reference_flows())
+        result = LayoutResult(
+            1,
+            {
+                "source": Rect(0, 0, 3000, 3000),
+                "target": Rect(3000, 0, 3000, 3000),
+            },
+        )
+        routes = route_flows(building, result)
+        report = validate_building(
+            building,
+            result,
+            EquipmentLayoutResult(()),
+            routes,
+            validate_flow_routes(building, result, routes),
+            profile=load_facility_profile("rules/cleanroom_pilot.yaml"),
+        )
+
+        check = next(item for item in report.checks if item.id == "CLEANROOM_AIRLOCK_PRESENCE")
+        self.assertEqual(check.status, "FAIL", report.to_dict())
+        self.assertIn("personnel_airlock", " ".join(check.evidence))
+        self.assertIn("no parent", " ".join(check.evidence))
+
+    def test_cleanroom_airlock_role_is_unknown_when_profile_contract_is_malformed(self):
+        profile = FacilityProfile.from_mapping(
+            {
+                "name": "Malformed airlock contract",
+                "version": "test",
+                "domain": "cleanroom",
+                "jurisdiction": "project-profile-not-a-regulatory-verdict",
+                "rules": [
+                    {
+                        "id": "AIRLOCK",
+                        "kind": "airlock_presence",
+                        "title": "Airlock",
+                        "source": "https://example.test/airlock",
+                        "edition": "test edition",
+                        "effective_date": "test-date",
+                        "evidence": ["Airlock evidence"],
+                        "parameters": {"required_types": "personnel_airlock"},
+                    }
+                ],
+            }
+        )
+        building = _building(zones=_cleanroom_reference_zones())
+        result = LayoutResult(
+            1,
+            {
+                "source": Rect(0, 0, 3000, 3000),
+                "target": Rect(3000, 0, 3000, 3000),
+            },
+        )
+
+        report = validate_building(
+            building,
+            result,
+            EquipmentLayoutResult(()),
+            None,
+            None,
+            profile=profile,
+        )
+
+        check = next(item for item in report.checks if item.id == "AIRLOCK")
+        self.assertEqual(check.status, "UNKNOWN", report.to_dict())
+        self.assertIn("required_types", " ".join(check.evidence))
+
     def test_starter_domain_profiles_are_versioned_and_non_regulatory(self):
         expected = {
-            "cleanroom_pilot.yaml": "cleanroom",
-            "laboratory_pilot.yaml": "laboratory",
-            "hospital_pilot.yaml": "hospital",
-            "industrial_pilot.yaml": "industrial",
+            "cleanroom_pilot.yaml": ("cleanroom", "0.2"),
+            "laboratory_pilot.yaml": ("laboratory", "0.1"),
+            "hospital_pilot.yaml": ("hospital", "0.1"),
+            "industrial_pilot.yaml": ("industrial", "0.1"),
         }
-        for filename, domain in expected.items():
+        for filename, (domain, version) in expected.items():
             profile = load_facility_profile(Path("rules") / filename)
             self.assertEqual(profile.domain, domain)
-            self.assertEqual(profile.version, "0.1")
+            self.assertEqual(profile.version, version)
             self.assertEqual(profile.jurisdiction, "project-profile-not-a-regulatory-verdict")
             self.assertTrue(profile.incompatible_flow_type_pairs)
             self.assertEqual(profile.drawing.sheet_id, "A-101")
@@ -590,6 +799,55 @@ class FacilityTests(unittest.TestCase):
             self.assertEqual(summary.open_topics, 0)
             self.assertEqual(summary.resolved_topics, len(report.issues))
             self.assertTrue(all(topic.status == "Closed" for topic in summary.topics))
+
+
+def _cleanroom_reference_zones(*, parent_class="ISO 7", child_class="ISO 8", child_pressure=10):
+    return [
+        {
+            "id": "clean_parent",
+            "type": "cleanroom",
+            "room_ids": ["source"],
+            "cleanroom_class": parent_class,
+            "pressure_pa": 20,
+        },
+        {
+            "id": "clean_child",
+            "type": "cleanroom",
+            "room_ids": ["target"],
+            "parent_zone_id": "clean_parent",
+            "cleanroom_class": child_class,
+            "pressure_pa": child_pressure,
+        },
+        {
+            "id": "personnel_airlock",
+            "type": "personnel_airlock",
+            "cleanroom_class": "ISO 8",
+            "pressure_pa": 10,
+            "parent_zone_id": "clean_parent",
+            "airlock": True,
+        },
+        {
+            "id": "material_airlock",
+            "type": "material_airlock",
+            "cleanroom_class": "gateway",
+            "pressure_pa": 10,
+            "parent_zone_id": "clean_parent",
+            "airlock": True,
+        },
+    ]
+
+
+def _cleanroom_reference_flows():
+    return [
+        {
+            "id": f"{flow_type}_flow",
+            "type": flow_type,
+            "from_ids": ["source"],
+            "to_ids": ["target"],
+            "minimum_clear_width_mm": 800,
+        }
+        for flow_type in ("clean_material", "dirty_material", "people", "waste")
+    ]
 
 
 def _pharma_reference_flows():

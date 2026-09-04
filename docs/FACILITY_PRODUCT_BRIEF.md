@@ -114,10 +114,12 @@ BCF-like issues.
 
 В репозитории зафиксированы отдельные пакеты:
 
-- `rules/cleanroom_pilot.yaml` — классы зон, pressure ordering, airlock и
+- `rules/cleanroom_pilot.yaml` — vocabulary/order классов ISO-зон, pressure
+  ordering с sourced guidance value, parent-linked personnel/material airlocks и
   clean/dirty flow separation;
 - `rules/pharma_clean_production.yaml` — material, personnel, finished goods и
-  waste declarations/separation;
+  waste declarations, process-stage type contract и обязательная проверка
+  derived routes;
 - `rules/laboratory_pilot.yaml` — specimen, personnel, clean supply и waste;
 - `rules/hospital_pilot.yaml` — patient, personnel, clean supply, dirty supply
   и waste;
@@ -152,8 +154,9 @@ Pharma/cleanroom, laboratory, hospital и industrial profiles версионир
 2. **Coordination exchange.** Повторное чтение IFC flow proxies, BCF-XML 2.1
    topics/viewpoints и read-only viewer QA: конфликтные маршруты/оборудование
    подсвечиваются, `OPEN`/`RESOLVED` фильтруются, а BCF history видна на плане.
-3. **Confirmed domain packs.** Расширять YAML-профили отдельными spec →
-   implementation → review циклами только вместе с domain experts и
+3. **Confirmed domain packs.** Следующий implementation cycle — laboratory,
+   hospital и industrial; расширять YAML-профили отдельными spec →
+   implementation → acceptance циклами только вместе с domain experts и
    подтверждёнными источниками норм.
 
 ## Что не обещаем

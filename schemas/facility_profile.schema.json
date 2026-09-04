@@ -69,7 +69,8 @@
             "process_sequence",
             "required_zone_fields",
             "airlock_presence",
-            "pressure_cascade"
+            "pressure_cascade",
+            "zone_classification"
           ]
         },
         "title": {"type": "string", "minLength": 1},

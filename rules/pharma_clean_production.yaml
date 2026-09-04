@@ -1,5 +1,5 @@
 name: Pharmaceutical process pilot
-version: "0.1"
+version: "0.2"
 domain: pharma-clean-production
 jurisdiction: project-profile-not-a-regulatory-verdict
 provenance:
@@ -33,6 +33,14 @@ rules:
       sequence: [raw_material, production, packaging, finished_goods]
       branches:
         - [production, waste]
+      stage_flow_types:
+        raw_material: [material]
+        production: [material]
+        packaging: [material]
+        finished_goods: [finished_goods]
+        waste: [waste]
+      require_required_flows: true
+      require_routed: true
 
   - id: PHARMA_FLOW_SEPARATION
     kind: flow_separation
@@ -41,6 +49,7 @@ rules:
     edition: EU GMP Annex 1 (2022 revision)
     effective_date: "2024-08-25"
     evidence:
+      - EU GMP Annex 1 section 4.11 describes separate unidirectional movement for transfers into and out of higher-grade areas.
       - The project profile models raw-material, personnel, finished-goods and waste separation as explicit route evidence.
       - Sharing an intermediate room is reported for review and is not a regulatory verdict.
     parameters:

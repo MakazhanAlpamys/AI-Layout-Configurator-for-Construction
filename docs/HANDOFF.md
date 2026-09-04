@@ -134,7 +134,8 @@ endpoint; `cite` только извлекает rule/clause/source и не пр
 `rules/laboratory_pilot.yaml`, `rules/hospital_pilot.yaml` и
 `rules/industrial_pilot.yaml`. Их правила типизированы и несут собственные
 `source`, `edition`, `effective_date`, `evidence` и `parameters`; пакет cleanroom
-также проверяет классы зон, airlock и давление без выдуманных порогов. Они явно не
+также проверяет vocabulary/order классов зон, роли и parent для airlock и давление
+с явно sourced guidance value. Они явно не
 выдают GMP или иной регуляторный verdict. `BuildingIR` теперь умеет связывать зоны с hard required и
 forbidden adjacency-группами, обязательные потоки автоматически повышают
 эффективную ширину дверного проёма, а оборудование и маршруты используют
@@ -166,8 +167,13 @@ topics нормализуются в `OPEN`/`RESOLVED`, а текущие issues
 Reopen, comment и assign; audit trail сохраняется в отдельном
 `building_01.issue-management.json`, а BCF/coordination JSON и manifest counters
 обновляются. Геометрия остаётся read-only: edit/undo/redo/reset — HTTP 405.
-Следующий крупный шаг — расширение правил только с подтверждённым источником,
-версией и областью применимости.
+Профили pharma и cleanroom теперь версии 0.2: pharma sequence требует тип потока,
+обязательность декларации и derived route для каждой стадии, а cleanroom проверяет
+классы ISO, parent-child ordering, personnel/material airlock roles, parent link и
+10 Pa guidance value из Annex 1. Для отсутствующего входного доказательства
+сохраняется `UNKNOWN`; это по-прежнему project policy, а не нормативный verdict.
+Следующий крупный шаг — такой же отдельный spec → implementation → acceptance
+цикл для laboratory, hospital и industrial с подтверждёнными источниками.
 ### Facility review surface
 
 The `ui` command now auto-detects a generated `BuildingIR` result (`building_01.json`) and opens a read-only facility review. The server independently recomputes equipment, flow, and facility validation; the SVG projection overlays equipment footprints, service-clearance envelopes, derived flow routes, open conflict markers, and resolved BCF viewpoints. The side panel shows profile evidence, `OPEN`/`RESOLVED` filters, current coordination issues, BCF issue history, and JSON/DXF/PDF/IFC/BCF artifacts. A selected issue can be resolved, reopened, assigned, or commented; the audit trail is stored in `building_01.issue-management.json` and refreshes the BCF/coordination JSON projections. Geometry edit, undo, redo, and reset endpoints still return HTTP 405 in this mode.

@@ -148,9 +148,11 @@ facility-программ default time limit этой команды — 60 се
 В репозитории также есть domain rule packs
 `rules\cleanroom_pilot.yaml`, `rules\laboratory_pilot.yaml`,
 `rules\hospital_pilot.yaml` и `rules\industrial_pilot.yaml`. Они содержат
-типизированные проверки потоков, а cleanroom-пакет также классы зон, airlock и
-pressure ordering; это project policies, а не GMP, healthcare, HSE, ISO или
-строительные code-checks.
+типизированные проверки потоков, а cleanroom-пакет также vocabulary/order классов
+зон, роли и parent links airlock и pressure ordering с явно указанным sourced
+guidance value. Pharma-пакет проверяет stage-flow types и обязательные derived
+routes. Это project policies, а не GMP, healthcare, HSE, ISO или строительные
+code-checks.
 Каждый профиль может содержать секцию `drawing` (`sheet_id`, `discipline`,
 `title`, `revision` и флаги аннотаций), которая управляет DXF/PDF projection.
 
@@ -219,7 +221,7 @@ facility validation report.
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
   examples\commercial_pilot.yaml --output out\commercial_pilot_acceptance `
-  --variants 3 --time-limit 30 --seed 42 `
+  --variants 3 --time-limit 30 --seed 1 `
   --profile rules\pharma_clean_production.yaml
 .venv\Scripts\python.exe -m layout_configurator.cli qa-building-set `
   out\commercial_pilot_acceptance --variants 3 `
