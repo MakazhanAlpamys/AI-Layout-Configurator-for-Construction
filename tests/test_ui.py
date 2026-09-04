@@ -15,10 +15,22 @@ from layout_configurator.facility import CoordinationIssue, FacilityValidationRe
 from layout_configurator.io import write_building_result
 from layout_configurator.models import Rect
 from layout_configurator.solver import solve_layouts
-from layout_configurator.ui import FacilityReviewSession, UiSession, create_ui_server
+from layout_configurator.ui import FacilityReviewSession, UiSession, create_ui_server, resolve_ui_input
 
 
 class UiTests(unittest.TestCase):
+    def test_generated_bundle_directory_resolves_selected_facility_variant(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "building_01.json").write_text("{}", encoding="utf-8")
+            (root / "building_02.json").write_text("{}", encoding="utf-8")
+            (root / "building_01.issue-management.json").write_text("{}", encoding="utf-8")
+
+            self.assertEqual(resolve_ui_input(root, variant=2), root / "building_02.json")
+            self.assertEqual(resolve_ui_input(root / "building_01.json"), root / "building_01.json")
+            with self.assertRaises(ValueError):
+                resolve_ui_input(root, variant=3)
+
     def test_local_ui_serves_state_and_applies_typed_command(self):
         with tempfile.TemporaryDirectory() as directory:
             generated = UiSession.from_input(

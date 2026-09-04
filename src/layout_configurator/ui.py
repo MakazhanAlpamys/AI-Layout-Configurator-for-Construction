@@ -686,18 +686,20 @@ def serve_ui(
     port: int = 8765,
     rules_path: str | Path | None = None,
     profile_path: str | Path | None = None,
+    variant: int = 1,
     require_provenance: bool = False,
 ) -> int:
+    resolved_input = resolve_ui_input(input_path, variant=variant)
     try:
         session: UiSession | FacilityReviewSession = FacilityReviewSession.from_input(
-            input_path,
+            resolved_input,
             output_dir,
             profile_path=profile_path,
         )
         print("mode: facility review (read-only)")
     except (KeyError, TypeError, ValueError, json.JSONDecodeError):
         session = UiSession.from_input(
-            input_path,
+            resolved_input,
             output_dir,
             rules_path=rules_path,
             require_provenance=require_provenance,
@@ -712,6 +714,20 @@ def serve_ui(
     finally:
         server.server_close()
     return 0
+
+
+def resolve_ui_input(input_path: str | Path, *, variant: int = 1) -> Path:
+    """Resolve a generated bundle directory to one selected BuildingIR result."""
+
+    source = Path(input_path)
+    if not source.is_dir():
+        return source
+    if variant < 1:
+        raise ValueError("--variant must be positive")
+    selected = source / f"building_{variant:02d}.json"
+    if not selected.is_file():
+        raise ValueError(f"Variant {variant} was not found in generated bundle: {source}")
+    return selected
 
 
 class _UiHandler(BaseHTTPRequestHandler):

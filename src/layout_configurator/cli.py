@@ -158,12 +158,13 @@ def main(argv: list[str] | None = None) -> int:
     multifloor.add_argument("--time-limit", type=float, default=30)
     multifloor.add_argument("--seed", type=int, default=42)
     ui = subparsers.add_parser("ui", help="serve a local browser editor or facility review")
-    ui.add_argument("input", type=Path, help="existing layout/building result JSON or a YAML/JSON specification")
+    ui.add_argument("input", type=Path, help="layout/building result JSON, YAML/JSON specification, or generated variant directory")
     ui.add_argument("--output", "-o", type=Path, default=Path("out/ui"))
     ui.add_argument("--host", default="127.0.0.1")
     ui.add_argument("--port", type=int, default=8765)
     ui.add_argument("--rules", type=Path, help="optional deterministic ruleset shown after each edit")
     ui.add_argument("--profile", type=Path, help="optional facility profile for BuildingIR read-only review")
+    ui.add_argument("--variant", type=int, default=1, help="variant number when input is a generated bundle directory")
     ui.add_argument("--require-provenance", action="store_true", help="require complete ruleset provenance")
     args = parser.parse_args(argv)
 
@@ -736,6 +737,7 @@ def main(argv: list[str] | None = None) -> int:
                 port=args.port,
                 rules_path=args.rules,
                 profile_path=args.profile,
+                variant=args.variant,
                 require_provenance=args.require_provenance,
             )
         except (OSError, ValueError, KeyError, RuntimeError, InfeasibleLayout) as exc:

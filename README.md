@@ -230,6 +230,17 @@ facility validation report.
 совпадение semantic room/equipment/flow IDs, топологии маршрутов, IFC read-back
 идентификаторов и BCF 2.1 topic identities между вариантами.
 
+Для read-only viewer можно передать весь acceptance-каталог и выбрать вариант:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli ui `
+  out\commercial_pilot_acceptance --variant 2 `
+  --profile rules\pharma_clean_production.yaml
+```
+
+`--variant` выбирает `building_02.json` и его соседние DXF/PDF/IFC/BCF/JSON
+артефакты; варианты 1 и 3 открываются тем же способом.
+
 ### Facility review и BCF issue history
 
 Команда `ui` автоматически открывает существующий `building_01.json` как
