@@ -1,0 +1,20 @@
+name: Industrial process pilot
+version: "0.1"
+domain: industrial
+jurisdiction: project-profile-not-a-regulatory-verdict
+provenance:
+  source: Facility Layout Compiler domain profile
+  purpose: deterministic flow coordination evidence for an industrial pilot
+# Conceptual project relations only. These are not an HSE, hazardous-process,
+# fire, machinery-safety or building-code verdict.
+flow_separation:
+  incompatible_flow_type_pairs:
+    - [material, waste]
+    - [people, vehicle]
+    - [finished_goods, waste]
+    - [hazardous_material, waste]
+drawing:
+  sheet_id: A-101
+  discipline: Industrial layout
+  title: Industrial process coordination plan
+  revision: P01

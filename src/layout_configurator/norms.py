@@ -17,7 +17,7 @@ from .validation import validate_layout
 from .walls import build_wall_plan
 
 
-RuleStatus = Literal["PASS", "FAIL", "NOT_APPLICABLE"]
+RuleStatus = Literal["PASS", "FAIL", "NOT_APPLICABLE", "UNKNOWN"]
 SUPPORTED_RULES = frozenset(
     {
         "GEOMETRY_VALID",
@@ -56,7 +56,7 @@ class RuleResult:
 
     @property
     def ok(self) -> bool:
-        return self.status != "FAIL"
+        return self.status in {"PASS", "NOT_APPLICABLE"}
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -156,7 +156,7 @@ class NormsReport:
 
     @property
     def ok(self) -> bool:
-        return all(result.status != "FAIL" for result in self.results)
+        return all(result.ok for result in self.results)
 
     def to_dict(self) -> dict[str, Any]:
         return {

@@ -80,12 +80,23 @@ DXF + vector PDF + IFC + JSON evidence bundle
 
 - `BuildingIR`: зоны, equipment, flows и structural grid без входных координат;
 - CP-SAT раскладка помещений и отдельный CP-SAT packing оборудования;
+- hard zone adjacency groups for required/forbidden functional relations;
 - service clearance, повороты, wall anchors и `NoOverlap2D`;
-- независимый equipment/flow validator и JSON audit evidence;
+- независимый equipment/flow/facility validator и JSON audit evidence;
+- automatic effective door width promotion for required process flows and
+  equipment front-edge access points for routing;
+- derived IFC flow route proxies with route metadata and validation status;
+- stable BCF-like JSON sidecars plus BCF-XML 2.1 ZIP topics/viewpoints;
+- IFC read-back of entity counts and route metadata before a bundle is accepted;
+- readable drawing annotations for room sizes, flow types and clear widths;
+- YAML-driven sheet metadata and annotation toggles for DXF/PDF;
 - editable DXF, vector PDF и IFC equipment proxies;
 - конструктивные оси в DXF/PDF;
+- versioned pharma profile plus starter `cleanroom`, `laboratory`, `hospital` and
+  `industrial` flow-separation profiles;
+- `check-building` round-trip validation command;
 - пример `examples/commercial_pilot.yaml`, теперь обозначенный как
-  pharmaceutical clean-production pilot.
+  pharmaceutical clean-production pilot and passing its current facility checks.
 
 Это ещё не готовая фармацевтическая или медицинская система. Текущие комнаты
 прямоугольные, flow routing ограничен 2D pilot-логикой, а rule packs не заменяют
@@ -106,15 +117,15 @@ Pharma/cleanroom, laboratory, hospital и industrial profiles версионир
 
 ## Ближайшая последовательность
 
-1. **Pharma clean-production profile.** Зафиксировать controlled vocabulary,
+1. **Domain profile pack.** Подтвердить с domain experts controlled vocabulary,
    allowed/forbidden flow relations, clean/dirty separation и минимальный
-   evidence report без непроверенных нормативных чисел.
-2. **Facility drawing profile.** Легенда потоков/оборудования, размерные цепи,
-   sheet set и readable audit annotations в DXF/PDF.
-3. **Coordination evidence.** IFC-представление flows и clashes, BCF issues,
-   повторное чтение IFC и viewer QA.
-4. **Domain packs.** После валидации первого профиля — laboratory, затем
-   hospital или industrial, каждый своим spec → implementation → review циклом.
+   evidence report без непроверенных нормативных чисел. Сейчас есть pharma,
+   cleanroom, laboratory, hospital и industrial starter profiles.
+2. **Coordination exchange.** Повторное чтение IFC flow proxies, BCF-XML 2.1
+   topics/viewpoints и viewer QA.
+3. **Domain packs.** Расширить starter profiles отдельными spec →
+   implementation → review циклами вместе с domain experts и подтверждёнными
+   источниками норм.
 
 ## Что не обещаем
 

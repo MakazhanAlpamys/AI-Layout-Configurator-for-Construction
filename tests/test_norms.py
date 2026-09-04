@@ -5,11 +5,25 @@ from pathlib import Path
 
 from layout_configurator.io import load_spec
 from layout_configurator.models import LayoutIR, LayoutResult, Rect
-from layout_configurator.norms import RuleSet, check_layout, load_ruleset, retrieve_rule_citations
+from layout_configurator.norms import NormsReport, RuleResult, RuleSet, check_layout, load_ruleset, retrieve_rule_citations
 from layout_configurator.solver import solve_layouts
 
 
 class NormsTests(unittest.TestCase):
+    def test_unknown_rule_status_is_not_accepted_as_a_pass(self):
+        result = RuleResult(
+            id="UNRESOLVED",
+            title="Unresolved evidence",
+            status="UNKNOWN",
+            source="test",
+            clause="test.unknown",
+            evidence=("The check could not be evaluated",),
+        )
+        report = NormsReport("test", "1", "test", (result,))
+
+        self.assertFalse(result.ok)
+        self.assertFalse(report.ok)
+
     def test_baseline_ruleset_passes_sample_and_keeps_evidence(self):
         spec = load_spec("examples/basic.yaml")
         result = solve_layouts(spec, variants=1, time_limit_seconds=10)[0]

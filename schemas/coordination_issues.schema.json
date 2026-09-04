@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/coordination-issues-0.1.json",
+  "title": "Facility Layout Compiler coordination issues 0.1",
+  "description": "Portable BCF-like JSON issue sidecar. It is not a BCF ZIP or a regulatory verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "profile", "open_count", "issues"],
+  "properties": {
+    "format": {"const": "FLC-BCF-like-json"},
+    "version": {"type": "string", "minLength": 1},
+    "project_name": {"type": "string", "minLength": 1},
+    "variant": {"type": "integer", "minimum": 1},
+    "profile": {"type": "object"},
+    "open_count": {"type": "integer", "minimum": 0},
+    "model_references": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "issues": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/issue"}
+    }
+  },
+  "$defs": {
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issue_id", "code", "title", "message", "severity", "source", "status"],
+      "properties": {
+        "issue_id": {"type": "string", "pattern": "^FLC-[A-F0-9]{12}$"},
+        "code": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "message": {"type": "string", "minLength": 1},
+        "severity": {"enum": ["ERROR", "WARNING", "INFO"]},
+        "source": {"type": "string", "minLength": 1},
+        "status": {"enum": ["OPEN", "RESOLVED"]},
+        "flow_id": {"type": "string", "minLength": 1},
+        "equipment_id": {"type": "string", "minLength": 1},
+        "location": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["x", "y"],
+          "properties": {
+            "x": {"type": "number"},
+            "y": {"type": "number"}
+          }
+        }
+      }
+    }
+  }
+}

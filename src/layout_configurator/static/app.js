@@ -1,4 +1,4 @@
-const state = { current: null, interaction: null, busy: false, selectedRoomId: null };
+const state = { current: null, interaction: null, busy: false, selectedRoomId: null, selectedCoordinationTarget: null };
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value)
@@ -82,6 +82,43 @@ function snap(value, grid) {
   return Math.round(value / grid) * grid;
 }
 
+function flowClass(type) {
+  return String(type || "flow").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
+}
+
+function drawFacilityOverlay(svg, data, height) {
+  if (data.mode !== "facility-review") return;
+  const structuralGrid = data.structural_grid;
+  if (structuralGrid) {
+    for (const [index, x] of (structuralGrid.axes_x_mm || []).entries()) {
+      const label = (structuralGrid.labels_x || [])[index] || `X${index + 1}`;
+      svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="${x}" y1="0" x2="${x}" y2="${height}"></line><text class="structural-label" x="${x + 70}" y="260">${escapeHtml(label)}</text>`);
+    }
+    for (const [index, y] of (structuralGrid.axes_y_mm || []).entries()) {
+      const label = (structuralGrid.labels_y || [])[index] || `Y${index + 1}`;
+      svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="0" y1="${height - y}" x2="${data.boundary.width}" y2="${height - y}"></line><text class="structural-label" x="180" y="${height - y - 70}">${escapeHtml(label)}</text>`);
+    }
+  }
+  for (const flow of data.flows || []) {
+    const points = (flow.points || []).map((point) => `${point.x},${height - point.y}`).join(" ");
+    if (!points) continue;
+    const labelPoint = flow.points[Math.floor(flow.points.length / 2)] || flow.points[0];
+    const label = `${flow.flow_id} · ${flow.type || "flow"}`;
+    const selected = state.selectedCoordinationTarget?.kind === "flow" && state.selectedCoordinationTarget.id === flow.flow_id;
+    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${escapeHtml(flowClass(flow.type))}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" x="${labelPoint.x}" y="${height - labelPoint.y - 90}">${escapeHtml(label)}</text>`);
+  }
+  for (const item of data.equipment || []) {
+    const clearance = item.clearance;
+    const selected = state.selectedCoordinationTarget?.kind === "equipment" && state.selectedCoordinationTarget.id === item.equipment_id;
+    if (clearance) {
+      const clearanceY = height - clearance.y - clearance.depth;
+      svg.insertAdjacentHTML("beforeend", `<rect class="equipment-clearance${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${clearance.x}" y="${clearanceY}" width="${clearance.width}" height="${clearance.depth}" rx="24"></rect>`);
+    }
+    const y = height - item.y - item.depth;
+    svg.insertAdjacentHTML("beforeend", `<rect class="equipment${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${item.x}" y="${y}" width="${item.width}" height="${item.depth}" rx="18"></rect><text class="equipment-label" x="${item.x + item.width / 2}" y="${y + item.depth / 2 + 45}">${escapeHtml(item.equipment_id)}</text>`);
+  }
+}
+
 function drawPlan(data, preview = null) {
   const svg = $("#plan");
   const width = data.boundary.width;
@@ -103,6 +140,7 @@ function drawPlan(data, preview = null) {
     }
     svg.insertAdjacentHTML("beforeend", "</g>");
   }
+  drawFacilityOverlay(svg, data, height);
   if (preview) {
     const r = preview.rect;
     const y = height - r.y - r.height;
@@ -127,7 +165,7 @@ function drawPlan(data, preview = null) {
 }
 
 function canvasPointerDown(event) {
-  if (!state.current || state.busy) return;
+  if (!state.current || state.busy || state.current.mode === "facility-review") return;
   const handle = event.target.closest("[data-resize-room]");
   const roomNode = event.target.closest("[data-room-id]");
   if (!roomNode) return;
@@ -210,15 +248,56 @@ function canvasPointerCancel(event) {
   render(state.current);
 }
 
+function renderFacilityReview(data) {
+  const facility = data.facility || {};
+  const checks = facility.checks || [];
+  const issues = facility.issues || data.validation.issues || [];
+  const equipmentCount = (data.equipment || []).length;
+  const flowCount = (data.flow_declarations || []).length;
+  const routedCount = (data.flows || []).length;
+  const passCount = checks.filter((check) => check.status === "PASS").length;
+  const profile = facility.profile || {};
+  $("#summary").innerHTML = `<dt>Rooms</dt><dd>${data.rooms.length}</dd><dt>Equipment</dt><dd>${equipmentCount}</dd><dt>Flow declarations</dt><dd>${flowCount} / ${routedCount} routed</dd><dt>Checks</dt><dd>${passCount} / ${checks.length} pass</dd><dt>Profile</dt><dd>${escapeHtml(profile.domain || "facility")}</dd><dt>Sheet</dt><dd>${escapeHtml((profile.drawing || {}).sheet_id || "A-101")}</dd>`;
+  $("#issues").innerHTML = issues.length
+    ? `<div class="issues"><div class="issues-title">Coordination issues (${issues.length})</div>${issues.map((issue) => { const kind = issue.flow_id ? "flow" : issue.equipment_id ? "equipment" : ""; const target = issue.flow_id || issue.equipment_id || ""; const interactive = kind ? " interactive" : ""; return `<div class="issue-row${interactive}" data-issue-id="${escapeHtml(issue.issue_id || "")}" data-target-kind="${kind}" data-target-id="${escapeHtml(target)}" role="${kind ? "button" : "status"}" tabindex="${kind ? "0" : "-1"}"><strong>${escapeHtml(issue.severity || "ERROR")} · ${escapeHtml(issue.code)}${kind ? ` · focus ${escapeHtml(target)}` : ""}</strong><span>${escapeHtml(issue.message)}</span></div>`; }).join("")}</div>`
+    : `<div class="issues issues-pass"><strong>Coordination clean</strong><span>All deterministic facility checks passed.</span></div>`;
+  $("#norms").innerHTML = checks.length
+    ? `<div class="norms facility-checks"><div class="norms-head">Facility evidence · ${escapeHtml(profile.name || "selected profile")}</div>${checks.map((check) => { const statusClass = check.status === "PASS" ? "norm-pass" : check.status === "FAIL" ? "norm-fail" : "norm-na"; return `<details class="facility-check"><summary><span>${escapeHtml(check.id)}</span><strong class="${statusClass}">${escapeHtml(check.status)}</strong></summary><p>${escapeHtml((check.evidence || []).join("; "))}</p></details>`; }).join("")}</div>`
+    : "";
+  $("#journal").innerHTML = `<div class="journal-title">Review mode</div><p class="journal-empty">Read-only projection. Edit the BuildingIR program and regenerate the bundle to create a new revision.</p>`;
+  $("#files").innerHTML = data.files.map((file) => `<a href="${file.url}" download>${escapeHtml(file.name)}</a>`).join("");
+  $("#legend").innerHTML = `<span><i class="swatch flow-people"></i> people flow</span><span><i class="swatch flow-material"></i> material flow</span><span><i class="swatch equipment"></i> equipment</span><span><i class="swatch clearance"></i> service clearance</span><span><i class="swatch entry"></i> external entry</span>`;
+}
+
+function selectCoordinationIssue(issueId) {
+  const issue = (state.current?.facility?.issues || []).find((item) => item.issue_id === issueId);
+  if (!issue) return;
+  if (issue.flow_id) state.selectedCoordinationTarget = { kind: "flow", id: issue.flow_id };
+  else if (issue.equipment_id) state.selectedCoordinationTarget = { kind: "equipment", id: issue.equipment_id };
+  else state.selectedCoordinationTarget = null;
+  render(state.current);
+}
+
 function render(data) {
   state.current = data;
+  const review = data.mode === "facility-review";
+  document.body.classList.toggle("facility-review", review);
   $("#project-name").textContent = data.spec.project_name;
   const status = $("#status");
   status.textContent = data.validation.ok ? "VALID" : `${data.validation.issues.length} issue(s)`;
   status.classList.toggle("bad", !data.validation.ok);
-  $("#undo").disabled = !data.can_undo;
-  $("#redo").disabled = !data.can_redo;
+  $("#undo").disabled = review || !data.can_undo;
+  $("#redo").disabled = review || !data.can_redo;
+  $("#reset").disabled = review;
+  $(".command-card").hidden = review;
+  $(".canvas-help").textContent = review
+    ? "Read-only facility review: flows, equipment footprints, service clearances and deterministic checks are projected from the generated BuildingIR bundle."
+    : "Перетащите комнату или resize-маркер; отпускание отправляет одну typed-команду.";
   drawPlan(data);
+  if (review) {
+    renderFacilityReview(data);
+    return;
+  }
   $("#summary").innerHTML = `<dt>Комнат</dt><dd>${data.rooms.length}</dd><dt>Вариант</dt><dd>${data.layout.variant}</dd><dt>История</dt><dd>${data.history.length || "—"}</dd><dt>Внешний вход</dt><dd>${data.spec.external_entry ? escapeHtml(data.spec.external_entry.id) : "—"}</dd>`;
   $("#issues").innerHTML = data.validation.issues.length ? `<div class="issues">${data.validation.issues.map((issue) => `<div>${escapeHtml(issue.code)}: ${escapeHtml(issue.message)}</div>`).join("")}</div>` : "";
   if (data.norms) {
@@ -236,6 +315,17 @@ function render(data) {
 }
 
 $("#operation").addEventListener("change", renderFields);
+$("#issues").addEventListener("click", (event) => {
+  const row = event.target.closest("[data-issue-id]");
+  if (row) selectCoordinationIssue(row.dataset.issueId);
+});
+$("#issues").addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const row = event.target.closest("[data-issue-id]");
+  if (!row) return;
+  event.preventDefault();
+  selectCoordinationIssue(row.dataset.issueId);
+});
 $("#plan").addEventListener("pointerdown", canvasPointerDown);
 $("#plan").addEventListener("pointermove", canvasPointerMove);
 $("#plan").addEventListener("pointerup", canvasPointerUp);

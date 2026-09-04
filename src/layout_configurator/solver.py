@@ -31,8 +31,24 @@ def solve_layouts(
     axis_aligned_room_ids: Iterable[str] | None = None,
     structural_axes_x_mm: Iterable[float] | None = None,
     structural_axes_y_mm: Iterable[float] | None = None,
+    required_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
+    forbidden_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
+    minimum_adjacency_mm: float | None = None,
+    equipment_fit_options: Mapping[str, Iterable[tuple[str, Iterable[tuple[float, float]]]]] | None = None,
 ) -> list[LayoutResult]:
-    """Solve grid-snapped layouts with optional fixed rectangles and axes."""
+    """Solve grid-snapped layouts with optional fixed rectangles and axes.
+
+    ``required_adjacency_groups`` expands higher-level constraints such as
+    "logistics must touch production". Each group is ``(name, left_rooms,
+    right_rooms)`` and requires at least one room pair to share a boundary.
+    ``forbidden_adjacency_groups`` uses the same shape and prevents every pair
+    from touching. Room-level LayoutIR relations remain supported unchanged.
+    ``minimum_adjacency_mm`` can reserve extra room beside a generated opening
+    for a wider facility flow corridor.
+    ``equipment_fit_options`` adds necessary room width/height constraints for
+    fixed room equipment; the second-stage equipment solver still packs all
+    clearances exactly.
+    """
 
     if variants < 1:
         raise ValueError("variants должен быть не меньше 1")
@@ -49,6 +65,14 @@ def solve_layouts(
     unknown_axis_rooms = axis_room_ids - {room.id for room in spec.rooms}
     if unknown_axis_rooms:
         raise InfeasibleLayout(f"Нельзя привязать к осям неизвестные комнаты: {', '.join(sorted(unknown_axis_rooms))}")
+
+    known_room_ids = {room.id for room in spec.rooms}
+    required_groups = _normalise_adjacency_groups(required_adjacency_groups, known_room_ids, "required")
+    forbidden_groups = _normalise_adjacency_groups(forbidden_adjacency_groups, known_room_ids, "forbidden")
+    room_fit_options = _normalise_equipment_fit_options(equipment_fit_options, known_room_ids)
+    adjacency_width_mm = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
+    if adjacency_width_mm <= 0:
+        raise ValueError("minimum_adjacency_mm must be positive")
 
     model = cp_model.CpModel()
     grid = spec.grid_mm
@@ -84,6 +108,16 @@ def solve_layouts(
             model.Add(y == _fixed_grid_value(fixed.y, grid, room.id, "y"))
             model.Add(width == _fixed_grid_value(fixed.width, grid, room.id, "width"))
             model.Add(height == _fixed_grid_value(fixed.height, grid, room.id, "height"))
+        for equipment_id, fit_options in room_fit_options.get(room.id, ()):
+            fit_choices = []
+            for option_index, (minimum_width, minimum_height) in enumerate(fit_options):
+                fit_choice = model.NewBoolVar(f"equipment_fit_{room.id}_{equipment_id}_{option_index}")
+                model.Add(width >= _ceil_grid(minimum_width, grid)).OnlyEnforceIf(fit_choice)
+                model.Add(height >= _ceil_grid(minimum_height, grid)).OnlyEnforceIf(fit_choice)
+                fit_choices.append(fit_choice)
+            if not fit_choices:
+                raise InfeasibleLayout(f"Equipment fit requirements for {equipment_id} contain no orientations")
+            model.AddBoolOr(fit_choices)
         if room.needs_daylight:
             _constrain_daylight_contact(
                 model,
@@ -120,11 +154,40 @@ def solve_layouts(
         _constrain_external_entry(model, room_vars[spec.external_entry.room_id], spec, boundary_width, boundary_height)
 
     model.AddNoOverlap2D(x_intervals, y_intervals)
-    minimum_shared = max(1, _ceil_grid(spec.door_width_mm, grid))
+    minimum_shared = max(1, _ceil_grid(adjacency_width_mm, grid))
     for room_a, room_b in spec.relation_pairs("required_adjacency"):
         _add_required_adjacency(model, room_vars[room_a], room_vars[room_b], minimum_shared, f"adj_{room_a}_{room_b}")
     for room_a, room_b in spec.relation_pairs("forbidden_adjacency"):
         _add_forbidden_adjacency(model, room_vars[room_a], room_vars[room_b], f"forbid_{room_a}_{room_b}")
+
+    for group_name, left_rooms, right_rooms in required_groups:
+        indicators = [
+            _add_adjacency_indicator(
+                model,
+                room_vars[room_a],
+                room_vars[room_b],
+                minimum_shared,
+                f"zone_required_{group_name}_{room_a}_{room_b}",
+            )
+            for room_a in left_rooms
+            for room_b in right_rooms
+            if room_a != room_b
+        ]
+        if not indicators:
+            raise InfeasibleLayout(f"Групповая смежность {group_name} не содержит допустимых комнат")
+        model.AddBoolOr(indicators)
+
+    for group_name, left_rooms, right_rooms in forbidden_groups:
+        for room_a in left_rooms:
+            for room_b in right_rooms:
+                if room_a == room_b:
+                    continue
+                _add_forbidden_adjacency(
+                    model,
+                    room_vars[room_a],
+                    room_vars[room_b],
+                    f"zone_forbidden_{group_name}_{room_a}_{room_b}",
+                )
 
     # Area accuracy dominates; the position tie-breaker makes one run stable.
     model.Minimize(sum(area_deviations) * 10_000 + sum(v for room in spec.rooms for v in (room_vars[room.id].x, room_vars[room.id].y)))
@@ -161,8 +224,24 @@ def solve_layouts(
 
 
 def _add_required_adjacency(model, a: _RoomVars, b: _RoomVars, minimum_shared: int, name: str) -> None:
-    orientations = [model.NewBoolVar(f"{name}_right"), model.NewBoolVar(f"{name}_left"), model.NewBoolVar(f"{name}_above"), model.NewBoolVar(f"{name}_below")]
-    model.AddExactlyOne(orientations)
+    indicator = _add_adjacency_indicator(model, a, b, minimum_shared, name)
+    model.Add(indicator == 1)
+
+
+def _add_adjacency_indicator(model, a: _RoomVars, b: _RoomVars, minimum_shared: int, name: str):
+    """Create a Boolean that is true exactly when a pair shares a usable edge."""
+
+    indicator = model.NewBoolVar(f"{name}_contact")
+    orientations = [
+        model.NewBoolVar(f"{name}_right"),
+        model.NewBoolVar(f"{name}_left"),
+        model.NewBoolVar(f"{name}_above"),
+        model.NewBoolVar(f"{name}_below"),
+    ]
+    model.AddExactlyOne(orientations).OnlyEnforceIf(indicator)
+    model.AddBoolOr([indicator.Not(), *orientations])
+    for orientation in orientations:
+        model.AddImplication(orientation, indicator)
     right, left, above, below = orientations
     model.Add(a.x + a.width == b.x).OnlyEnforceIf(right)
     model.Add(b.x + b.width == a.x).OnlyEnforceIf(left)
@@ -172,6 +251,7 @@ def _add_required_adjacency(model, a: _RoomVars, b: _RoomVars, minimum_shared: i
     _add_overlap(model, left, a.y, a.height, b.y, b.height, minimum_shared, f"{name}_left_overlap")
     _add_overlap(model, above, a.x, a.width, b.x, b.width, minimum_shared, f"{name}_above_overlap")
     _add_overlap(model, below, a.x, a.width, b.x, b.width, minimum_shared, f"{name}_below_overlap")
+    return indicator
 
 
 def _add_overlap(model, orientation, a_start, a_size, b_start, b_size, minimum: int, name: str) -> None:
@@ -195,6 +275,43 @@ def _add_forbidden_adjacency(model, a: _RoomVars, b: _RoomVars, name: str) -> No
     model.Add(b.x + b.width + 1 <= a.x).OnlyEnforceIf(right)
     model.Add(a.y + a.height + 1 <= b.y).OnlyEnforceIf(below)
     model.Add(b.y + b.height + 1 <= a.y).OnlyEnforceIf(above)
+
+
+def _normalise_equipment_fit_options(options, known_room_ids: set[str]):
+    normalised: dict[str, tuple[tuple[str, tuple[tuple[float, float], ...]], ...]] = {}
+    for room_id, requirements in (options or {}).items():
+        room_id = str(room_id)
+        if room_id not in known_room_ids:
+            raise InfeasibleLayout(f"Equipment fit requirements reference unknown room {room_id}")
+        room_requirements = []
+        for equipment_id, fit_options in requirements:
+            normalised_options = tuple(
+                (float(minimum_width), float(minimum_height))
+                for minimum_width, minimum_height in fit_options
+            )
+            if any(width <= 0 or height <= 0 for width, height in normalised_options):
+                raise InfeasibleLayout(f"Equipment fit requirements for {equipment_id} must be positive")
+            room_requirements.append((str(equipment_id), normalised_options))
+        normalised[room_id] = tuple(room_requirements)
+    return normalised
+
+
+def _normalise_adjacency_groups(groups, known_room_ids: set[str], relation: str):
+    normalised = []
+    for index, raw_group in enumerate(groups or ()):
+        try:
+            name, left_raw, right_raw = raw_group
+        except (TypeError, ValueError) as exc:
+            raise InfeasibleLayout(f"Некорректная {relation} group adjacency #{index}") from exc
+        left = tuple(str(room_id) for room_id in left_raw)
+        right = tuple(str(room_id) for room_id in right_raw)
+        unknown = (set(left) | set(right)) - known_room_ids
+        if unknown:
+            raise InfeasibleLayout(
+                f"{relation} group adjacency {name} references unknown rooms: {', '.join(sorted(unknown))}"
+            )
+        normalised.append((str(name), tuple(dict.fromkeys(left)), tuple(dict.fromkeys(right))))
+    return tuple(normalised)
 
 
 def _constrain_external_entry(model, room: _RoomVars, spec: LayoutIR, boundary_width: int, boundary_height: int) -> None:

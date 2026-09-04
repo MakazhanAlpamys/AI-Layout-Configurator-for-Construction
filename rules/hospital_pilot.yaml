@@ -1,0 +1,20 @@
+name: Hospital planning pilot
+version: "0.1"
+domain: hospital
+jurisdiction: project-profile-not-a-regulatory-verdict
+provenance:
+  source: Facility Layout Compiler domain profile
+  purpose: deterministic flow coordination evidence for a hospital pilot
+# Conceptual project relations only. These are not a healthcare, infection-
+# control, accessibility, fire or building-code verdict.
+flow_separation:
+  incompatible_flow_type_pairs:
+    - [patients, waste]
+    - [people, waste]
+    - [clean_supply, waste]
+    - [sterile_supply, waste]
+drawing:
+  sheet_id: A-101
+  discipline: Hospital layout
+  title: Hospital flow coordination plan
+  revision: P01

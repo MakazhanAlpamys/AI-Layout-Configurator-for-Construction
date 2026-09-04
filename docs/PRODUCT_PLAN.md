@@ -232,9 +232,17 @@ facility**, без заявления о соблюдении GMP или чис�
 
 Циклы A и базовая часть B, а также первый срез C уже реализованы: есть canonical
 `BuildingIR`, плотный single-floor pilot, deterministic equipment packing,
-clearance/collision checks, room-graph flow routing с детерминированным обходом
-прямоугольных препятствий, первичная DXF/PDF projection оборудования и потоков
-и IFC equipment proxies с размерами/clearance property sets. Следующий кодовый
-шаг — зафиксировать pharma clean-production domain profile без непроверенных
-нормативных чисел, затем вынести facility drawing-профиль и
-IFC-представление потоков/коллизий.
+clearance/collision checks, hard required/forbidden zone adjacency groups,
+room-graph flow routing с детерминированным обходом прямоугольных препятствий,
+front-edge equipment endpoints, automatic process-door sizing, первичная
+DXF/PDF projection оборудования и потоков, IFC equipment proxies с
+размерами/clearance property sets, IFC flow route proxies и единый facility
+evidence report. Versioned pharma, cleanroom, laboratory, hospital и industrial
+starter profiles уже зафиксированы без непроверенных нормативных чисел.
+BCF-XML 2.1 exchange уже формируется поверх экспортируемых IFC маршрутов:
+каждый вариант получает ZIP с topics/viewpoints и внешними ссылками на модели,
+а BCF-like JSON sidecar и YAML-driven drawing profile остаются локальными
+машиночитаемыми проекциями. `--bcf-input` сохраняет исчезнувшие topics как
+`Closed` при следующей итерации. Следующий шаг — viewer QA на конкретных
+regulated facility шаблонах; для read-only проверки полного комплекта уже есть
+`qa-building`.

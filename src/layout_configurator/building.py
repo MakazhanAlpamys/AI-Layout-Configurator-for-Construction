@@ -8,7 +8,7 @@ not accept generated coordinates; those remain solver output.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from collections.abc import Mapping
 from typing import Any, Literal
 
@@ -145,6 +145,24 @@ class EquipmentSpec:
         if self.anchor_side is not None:
             payload["anchor_side"] = self.anchor_side
         return payload
+
+    def room_fit_dimensions(self, wall_thickness_mm: float) -> tuple[tuple[float, float], ...]:
+        """Return room dimensions that can contain this item and its envelope.
+
+        These are necessary per-equipment room constraints for the room solver;
+        the equipment solver still performs the final multi-item packing.
+        """
+
+        orientations = ((self.width_mm, self.depth_mm, self.clearance_left_mm, self.clearance_right_mm, self.clearance_back_mm, self.clearance_front_mm),)
+        if self.rotation_allowed and self.width_mm != self.depth_mm:
+            orientations += ((self.depth_mm, self.width_mm, self.clearance_front_mm, self.clearance_back_mm, self.clearance_left_mm, self.clearance_right_mm),)
+        return tuple(
+            (
+                wall_thickness_mm + width + left + right,
+                wall_thickness_mm + depth + bottom + top,
+            )
+            for width, depth, left, right, bottom, top in orientations
+        )
 
 
 @dataclass(frozen=True)
@@ -329,6 +347,75 @@ class BuildingIR:
                 raise BuildingSpecError(
                     f"Flow {flow.id} references unknown endpoints: {', '.join(sorted(unknown))}"
                 )
+
+    def room_ids_for_zone(self, zone_id: str, *, include_descendants: bool = True) -> tuple[str, ...]:
+        """Return stable room membership for a zone and its child zones."""
+
+        zones_by_id = {zone.id: zone for zone in self.zones}
+        if zone_id not in zones_by_id:
+            raise BuildingSpecError(f"Unknown zone: {zone_id}")
+        selected = {zone_id}
+        if include_descendants:
+            changed = True
+            while changed:
+                changed = False
+                for zone in self.zones:
+                    if zone.parent_zone_id in selected and zone.id not in selected:
+                        selected.add(zone.id)
+                        changed = True
+        room_ids = {
+            room_id
+            for zone in self.zones
+            if zone.id in selected
+            for room_id in zone.room_ids
+        }
+        return tuple(room.id for room in self.layout.rooms if room.id in room_ids)
+
+    def with_required_flow_opening_width(self) -> "BuildingIR":
+        """Return a copy whose generated doors can carry required flows.
+
+        ``LayoutIR.door_width_mm`` is the minimum generated opening width. A
+        process flow can demand a wider passage, so the facility compiler
+        promotes the effective width before solving instead of producing a
+        geometrically plausible but unusable route. The canonical result keeps
+        the promoted value visible in its evidence bundle.
+        """
+
+        required_width = max(
+            (flow.minimum_clear_width_mm for flow in self.flows if flow.required),
+            default=self.layout.door_width_mm,
+        )
+        if required_width <= self.layout.door_width_mm + 1e-6:
+            return self
+        return replace(self, layout=replace(self.layout, door_width_mm=required_width))
+
+    def zone_relation_groups(
+        self,
+        relation: Literal["required_adjacency", "preferred_adjacency", "forbidden_adjacency"],
+    ) -> tuple[tuple[str, tuple[str, ...], tuple[str, ...]], ...]:
+        """Expand zone relations into named groups of candidate room pairs.
+
+        A required zone relation means that at least one room pair from the two
+        zones must share a usable boundary. A forbidden relation means that no
+        pair may touch. Duplicate reverse declarations are collapsed here so
+        the solver and evidence report stay deterministic.
+        """
+
+        known = {zone.id for zone in self.zones}
+        groups: list[tuple[str, tuple[str, ...], tuple[str, ...]]] = []
+        seen: set[tuple[str, str]] = set()
+        for zone in self.zones:
+            for other_id in getattr(zone, relation):
+                if other_id not in known:
+                    continue
+                pair = tuple(sorted((zone.id, other_id)))
+                if pair in seen:
+                    continue
+                seen.add(pair)
+                left = self.room_ids_for_zone(pair[0])
+                right = self.room_ids_for_zone(pair[1])
+                groups.append((f"{pair[0]}-{pair[1]}", left, right))
+        return tuple(groups)
 
     @staticmethod
     def _validate_relation_ids(owner: str, relation_ids: tuple[str, ...], known: set[str], field: str) -> None:

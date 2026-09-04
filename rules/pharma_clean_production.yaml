@@ -1,0 +1,29 @@
+name: Pharma-like clean production pilot
+version: "0.1"
+domain: pharma-clean-production
+jurisdiction: project-profile-not-a-regulatory-verdict
+
+# This is a domain policy for early design coordination. It is not GMP,
+# healthcare, fire or construction-code approval.
+provenance:
+  source: Facility Layout Compiler product profile
+  purpose: deterministic coordination evidence for a pharma-like pilot
+
+flow_separation:
+  # The current BuildingIR models separation as non-sharing of intermediate
+  # rooms. It is deliberately conservative and does not claim contamination,
+  # HVAC or pressure-cascade compliance.
+  incompatible_flow_type_pairs:
+    - [material, waste]
+    - [people, waste]
+    - [finished_goods, waste]
+drawing:
+  sheet_id: A-101
+  discipline: Pharma clean production
+  title: Clean production coordination plan
+  revision: P01
+  show_room_dimensions: true
+  show_flow_legend: true
+  show_flow_labels: true
+  show_equipment_clearance: true
+  show_structural_grid: true

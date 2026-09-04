@@ -114,21 +114,90 @@ domain/rule packs поверх того же контракта, а не сме�
 план — в [`docs/PRODUCT_PLAN.md`](docs/PRODUCT_PLAN.md).
 
 `generate-building` уже решает комнаты CP-SAT, затем размещает оборудование
-вторым CP-SAT с учётом clearance и выпускает `building_01.json`:
+вторым CP-SAT с учётом clearance и выпускает `building_01.json`. Для плотных
+facility-программ default time limit этой команды — 60 секунд:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
   examples\commercial_pilot.yaml --output out\commercial_pilot --variants 1
 ```
 
+По умолчанию команда применяет встроенный профиль
+`pharma-clean-production`. Его можно заменить любым starter или собственным
+доменным профилем, например:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate-building `
+  examples\commercial_pilot.yaml --profile rules\pharma_clean_production.yaml `
+  --output out\commercial_pilot
+```
+
+В репозитории также есть starter-профили
+`rules\cleanroom_pilot.yaml`, `rules\laboratory_pilot.yaml`,
+`rules\hospital_pilot.yaml` и `rules\industrial_pilot.yaml`. Они содержат
+только проектные отношения типов потоков и не являются GMP, healthcare, HSE,
+ISO или строительными code-checks.
+Каждый профиль может содержать секцию `drawing` (`sheet_id`, `discipline`,
+`title`, `revision` и флаги аннотаций), которая управляет DXF/PDF projection.
+
+Связи зон становятся жёсткими CP-SAT-ограничениями: обязательная связь требует
+контакт хотя бы одной пары комнат, а запрещённая не допускает касания. Для
+обязательных потоков эффективная ширина генерируемых дверей автоматически
+поднимается до максимальной ширины потока; результат сохраняет это значение в
+каноническом `spec` и evidence.
+
 `generate-building` выпускает program/solver output и drawing-проекции: editable DXF
 с блоками оборудования на `A-EQUIP` и пунктирными service-clearance на `A-CLEARANCE`,
 а также векторный PDF. В `building_01.json` дополнительно сохраняются
-`equipment_validation`, derived `flow_routes` и независимый `flow_validation`.
+`equipment_validation`, derived `flow_routes`, независимый `flow_validation` и
+единый `facility_validation` с профилем, статусами и evidence. Необязательные
+потоки (`required: false`) не делают результат FAIL при отсутствии маршрута.
+Рядом с ним команда сохраняет `building_01.coordination.json` — явный
+`FLC-BCF-like-json` sidecar со стабильными issue ID, severity, source,
+endpoint’ами и координатой маршрута, если проблема относится к flow. DXF/PDF
+дополнительно содержат размеры помещений и подписи flow type/clear width.
+Формат sidecar описан в [`schemas/coordination_issues.schema.json`](schemas/coordination_issues.schema.json);
+дополнительно рядом автоматически создаётся настоящий BCF-XML 2.1 ZIP
+`building_01.bcf`: по одному topic на issue, `markup.bcf`, viewpoint `*.bcfv`,
+snapshot и внешние ссылки на program/DXF/PDF/IFC. JSON остаётся компактным
+sidecar для автоматической обработки.
 IFC для оборудования представлен как `IfcBuildingElementProxy` с двумя property
-sets, а маршруты потоков пока остаются в JSON/DXF/PDF projection. Это evidence
-для проектной проверки, не GMP/медицинское разрешение и не автоматический
+sets. Derived flow routes также экспортируются как `IfcBuildingElementProxy` с
+`Curve3D` и `Pset_LayoutFlow`: тип, endpoint’ы, room path, ширина, число проблем
+и статус независимой проверки. Это coordination/evidence projection, а не MEP
+или process-system model, не GMP/медицинское разрешение и не автоматический
 нормативный verdict.
+
+После записи IFC автоматически открывается через IfcOpenShell обратно и сверяет
+ключевые entity counts и flow metadata. В `manifest.json` это отражено в
+`ifc_readback`; для ручной проверки уже существующего результата можно передать
+`check-building --ifc path\to\building.ifc`.
+
+Сохранённый результат можно перепроверить отдельным детерминированным запуском:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli check-building `
+  out\commercial_pilot\building_01.json --json
+```
+
+Для повторной проверки с отдельным issue-файлом добавьте
+`--issues-output out\commercial_pilot\recheck.coordination.json`.
+Для отдельного BCF-пакета при повторной проверке добавьте
+`--bcf-output out\commercial_pilot\recheck.bcf`.
+При следующей итерации можно передать предыдущий пакет через
+`generate-building --bcf-input out\commercial_pilot\building_01.bcf`:
+исчезнувшие из текущего validation report topics попадут в новый BCF как
+`Closed`, а вернувшиеся ошибки снова будут `Open`.
+
+Для полной проверки уже созданного комплекта используйте:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli qa-building `
+  out\commercial_pilot\building_01.json --json
+```
+
+Команда сверяет JSON sidecar, DXF, PDF, IFC read-back и BCF 2.1 с текущим
+facility validation report.
 
 ## Ограничения MVP
 
@@ -306,3 +375,13 @@ $env:LAYOUT_LLM_API_KEY = "your-key"
 Для прямого запуска солвера с этим же строгим входом используй
 `generate --strict-input`; shorthand без обязательных canonical-полей будет
 отклонён до запуска CP-SAT.
+### Facility review UI
+
+Opening a generated `BuildingIR` result automatically selects the read-only facility review:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli ui `
+  out\commercial_pilot\building_01.json --profile rules\pharma_clean_production.yaml
+```
+
+The review projects rooms, process equipment, service-clearance envelopes, derived people/material/waste routes, structural axes, deterministic facility evidence, coordination issues, and the generated JSON/DXF/PDF/IFC/BCF artifacts. It recomputes the facility report on open and rejects edit, undo, redo, and reset commands with HTTP 405.

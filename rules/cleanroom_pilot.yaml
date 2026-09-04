@@ -1,0 +1,20 @@
+name: Cleanroom process pilot
+version: "0.1"
+domain: cleanroom
+jurisdiction: project-profile-not-a-regulatory-verdict
+provenance:
+  source: Facility Layout Compiler domain profile
+  purpose: deterministic flow coordination evidence for a cleanroom pilot
+# Conceptual project relations only. These are not ISO 14644, GMP, HVAC or
+# contamination-control requirements.
+flow_separation:
+  incompatible_flow_type_pairs:
+    - [clean_material, waste]
+    - [people, waste]
+    - [finished_goods, waste]
+    - [clean_material, dirty_material]
+drawing:
+  sheet_id: A-101
+  discipline: Cleanroom layout
+  title: Cleanroom process coordination plan
+  revision: P01

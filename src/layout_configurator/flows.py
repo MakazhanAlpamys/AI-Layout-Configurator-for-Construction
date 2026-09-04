@@ -155,7 +155,8 @@ def validate_flow_routes(
             issues.append(FlowValidationIssue("endpoint_unplaced", f"Flow {flow.id} has no placed target endpoint", flow.id))
         for source in sources:
             for target in targets:
-                expected[(flow.id, source.source_id, target.source_id, source.room_id, target.room_id)] = flow
+                if flow.required:
+                    expected[(flow.id, source.source_id, target.source_id, source.room_id, target.room_id)] = flow
 
     seen: set[tuple[str, str, str, str, str]] = set()
     for route in routes.routes:
@@ -176,7 +177,7 @@ def validate_flow_routes(
             issues.append(FlowValidationIssue("route_width_mismatch", f"Flow {route.flow_id} route width is below its declared minimum", route.flow_id))
 
         route_line = LineString(route.points)
-        corridor = route_line.buffer(route.minimum_clear_width_mm / 2, cap_style=2, join_style=2)
+        corridor = route_line.buffer(route.minimum_clear_width_mm / 2, cap_style=2, join_style=3)
         for room_a, room_b in zip(route.room_path, route.room_path[1:]):
             opening = _graph_opening(graph, room_a, room_b)
             if opening is None:
@@ -236,7 +237,12 @@ def _resolve_endpoints(
             result.append(_Endpoint(endpoint_id, endpoint_id))
         elif endpoint_id in equipment_by_id:
             placement = equipment_by_id[endpoint_id]
-            result.append(_Endpoint(endpoint_id, placement.room_id, placement.rect.center))
+            spec = next(
+                (item for item in building.equipment if item.id == endpoint_id),
+                None,
+            )
+            point = _equipment_access_point(spec, placement) if spec is not None else placement.rect.center
+            result.append(_Endpoint(endpoint_id, placement.room_id, point))
         elif endpoint_id in zone_ids:
             zone_set = _descendant_zones(building, endpoint_id)
             result.extend(
@@ -245,6 +251,16 @@ def _resolve_endpoints(
                 if room.id in layout.placements and any(room.id in zone.room_ids for zone in building.zones if zone.id in zone_set)
             )
     return tuple(result)
+
+
+def _equipment_access_point(spec, placement: EquipmentPlacement) -> tuple[float, float]:
+    """Use the declared front edge as the process-flow connection point."""
+
+    rect = placement.rect
+    if placement.rotated:
+        # A 90-degree turn maps local front to the global left edge.
+        return (rect.x, rect.y + rect.height / 2)
+    return (rect.x + rect.width / 2, rect.top)
 
 
 def _descendant_zones(building: BuildingIR, root_id: str) -> set[str]:
@@ -321,14 +337,21 @@ def _route_points(
         end = target.point or layout.placements[room_path[0]].center
         return _deduplicate_points((start, end))
 
-    portal_offset = max(500.0, minimum_clear_width_mm / 2 + 50.0)
+    portal_offset = max(
+        500.0,
+        minimum_clear_width_mm / 2 + building.layout.wall_thickness_mm / 2 + 50.0,
+    )
     points: list[tuple[float, float]] = []
     for index, room_id in enumerate(room_path):
         room_points: list[tuple[float, float]] = []
         if index == 0:
             room_points.append(source.point or _inward_point(layout.placements[room_id], openings[0], portal_offset))
         else:
-            room_points.append(openings[index - 1].center)
+            # Start inside the room rather than at the wall centreline. A
+            # swept flow corridor is wider than the centreline opening; using
+            # the portal itself as a diagonal routing node makes its buffer
+            # leak into the wall beside the door.
+            room_points.append(_inward_point(layout.placements[room_id], openings[index - 1], portal_offset))
         if index < len(room_path) - 1:
             room_points.append(_inward_point(layout.placements[room_id], openings[index], portal_offset))
         else:
@@ -353,11 +376,12 @@ def _route_points(
 
 
 def _inward_point(room: Rect, opening: DoorOpening, offset: float) -> tuple[float, float]:
-    distance = min(offset, room.width / 4, room.height / 4)
     x, y = opening.center
     if opening.orientation == "vertical":
+        distance = min(offset, room.width / 2)
         x += distance if abs(opening.fixed - room.x) <= 1e-6 else -distance
     else:
+        distance = min(offset, room.height / 2)
         y += distance if abs(opening.fixed - room.y) <= 1e-6 else -distance
     return (x, y)
 
@@ -403,7 +427,10 @@ def _route_around_obstacles(
     half_width = width_mm / 2
     nodes: list[tuple[float, float]] = [start, end]
     for obstacle in obstacles:
-        margin = half_width
+        # Keep a small numerical/design buffer beyond the exact swept width;
+        # a tangent route otherwise still intersects the obstacle after GEOS
+        # computes joins and floating-point coordinates.
+        margin = half_width + 10.0
         expanded = Rect(
             obstacle.x - margin,
             obstacle.y - margin,
@@ -460,7 +487,7 @@ def _segment_is_clear(
 ) -> bool:
     if start == end:
         return True
-    corridor = LineString([start, end]).buffer(width_mm / 2, cap_style=2, join_style=2)
+    corridor = LineString([start, end]).buffer(width_mm / 2, cap_style=2, join_style=3)
     return all(
         corridor.intersection(box(obstacle.x, obstacle.y, obstacle.right, obstacle.top)).area <= 1e-6
         for obstacle in obstacles

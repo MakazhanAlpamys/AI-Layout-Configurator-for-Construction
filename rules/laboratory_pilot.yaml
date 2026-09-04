@@ -1,0 +1,19 @@
+name: Laboratory process pilot
+version: "0.1"
+domain: laboratory
+jurisdiction: project-profile-not-a-regulatory-verdict
+provenance:
+  source: Facility Layout Compiler domain profile
+  purpose: deterministic flow coordination evidence for a laboratory pilot
+# Conceptual project relations only. These are not a biosafety, GLP, OSHA,
+# healthcare or building-code verdict.
+flow_separation:
+  incompatible_flow_type_pairs:
+    - [specimen, waste]
+    - [people, waste]
+    - [clean_supply, waste]
+drawing:
+  sheet_id: A-101
+  discipline: Laboratory layout
+  title: Laboratory process coordination plan
+  revision: P01

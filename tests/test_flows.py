@@ -3,11 +3,14 @@ import unittest
 from pathlib import Path
 
 import ezdxf
+import ifcopenshell
 
 from layout_configurator.building import BuildingIR
 from layout_configurator.equipment import EquipmentLayoutResult, EquipmentPlacement
 from layout_configurator.export import export_building_bundle
+from layout_configurator.facility import FacilityDrawingProfile
 from layout_configurator.flows import route_flows, validate_flow_routes
+from layout_configurator.ifc import export_building_ifc, validate_ifc_roundtrip
 from layout_configurator.models import LayoutResult, Rect
 
 
@@ -91,6 +94,7 @@ class FlowRoutingTests(unittest.TestCase):
         building = _building(minimum_width=800)
         layout = _layout()
         routes = route_flows(building, layout)
+        flow_report = validate_flow_routes(building, layout, routes)
 
         with tempfile.TemporaryDirectory() as directory:
             dxf_path, pdf_path = export_building_bundle(
@@ -100,14 +104,92 @@ class FlowRoutingTests(unittest.TestCase):
                 EquipmentLayoutResult(()),
                 flows=routes,
             )
+            ifc_path = Path(directory) / "building.ifc"
+            summary = export_building_ifc(
+                ifc_path,
+                building,
+                layout,
+                EquipmentLayoutResult(()),
+                routes,
+                flow_report,
+            )
             document = ezdxf.readfile(dxf_path)
             flow_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-FLOW"]
             axis_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-AXIS"]
+            legend_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-LEGEND"]
             self.assertEqual(len([entity for entity in flow_entities if entity.dxftype() == "LWPOLYLINE"]), 1)
             self.assertEqual(len([entity for entity in flow_entities if entity.dxftype() == "TEXT"]), 1)
+            self.assertIn("material", next(entity.dxf.text for entity in flow_entities if entity.dxftype() == "TEXT"))
+            self.assertIn("800 mm", next(entity.dxf.text for entity in flow_entities if entity.dxftype() == "TEXT"))
+            self.assertTrue(any(entity.dxf.text == "FACILITY LAYOUT LEGEND" for entity in legend_entities))
+            self.assertTrue(any("FLOW TYPES: material" in entity.dxf.text for entity in legend_entities))
             self.assertEqual(len([entity for entity in axis_entities if entity.dxftype() == "LINE"]), 5)
             self.assertEqual(len([entity for entity in axis_entities if entity.dxftype() == "TEXT"]), 5)
             self.assertEqual(Path(pdf_path).read_bytes()[:8], b"%PDF-1.3")
+            model = ifcopenshell.open(ifc_path)
+            flow_elements = [
+                element
+                for element in model.by_type("IfcBuildingElementProxy")
+                if element.Name.startswith("Flow ")
+            ]
+            self.assertEqual(summary.flow_routes, 1)
+            readback = validate_ifc_roundtrip(ifc_path, summary, expected_flow_ids=["flow"])
+            self.assertTrue(readback.ok, readback.to_dict())
+            self.assertEqual(readback.summary.flow_ids, ("flow",))
+            self.assertEqual(len(flow_elements), 1)
+            self.assertEqual(flow_elements[0].Description, "material process route")
+            self.assertEqual(flow_elements[0].Representation.Representations[0].RepresentationType, "Curve3D")
+            flow_pset = next(
+                definition.RelatingPropertyDefinition
+                for definition in flow_elements[0].IsDefinedBy
+                if definition.RelatingPropertyDefinition.Name == "Pset_LayoutFlow"
+            )
+            values = {prop.Name: prop.NominalValue.wrappedValue for prop in flow_pset.HasProperties}
+            self.assertEqual(values["FlowId"], "flow")
+            self.assertEqual(values["ValidationStatus"], "PASS")
+            self.assertEqual(values["RoomPath"], "source > target")
+
+    def test_drawing_profile_controls_optional_annotations(self):
+        building = _building(minimum_width=800)
+        layout = _layout()
+        routes = route_flows(building, layout)
+        profile = FacilityDrawingProfile(
+            sheet_id="L-201",
+            discipline="Laboratory",
+            title="Process route only",
+            revision="A02",
+            show_room_dimensions=False,
+            show_flow_legend=False,
+            show_flow_labels=False,
+            show_equipment_clearance=False,
+            show_structural_grid=False,
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            dxf_path, _ = export_building_bundle(
+                directory,
+                building,
+                layout,
+                EquipmentLayoutResult(()),
+                flows=routes,
+                drawing_profile=profile,
+            )
+            document = ezdxf.readfile(dxf_path)
+            flow_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-FLOW"]
+            legend_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-LEGEND"]
+            axis_entities = [entity for entity in document.modelspace() if entity.dxf.layer == "A-AXIS"]
+            title_text = " ".join(
+                entity.dxf.text
+                for entity in document.modelspace()
+                if entity.dxf.layer == "A-TITLE" and entity.dxftype() == "TEXT"
+            )
+
+            self.assertEqual(len([entity for entity in flow_entities if entity.dxftype() == "LWPOLYLINE"]), 1)
+            self.assertEqual(len([entity for entity in flow_entities if entity.dxftype() == "TEXT"]), 0)
+            self.assertEqual(len(legend_entities), 0)
+            self.assertEqual(len(axis_entities), 0)
+            self.assertIn("L-201", title_text)
+            self.assertIn("Rev A02", title_text)
 
 
 def _building(*, minimum_width, equipment=()):

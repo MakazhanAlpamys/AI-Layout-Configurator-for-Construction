@@ -6,7 +6,11 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from layout_configurator.ui import UiSession, create_ui_server
+from layout_configurator.building import BuildingIR
+from layout_configurator.equipment import place_equipment
+from layout_configurator.io import write_building_result
+from layout_configurator.solver import solve_layouts
+from layout_configurator.ui import FacilityReviewSession, UiSession, create_ui_server
 
 
 class UiTests(unittest.TestCase):
@@ -48,6 +52,8 @@ class UiTests(unittest.TestCase):
                 self.assertIn(b"resize_room", app_js)
                 self.assertIn(b"grid-pattern", app_js)
                 self.assertIn(b"journal", app_js)
+                self.assertIn(b"facility-review", app_js)
+                self.assertIn(b"selectCoordinationIssue", app_js)
 
                 command = Request(
                     f"{base_url}/api/command",
@@ -116,6 +122,74 @@ class UiTests(unittest.TestCase):
                 error_state = json.load(raised.exception)
                 self.assertEqual(error_state["state"]["history"], ["MoveRoom", "ResizeRoom"])
                 self.assertFalse(error_state["state"]["can_redo"])
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
+
+    def test_building_result_opens_as_read_only_facility_review(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            building = BuildingIR.from_mapping(
+                {
+                    "project_name": "Facility review test",
+                    "boundary": {"width": 10000, "height": 8000},
+                    "rooms": [
+                        {
+                            "id": "production",
+                            "type": "clean_production",
+                            "target_area": 40,
+                            "min_area": 30,
+                            "max_area": 60,
+                            "min_width": 5000,
+                            "min_depth": 5000,
+                        }
+                    ],
+                    "equipment": [
+                        {
+                            "id": "mixer",
+                            "type": "process_mixer",
+                            "room_id": "production",
+                            "width_mm": 1000,
+                            "depth_mm": 800,
+                            "clearance_mm": 300,
+                        }
+                    ],
+                    "flows": [],
+                }
+            )
+            result = solve_layouts(building.layout, variants=1, time_limit_seconds=5, seed=42)[0]
+            equipment = place_equipment(building, result, time_limit_seconds=5, seed=42)
+            input_path = root / "building_01.json"
+            write_building_result(input_path, building, result, equipment)
+            session = FacilityReviewSession.from_input(input_path, root)
+            snapshot = session.snapshot()
+            self.assertEqual(snapshot["mode"], "facility-review")
+            self.assertTrue(snapshot["read_only"])
+            self.assertEqual(len(snapshot["equipment"]), 1)
+            self.assertEqual(snapshot["equipment"][0]["equipment_id"], "mixer")
+            self.assertFalse(snapshot["can_undo"])
+
+            server = create_ui_server(session)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            base_url = f"http://127.0.0.1:{server.server_port}"
+            try:
+                with urlopen(f"{base_url}/api/state") as response:
+                    served = json.load(response)
+                self.assertEqual(served["mode"], "facility-review")
+                readonly_command = Request(
+                    f"{base_url}/api/command",
+                    data=b'{"type":"move_room","room_id":"production","dx_mm":100,"dy_mm":0}',
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as raised:
+                    urlopen(readonly_command)
+                self.assertEqual(raised.exception.code, 405)
+                error_state = json.load(raised.exception)
+                self.assertEqual(error_state["state"]["mode"], "facility-review")
             finally:
                 server.shutdown()
                 server.server_close()

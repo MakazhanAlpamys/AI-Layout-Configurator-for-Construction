@@ -1,8 +1,9 @@
-"""Small local web editor over the typed command API.
+"""Small local browser editor and read-only facility review surface.
 
-The browser is deliberately a thin client: it renders the current LayoutIR
-projection and sends command payloads to :class:`EditorState`. It never moves
-rooms or writes CAD files by itself.
+The browser is deliberately a thin client: the editor renders the current
+LayoutIR projection and sends command payloads to :class:`EditorState`; the
+facility review renders a recomputed BuildingIR validation projection. It
+never computes geometry in JavaScript.
 """
 
 from __future__ import annotations
@@ -27,10 +28,14 @@ from .commands import (
     ResizeRoom,
     SetExternalEntry,
 )
+from .building import BuildingIR
 from .editor import EditorState
+from .equipment import EquipmentLayoutResult, EquipmentValidationReport, validate_equipment_layout
 from .export import export_bundle
+from .facility import FacilityProfile, FacilityValidationReport, default_facility_profile, load_facility_profile, validate_building
+from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
 from .ifc import export_ifc
-from .io import load_result, load_spec, write_result
+from .io import load_building_result, load_result, load_spec, write_result
 from .models import LayoutIR, LayoutResult
 from .norms import RuleSet, check_layout, load_ruleset
 from .solver import InfeasibleLayout, solve_layouts
@@ -43,6 +48,211 @@ ASSET_TYPES = {
     "app.js": "text/javascript; charset=utf-8",
     "style.css": "text/css; charset=utf-8",
 }
+
+
+@dataclass
+class FacilityReviewSession:
+    """Read-only review session for a generated ``BuildingIR`` bundle.
+
+    The review recomputes the domain checks from the program result when the
+    browser opens it. This keeps the browser projection useful for humans,
+    while the Python validators remain the authority for pass/fail status.
+    """
+
+    input_path: Path
+    building: BuildingIR
+    result: LayoutResult
+    equipment: EquipmentLayoutResult
+    flow_routes: FlowRoutingResult
+    equipment_report: EquipmentValidationReport
+    flow_report: FlowValidationReport
+    facility_report: FacilityValidationReport
+    output_dir: Path
+    lock: threading.RLock
+    profile: FacilityProfile
+    read_only: bool = True
+
+    @classmethod
+    def from_input(
+        cls,
+        input_path: str | Path,
+        output_dir: str | Path,
+        *,
+        profile_path: str | Path | None = None,
+    ) -> "FacilityReviewSession":
+        source = Path(input_path)
+        building, result, equipment = load_building_result(source)
+        profile = _facility_profile_for_result(source, profile_path)
+        equipment_report = validate_equipment_layout(building, result, equipment)
+        routes = route_flows(building, result, equipment)
+        flow_report = validate_flow_routes(building, result, routes, equipment)
+        facility_report = validate_building(
+            building,
+            result,
+            equipment,
+            routes,
+            flow_report,
+            profile=profile,
+            equipment_report=equipment_report,
+        )
+        return cls(
+            input_path=source.resolve(),
+            building=building,
+            result=result,
+            equipment=equipment,
+            flow_routes=routes,
+            equipment_report=equipment_report,
+            flow_report=flow_report,
+            facility_report=facility_report,
+            # Facility artifacts are generated beside the result JSON. The
+            # review never writes to this directory.
+            output_dir=source.parent,
+            lock=threading.RLock(),
+            profile=profile,
+        )
+
+    def snapshot(self) -> dict[str, Any]:
+        with self.lock:
+            layout = self.building.layout
+            wall_plan = build_wall_plan(layout, self.result)
+            specs = {item.id: item for item in self.building.equipment}
+            equipment = []
+            for placement in self.equipment.placements:
+                spec = specs.get(placement.equipment_id)
+                if spec is None:
+                    equipment.append(
+                        {
+                            "equipment_id": placement.equipment_id,
+                            "room_id": placement.room_id,
+                            "x": placement.rect.x,
+                            "y": placement.rect.y,
+                            "width": placement.rect.width,
+                            "depth": placement.rect.height,
+                            "clearance": None,
+                        }
+                    )
+                    continue
+                payload = placement.to_dict(spec)
+                payload.update(
+                    {
+                        "type": spec.type,
+                        "fixed": spec.fixed,
+                        "clearance_front_mm": spec.clearance_front_mm,
+                        "clearance_back_mm": spec.clearance_back_mm,
+                        "clearance_left_mm": spec.clearance_left_mm,
+                        "clearance_right_mm": spec.clearance_right_mm,
+                    }
+                )
+                equipment.append(payload)
+
+            flow_specs = {flow.id: flow for flow in self.building.flows}
+            flows = []
+            for route in self.flow_routes.routes:
+                payload = route.to_dict()
+                flow = flow_specs.get(route.flow_id)
+                payload.update(
+                    {
+                        "type": flow.type if flow else "flow",
+                        "required": flow.required if flow else True,
+                    }
+                )
+                flows.append(payload)
+
+            facility = self.facility_report.to_dict()
+            return {
+                "mode": "facility-review",
+                "read_only": True,
+                "spec": layout.to_dict(),
+                "building": self.building.to_dict(),
+                "layout": self.result.to_dict(),
+                "boundary": {
+                    "width": layout.boundary.width_mm,
+                    "height": layout.boundary.height_mm,
+                },
+                "rooms": [
+                    {
+                        "id": room.id,
+                        "type": room.type,
+                        "target_area_m2": room.target_area_m2,
+                        "needs_daylight": room.needs_daylight,
+                        "is_heated": room.is_heated,
+                        "rect": {
+                            "x": self.result.placements[room.id].x,
+                            "y": self.result.placements[room.id].y,
+                            "width": self.result.placements[room.id].width,
+                            "height": self.result.placements[room.id].height,
+                            "area_m2": self.result.placements[room.id].area_m2,
+                        },
+                    }
+                    for room in layout.rooms
+                ],
+                "zones": [zone.to_dict() for zone in self.building.zones],
+                "equipment": equipment,
+                "flows": flows,
+                "flow_declarations": [flow.to_dict() for flow in self.building.flows],
+                "structural_grid": self.building.structural_grid.to_dict() if self.building.structural_grid else None,
+                "openings": [_opening_to_dict(opening) for opening in wall_plan.openings],
+                "windows": [_opening_to_dict(window) for window in wall_plan.windows],
+                "validation": {
+                    "ok": self.facility_report.ok,
+                    "issues": [issue.to_dict() for issue in self.facility_report.issues],
+                },
+                "facility": facility,
+                "norms": None,
+                "history": [],
+                "journal": [],
+                "can_undo": False,
+                "can_redo": False,
+                "files": [
+                    {"name": name, "url": f"/files/{name}"}
+                    for name in self._file_names()
+                ],
+            }
+
+    def apply_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        raise EditError("Facility review is read-only; edit the BuildingIR program and regenerate the bundle")
+
+    def undo(self) -> dict[str, Any]:
+        raise EditError("Facility review is read-only")
+
+    def redo(self) -> dict[str, Any]:
+        raise EditError("Facility review is read-only")
+
+    def reset(self) -> dict[str, Any]:
+        raise EditError("Facility review is read-only")
+
+    def file_path(self, name: str) -> Path | None:
+        safe_name = Path(unquote(name)).name
+        if safe_name != name or safe_name not in self._file_names():
+            return None
+        path = (self.output_dir / safe_name).resolve()
+        if path.parent != self.output_dir.resolve() or not path.is_file():
+            return None
+        return path
+
+    def _file_names(self) -> tuple[str, ...]:
+        stem = f"building_{self.result.variant:02d}"
+        candidates = (
+            f"{stem}.json",
+            f"{stem}.dxf",
+            f"{stem}.pdf",
+            f"{stem}.ifc",
+            f"{stem}.bcf",
+            f"{stem}.coordination.json",
+            "manifest.json",
+        )
+        return tuple(name for name in candidates if (self.output_dir / name).is_file())
+
+
+def _facility_profile_for_result(source: Path, profile_path: str | Path | None) -> FacilityProfile:
+    if profile_path is not None:
+        return load_facility_profile(profile_path)
+    try:
+        payload = json.loads(source.read_text(encoding="utf-8"))
+    except (OSError, TypeError, ValueError, json.JSONDecodeError):
+        return default_facility_profile()
+    raw = payload.get("facility_validation", {}).get("profile") if isinstance(payload, dict) else None
+    return FacilityProfile.from_mapping(raw) if isinstance(raw, dict) else default_facility_profile()
 
 
 def _asset(name: str) -> str:
@@ -221,7 +431,10 @@ class UiSession:
         return tuple(f"{stem}{suffix}" for suffix in (".dxf", ".pdf", ".ifc", ".json"))
 
 
-def create_ui_server(session: UiSession, address: tuple[str, int] = ("127.0.0.1", 0)) -> ThreadingHTTPServer:
+def create_ui_server(
+    session: UiSession | FacilityReviewSession,
+    address: tuple[str, int] = ("127.0.0.1", 0),
+) -> ThreadingHTTPServer:
     """Create a testable HTTP server for one editing session."""
 
     class Handler(_UiHandler):
@@ -237,14 +450,23 @@ def serve_ui(
     host: str = "127.0.0.1",
     port: int = 8765,
     rules_path: str | Path | None = None,
+    profile_path: str | Path | None = None,
     require_provenance: bool = False,
 ) -> int:
-    session = UiSession.from_input(
-        input_path,
-        output_dir,
-        rules_path=rules_path,
-        require_provenance=require_provenance,
-    )
+    try:
+        session: UiSession | FacilityReviewSession = FacilityReviewSession.from_input(
+            input_path,
+            output_dir,
+            profile_path=profile_path,
+        )
+        print("mode: facility review (read-only)")
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        session = UiSession.from_input(
+            input_path,
+            output_dir,
+            rules_path=rules_path,
+            require_provenance=require_provenance,
+        )
     server = create_ui_server(session, (host, port))
     print(f"UI editor: http://{host}:{server.server_port}/")
     print(f"exports: {session.output_dir}")
@@ -258,7 +480,7 @@ def serve_ui(
 
 
 class _UiHandler(BaseHTTPRequestHandler):
-    current_session: UiSession
+    current_session: UiSession | FacilityReviewSession
 
     def do_GET(self) -> None:  # noqa: N802 - stdlib handler API
         route = urlsplit(self.path).path
@@ -285,6 +507,7 @@ class _UiHandler(BaseHTTPRequestHandler):
                 ".pdf": "application/pdf",
                 ".ifc": "application/x-step",
                 ".json": "application/json; charset=utf-8",
+                ".bcf": "application/zip",
             }[path.suffix.lower()]
             self._send_bytes(200, path.read_bytes(), content_type)
             return
@@ -294,6 +517,15 @@ class _UiHandler(BaseHTTPRequestHandler):
         route = urlsplit(self.path).path
         if route not in {"/api/command", "/api/reset", "/api/undo", "/api/redo"}:
             self._send_json(404, {"error": "not found"})
+            return
+        if getattr(self.current_session, "read_only", False):
+            self._send_json(
+                405,
+                {
+                    "error": "Facility review is read-only; edit the BuildingIR program and regenerate the bundle",
+                    "state": self.current_session.snapshot(),
+                },
+            )
             return
         try:
             if route == "/api/command":

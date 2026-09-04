@@ -9,18 +9,29 @@ import sys
 from pathlib import Path
 
 from .brief import parse_text_brief
+from .bcf import write_bcf_package
 from .building import BuildingSpecError
 from .compliance import validate_ids
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .editor import EditorState
 from .equipment import EquipmentPlacementError, place_equipment, validate_equipment_layout
 from .export import export_building_bundle, export_bundle
+from .facility import default_facility_profile, load_facility_profile, validate_building
 from .flows import route_flows, validate_flow_routes
-from .ifc import export_building_ifc, export_ifc, export_multifloor_ifc
+from .ifc import export_building_ifc, export_ifc, export_multifloor_ifc, validate_ifc_roundtrip
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
-from .io import load_building, load_result, load_spec, write_building_result, write_result
+from .io import (
+    load_building,
+    load_building_result,
+    load_result,
+    load_spec,
+    write_building_result,
+    write_coordination_issues,
+    write_result,
+)
 from .norms import check_layout, load_ruleset, retrieve_rule_citations
 from .multifloor import MultiFloorSpec, solve_multifloor
+from .qa import validate_building_bundle
 from .schema import load_canonical_spec, normalize_mapping, validate_mapping, validate_spec, load_mapping
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import validate_layout
@@ -43,8 +54,49 @@ def main(argv: list[str] | None = None) -> int:
     generate_building.add_argument("spec", type=Path)
     generate_building.add_argument("--output", "-o", type=Path, default=Path("out/building"))
     generate_building.add_argument("--variants", type=int, default=1)
-    generate_building.add_argument("--time-limit", type=float, default=30)
+    generate_building.add_argument(
+        "--time-limit",
+        type=float,
+        default=60,
+        help="CP-SAT time limit in seconds; dense facility defaults to 60",
+    )
     generate_building.add_argument("--seed", type=int, default=42)
+    generate_building.add_argument(
+        "--profile",
+        type=Path,
+        default=None,
+        help="facility profile YAML; defaults to the built-in pharma-like profile",
+    )
+    generate_building.add_argument(
+        "--bcf-input",
+        type=Path,
+        default=None,
+        help="previous BCF package; disappeared issues are carried forward as resolved history",
+    )
+    check_building = subparsers.add_parser(
+        "check-building",
+        help="recompute and validate a generated BuildingIR result",
+    )
+    check_building.add_argument("input", type=Path)
+    check_building.add_argument("--profile", type=Path, default=None)
+    check_building.add_argument("--json", action="store_true", dest="json_output")
+    check_building.add_argument("--issues-output", type=Path, default=None)
+    check_building.add_argument("--bcf-output", type=Path, default=None)
+    check_building.add_argument("--bcf-input", type=Path, default=None)
+    check_building.add_argument("--ifc", type=Path, default=None, help="optional IFC projection to read back")
+    qa_building = subparsers.add_parser(
+        "qa-building",
+        help="read back and cross-check a complete BuildingIR coordination bundle",
+    )
+    qa_building.add_argument("input", type=Path)
+    qa_building.add_argument("--profile", type=Path, default=None)
+    qa_building.add_argument("--dxf", type=Path, default=None)
+    qa_building.add_argument("--pdf", type=Path, default=None)
+    qa_building.add_argument("--ifc", type=Path, default=None)
+    qa_building.add_argument("--bcf", type=Path, default=None)
+    qa_building.add_argument("--coordination", type=Path, default=None)
+    qa_building.add_argument("--manifest", type=Path, default=None)
+    qa_building.add_argument("--json", action="store_true", dest="json_output")
     edit = subparsers.add_parser("edit", help="apply typed edits to an existing layout JSON and re-export it")
     edit.add_argument("input", type=Path)
     edit.add_argument("--output", "-o", type=Path, default=Path("edited"))
@@ -97,12 +149,13 @@ def main(argv: list[str] | None = None) -> int:
     multifloor.add_argument("--output", "-o", type=Path, default=Path("out/multifloor"))
     multifloor.add_argument("--time-limit", type=float, default=30)
     multifloor.add_argument("--seed", type=int, default=42)
-    ui = subparsers.add_parser("ui", help="serve a local browser editor over typed commands")
-    ui.add_argument("input", type=Path, help="existing layout JSON or a YAML/JSON specification")
+    ui = subparsers.add_parser("ui", help="serve a local browser editor or facility review")
+    ui.add_argument("input", type=Path, help="existing layout/building result JSON or a YAML/JSON specification")
     ui.add_argument("--output", "-o", type=Path, default=Path("out/ui"))
     ui.add_argument("--host", default="127.0.0.1")
     ui.add_argument("--port", type=int, default=8765)
     ui.add_argument("--rules", type=Path, help="optional deterministic ruleset shown after each edit")
+    ui.add_argument("--profile", type=Path, help="optional facility profile for BuildingIR read-only review")
     ui.add_argument("--require-provenance", action="store_true", help="require complete ruleset provenance")
     args = parser.parse_args(argv)
 
@@ -156,14 +209,40 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "generate-building":
         try:
-            building = load_building(args.spec)
-            results = solve_layouts(building.layout, args.variants, args.time_limit, args.seed)
+            building = load_building(args.spec).with_required_flow_opening_width()
+            profile = load_facility_profile(args.profile) if args.profile else default_facility_profile()
+            equipment_fit_options = {}
+            for item in building.equipment:
+                if item.room_id is not None:
+                    equipment_fit_options.setdefault(item.room_id, []).append(
+                        (item.id, item.room_fit_dimensions(building.layout.wall_thickness_mm))
+                    )
+            results = solve_layouts(
+                building.layout,
+                args.variants,
+                args.time_limit,
+                args.seed,
+                required_adjacency_groups=building.zone_relation_groups("required_adjacency"),
+                forbidden_adjacency_groups=building.zone_relation_groups("forbidden_adjacency"),
+                minimum_adjacency_mm=(
+                    building.layout.door_width_mm + 2 * building.layout.wall_thickness_mm
+                    if building.flows
+                    else None
+                ),
+                equipment_fit_options=equipment_fit_options,
+            )
         except (OSError, ValueError, BuildingSpecError, InfeasibleLayout, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
 
         args.output.mkdir(parents=True, exist_ok=True)
-        manifest = {"project": building.layout.project_name, "variants": []}
+        manifest = {
+            "project": building.layout.project_name,
+            "facility_profile": profile.to_dict(),
+            "drawing_profile": profile.drawing.to_dict(),
+            "variants": [],
+        }
+        facility_reports = []
         for result in results:
             report = validate_layout(building.layout, result)
             if not report.ok:
@@ -185,8 +264,31 @@ def main(argv: list[str] | None = None) -> int:
                     )
                 flow_routes = route_flows(building, result, equipment)
                 flow_report = validate_flow_routes(building, result, flow_routes, equipment)
+                facility_report = validate_building(
+                    building,
+                    result,
+                    equipment,
+                    flow_routes,
+                    flow_report,
+                    profile=profile,
+                    equipment_report=equipment_report,
+                )
                 ifc_path = args.output / f"building_{result.variant:02d}.ifc"
-                ifc_summary = export_building_ifc(ifc_path, building, result, equipment)
+                ifc_summary = export_building_ifc(
+                    ifc_path,
+                    building,
+                    result,
+                    equipment,
+                    flow_routes,
+                    flow_report,
+                )
+                ifc_readback = validate_ifc_roundtrip(
+                    ifc_path,
+                    ifc_summary,
+                    expected_flow_ids=(route.flow_id for route in flow_routes.routes),
+                )
+                if not ifc_readback.ok:
+                    raise RuntimeError("; ".join(ifc_readback.issues))
             except (EquipmentPlacementError, ValueError, RuntimeError) as exc:
                 print(f"ERROR: оборудование в варианте {result.variant} не размещено: {exc}", file=sys.stderr)
                 return 3
@@ -198,6 +300,7 @@ def main(argv: list[str] | None = None) -> int:
                 report,
                 flow_routes,
                 flow_report,
+                profile.drawing,
             )
             json_path = args.output / f"building_{result.variant:02d}.json"
             write_building_result(
@@ -208,7 +311,41 @@ def main(argv: list[str] | None = None) -> int:
                 flow_routes,
                 flow_report,
                 equipment_report=equipment_report,
+                facility_report=facility_report,
             )
+            issues_path = args.output / f"building_{result.variant:02d}.coordination.json"
+            write_coordination_issues(
+                issues_path,
+                facility_report,
+                project_name=building.layout.project_name,
+                variant=result.variant,
+                model_references={
+                    "program": json_path.name,
+                    "dxf": dxf_path.name,
+                    "pdf": pdf_path.name,
+                    "ifc": ifc_path.name,
+                },
+            )
+            bcf_path = args.output / f"building_{result.variant:02d}.bcf"
+            try:
+                bcf_summary = write_bcf_package(
+                    bcf_path,
+                    facility_report,
+                    project_name=building.layout.project_name,
+                    variant=result.variant,
+                    model_references={
+                        "program": json_path.name,
+                        "dxf": dxf_path.name,
+                        "pdf": pdf_path.name,
+                        "ifc": ifc_path.name,
+                    },
+                    ifc_path=ifc_path,
+                    previous=args.bcf_input,
+                )
+            except (OSError, ValueError, RuntimeError) as exc:
+                print(f"ERROR: BCF-пакет варианта {result.variant} не сформирован: {exc}", file=sys.stderr)
+                return 3
+            facility_reports.append(facility_report)
             manifest["variants"].append(
                 {
                     "variant": result.variant,
@@ -217,6 +354,16 @@ def main(argv: list[str] | None = None) -> int:
                     "equipment_issues": len(equipment_report.issues),
                     "flows": len(flow_routes.routes),
                     "flow_issues": len(flow_report.issues),
+                    "facility_checks": len(facility_report.checks),
+                    "facility_issues": sum(check.status == "FAIL" for check in facility_report.checks),
+                    "coordination_issues": issues_path.name,
+                    "coordination_issue_count": len(facility_report.issues),
+                    "bcf": bcf_path.name,
+                    "bcf_version": bcf_summary.version,
+                    "bcf_topic_count": len(bcf_summary.topics),
+                    "bcf_open_topics": bcf_summary.open_topics,
+                    "bcf_resolved_topics": bcf_summary.resolved_topics,
+                    "facility_ok": facility_report.ok,
                     "dxf": dxf_path.name,
                     "pdf": pdf_path.name,
                     "ifc": ifc_path.name,
@@ -227,12 +374,17 @@ def main(argv: list[str] | None = None) -> int:
                         "windows": ifc_summary.windows,
                         "equipment": ifc_summary.equipment,
                         "equipment_types": ifc_summary.equipment_types,
+                        "flow_routes": ifc_summary.flow_routes,
                         "openings": ifc_summary.openings,
                     },
+                    "ifc_readback": ifc_readback.to_dict(),
                     "json": json_path.name,
                 }
             )
-            print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {ifc_path} | {json_path}")
+            print(
+                f"variant {result.variant}: {dxf_path} | {pdf_path} | {ifc_path} | "
+                f"{json_path} | {issues_path} | {bcf_path}"
+            )
             if flow_report.issues:
                 print(
                     f"  flow validation: {len(flow_report.issues)} issue(s); see {json_path.name} -> flow_validation",
@@ -241,7 +393,91 @@ def main(argv: list[str] | None = None) -> int:
         (args.output / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        return 0
+        return 0 if all(report.ok for report in facility_reports) else 4
+    if args.command == "qa-building":
+        try:
+            profile = load_facility_profile(args.profile) if args.profile else None
+            qa_report = validate_building_bundle(
+                args.input,
+                profile=profile,
+                dxf_path=args.dxf,
+                pdf_path=args.pdf,
+                ifc_path=args.ifc,
+                bcf_path=args.bcf,
+                coordination_path=args.coordination,
+                manifest_path=args.manifest,
+            )
+        except (OSError, KeyError, TypeError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: bundle QA failed: {exc}", file=sys.stderr)
+            return 2
+        if args.json_output:
+            print(json.dumps(qa_report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(f"Bundle QA: {'PASS' if qa_report.ok else 'FAIL'}")
+            for check in qa_report.checks:
+                print(f"{'PASS' if check.ok else 'FAIL'}: {check.id}: {check.message}")
+        return 0 if qa_report.ok else 4
+    if args.command == "check-building":
+        try:
+            building, result, equipment = load_building_result(args.input)
+            profile = load_facility_profile(args.profile) if args.profile else default_facility_profile()
+            equipment_report = validate_equipment_layout(building, result, equipment)
+            flow_routes = route_flows(building, result, equipment)
+            flow_report = validate_flow_routes(building, result, flow_routes, equipment)
+            ifc_path = args.ifc
+            ifc_readback = None
+            if ifc_path is None:
+                candidate = args.input.with_suffix(".ifc")
+                if candidate.is_file():
+                    ifc_path = candidate
+            if ifc_path is not None:
+                ifc_readback = validate_ifc_roundtrip(
+                    ifc_path,
+                    expected_flow_ids=(route.flow_id for route in flow_routes.routes),
+                )
+            facility_report = validate_building(
+                building,
+                result,
+                equipment,
+                flow_routes,
+                flow_report,
+                profile=profile,
+                equipment_report=equipment_report,
+            )
+            if args.issues_output is not None:
+                write_coordination_issues(
+                    args.issues_output,
+                    facility_report,
+                    project_name=building.layout.project_name,
+                    variant=result.variant,
+                )
+            if args.bcf_output is not None:
+                write_bcf_package(
+                    args.bcf_output,
+                    facility_report,
+                    project_name=building.layout.project_name,
+                    variant=result.variant,
+                    model_references={"program": args.input.name},
+                    previous=args.bcf_input,
+                )
+        except (OSError, KeyError, TypeError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        if args.json_output:
+            payload = facility_report.to_dict()
+            if ifc_readback is not None:
+                payload["ifc_readback"] = ifc_readback.to_dict()
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print(
+                f"Facility profile: {profile.name} {profile.version} "
+                f"[{profile.domain}]"
+            )
+            for check_result in facility_report.checks:
+                print(f"{check_result.status}: {check_result.id}: {check_result.title}")
+                for evidence in check_result.evidence:
+                    print(f"  - {evidence}")
+        return 0 if facility_report.ok and (ifc_readback is None or ifc_readback.ok) else 4
     if args.command == "edit":
         if not any((args.move_room, args.resize_room, args.add_door, args.add_door_at, args.remove_door, args.add_window, args.remove_window, args.set_external_entry, args.remove_external_entry)):
             print("ERROR: укажите хотя бы одну typed-команду правки", file=sys.stderr)
@@ -471,6 +707,7 @@ def main(argv: list[str] | None = None) -> int:
                 host=args.host,
                 port=args.port,
                 rules_path=args.rules,
+                profile_path=args.profile,
                 require_provenance=args.require_provenance,
             )
         except (OSError, ValueError, KeyError, RuntimeError, InfeasibleLayout) as exc:

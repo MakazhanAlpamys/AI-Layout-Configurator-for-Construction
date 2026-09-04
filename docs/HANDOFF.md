@@ -129,3 +129,33 @@ endpoint; `cite` только извлекает rule/clause/source и не пр
 по одной сетке, проверяет структурные оси и экспортирует общий IFC с этажами и
 лестницами. Структурные оси применяются внутри CP-SAT как hard constraints,
 а IDS-спецификация без применимых сущностей считается vacuous PASS.
+Для следующего продуктового контура добавлены versioned starter-профили
+`rules/pharma_clean_production.yaml`, `rules/cleanroom_pilot.yaml`,
+`rules/laboratory_pilot.yaml`, `rules/hospital_pilot.yaml` и
+`rules/industrial_pilot.yaml`. Они фиксируют несовместимые типы потоков и явно не
+выдают GMP или иной регуляторный verdict. `BuildingIR` теперь умеет связывать зоны с hard required и
+forbidden adjacency-группами, обязательные потоки автоматически повышают
+эффективную ширину дверного проёма, а оборудование и маршруты используют
+проверяемые точки доступа. `generate-building` сохраняет единый
+`facility_validation` report; `check-building` пересчитывает его независимо из
+сохранённого результата. Коммерческий pilot проходит полный facility smoke-test;
+IFC теперь содержит derived flow route proxies с `Pset_LayoutFlow` и статусом
+проверки. Каждый вариант также получает `*.coordination.json` с BCF-like issue
+records и `*.bcf` с BCF-XML 2.1 topics/viewpoints и внешними ссылками на
+program/DXF/PDF/IFC; DXF/PDF — размеры помещений, sheet metadata и подписи
+типов потоков/clear width; schema sidecar находится в
+`schemas/coordination_issues.schema.json`.
+После записи IFC выполняется независимый read-back через IfcOpenShell с проверкой
+entity counts и flow metadata; результат сохраняется в `manifest.json` как
+`ifc_readback`.
+Для повторной итерации `generate-building --bcf-input` переносит исчезнувшие
+topics в новый BCF как `Closed`, сохраняя issue history без изменения канонического
+facility validation report.
+Добавлена команда `qa-building`: она в read-only режиме сверяет JSON sidecar,
+DXF/PDF, IFC read-back и BCF 2.1 с текущим `BuildingIR` result.
+Следующий крупный шаг — viewer QA и BCF issue-management workflow для конкретных regulated
+facility-шаблонов, затем подключение официальных норм только с подтверждённым
+источником и областью применимости.
+### Facility review surface
+
+The `ui` command now auto-detects a generated `BuildingIR` result (`building_01.json`) and opens a read-only facility review. The server independently recomputes equipment, flow, and facility validation; the SVG projection overlays equipment footprints, service-clearance envelopes, and derived flow routes, while the side panel shows profile evidence, coordination issues, and available JSON/DXF/PDF/IFC/BCF artifacts. Edit, undo, redo, and reset endpoints return HTTP 405 in this mode.

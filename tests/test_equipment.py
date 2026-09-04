@@ -16,9 +16,43 @@ from layout_configurator.equipment import (
     validate_equipment_layout,
 )
 from layout_configurator.models import LayoutResult, Rect
+from layout_configurator.qa import validate_building_bundle
+from layout_configurator.solver import solve_layouts
 
 
 class EquipmentTests(unittest.TestCase):
+    def test_room_solver_reserves_fixed_equipment_envelope(self):
+        building = _building(
+            [
+                {
+                    "id": "large_machine",
+                    "type": "machine",
+                    "room_id": "production",
+                    "width_mm": 2000,
+                    "depth_mm": 1000,
+                    "clearance_front_mm": 1200,
+                    "clearance_left_mm": 500,
+                    "clearance_right_mm": 500,
+                    "rotation_allowed": False,
+                }
+            ]
+        )
+        result = solve_layouts(
+            building.layout,
+            time_limit_seconds=5,
+            equipment_fit_options={
+                "production": [
+                    ("large_machine", building.equipment[0].room_fit_dimensions(building.layout.wall_thickness_mm))
+                ]
+            },
+        )[0]
+        minimum_width, minimum_height = building.equipment[0].room_fit_dimensions(
+            building.layout.wall_thickness_mm
+        )[0]
+
+        self.assertGreaterEqual(result.placements["production"].width, minimum_width)
+        self.assertGreaterEqual(result.placements["production"].height, minimum_height)
+
     def test_cp_sat_respects_wall_inset_and_clearance(self):
         building = _building(
             [
@@ -219,6 +253,24 @@ class EquipmentTests(unittest.TestCase):
             self.assertEqual(len(payload["equipment"]), 1)
             self.assertEqual(payload["equipment"][0]["equipment_id"], "machine")
             self.assertEqual(payload["equipment_validation"], {"ok": True, "issues": []})
+            self.assertTrue(payload["facility_validation"]["ok"])
+            coordination = json.loads(
+                (output / "building_01.coordination.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(coordination["format"], "FLC-BCF-like-json")
+            self.assertEqual(coordination["open_count"], 0)
+            self.assertEqual(coordination["project_name"], "equipment test")
+            self.assertEqual(coordination["variant"], 1)
+            self.assertEqual(
+                coordination["model_references"],
+                {
+                    "program": "building_01.json",
+                    "dxf": "building_01.dxf",
+                    "pdf": "building_01.pdf",
+                    "ifc": "building_01.ifc",
+                },
+            )
+            self.assertEqual(main(["check-building", str(output / "building_01.json")]), 0)
             document = ezdxf.readfile(output / "building_01.dxf")
             modelspace = document.modelspace()
             equipment_entities = [entity for entity in modelspace if entity.dxf.layer == "A-EQUIP"]
@@ -243,7 +295,14 @@ class EquipmentTests(unittest.TestCase):
             self.assertEqual(manifest["variants"][0]["pdf"], "building_01.pdf")
             self.assertEqual(manifest["variants"][0]["ifc"], "building_01.ifc")
             self.assertEqual(manifest["variants"][0]["ifc_entities"]["equipment"], 1)
+            self.assertEqual(manifest["variants"][0]["coordination_issue_count"], 0)
             self.assertEqual(manifest["variants"][0]["equipment_issues"], 0)
+            self.assertTrue(manifest["variants"][0]["ifc_readback"]["ok"])
+            self.assertEqual(manifest["variants"][0]["bcf"], "building_01.bcf")
+            self.assertEqual(manifest["variants"][0]["bcf_topic_count"], 0)
+            self.assertTrue((output / "building_01.bcf").is_file())
+            qa_report = validate_building_bundle(output / "building_01.json")
+            self.assertTrue(qa_report.ok, qa_report.to_dict())
 
 
 def _building(equipment, *, room_width=6000, room_height=5000, zones=()):

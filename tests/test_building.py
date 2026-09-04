@@ -13,7 +13,7 @@ class BuildingIRTests(unittest.TestCase):
         self.assertEqual(len(building.layout.rooms), 10)
         self.assertEqual(len(building.zones), 3)
         self.assertEqual(len(building.equipment), 5)
-        self.assertEqual(len(building.flows), 4)
+        self.assertEqual(len(building.flows), 5)
         self.assertEqual(building.structural_grid.axes_x_mm[-1], 42000)
 
     def test_canonical_building_round_trip_and_schema(self):

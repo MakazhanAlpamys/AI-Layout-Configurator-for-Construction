@@ -7,13 +7,14 @@ like DXF and PDF.
 
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
 from .building import BuildingIR, EquipmentSpec
 from .equipment import EquipmentLayoutResult, clearance_rect
+from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
 from .multifloor import MultiFloorResult, MultiFloorSpec
 from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
@@ -41,8 +42,58 @@ class IfcExportSummary:
     external_entries: int = 0
     equipment: int = 0
     equipment_types: int = 0
+    flow_routes: int = 0
     storeys: int = 1
     stairs: int = 0
+
+
+@dataclass(frozen=True)
+class IfcReadbackSummary:
+    """Counts and coordination metadata read from an exported IFC file."""
+
+    path: Path
+    project_global_id: str | None
+    spaces: int
+    walls: int
+    doors: int
+    windows: int
+    equipment: int
+    flow_routes: int
+    equipment_ids: tuple[str, ...] = ()
+    flow_ids: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "path": str(self.path),
+            "project_global_id": self.project_global_id,
+            "spaces": self.spaces,
+            "walls": self.walls,
+            "doors": self.doors,
+            "windows": self.windows,
+            "equipment": self.equipment,
+            "flow_routes": self.flow_routes,
+            "equipment_ids": list(self.equipment_ids),
+            "flow_ids": list(self.flow_ids),
+        }
+
+
+@dataclass(frozen=True)
+class IfcReadbackReport:
+    """Independent exchange QA result for an IFC projection."""
+
+    summary: IfcReadbackSummary | None
+    issues: tuple[str, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        return not self.issues and self.summary is not None
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "ok": self.ok,
+            "summary": None if self.summary is None else self.summary.to_dict(),
+            "issues": list(self.issues),
+        }
 
 
 @dataclass(frozen=True)
@@ -68,6 +119,9 @@ def export_ifc(
     result: LayoutResult,
     equipment_layout: EquipmentLayoutResult | None = None,
     equipment_specs: Iterable[EquipmentSpec] | None = None,
+    flows: FlowRoutingResult | None = None,
+    flow_report: FlowValidationReport | None = None,
+    flow_types: Mapping[str, str] | None = None,
 ) -> IfcExportSummary:
     """Write a small, readable IFC4 model and return entity counts."""
 
@@ -180,11 +234,22 @@ def export_ifc(
         equipment_layout,
         equipment_specs or (),
     )
+    flow_elements = _make_flow_elements(
+        document,
+        owner_history,
+        context,
+        storey_placement,
+        spec,
+        flows,
+        flow_report,
+        flow_types or {},
+    )
     _add_bim_relationships(document, owner_history, spec, result, spaces_by_id, wall_records, opening_records)
     elements.extend(walls)
     elements.extend(doors)
     elements.extend(windows)
     elements.extend(equipment_elements)
+    elements.extend(flow_elements)
     _associate_material(document, owner_history, walls, "Generic partition wall")
     _associate_material(document, owner_history, doors, "Generic internal door")
     _associate_material(document, owner_history, windows, "Generic window")
@@ -214,6 +279,7 @@ def export_ifc(
         external_entries=sum(1 for opening in wall_plan.openings if opening.external),
         equipment=len(equipment_elements),
         equipment_types=len(equipment_types),
+        flow_routes=len(flow_elements),
     )
 
 
@@ -222,10 +288,103 @@ def export_building_ifc(
     building: BuildingIR,
     result: LayoutResult,
     equipment: EquipmentLayoutResult,
+    flows: FlowRoutingResult | None = None,
+    flow_report: FlowValidationReport | None = None,
 ) -> IfcExportSummary:
     """Export a BuildingIR result with equipment as BIM proxy elements."""
 
-    return export_ifc(path, building.layout, result, equipment, building.equipment)
+    return export_ifc(
+        path,
+        building.layout,
+        result,
+        equipment,
+        building.equipment,
+        flows,
+        flow_report,
+        {item.id: item.type for item in building.flows},
+    )
+
+
+def read_ifc_summary(path: str | Path) -> IfcReadbackSummary:
+    """Read an IFC projection through IfcOpenShell for exchange QA."""
+
+    import ifcopenshell
+
+    source = Path(path)
+    document = ifcopenshell.open(str(source))
+    project = next(iter(document.by_type("IfcProject")), None)
+    proxies = document.by_type("IfcBuildingElementProxy")
+    equipment_values = [
+        values
+        for proxy in proxies
+        if (values := _ifc_property_values(proxy, "Pset_LayoutEquipment"))
+    ]
+    flow_values = [
+        values
+        for proxy in proxies
+        if (values := _ifc_property_values(proxy, "Pset_LayoutFlow"))
+    ]
+    equipment_ids = tuple(
+        sorted(str(values["EquipmentId"]) for values in equipment_values if "EquipmentId" in values)
+    )
+    flow_ids = tuple(
+        sorted(str(values["FlowId"]) for values in flow_values if "FlowId" in values)
+    )
+    return IfcReadbackSummary(
+        path=source,
+        project_global_id=None if project is None else getattr(project, "GlobalId", None),
+        spaces=len(document.by_type("IfcSpace")),
+        walls=len(document.by_type("IfcWall")),
+        doors=len(document.by_type("IfcDoor")),
+        windows=len(document.by_type("IfcWindow")),
+        equipment=len(equipment_values),
+        flow_routes=len(flow_values),
+        equipment_ids=equipment_ids,
+        flow_ids=flow_ids,
+    )
+
+
+def validate_ifc_roundtrip(
+    path: str | Path,
+    expected: IfcExportSummary | None = None,
+    *,
+    expected_flow_ids: Iterable[str] = (),
+) -> IfcReadbackReport:
+    """Check that a written IFC can be reopened and preserves key projections."""
+
+    try:
+        summary = read_ifc_summary(path)
+    except (ImportError, OSError, RuntimeError, ValueError) as exc:
+        return IfcReadbackReport(None, (f"IFC read-back failed: {exc}",))
+
+    issues: list[str] = []
+    if summary.project_global_id is None:
+        issues.append("IFC read-back found no IfcProject GlobalId")
+    if expected is not None:
+        for field in ("spaces", "walls", "doors", "windows", "equipment", "flow_routes"):
+            actual = getattr(summary, field)
+            wanted = getattr(expected, field)
+            if actual != wanted:
+                issues.append(f"IFC read-back count mismatch for {field}: expected {wanted}, got {actual}")
+    expected_ids = {str(value) for value in expected_flow_ids}
+    missing_flow_ids = sorted(expected_ids - set(summary.flow_ids))
+    if missing_flow_ids:
+        issues.append(f"IFC read-back is missing flow route metadata: {', '.join(missing_flow_ids)}")
+    return IfcReadbackReport(summary, tuple(issues))
+
+
+def _ifc_property_values(element, property_set_name: str) -> dict[str, object]:
+    values: dict[str, object] = {}
+    for definition in getattr(element, "IsDefinedBy", ()) or ():
+        property_set = getattr(definition, "RelatingPropertyDefinition", None)
+        if property_set is None or not property_set.is_a("IfcPropertySet"):
+            continue
+        if property_set.Name != property_set_name:
+            continue
+        for prop in property_set.HasProperties or ():
+            nominal = getattr(prop, "NominalValue", None)
+            values[str(prop.Name)] = None if nominal is None else nominal.wrappedValue
+    return values
 
 
 def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: MultiFloorResult) -> IfcExportSummary:
@@ -431,6 +590,72 @@ def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: 
         storeys=len(storeys),
         stairs=len(stairs),
     )
+
+
+def _make_flow_elements(
+    document,
+    owner_history,
+    context,
+    storey_placement,
+    spec: LayoutIR,
+    flows: FlowRoutingResult | None,
+    flow_report: FlowValidationReport | None,
+    flow_types: Mapping[str, str],
+):
+    """Project derived 2D routes as auditable IFC coordination elements.
+
+    A route is intentionally represented as an ``IfcBuildingElementProxy``
+    with a ``Curve3D`` representation. This keeps the exchange portable across
+    IFC viewers while the property set preserves the process meaning and the
+    independent validation status. It is not an MEP/process-system model.
+    """
+
+    if flows is None:
+        return []
+    issues_by_flow: dict[str, list[object]] = {}
+    if flow_report is not None:
+        for issue in flow_report.issues:
+            if issue.flow_id is not None:
+                issues_by_flow.setdefault(issue.flow_id, []).append(issue)
+
+    elements = []
+    for index, route in enumerate(flows.routes):
+        if len(route.points) < 2:
+            continue
+        route_key = f"{route.flow_id}:{route.from_id}:{route.to_id}:{index}"
+        flow_issues = issues_by_flow.get(route.flow_id, ())
+        validation_status = "UNKNOWN" if flow_report is None else ("FAIL" if flow_issues else "PASS")
+        element = document.create_entity(
+            "IfcBuildingElementProxy",
+            GlobalId=_guid(spec, f"flow-route-{route_key}"),
+            OwnerHistory=owner_history,
+            Name=f"Flow {route.flow_id}: {route.from_id} -> {route.to_id}",
+            Description=f"{flow_types.get(route.flow_id, 'unspecified')} process route",
+            ObjectPlacement=_product_placement(document, storey_placement, 0, 0),
+            Representation=_polyline_representation(document, context, route.points, z=50),
+        )
+        _add_properties(
+            document,
+            owner_history,
+            [element],
+            "Pset_LayoutFlow",
+            {
+                "FlowId": route.flow_id,
+                "FlowType": flow_types.get(route.flow_id, "unspecified"),
+                "FromId": route.from_id,
+                "ToId": route.to_id,
+                "FromRoomId": route.from_room_id,
+                "ToRoomId": route.to_room_id,
+                "RoomPath": " > ".join(route.room_path),
+                "MinimumClearWidthMm": route.minimum_clear_width_mm,
+                "RoutePointCount": len(route.points),
+                "ValidationStatus": validation_status,
+                "ValidationIssueCount": len(flow_issues),
+                "RepresentationKind": "2D derived route centerline at z=50 mm; not an MEP system",
+            },
+        )
+        elements.append(element)
+    return elements
 
 
 def _make_equipment(
@@ -869,6 +1094,26 @@ def _associate_material(document, owner_history, objects, name: str) -> None:
         OwnerHistory=owner_history,
         RelatedObjects=objects,
         RelatingMaterial=material,
+    )
+
+
+def _polyline_representation(document, context, points, z: float = 0):
+    curve_points = [
+        _point(document, (x, y, z))
+        for x, y in points
+    ]
+    curve = document.create_entity("IfcPolyline", Points=curve_points)
+    return document.create_entity(
+        "IfcProductDefinitionShape",
+        Representations=[
+            document.create_entity(
+                "IfcShapeRepresentation",
+                ContextOfItems=context,
+                RepresentationIdentifier="Body",
+                RepresentationType="Curve3D",
+                Items=[curve],
+            )
+        ],
     )
 
 

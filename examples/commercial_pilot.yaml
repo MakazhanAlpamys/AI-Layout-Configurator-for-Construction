@@ -162,17 +162,22 @@ equipment:
 flows:
   - id: material_in
     type: material
-    from_ids: [receiving]
-    to_ids: [raw_storage]
+    from_ids: [loading_dock_01]
+    to_ids: [cold_store_01]
     minimum_clear_width_mm: 1800
   - id: material_to_production
     type: material
-    from_ids: [raw_storage]
-    to_ids: [preparation, production]
+    from_ids: [cold_store_01]
+    to_ids: [mixer_01]
+    minimum_clear_width_mm: 1800
+  - id: production_transfer
+    type: material
+    from_ids: [mixer_01]
+    to_ids: [production_line_01]
     minimum_clear_width_mm: 1800
   - id: finished_goods
     type: finished_goods
-    from_ids: [packaging]
+    from_ids: [packaging_line_01]
     to_ids: [finished_storage, dispatch]
     minimum_clear_width_mm: 1800
   - id: staff_access

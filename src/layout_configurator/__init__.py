@@ -14,13 +14,43 @@ from .equipment import (
 from .flows import FlowRoute, FlowRoutingResult, FlowValidationIssue, FlowValidationReport, route_flows, validate_flow_routes
 from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, RoomSpec, WindowSpec
 from .brief import parse_llm_mapping, parse_text_brief
+from .bcf import (
+    BcfPackageSummary,
+    BcfTopicSummary,
+    merge_bcf_history,
+    read_bcf_package,
+    write_bcf_package,
+)
 from .multifloor import MultiFloorResult, MultiFloorSpec, MultiFloorValidationReport, VerticalCoreSpec, solve_multifloor, validate_multifloor
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .compliance import IdsSpecificationResult, IdsValidationReport, validate_ids
 from .editor import EditorState
-from .ifc import IfcExportSummary, export_building_ifc, export_ifc, export_multifloor_ifc
+from .facility import (
+    CoordinationIssue,
+    CoordinationSeverity,
+    FacilityDrawingProfile,
+    FacilityCheckResult,
+    FacilityCheckStatus,
+    FacilityProfile,
+    FacilityValidationReport,
+    default_facility_profile,
+    load_facility_profile,
+    validate_building,
+)
+from .ifc import (
+    IfcExportSummary,
+    IfcReadbackReport,
+    IfcReadbackSummary,
+    export_building_ifc,
+    export_ifc,
+    export_multifloor_ifc,
+    read_ifc_summary,
+    validate_ifc_roundtrip,
+)
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
 from .norms import NormsReport, RuleCitation, RuleDefinition, RuleResult, RuleSet, RuleStatus, check_layout, load_ruleset, retrieve_rule_citations
+from .qa import BundleQACheck, BundleQAReport, validate_building_bundle
+from .ui import FacilityReviewSession, UiSession, create_ui_server, serve_ui
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import ValidationReport, validate_layout
 from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
@@ -58,7 +88,21 @@ __all__ = [
     "AddWindow",
     "EditError",
     "EditorState",
+    "FacilityCheckResult",
+    "FacilityCheckStatus",
+    "FacilityDrawingProfile",
+    "CoordinationIssue",
+    "CoordinationSeverity",
+    "FacilityProfile",
+    "FacilityValidationReport",
+    "default_facility_profile",
+    "load_facility_profile",
+    "validate_building",
     "IfcExportSummary",
+    "IfcReadbackSummary",
+    "IfcReadbackReport",
+    "read_ifc_summary",
+    "validate_ifc_roundtrip",
     "IdsSpecificationResult",
     "IdsValidationReport",
     "NormsReport",
@@ -86,6 +130,13 @@ __all__ = [
     "load_ruleset",
     "RuleCitation",
     "retrieve_rule_citations",
+    "BundleQACheck",
+    "BundleQAReport",
+    "validate_building_bundle",
+    "FacilityReviewSession",
+    "UiSession",
+    "create_ui_server",
+    "serve_ui",
     "validate_ids",
     "solve_layouts",
     "validate_layout",
@@ -97,4 +148,9 @@ __all__ = [
     "validate_multifloor",
     "parse_text_brief",
     "parse_llm_mapping",
+    "BcfPackageSummary",
+    "BcfTopicSummary",
+    "merge_bcf_history",
+    "read_bcf_package",
+    "write_bcf_package",
 ]
