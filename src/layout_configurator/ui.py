@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from pathlib import Path
@@ -28,7 +28,7 @@ from .commands import (
     ResizeRoom,
     SetExternalEntry,
 )
-from .bcf import BcfPackageSummary, read_bcf_package
+from .bcf import BcfPackageSummary, read_bcf_package, write_bcf_package
 from .building import BuildingIR
 from .editor import EditorState
 from .equipment import EquipmentLayoutResult, EquipmentValidationReport, validate_equipment_layout
@@ -36,7 +36,15 @@ from .export import export_bundle
 from .facility import FacilityProfile, FacilityValidationReport, default_facility_profile, load_facility_profile, validate_building
 from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
 from .ifc import export_ifc
-from .io import load_building_result, load_result, load_spec, write_result
+from .io import load_building_result, load_result, load_spec, write_coordination_issues, write_result
+from .issue_management import (
+    issue_state_map,
+    load_issue_management,
+    new_issue_management_state,
+    replace_issue_state,
+    utc_timestamp,
+    write_issue_management,
+)
 from .models import LayoutIR, LayoutResult
 from .norms import RuleSet, check_layout, load_ruleset
 from .solver import InfeasibleLayout, solve_layouts
@@ -73,7 +81,8 @@ class FacilityReviewSession:
     profile: FacilityProfile
     read_only: bool = True
     bcf_summary: BcfPackageSummary | None = None
-    issue_history: tuple[dict[str, Any], ...] = ()
+    issue_management_path: Path | None = None
+    issue_management: dict[str, Any] = field(default_factory=new_issue_management_state)
 
     @classmethod
     def from_input(
@@ -99,6 +108,10 @@ class FacilityReviewSession:
             equipment_report=equipment_report,
         )
         bcf_summary = _load_bcf_summary(source)
+        issue_management_path = source.with_name(f"{source.stem}.issue-management.json")
+        issue_management = load_issue_management(issue_management_path)
+        issue_management.setdefault("project_name", building.layout.project_name)
+        issue_management.setdefault("variant", result.variant)
         return cls(
             input_path=source.resolve(),
             building=building,
@@ -114,7 +127,8 @@ class FacilityReviewSession:
             lock=threading.RLock(),
             profile=profile,
             bcf_summary=bcf_summary,
-            issue_history=_issue_history(facility_report.issues, bcf_summary),
+            issue_management_path=issue_management_path,
+            issue_management=issue_management,
         )
 
     def snapshot(self) -> dict[str, Any]:
@@ -164,7 +178,9 @@ class FacilityReviewSession:
                 )
                 flows.append(payload)
 
+            managed_issues = self._current_issue_records()
             facility = self.facility_report.to_dict()
+            facility["issues"] = managed_issues
             return {
                 "mode": "facility-review",
                 "read_only": True,
@@ -201,11 +217,20 @@ class FacilityReviewSession:
                 "windows": [_opening_to_dict(window) for window in wall_plan.windows],
                 "validation": {
                     "ok": self.facility_report.ok,
-                    "issues": [issue.to_dict() for issue in self.facility_report.issues],
+                    "issues": managed_issues,
                 },
                 "facility": facility,
                 "bcf": self.bcf_summary.to_dict() if self.bcf_summary else None,
-                "issue_history": list(self.issue_history),
+                "issue_history": self._managed_issue_history(managed_issues),
+                "issue_management": {
+                    "path": self.issue_management_path.name if self.issue_management_path else None,
+                    "updated_at": self.issue_management.get("updated_at"),
+                    "actions": sum(
+                        len(item.get("history", ()))
+                        for item in self.issue_management.get("issues", ())
+                        if isinstance(item, dict)
+                    ),
+                },
                 "norms": None,
                 "history": [],
                 "journal": [],
@@ -229,6 +254,179 @@ class FacilityReviewSession:
     def reset(self) -> dict[str, Any]:
         raise EditError("Facility review is read-only")
 
+    def apply_issue_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Apply a review-only issue action and refresh BCF projections."""
+
+        with self.lock:
+            action = str(payload.get("action", "")).strip().lower()
+            issue_id = str(payload.get("issue_id", "")).strip()
+            author = _required_text(payload.get("author"), "author", 120)
+            comment = _optional_text(payload.get("comment"), "comment", 4000)
+            assignee = _optional_text(payload.get("assignee"), "assignee", 120)
+            current_records = {issue.issue_id: issue for issue in self.facility_report.issues}
+            history_records = {
+                str(item.get("issue_id")): item
+                for item in self._managed_issue_history(())
+                if item.get("issue_id")
+            }
+            if issue_id not in current_records and issue_id not in history_records:
+                raise EditError(f"Unknown issue: {issue_id or 'missing issue_id'}")
+            if action not in {"resolve", "reopen", "comment", "assign"}:
+                raise EditError("Issue action must be resolve, reopen, comment or assign")
+            if issue_id not in current_records and action in {"resolve", "reopen"}:
+                raise EditError("Only current validation issues can be resolved or reopened")
+            if action in {"resolve", "reopen", "comment"} and not comment:
+                raise EditError("A comment/reason is required for this issue action")
+
+            records = issue_state_map(self.issue_management)
+            record = dict(records.get(issue_id, {}))
+            default_status = (
+                current_records[issue_id].status
+                if issue_id in current_records
+                else str(history_records[issue_id].get("status", "OPEN"))
+            )
+            old_status = record.get("status", default_status)
+            old_assignee = str(record.get("assignee", ""))
+            new_status = old_status
+            new_assignee = old_assignee
+            if action == "resolve":
+                new_status = "RESOLVED"
+            elif action == "reopen":
+                new_status = "OPEN"
+            elif action == "assign":
+                new_assignee = assignee or ""
+            entry = {
+                "action": action,
+                "author": author,
+                "timestamp": utc_timestamp(),
+                "comment": comment or "",
+                "from_status": old_status,
+                "to_status": new_status,
+                "from_assignee": old_assignee,
+                "to_assignee": new_assignee,
+            }
+            comments = list(record.get("comments", ()))
+            if comment:
+                comments.append(
+                    {
+                        "author": author,
+                        "text": comment,
+                        "created_at": entry["timestamp"],
+                        "action": action,
+                    }
+                )
+            record.update(
+                {
+                    "issue_id": issue_id,
+                    "status": new_status,
+                    "assignee": new_assignee,
+                    "comments": comments,
+                    "history": list(record.get("history", ())) + [entry],
+                }
+            )
+            records[issue_id] = record
+            self.issue_management = replace_issue_state(
+                self.issue_management,
+                records,
+                updated_at=entry["timestamp"],
+            )
+            if self.issue_management_path is None:
+                raise EditError("Issue management sidecar path is not configured")
+            write_issue_management(self.issue_management_path, self.issue_management)
+            self._export_issue_projections()
+            return self.snapshot()
+
+    def _current_issue_records(self) -> list[dict[str, Any]]:
+        return [self._managed_issue_record(issue.to_dict()) for issue in self.facility_report.issues]
+
+    def _managed_issue_record(self, payload: dict[str, Any]) -> dict[str, Any]:
+        record = issue_state_map(self.issue_management).get(str(payload.get("issue_id", "")))
+        if record:
+            payload = dict(payload)
+            payload["status"] = record.get("status", payload.get("status", "OPEN"))
+            payload["assignee"] = record.get("assignee", "")
+            payload["comments"] = list(record.get("comments", ()))
+            payload["management_history"] = list(record.get("history", ()))
+        else:
+            payload["assignee"] = ""
+            payload["comments"] = []
+            payload["management_history"] = []
+        return payload
+
+    def _managed_issue_history(self, current: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        current_ids = {str(item.get("issue_id")) for item in current}
+        records = [dict(item, record_type="current") for item in current]
+        if self.bcf_summary is not None:
+            for topic in self.bcf_summary.topics:
+                if topic.issue_id and topic.issue_id in current_ids:
+                    continue
+                payload = self._managed_issue_record(topic.to_dict())
+                payload["record_type"] = "bcf"
+                records.append(payload)
+        return records
+
+    def _export_issue_projections(self) -> None:
+        report = replace(
+            self.facility_report,
+            issues=tuple(
+                replace(issue, status=self._managed_issue_record(issue.to_dict())["status"])
+                for issue in self.facility_report.issues
+            ),
+        )
+        stem = f"building_{self.result.variant:02d}"
+        references = {
+            key: f"{stem}{suffix}"
+            for key, suffix in {
+                "program": ".json",
+                "dxf": ".dxf",
+                "pdf": ".pdf",
+                "ifc": ".ifc",
+            }.items()
+            if (self.output_dir / f"{stem}{suffix}").is_file()
+        }
+        bcf_path = self.output_dir / f"{stem}.bcf"
+        self.bcf_summary = write_bcf_package(
+            bcf_path,
+            report,
+            project_name=self.building.layout.project_name,
+            variant=self.result.variant,
+            model_references=references,
+            ifc_path=self.output_dir / f"{stem}.ifc",
+            previous=self.bcf_summary,
+        )
+        write_coordination_issues(
+            self.output_dir / f"{stem}.coordination.json",
+            report,
+            project_name=self.building.layout.project_name,
+            variant=self.result.variant,
+            model_references=references,
+        )
+        self._update_manifest_bcf_counts()
+
+    def _update_manifest_bcf_counts(self) -> None:
+        if self.bcf_summary is None:
+            return
+        manifest_path = self.output_dir / "manifest.json"
+        if not manifest_path.is_file():
+            return
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            variants = manifest.get("variants")
+            if not isinstance(variants, list):
+                return
+            variant = next(
+                (item for item in variants if isinstance(item, dict) and item.get("variant") == self.result.variant),
+                None,
+            )
+            if variant is None:
+                return
+            variant["bcf_topic_count"] = len(self.bcf_summary.topics)
+            variant["bcf_open_topics"] = self.bcf_summary.open_topics
+            variant["bcf_resolved_topics"] = self.bcf_summary.resolved_topics
+            manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+        except (OSError, TypeError, ValueError, json.JSONDecodeError):
+            return
+
     def file_path(self, name: str) -> Path | None:
         safe_name = Path(unquote(name)).name
         if safe_name != name or safe_name not in self._file_names():
@@ -247,6 +445,7 @@ class FacilityReviewSession:
             f"{stem}.ifc",
             f"{stem}.bcf",
             f"{stem}.coordination.json",
+            f"{stem}.issue-management.json",
             "manifest.json",
         )
         return tuple(name for name in candidates if (self.output_dir / name).is_file())
@@ -275,27 +474,20 @@ def _load_bcf_summary(source: Path) -> BcfPackageSummary | None:
         return None
 
 
-def _issue_history(
-    current: tuple[Any, ...],
-    bcf_summary: BcfPackageSummary | None,
-) -> tuple[dict[str, Any], ...]:
-    """Merge recomputed current issues with the BCF package's resolved topics."""
+def _required_text(value: Any, name: str, limit: int) -> str:
+    text = str(value or "").strip()
+    if not text:
+        raise EditError(f"{name} is required")
+    if len(text) > limit:
+        raise EditError(f"{name} must be at most {limit} characters")
+    return text
 
-    records: list[dict[str, Any]] = []
-    current_ids: set[str] = set()
-    for issue in current:
-        payload = issue.to_dict()
-        payload["record_type"] = "current"
-        records.append(payload)
-        current_ids.add(issue.issue_id)
-    if bcf_summary is not None:
-        for topic in bcf_summary.topics:
-            if topic.issue_id and topic.issue_id in current_ids:
-                continue
-            payload = topic.to_dict()
-            payload["record_type"] = "bcf"
-            records.append(payload)
-    return tuple(records)
+
+def _optional_text(value: Any, name: str, limit: int) -> str:
+    text = str(value or "").strip()
+    if len(text) > limit:
+        raise EditError(f"{name} must be at most {limit} characters")
+    return text
 
 
 def _asset(name: str) -> str:
@@ -558,6 +750,17 @@ class _UiHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802 - stdlib handler API
         route = urlsplit(self.path).path
+        if route == "/api/issue-action":
+            if not isinstance(self.current_session, FacilityReviewSession):
+                self._send_json(405, {"error": "Issue management is available only in facility review mode", "state": self.current_session.snapshot()})
+                return
+            try:
+                snapshot = self.current_session.apply_issue_payload(self._read_json())
+            except (EditError, KeyError, TypeError, ValueError, OSError, RuntimeError) as exc:
+                self._send_json(400, {"error": str(exc), "state": self.current_session.snapshot()})
+                return
+            self._send_json(200, snapshot)
+            return
         if route not in {"/api/command", "/api/reset", "/api/undo", "/api/redo"}:
             self._send_json(404, {"error": "not found"})
             return

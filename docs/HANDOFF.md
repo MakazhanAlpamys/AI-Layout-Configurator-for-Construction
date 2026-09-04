@@ -162,9 +162,12 @@ Viewer QA и BCF issue-management workflow добавлены в read-only facil
 открытые flow/equipment conflicts автоматически подсвечиваются на SVG, BCF
 topics нормализуются в `OPEN`/`RESOLVED`, а текущие issues и закрытая history
 отображаются через фильтры статуса. BCF viewpoint coordinates восстанавливаются
-для визуальной отметки закрытых issues; edit/undo/redo/reset остаются HTTP 405.
+для визуальной отметки закрытых issues. Для выбранного issue доступны Resolve,
+Reopen, comment и assign; audit trail сохраняется в отдельном
+`building_01.issue-management.json`, а BCF/coordination JSON и manifest counters
+обновляются. Геометрия остаётся read-only: edit/undo/redo/reset — HTTP 405.
 Следующий крупный шаг — расширение правил только с подтверждённым источником,
 версией и областью применимости.
 ### Facility review surface
 
-The `ui` command now auto-detects a generated `BuildingIR` result (`building_01.json`) and opens a read-only facility review. The server independently recomputes equipment, flow, and facility validation; the SVG projection overlays equipment footprints, service-clearance envelopes, derived flow routes, open conflict markers, and resolved BCF viewpoints. The side panel shows profile evidence, `OPEN`/`RESOLVED` filters, current coordination issues, BCF issue history, and JSON/DXF/PDF/IFC/BCF artifacts. Edit, undo, redo, and reset endpoints return HTTP 405 in this mode.
+The `ui` command now auto-detects a generated `BuildingIR` result (`building_01.json`) and opens a read-only facility review. The server independently recomputes equipment, flow, and facility validation; the SVG projection overlays equipment footprints, service-clearance envelopes, derived flow routes, open conflict markers, and resolved BCF viewpoints. The side panel shows profile evidence, `OPEN`/`RESOLVED` filters, current coordination issues, BCF issue history, and JSON/DXF/PDF/IFC/BCF artifacts. A selected issue can be resolved, reopened, assigned, or commented; the audit trail is stored in `building_01.issue-management.json` and refreshes the BCF/coordination JSON projections. Geometry edit, undo, redo, and reset endpoints still return HTTP 405 in this mode.

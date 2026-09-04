@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/issue-management-0.1.json",
+  "title": "Facility Layout Compiler issue management 0.1",
+  "description": "Local BCF issue workflow sidecar. It is not a regulatory verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "issues"],
+  "properties": {
+    "format": {"const": "FLC-BCF-issue-management"},
+    "version": {"const": "0.1"},
+    "project_name": {"type": "string", "minLength": 1},
+    "variant": {"type": "integer", "minimum": 1},
+    "updated_at": {"type": "string", "minLength": 1},
+    "issues": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/managedIssue"}
+    }
+  },
+  "$defs": {
+    "managedIssue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issue_id", "status", "assignee", "comments", "history"],
+      "properties": {
+        "issue_id": {"type": "string", "pattern": "^FLC-[A-F0-9]{12}$"},
+        "status": {"enum": ["OPEN", "RESOLVED"]},
+        "assignee": {"type": "string", "maxLength": 120},
+        "comments": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/comment"}
+        },
+        "history": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/historyEntry"}
+        }
+      }
+    },
+    "comment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["author", "text", "created_at", "action"],
+      "properties": {
+        "author": {"type": "string", "minLength": 1, "maxLength": 120},
+        "text": {"type": "string", "minLength": 1, "maxLength": 4000},
+        "created_at": {"type": "string", "minLength": 1},
+        "action": {"enum": ["resolve", "reopen", "comment", "assign"]}
+      }
+    },
+    "historyEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "author", "timestamp", "comment", "from_status", "to_status", "from_assignee", "to_assignee"],
+      "properties": {
+        "action": {"enum": ["resolve", "reopen", "comment", "assign"]},
+        "author": {"type": "string", "minLength": 1, "maxLength": 120},
+        "timestamp": {"type": "string", "minLength": 1},
+        "comment": {"type": "string", "maxLength": 4000},
+        "from_status": {"enum": ["OPEN", "RESOLVED"]},
+        "to_status": {"enum": ["OPEN", "RESOLVED"]},
+        "from_assignee": {"type": "string", "maxLength": 120},
+        "to_assignee": {"type": "string", "maxLength": 120}
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-const state = { current: null, interaction: null, busy: false, selectedRoomId: null, selectedCoordinationTarget: null, issueFilter: "ALL" };
+const state = { current: null, interaction: null, busy: false, issueActionBusy: false, selectedRoomId: null, selectedCoordinationTarget: null, selectedIssueId: null, issueFilter: "ALL" };
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value)
@@ -108,6 +108,55 @@ function issueLocation(issue) {
   const x = Number(issue?.location?.x);
   const y = Number(issue?.location?.y);
   return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null;
+}
+
+function selectedIssue(data) {
+  return (data.issue_history || []).find((issue) => issue.issue_id === state.selectedIssueId) || null;
+}
+
+function renderIssueActions(data) {
+  const container = $("#issue-actions");
+  container.hidden = false;
+  const issue = selectedIssue(data);
+  if (!issue) {
+    container.innerHTML = `<div class="issues-title">Issue actions</div><p class="issue-action-empty">Select an issue to resolve, reopen, assign or comment.</p>`;
+    return;
+  }
+  const status = issueStatus(issue);
+  const currentIssue = (data.facility?.issues || []).some((item) => item.issue_id === issue.issue_id);
+  const comments = issue.comments || [];
+  const audit = issue.management_history || [];
+  const commentsHtml = comments.length
+    ? `<div class="issue-comments"><strong>Comments</strong>${comments.slice().reverse().map((comment) => `<p><b>${escapeHtml(comment.author)}</b> · ${escapeHtml(comment.created_at)}<br>${escapeHtml(comment.text)}</p>`).join("")}</div>`
+    : "";
+  const auditHtml = audit.length
+    ? `<details class="issue-audit"><summary>Audit trail (${audit.length})</summary>${audit.slice().reverse().map((entry) => `<p><b>${escapeHtml(entry.action)}</b> · ${escapeHtml(entry.author)} · ${escapeHtml(entry.timestamp)}${entry.comment ? `<br>${escapeHtml(entry.comment)}` : ""}</p>`).join("")}</details>`
+    : "";
+  container.innerHTML = `<div class="issues-title">Issue actions · ${escapeHtml(issue.issue_id || issue.code || "selected")}</div><div class="issue-selected"><span class="issue-status ${status === "RESOLVED" ? "status-resolved" : "status-open"}">${status}</span> · ${escapeHtml(issue.code || "BCF_TOPIC")} · ${escapeHtml(issue.title || "Issue")}${issue.assignee ? ` · owner: ${escapeHtml(issue.assignee)}` : ""}</div>${currentIssue ? "" : "<p class=\"issue-action-empty\">Historical BCF topic: status can only change after it reappears in current validation.</p>"}<div class="grid-2"><label>Author<input id="issue-author" value="reviewer" maxlength="120"></label><label>Assignee<input id="issue-assignee" value="${escapeHtml(issue.assignee || "")}" maxlength="120" placeholder="unassigned"></label></div><label>Comment / reason<textarea id="issue-comment" maxlength="4000" placeholder="Required for resolve, reopen and comment"></textarea></label><div class="grid-2"><button type="button" class="primary issue-action-button" data-issue-action="resolve" ${status === "RESOLVED" || !currentIssue ? "disabled" : ""}>Resolve</button><button type="button" class="secondary issue-action-button" data-issue-action="reopen" ${status === "OPEN" || !currentIssue ? "disabled" : ""}>Reopen</button></div><div class="grid-2"><button type="button" class="secondary issue-action-button" data-issue-action="comment">Add comment</button><button type="button" class="secondary issue-action-button" data-issue-action="assign">Save assignee</button></div>${commentsHtml}${auditHtml}<p id="issue-action-error" class="error" hidden></p>`;
+}
+
+async function submitIssueAction(action) {
+  if (!state.selectedIssueId || state.issueActionBusy) return;
+  const author = $("#issue-author")?.value || "";
+  const comment = $("#issue-comment")?.value || "";
+  const assignee = $("#issue-assignee")?.value || "";
+  state.issueActionBusy = true;
+  try {
+    render(await request("/api/issue-action", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, issue_id: state.selectedIssueId, author, comment, assignee }),
+    }));
+  } catch (err) {
+    if (err.state) render(err.state);
+    const error = $("#issue-action-error");
+    if (error) {
+      error.textContent = err.message;
+      error.hidden = false;
+    }
+  } finally {
+    state.issueActionBusy = false;
+  }
 }
 
 function drawFacilityOverlay(svg, data, height) {
@@ -329,6 +378,7 @@ function renderFacilityReview(data) {
   $("#issue-history").innerHTML = visibleHistory.length
     ? `<div class="issue-history"><div class="issues-title">Issue history · ${bcfLabel}</div><div class="issue-history-counts"><span class="status-open">${openCount} open</span><span class="status-resolved">${resolvedCount} resolved</span></div>${visibleHistory.map(issueRow).join("")}</div>`
     : `<div class="issue-history issue-history-empty"><div class="issues-title">Issue history</div><p>No issues match the selected filter.</p></div>`;
+  renderIssueActions(data);
   $("#norms").innerHTML = checks.length
     ? `<div class="norms facility-checks"><div class="norms-head">Facility evidence · ${escapeHtml(profile.name || "selected profile")}</div>${checks.map((check) => { const statusClass = check.status === "PASS" ? "norm-pass" : check.status === "FAIL" ? "norm-fail" : "norm-na"; return `<details class="facility-check"><summary><span>${escapeHtml(check.id)}</span><strong class="${statusClass}">${escapeHtml(check.status)}</strong></summary><p>${escapeHtml((check.evidence || []).join("; "))}</p></details>`; }).join("")}</div>`
     : "";
@@ -338,11 +388,10 @@ function renderFacilityReview(data) {
 }
 
 function selectCoordinationIssue(issueId) {
-  const issue = (state.current?.facility?.issues || []).find((item) => item.issue_id === issueId);
+  const issue = (state.current?.issue_history || state.current?.facility?.issues || []).find((item) => item.issue_id === issueId);
   if (!issue) return;
-  if (issue.flow_id) state.selectedCoordinationTarget = { kind: "flow", id: issue.flow_id };
-  else if (issue.equipment_id) state.selectedCoordinationTarget = { kind: "equipment", id: issue.equipment_id };
-  else state.selectedCoordinationTarget = null;
+  state.selectedIssueId = issueId;
+  state.selectedCoordinationTarget = issueTarget(issue);
   render(state.current);
 }
 
@@ -359,6 +408,7 @@ function render(data) {
   $("#reset").disabled = review;
   $(".command-card").hidden = review;
   $("#issue-controls").hidden = !review;
+  $("#issue-actions").hidden = !review;
   $(".canvas-help").textContent = review
     ? "Read-only facility review: flows, equipment footprints, service clearances and deterministic checks are projected from the generated BuildingIR bundle."
     : "Перетащите комнату или resize-маркер; отпускание отправляет одну typed-команду.";
@@ -368,6 +418,8 @@ function render(data) {
     return;
   }
   $("#issue-controls").hidden = true;
+  $("#issue-actions").hidden = true;
+  $("#issue-actions").innerHTML = "";
   $("#issue-history").innerHTML = "";
   $("#summary").innerHTML = `<dt>Комнат</dt><dd>${data.rooms.length}</dd><dt>Вариант</dt><dd>${data.layout.variant}</dd><dt>История</dt><dd>${data.history.length || "—"}</dd><dt>Внешний вход</dt><dd>${data.spec.external_entry ? escapeHtml(data.spec.external_entry.id) : "—"}</dd>`;
   $("#issues").innerHTML = data.validation.issues.length ? `<div class="issues">${data.validation.issues.map((issue) => `<div>${escapeHtml(issue.code)}: ${escapeHtml(issue.message)}</div>`).join("")}</div>` : "";
@@ -413,6 +465,10 @@ $("#issue-controls").addEventListener("click", (event) => {
   if (!button) return;
   state.issueFilter = button.dataset.issueFilter || "ALL";
   if (state.current?.mode === "facility-review") renderFacilityReview(state.current);
+});
+$("#issue-actions").addEventListener("click", (event) => {
+  const button = event.target.closest("[data-issue-action]");
+  if (button) submitIssueAction(button.dataset.issueAction);
 });
 $("#plan").addEventListener("pointerdown", canvasPointerDown);
 $("#plan").addEventListener("pointermove", canvasPointerMove);

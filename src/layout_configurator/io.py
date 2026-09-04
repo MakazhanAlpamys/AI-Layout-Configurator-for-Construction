@@ -146,7 +146,8 @@ def write_coordination_issues(
         "format": "FLC-BCF-like-json",
         "version": "0.1",
         "profile": report.profile.to_dict(),
-        "open_count": len(report.issues),
+        "open_count": sum(issue.status == "OPEN" for issue in report.issues),
+        "resolved_count": sum(issue.status == "RESOLVED" for issue in report.issues),
         "issues": [issue.to_dict() for issue in report.issues],
     }
     if project_name is not None:

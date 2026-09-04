@@ -245,4 +245,6 @@ BCF-XML 2.1 exchange уже формируется поверх экспорти
 машиночитаемыми проекциями. `--bcf-input` сохраняет исчезнувшие topics как
 `Closed` при следующей итерации. Read-only viewer QA уже показывает derived flow
 и equipment conflicts, статусы `OPEN`/`RESOLVED`, фильтр issues и BCF history;
-для проверки полного комплекта также есть `qa-building`.
+issue workflow поддерживает Resolve/Reopen/comment/assign с audit sidecar и
+обновлением BCF/coordination JSON. Для проверки полного комплекта также есть
+`qa-building`.

@@ -6,11 +6,14 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
+from jsonschema import Draft202012Validator
+
 from layout_configurator.building import BuildingIR
 from layout_configurator.bcf import write_bcf_package
-from layout_configurator.equipment import place_equipment
+from layout_configurator.equipment import EquipmentLayoutResult, EquipmentPlacement, place_equipment
 from layout_configurator.facility import CoordinationIssue, FacilityValidationReport
 from layout_configurator.io import write_building_result
+from layout_configurator.models import Rect
 from layout_configurator.solver import solve_layouts
 from layout_configurator.ui import FacilityReviewSession, UiSession, create_ui_server
 
@@ -58,6 +61,8 @@ class UiTests(unittest.TestCase):
                 self.assertIn(b"selectCoordinationIssue", app_js)
                 self.assertIn(b"issue_history", app_js)
                 self.assertIn(b"data-issue-filter", app_js)
+                self.assertIn(b"/api/issue-action", app_js)
+                self.assertIn(b"submitIssueAction", app_js)
                 with urlopen(f"{base_url}/style.css") as response:
                     self.assertIn(b"issue-marker-resolved", response.read())
 
@@ -262,6 +267,117 @@ class UiTests(unittest.TestCase):
             self.assertEqual(records["FLC-OLD-ROUTE"]["status"], "RESOLVED")
             self.assertEqual(records["FLC-OLD-ROUTE"]["record_type"], "bcf")
             self.assertEqual(records["FLC-OLD-ROUTE"]["location"], {"x": 2500.0, "y": 3000.0})
+
+    def test_facility_review_manages_issue_lifecycle_and_exports_projections(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            building = BuildingIR.from_mapping(
+                {
+                    "project_name": "Issue lifecycle review",
+                    "boundary": {"width": 8000, "height": 6000},
+                    "rooms": [
+                        {
+                            "id": "production",
+                            "type": "production",
+                            "target_area": 48,
+                            "min_area": 30,
+                            "max_area": 60,
+                            "min_width": 5000,
+                            "min_depth": 5000,
+                        }
+                    ],
+                    "equipment": [
+                        {
+                            "id": "machine",
+                            "type": "process_machine",
+                            "room_id": "production",
+                            "width_mm": 1000,
+                            "depth_mm": 1000,
+                            "clearance_mm": 300,
+                        }
+                    ],
+                    "flows": [],
+                }
+            )
+            result = solve_layouts(building.layout, variants=1, time_limit_seconds=5, seed=42)[0]
+            equipment = EquipmentLayoutResult(
+                (
+                    EquipmentPlacement(
+                        equipment_id="machine",
+                        room_id="production",
+                        rect=Rect(7600, 5000, 1000, 1000),
+                        rotated=False,
+                    ),
+                )
+            )
+            input_path = root / "building_01.json"
+            write_building_result(input_path, building, result, equipment)
+            initial = FacilityReviewSession.from_input(input_path, root)
+            write_bcf_package(root / "building_01.bcf", initial.facility_report, project_name="Issue lifecycle review", variant=1)
+            session = FacilityReviewSession.from_input(input_path, root)
+            initial_issue_count = len(session.facility_report.issues)
+            issue_id = session.snapshot()["facility"]["issues"][0]["issue_id"]
+
+            server = create_ui_server(session)
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            base_url = f"http://127.0.0.1:{server.server_port}"
+
+            def action(action_name, **extra):
+                payload = {"action": action_name, "issue_id": issue_id, "author": "qa-reviewer", **extra}
+                request = Request(
+                    f"{base_url}/api/issue-action",
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urlopen(request) as response:
+                    return json.load(response)
+
+            try:
+                resolved = action("resolve", comment="Clearance fix verified in revision R02")
+                managed = next(item for item in resolved["facility"]["issues"] if item["issue_id"] == issue_id)
+                self.assertEqual(managed["status"], "RESOLVED")
+                self.assertEqual(resolved["bcf"]["open_topics"], initial_issue_count - 1)
+                self.assertEqual(resolved["bcf"]["resolved_topics"], 1)
+                self.assertEqual(len(managed["comments"]), 1)
+                self.assertEqual(len(managed["management_history"]), 1)
+                self.assertTrue((root / "building_01.issue-management.json").is_file())
+                self.assertEqual(json.loads((root / "building_01.coordination.json").read_text(encoding="utf-8"))["open_count"], initial_issue_count - 1)
+
+                commented = action("comment", comment="Owner confirmed the measurement").copy()
+                managed = next(item for item in commented["facility"]["issues"] if item["issue_id"] == issue_id)
+                self.assertEqual(len(managed["comments"]), 2)
+                self.assertEqual(len(managed["management_history"]), 2)
+
+                assigned = action("assign", assignee="Facilities QA", comment="Handed to facilities coordinator")
+                managed = next(item for item in assigned["facility"]["issues"] if item["issue_id"] == issue_id)
+                self.assertEqual(managed["assignee"], "Facilities QA")
+                self.assertEqual(len(managed["management_history"]), 3)
+
+                reopened = action("reopen", comment="Reopened after a new clash was found")
+                managed = next(item for item in reopened["facility"]["issues"] if item["issue_id"] == issue_id)
+                self.assertEqual(managed["status"], "OPEN")
+                self.assertEqual(reopened["bcf"]["open_topics"], initial_issue_count)
+                self.assertEqual(reopened["bcf"]["resolved_topics"], 0)
+                self.assertEqual(len(managed["management_history"]), 4)
+                management_schema = json.loads(Path("schemas/issue_management.schema.json").read_text(encoding="utf-8"))
+                management_payload = json.loads((root / "building_01.issue-management.json").read_text(encoding="utf-8"))
+                self.assertEqual(list(Draft202012Validator(management_schema).iter_errors(management_payload)), [])
+
+                readonly_command = Request(
+                    f"{base_url}/api/command",
+                    data=b'{"type":"move_room","room_id":"production","dx_mm":100,"dy_mm":0}',
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with self.assertRaises(HTTPError) as raised:
+                    urlopen(readonly_command)
+                self.assertEqual(raised.exception.code, 405)
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@
 
 * { box-sizing: border-box; }
 body { margin: 0; background: radial-gradient(circle at 10% 0%, #202a31 0, var(--bg) 38%); color: var(--text); }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 .topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; max-width: 1440px; margin: 0 auto; padding: 34px 32px 20px; }
 .toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
@@ -55,8 +55,9 @@ h2 { font-size: 1.12rem; letter-spacing: -0.02em; }
 .swatch.entry { background: var(--accent); }
 .swatch.window { background: #88b9ff; }
 label { display: grid; gap: 7px; margin-bottom: 13px; color: var(--muted); font-size: .8rem; font-weight: 700; }
-input, select { width: 100%; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 11px; outline: none; }
-input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #68d5c522; }
+input, select, textarea { width: 100%; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 10px 11px; outline: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #68d5c522; }
+textarea { min-height: 76px; resize: vertical; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .primary, .secondary { border-radius: 9px; padding: 11px 14px; font-weight: 800; }
 .primary { width: 100%; color: #10211f; background: var(--accent); border: 1px solid var(--accent); }
@@ -136,6 +137,14 @@ input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px #
 .issue-history-counts { display: flex; gap: 12px; margin-bottom: 5px; font-size: .72rem; font-weight: 800; }
 .issue-history-empty { color: var(--muted); }
 .issue-history-empty p { margin: 0; }
+.issue-actions { margin-top: 18px; padding: 11px; border: 1px solid #36574f; border-radius: 9px; background: #172421; font-size: .78rem; line-height: 1.45; }
+.issue-action-empty { margin: 0; color: var(--muted); }
+.issue-selected { margin-bottom: 10px; color: var(--text); font-weight: 700; }
+.issue-action-button:disabled { cursor: not-allowed; opacity: .4; }
+.issue-comments, .issue-audit { margin-top: 12px; color: var(--muted); }
+.issue-comments > strong { color: var(--text); }
+.issue-comments p, .issue-audit p { margin: 7px 0 0; padding: 7px 8px; border-radius: 7px; background: var(--panel-2); }
+.issue-audit summary { cursor: pointer; color: var(--text); font-weight: 700; }
 .facility-checks { gap: 6px; }
 .facility-check { padding: 8px 9px; border-radius: 8px; background: var(--panel-2); font-size: .75rem; }
 .facility-check summary { display: flex; align-items: center; justify-content: space-between; gap: 8px; cursor: pointer; }

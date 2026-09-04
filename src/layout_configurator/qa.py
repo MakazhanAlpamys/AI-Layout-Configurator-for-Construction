@@ -11,6 +11,7 @@ from .bcf import read_bcf_package
 from .facility import FacilityProfile, default_facility_profile, validate_building
 from .flows import route_flows, validate_flow_routes
 from .ifc import validate_ifc_roundtrip
+from .issue_management import issue_state_map, load_issue_management
 from .io import load_building_result
 from .equipment import validate_equipment_layout
 
@@ -76,6 +77,13 @@ def validate_building_bundle(
         profile=selected_profile,
         equipment_report=equipment_report,
     )
+    management_path = source.with_name(f"{source.stem}.issue-management.json")
+    management = load_issue_management(management_path)
+    managed_records = issue_state_map(management)
+    expected_open = sum(
+        managed_records.get(issue.issue_id, {}).get("status", issue.status) == "OPEN"
+        for issue in facility_report.issues
+    )
     checks: list[BundleQACheck] = [
         BundleQACheck(
             "FACILITY_VALIDATION",
@@ -107,8 +115,8 @@ def validate_building_bundle(
             flow_ids={route.flow_id for route in routes.routes},
         )
     )
-    checks.append(_qa_bcf(bcf, {issue.issue_id for issue in facility_report.issues}))
-    checks.append(_qa_coordination(coordination, facility_report, schema_path))
+    checks.append(_qa_bcf(bcf, {issue.issue_id for issue in facility_report.issues}, expected_open=expected_open))
+    checks.append(_qa_coordination(coordination, facility_report, schema_path, expected_open=expected_open))
     return BundleQAReport(source, tuple(checks))
 
 
@@ -226,17 +234,17 @@ def _qa_ifc(path: Path, *, room_count: int, equipment_count: int, flow_ids: set[
     )
 
 
-def _qa_bcf(path: Path, issue_ids: set[str]) -> BundleQACheck:
+def _qa_bcf(path: Path, issue_ids: set[str], *, expected_open: int) -> BundleQACheck:
     try:
         summary = read_bcf_package(path)
         actual_ids = {topic.issue_id for topic in summary.topics if topic.issue_id}
         missing = sorted(issue_ids - actual_ids)
-        if missing or summary.open_topics != len(issue_ids):
+        if missing or summary.open_topics != expected_open:
             return BundleQACheck(
                 "BCF_READBACK",
                 False,
                 "BCF topics do not match current coordination issues",
-                {"missing_issue_ids": missing, "expected_open": len(issue_ids), "actual_open": summary.open_topics},
+                {"missing_issue_ids": missing, "expected_open": expected_open, "actual_open": summary.open_topics},
             )
         return BundleQACheck(
             "BCF_READBACK",
@@ -248,7 +256,7 @@ def _qa_bcf(path: Path, issue_ids: set[str]) -> BundleQACheck:
         return BundleQACheck("BCF_READBACK", False, f"BCF read-back failed: {exc}")
 
 
-def _qa_coordination(path: Path, facility_report, schema_path: str | Path) -> BundleQACheck:
+def _qa_coordination(path: Path, facility_report, schema_path: str | Path, *, expected_open: int) -> BundleQACheck:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
         from jsonschema import Draft202012Validator
@@ -257,8 +265,13 @@ def _qa_coordination(path: Path, facility_report, schema_path: str | Path) -> Bu
         errors = list(Draft202012Validator(schema).iter_errors(data))
         if errors:
             return BundleQACheck("COORDINATION_JSON", False, "Coordination sidecar violates its JSON Schema", {"errors": [error.message for error in errors]})
-        if data.get("open_count") != len(facility_report.issues):
+        current_ids = {issue.issue_id for issue in facility_report.issues}
+        actual_ids = {issue.get("issue_id") for issue in data.get("issues", []) if isinstance(issue, dict)}
+        missing = sorted(current_ids - actual_ids)
+        if missing:
+            return BundleQACheck("COORDINATION_JSON", False, "Coordination sidecar is missing current issue IDs", {"missing_issue_ids": missing})
+        if data.get("open_count") != expected_open:
             return BundleQACheck("COORDINATION_JSON", False, "Coordination sidecar issue count is stale")
-        return BundleQACheck("COORDINATION_JSON", True, "Coordination sidecar matches schema and current issues", {"open_count": data.get("open_count", 0)})
+        return BundleQACheck("COORDINATION_JSON", True, "Coordination sidecar matches schema and current issue workflow", {"open_count": data.get("open_count", 0), "resolved_count": data.get("resolved_count", 0)})
     except (ImportError, OSError, TypeError, ValueError) as exc:
         return BundleQACheck("COORDINATION_JSON", False, f"Coordination sidecar QA failed: {exc}")

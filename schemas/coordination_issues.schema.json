@@ -13,6 +13,7 @@
     "variant": {"type": "integer", "minimum": 1},
     "profile": {"type": "object"},
     "open_count": {"type": "integer", "minimum": 0},
+    "resolved_count": {"type": "integer", "minimum": 0},
     "model_references": {
       "type": "object",
       "additionalProperties": {"type": "string", "minLength": 1}

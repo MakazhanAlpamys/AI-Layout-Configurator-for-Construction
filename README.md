@@ -220,8 +220,10 @@ read-only facility review. SVG показывает производные ма�
 clearance оборудования и автоматически подсвечивает текущие flow/equipment
 конфликты. Боковая панель отображает статусы `OPEN`/`RESOLVED`, фильтр issues,
 текущий список конфликтов и историю BCF topics; закрытые viewpoints отмечаются
-на плане по координатам BCF. Изменения выполняются через повторную генерацию
-`BuildingIR` и `--bcf-input`; edit/undo/redo/reset в review возвращают HTTP 405.
+на плане по координатам BCF. Для выбранного issue доступны `Resolve`, `Reopen`,
+comment и assign; действия сохраняются в `building_01.issue-management.json`,
+обновляют BCF/coordination JSON и manifest counters. Геометрия остаётся
+read-only: edit/undo/redo/reset в review возвращают HTTP 405.
 
 ## Ограничения MVP
 
