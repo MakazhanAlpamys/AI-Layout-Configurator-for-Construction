@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from collections.abc import Mapping
+import math
 from typing import Any, Literal
 
 from .models import LayoutIR
@@ -27,6 +28,9 @@ class ZoneSpec:
     type: str
     room_ids: tuple[str, ...] = ()
     parent_zone_id: str | None = None
+    cleanroom_class: str | None = None
+    pressure_pa: float | None = None
+    airlock: bool = False
     required_adjacency: tuple[str, ...] = ()
     preferred_adjacency: tuple[str, ...] = ()
     forbidden_adjacency: tuple[str, ...] = ()
@@ -37,11 +41,26 @@ class ZoneSpec:
         room_ids = _ids(raw.get("room_ids", raw.get("rooms", ())), f"zones[{zone_id}].room_ids")
         parent = raw.get("parent_zone_id", raw.get("parent"))
         parent_id = None if parent in (None, "") else _required_id(parent, f"zones[{zone_id}].parent_zone_id")
+        cleanroom_class_value = raw.get("cleanroom_class", raw.get("classification"))
+        cleanroom_class = (
+            None
+            if cleanroom_class_value in (None, "")
+            else str(cleanroom_class_value).strip()
+        )
+        pressure_value = raw.get("pressure_pa")
+        pressure_pa = (
+            None
+            if pressure_value in (None, "")
+            else _number(pressure_value, f"zones[{zone_id}].pressure_pa")
+        )
         return cls(
             id=zone_id,
             type=str(raw.get("type", "zone")).strip() or "zone",
             room_ids=room_ids,
             parent_zone_id=parent_id,
+            cleanroom_class=cleanroom_class,
+            pressure_pa=pressure_pa,
+            airlock=_bool(raw.get("airlock", False)),
             required_adjacency=_ids(raw.get("required_adjacency", ()), f"zones[{zone_id}].required_adjacency"),
             preferred_adjacency=_ids(raw.get("preferred_adjacency", ()), f"zones[{zone_id}].preferred_adjacency"),
             forbidden_adjacency=_ids(raw.get("forbidden_adjacency", ()), f"zones[{zone_id}].forbidden_adjacency"),
@@ -58,6 +77,12 @@ class ZoneSpec:
         }
         if self.parent_zone_id is not None:
             payload["parent_zone_id"] = self.parent_zone_id
+        if self.cleanroom_class is not None:
+            payload["cleanroom_class"] = self.cleanroom_class
+        if self.pressure_pa is not None:
+            payload["pressure_pa"] = self.pressure_pa
+        if self.airlock:
+            payload["airlock"] = True
         return payload
 
 
@@ -175,6 +200,7 @@ class FlowSpec:
     to_ids: tuple[str, ...]
     minimum_clear_width_mm: float = 1_200.0
     required: bool = True
+    stage: str | None = None
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any], index: int) -> "FlowSpec":
@@ -185,6 +211,8 @@ class FlowSpec:
             raise BuildingSpecError(f"Flow {flow_id} must have non-empty from and to endpoints")
         if set(from_ids) & set(to_ids):
             raise BuildingSpecError(f"Flow {flow_id} cannot have the same endpoint on both sides")
+        stage_value = raw.get("stage", raw.get("process_stage"))
+        stage = None if stage_value in (None, "") else str(stage_value).strip() or None
         return cls(
             id=flow_id,
             type=str(raw.get("type", raw.get("kind", "people"))).strip() or "people",
@@ -195,10 +223,11 @@ class FlowSpec:
                 f"flows[{flow_id}].minimum_clear_width_mm",
             ),
             required=_bool(raw.get("required", True)),
+            stage=stage,
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "id": self.id,
             "type": self.type,
             "from_ids": list(self.from_ids),
@@ -206,6 +235,9 @@ class FlowSpec:
             "minimum_clear_width_mm": self.minimum_clear_width_mm,
             "required": self.required,
         }
+        if self.stage is not None:
+            payload["stage"] = self.stage
+        return payload
 
 
 @dataclass(frozen=True)
@@ -516,6 +548,16 @@ def _non_negative(value: Any, field_name: str) -> float:
         raise BuildingSpecError(f"{field_name} must be a number") from exc
     if result < 0:
         raise BuildingSpecError(f"{field_name} must be non-negative")
+    return result
+
+
+def _number(value: Any, field_name: str) -> float:
+    try:
+        result = float(value)
+    except (TypeError, ValueError) as exc:
+        raise BuildingSpecError(f"{field_name} must be a number") from exc
+    if not math.isfinite(result):
+        raise BuildingSpecError(f"{field_name} must be finite")
     return result
 
 

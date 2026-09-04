@@ -13,7 +13,7 @@ class BuildingIRTests(unittest.TestCase):
         self.assertEqual(len(building.layout.rooms), 10)
         self.assertEqual(len(building.zones), 3)
         self.assertEqual(len(building.equipment), 5)
-        self.assertEqual(len(building.flows), 5)
+        self.assertEqual(len(building.flows), 7)
         self.assertEqual(building.structural_grid.axes_x_mm[-1], 42000)
 
     def test_canonical_building_round_trip_and_schema(self):
@@ -22,6 +22,27 @@ class BuildingIRTests(unittest.TestCase):
         round_tripped = BuildingIR.from_mapping(canonical)
 
         self.assertEqual(round_tripped, building)
+        self.assertEqual(validate_building(building, "schemas/building_ir.schema.json"), ())
+
+    def test_cleanroom_zone_metadata_round_trips_and_passes_schema(self):
+        raw = _minimal_building()
+        raw["zones"] = [
+            {
+                "id": "clean_zone",
+                "type": "cleanroom",
+                "room_ids": ["room"],
+                "cleanroom_class": "ISO 7",
+                "pressure_pa": -15,
+                "airlock": True,
+            }
+        ]
+
+        building = BuildingIR.from_mapping(raw)
+
+        self.assertEqual(building.zones[0].cleanroom_class, "ISO 7")
+        self.assertEqual(building.zones[0].pressure_pa, -15)
+        self.assertTrue(building.zones[0].airlock)
+        self.assertEqual(BuildingIR.from_mapping(building.to_dict()), building)
         self.assertEqual(validate_building(building, "schemas/building_ir.schema.json"), ())
 
     def test_equipment_shared_clearance_is_expanded(self):

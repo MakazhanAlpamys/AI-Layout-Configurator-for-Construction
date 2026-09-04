@@ -3,16 +3,40 @@ version: "0.1"
 domain: hospital
 jurisdiction: project-profile-not-a-regulatory-verdict
 provenance:
-  source: Facility Layout Compiler domain profile
-  purpose: deterministic flow coordination evidence for a hospital pilot
-# Conceptual project relations only. These are not a healthcare, infection-
-# control, accessibility, fire or building-code verdict.
-flow_separation:
-  incompatible_flow_type_pairs:
-    - [patients, waste]
-    - [people, waste]
-    - [clean_supply, waste]
-    - [sterile_supply, waste]
+  source: https://www.who.int/publications/i/item/9789241516945
+  purpose: auditable early-design checks for patient, personnel, clean supply, dirty supply and waste flows
+  note: This is a project/domain policy and is not a healthcare, infection-control, accessibility, fire or building-code verdict.
+
+rules:
+  - id: HOSPITAL_REQUIRED_FLOW_TYPES
+    kind: required_flow_types
+    title: Hospital patient, personnel, clean-supply, dirty-supply and waste flows are declared
+    source: https://www.who.int/publications/i/item/9789241516945
+    edition: WHO Minimum requirements for infection prevention and control programmes
+    effective_date: "2019-11-18"
+    evidence:
+      - WHO defines minimum IPC requirements at national and health-care-facility level based on evidence and expert consensus.
+      - This rule checks that the project declares the flow categories needed for coordination; it does not certify an IPC programme or hospital design.
+    parameters:
+      flow_types: [patients, people, clean_supply, dirty_supply, waste]
+
+  - id: HOSPITAL_FLOW_SEPARATION
+    kind: flow_separation
+    title: Hospital incompatible flow types do not share intermediate rooms
+    source: https://www.who.int/europe/publications/i/item/9789289055475
+    edition: "WHO IPC guidance to action tools: environmental cleaning, waste and linen management"
+    effective_date: "2021-05-05"
+    evidence:
+      - WHO IPC tools identify environmental cleaning, waste and linen management as elements of standard and transmission-based precautions.
+      - The project profile reports route conflicts for human review; it does not replace local clinical, IPC or architectural review.
+    parameters:
+      incompatible_flow_type_pairs:
+        - [patients, waste]
+        - [people, waste]
+        - [clean_supply, dirty_supply]
+        - [clean_supply, waste]
+        - [dirty_supply, waste]
+
 drawing:
   sheet_id: A-101
   discipline: Hospital layout

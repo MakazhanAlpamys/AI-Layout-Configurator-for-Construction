@@ -1,5 +1,18 @@
 # Facility Layout Compiler
 
+## Domain rule packs
+
+Правила для regulated facilities задаются YAML-профилями, а не зашиваются в
+валидатор. Пакеты `cleanroom`, `pharma`, `laboratory`, `hospital` и `industrial`
+содержат типизированные правила потоков и собственные `source`, `edition`,
+`effective_date`, `evidence` и `parameters`.
+
+Структура профиля проверяется схемой
+[`schemas/facility_profile.schema.json`](schemas/facility_profile.schema.json).
+Результаты попадают в `facility_validation` и BCF-like issues вместе с ссылкой
+на применённое правило. Если входных данных недостаточно, результатом является
+`UNKNOWN`; система не подставляет нормативные числа и не выдаёт regulatory verdict.
+
 Solver-first компилятор проверяемых планировок для регулируемых и
 технологически насыщенных объектов: фармацевтики, чистых помещений,
 лабораторий, больниц и промышленности. Он принимает программу объекта,
@@ -103,8 +116,8 @@ undo/redo восстанавливают валидные снимки `EditorSt
 Первый узкий клин — фармацевтическое clean production / cleanroom-планирование.
 Он хорошо проверяет ценность продукта: отдельные зоны, equipment clearance,
 маршруты персонала и материалов, конструктивные оси и доказуемая проверка.
-Лаборатории, больницы и иные промышленные профили будут добавляться отдельными
-domain/rule packs поверх того же контракта, а не смешиваться в один набор
+Лаборатории, больницы и промышленные профили подключаются отдельными
+domain/rule packs поверх того же контракта, а не смешиваются в один набор
 непроверяемых правил.
 
 Текущий `BuildingIR` — канонический вход без координат: зоны, оборудование с
@@ -122,9 +135,9 @@ facility-программ default time limit этой команды — 60 се
   examples\commercial_pilot.yaml --output out\commercial_pilot --variants 1
 ```
 
-По умолчанию команда применяет встроенный профиль
-`pharma-clean-production`. Его можно заменить любым starter или собственным
-доменным профилем, например:
+По умолчанию команда применяет YAML-backed compatibility-профиль
+`rules/default_facility.yaml`. Для регулируемого объекта его нужно заменить
+явным domain profile — например:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
@@ -132,11 +145,12 @@ facility-программ default time limit этой команды — 60 се
   --output out\commercial_pilot
 ```
 
-В репозитории также есть starter-профили
+В репозитории также есть domain rule packs
 `rules\cleanroom_pilot.yaml`, `rules\laboratory_pilot.yaml`,
 `rules\hospital_pilot.yaml` и `rules\industrial_pilot.yaml`. Они содержат
-только проектные отношения типов потоков и не являются GMP, healthcare, HSE,
-ISO или строительными code-checks.
+типизированные проверки потоков, а cleanroom-пакет также классы зон, airlock и
+pressure ordering; это project policies, а не GMP, healthcare, HSE, ISO или
+строительные code-checks.
 Каждый профиль может содержать секцию `drawing` (`sheet_id`, `discipline`,
 `title`, `revision` и флаги аннотаций), которая управляет DXF/PDF projection.
 

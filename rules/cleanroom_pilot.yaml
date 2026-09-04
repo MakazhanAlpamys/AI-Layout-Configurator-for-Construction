@@ -3,16 +3,77 @@ version: "0.1"
 domain: cleanroom
 jurisdiction: project-profile-not-a-regulatory-verdict
 provenance:
-  source: Facility Layout Compiler domain profile
-  purpose: deterministic flow coordination evidence for a cleanroom pilot
-# Conceptual project relations only. These are not ISO 14644, GMP, HVAC or
-# contamination-control requirements.
-flow_separation:
-  incompatible_flow_type_pairs:
-    - [clean_material, waste]
-    - [people, waste]
-    - [finished_goods, waste]
-    - [clean_material, dirty_material]
+  source: https://www.iso.org/standard/53394.html
+  purpose: auditable project checks for cleanroom zoning, gateways, pressure ordering and flow declarations
+  note: External sources provide context; this pack does not certify ISO, GMP, HVAC or contamination-control compliance.
+
+rules:
+  - id: CLEANROOM_REQUIRED_FLOW_TYPES
+    kind: required_flow_types
+    title: Cleanroom personnel and material flow declarations are present
+    source: https://www.iso.org/standard/53394.html
+    edition: ISO 14644-1:2015
+    effective_date: "2015-12"
+    evidence:
+      - ISO 14644-1:2015 classifies air cleanliness in cleanrooms and clean zones by airborne particle concentration.
+      - This project rule checks only that the selected flow categories are declared; it does not calculate particle classification or certify a cleanroom.
+    parameters:
+      flow_types: [clean_material, dirty_material, people, waste]
+
+  - id: CLEANROOM_ZONE_FIELDS
+    kind: required_zone_fields
+    title: Applicable cleanroom zones carry declared class and pressure evidence
+    source: https://www.iso.org/standard/53394.html
+    edition: ISO 14644-1:2015
+    effective_date: "2015-12"
+    evidence:
+      - ISO 14644-1:2015 addresses classification of air cleanliness in cleanrooms and clean zones.
+      - The project must provide the class label and pressure evidence for each applicable zone before automated comparison.
+    parameters:
+      zone_types: [cleanroom, clean_zone, airlock]
+      fields: [cleanroom_class, pressure_pa]
+
+  - id: CLEANROOM_AIRLOCK_PRESENCE
+    kind: airlock_presence
+    title: A declared airlock/gateway zone is present
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision)
+    effective_date: "2024-08-25"
+    evidence:
+      - EU GMP Annex 1 places facility and process design under Quality Risk Management.
+      - This project rule requires the gateway to be explicitly modelled; it does not claim that one gateway is a universal regulatory minimum.
+    parameters:
+      zone_types: [airlock, personnel_airlock, material_airlock]
+      required: true
+
+  - id: CLEANROOM_PRESSURE_CASCADE
+    kind: pressure_cascade
+    title: Declared parent-child pressure ordering is consistent
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision)
+    effective_date: "2024-08-25"
+    evidence:
+      - EU GMP Annex 1 requires facility and process design decisions to be managed through documented Quality Risk Management.
+      - This check verifies only the direction declared by the project profile; no pressure differential is invented when the profile omits it.
+    parameters:
+      zone_types: [cleanroom, clean_zone, airlock]
+      direction: parent_gt_child
+
+  - id: FLOW_TYPE_SEPARATION
+    kind: flow_separation
+    title: Incompatible cleanroom flow types do not share intermediate rooms
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision)
+    effective_date: "2024-08-25"
+    evidence:
+      - The profile turns contamination-control design intent into an explicit, reviewable project coordination check.
+      - A failed check is a coordination issue for human review, not a regulatory finding.
+    parameters:
+      incompatible_flow_type_pairs:
+        - [clean_material, waste]
+        - [people, waste]
+        - [dirty_material, clean_material]
+
 drawing:
   sheet_id: A-101
   discipline: Cleanroom layout

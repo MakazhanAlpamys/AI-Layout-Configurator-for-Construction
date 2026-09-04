@@ -33,6 +33,9 @@
         "type": {"$ref": "#/$defs/id"},
         "room_ids": {"$ref": "#/$defs/idList"},
         "parent_zone_id": {"$ref": "#/$defs/id"},
+        "cleanroom_class": {"$ref": "#/$defs/id"},
+        "pressure_pa": {"type": "number"},
+        "airlock": {"type": "boolean"},
         "required_adjacency": {"$ref": "#/$defs/idList"},
         "preferred_adjacency": {"$ref": "#/$defs/idList"},
         "forbidden_adjacency": {"$ref": "#/$defs/idList"}
@@ -69,6 +72,7 @@
         "type": {"$ref": "#/$defs/id"},
         "from_ids": {"$ref": "#/$defs/idList"},
         "to_ids": {"$ref": "#/$defs/idList"},
+        "stage": {"$ref": "#/$defs/id"},
         "minimum_clear_width_mm": {"$ref": "#/$defs/positiveNumber"},
         "required": {"type": "boolean"}
       }

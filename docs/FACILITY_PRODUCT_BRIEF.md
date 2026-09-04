@@ -92,15 +92,42 @@ DXF + vector PDF + IFC + JSON evidence bundle
 - YAML-driven sheet metadata and annotation toggles for DXF/PDF;
 - editable DXF, vector PDF и IFC equipment proxies;
 - конструктивные оси в DXF/PDF;
-- versioned pharma profile plus starter `cleanroom`, `laboratory`, `hospital` and
-  `industrial` flow-separation profiles;
+- versioned YAML rule packs for `pharma`, `cleanroom`, `laboratory`, `hospital`
+  and `industrial` domains;
 - `check-building` round-trip validation command;
 - пример `examples/commercial_pilot.yaml`, теперь обозначенный как
-  pharmaceutical clean-production pilot and passing its current facility checks.
+  pharmaceutical clean-production pilot with explicit process stages and a
+  waste branch; строгий profile может честно вернуть FAIL/UNKNOWN до review
+  маршрутов.
 
 Это ещё не готовая фармацевтическая или медицинская система. Текущие комнаты
 прямоугольные, flow routing ограничен 2D pilot-логикой, а rule packs не заменяют
 нормативный экспертный review.
+
+## Auditable domain rule packs
+
+Все facility-правила хранятся в YAML-профилях. Каждое правило обязано иметь
+`id`, `kind`, `source`, `edition`, `effective_date`, `evidence` и `parameters`;
+результат проверки сохраняет ту же provenance-связь в `facility_validation` и
+BCF-like issues.
+
+В репозитории зафиксированы отдельные пакеты:
+
+- `rules/cleanroom_pilot.yaml` — классы зон, pressure ordering, airlock и
+  clean/dirty flow separation;
+- `rules/pharma_clean_production.yaml` — material, personnel, finished goods и
+  waste declarations/separation;
+- `rules/laboratory_pilot.yaml` — specimen, personnel, clean supply и waste;
+- `rules/hospital_pilot.yaml` — patient, personnel, clean supply, dirty supply
+  и waste;
+- `rules/industrial_pilot.yaml` — material, personnel, vehicles, hazardous
+  materials, maintenance и waste.
+
+`schemas/facility_profile.schema.json` проверяет структуру пакета. Отсутствующее
+входное доказательство даёт `UNKNOWN`, а не выдуманный PASS. Нормативные числа
+не добавляются по умолчанию: числовой параметр допускается только как явно
+заданный параметр конкретного проектного профиля с собственной ссылкой и
+evidence. Все профили прямо помечены как project policy, а не regulatory verdict.
 
 ## Продуктовые профили — не одна универсальная база норм
 
@@ -117,15 +144,15 @@ Pharma/cleanroom, laboratory, hospital и industrial profiles версионир
 
 ## Ближайшая последовательность
 
-1. **Domain profile pack.** Подтвердить с domain experts controlled vocabulary,
-   allowed/forbidden flow relations, clean/dirty separation и минимальный
-   evidence report без непроверенных нормативных чисел. Сейчас есть pharma,
-   cleanroom, laboratory, hospital и industrial starter profiles.
+1. **Domain profile pack.** Провести expert review controlled vocabulary,
+   allowed/forbidden flow relations и evidence каждого правила. YAML-пакеты для
+   pharma, cleanroom, laboratory, hospital и industrial уже реализованы; до
+   такого review они остаются project policies, а не нормативными verdicts.
 2. **Coordination exchange.** Повторное чтение IFC flow proxies, BCF-XML 2.1
    topics/viewpoints и viewer QA.
-3. **Domain packs.** Расширить starter profiles отдельными spec →
-   implementation → review циклами вместе с domain experts и подтверждёнными
-   источниками норм.
+3. **Confirmed domain packs.** Расширять YAML-профили отдельными spec →
+   implementation → review циклами только вместе с domain experts и
+   подтверждёнными источниками норм.
 
 ## Что не обещаем
 

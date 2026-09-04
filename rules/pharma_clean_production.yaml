@@ -1,22 +1,54 @@
-name: Pharma-like clean production pilot
+name: Pharmaceutical process pilot
 version: "0.1"
 domain: pharma-clean-production
 jurisdiction: project-profile-not-a-regulatory-verdict
-
-# This is a domain policy for early design coordination. It is not GMP,
-# healthcare, fire or construction-code approval.
 provenance:
-  source: Facility Layout Compiler product profile
-  purpose: deterministic coordination evidence for a pharma-like pilot
+  source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+  purpose: auditable early-design checks for raw material, production, packaging, finished goods and waste flow declarations
+  note: This is a project/domain policy and is not GMP, healthcare, fire or construction-code approval.
 
-flow_separation:
-  # The current BuildingIR models separation as non-sharing of intermediate
-  # rooms. It is deliberately conservative and does not claim contamination,
-  # HVAC or pressure-cascade compliance.
-  incompatible_flow_type_pairs:
-    - [material, waste]
-    - [people, waste]
-    - [finished_goods, waste]
+rules:
+  - id: PHARMA_REQUIRED_FLOW_TYPES
+    kind: required_flow_types
+    title: Pharmaceutical process flow categories are declared
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision)
+    effective_date: "2024-08-25"
+    evidence:
+      - EU GMP Annex 1 covers the manufacture of sterile medicinal products and frames facility/process design through Quality Risk Management.
+      - This rule checks project declarations for raw material, production access, packaging, finished goods and waste; it does not determine GMP compliance.
+    parameters:
+      flow_types: [material, people, finished_goods, waste]
+
+  - id: PHARMA_PROCESS_SEQUENCE
+    kind: process_sequence
+    title: Pharmaceutical process sequence is explicitly connected
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision)
+    effective_date: "2024-08-25"
+    evidence:
+      - EU GMP Annex 1 places sterile-manufacturing facility and process design within documented Quality Risk Management.
+      - The project must declare stage labels and endpoint transitions for raw material, production, packaging, finished goods and waste; this rule does not certify the process.
+    parameters:
+      sequence: [raw_material, production, packaging, finished_goods]
+      branches:
+        - [production, waste]
+
+  - id: PHARMA_FLOW_SEPARATION
+    kind: flow_separation
+    title: Pharmaceutical incompatible flow types do not share intermediate rooms
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision)
+    effective_date: "2024-08-25"
+    evidence:
+      - The project profile models raw-material, personnel, finished-goods and waste separation as explicit route evidence.
+      - Sharing an intermediate room is reported for review and is not a regulatory verdict.
+    parameters:
+      incompatible_flow_type_pairs:
+        - [material, waste]
+        - [people, waste]
+        - [finished_goods, waste]
+
 drawing:
   sheet_id: A-101
   discipline: Pharma clean production

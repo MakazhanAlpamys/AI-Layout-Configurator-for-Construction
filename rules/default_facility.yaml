@@ -1,0 +1,29 @@
+name: Facility Layout Compiler compatibility profile
+version: "0.1"
+domain: generic-facility
+jurisdiction: project-profile-not-a-regulatory-verdict
+provenance:
+  source: Facility Layout Compiler project policy
+  purpose: backwards-compatible default for generic BuildingIR examples
+  note: Select an explicit domain profile for regulated-facility checks.
+
+rules:
+  - id: FLOW_TYPE_SEPARATION
+    kind: flow_separation
+    title: Incompatible flow types do not share intermediate rooms
+    source: Facility Layout Compiler project policy
+    edition: "0.1"
+    effective_date: not-stated
+    evidence:
+      - Compatibility policy for generic BuildingIR examples; it is not a regulatory verdict.
+    parameters:
+      incompatible_flow_type_pairs:
+        - [material, waste]
+        - [people, waste]
+        - [finished_goods, waste]
+
+drawing:
+  sheet_id: A-101
+  discipline: Pharma clean production
+  title: Clean production coordination plan
+  revision: P01

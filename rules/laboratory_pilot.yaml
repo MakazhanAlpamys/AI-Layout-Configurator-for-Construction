@@ -3,15 +3,38 @@ version: "0.1"
 domain: laboratory
 jurisdiction: project-profile-not-a-regulatory-verdict
 provenance:
-  source: Facility Layout Compiler domain profile
-  purpose: deterministic flow coordination evidence for a laboratory pilot
-# Conceptual project relations only. These are not a biosafety, GLP, OSHA,
-# healthcare or building-code verdict.
-flow_separation:
-  incompatible_flow_type_pairs:
-    - [specimen, waste]
-    - [people, waste]
-    - [clean_supply, waste]
+  source: https://www.who.int/publications/i/item/9789240011311
+  purpose: auditable early-design checks for specimen, personnel, clean-supply and waste flows
+  note: This is a project/domain policy and is not a biosafety, GLP, OSHA, healthcare or building-code verdict.
+
+rules:
+  - id: LAB_REQUIRED_FLOW_TYPES
+    kind: required_flow_types
+    title: Laboratory specimen, personnel, clean-supply and waste flows are declared
+    source: https://www.who.int/publications/i/item/9789240011311
+    edition: WHO Laboratory Biosafety Manual, 4th edition
+    effective_date: "2020-12-21"
+    evidence:
+      - WHO Laboratory Biosafety Manual 4th edition uses a risk- and evidence-based approach and includes laboratory design, maintenance, decontamination and waste topics.
+      - This rule checks only the completeness of project flow declarations; it does not classify a biological risk group or certify a laboratory.
+    parameters:
+      flow_types: [specimen, people, clean_supply, waste]
+
+  - id: LAB_FLOW_SEPARATION
+    kind: flow_separation
+    title: Laboratory incompatible flow types do not share intermediate rooms
+    source: https://www.who.int/publications/i/item/9789240011311
+    edition: WHO Laboratory Biosafety Manual, 4th edition
+    effective_date: "2020-12-21"
+    evidence:
+      - The project profile makes specimen, personnel, clean-supply and waste route separation explicit for review.
+      - A failed check is a coordination issue and requires project-specific risk assessment.
+    parameters:
+      incompatible_flow_type_pairs:
+        - [specimen, waste]
+        - [people, waste]
+        - [clean_supply, waste]
+
 drawing:
   sheet_id: A-101
   discipline: Laboratory layout

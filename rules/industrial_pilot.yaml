@@ -3,16 +3,40 @@ version: "0.1"
 domain: industrial
 jurisdiction: project-profile-not-a-regulatory-verdict
 provenance:
-  source: Facility Layout Compiler domain profile
-  purpose: deterministic flow coordination evidence for an industrial pilot
-# Conceptual project relations only. These are not an HSE, hazardous-process,
-# fire, machinery-safety or building-code verdict.
-flow_separation:
-  incompatible_flow_type_pairs:
-    - [material, waste]
-    - [people, vehicle]
-    - [finished_goods, waste]
-    - [hazardous_material, waste]
+  source: https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.176
+  purpose: auditable early-design checks for material, personnel, vehicle, hazardous-material, maintenance and waste flows
+  note: This is a project/domain policy and is not an HSE, hazardous-process, fire, machinery-safety or building-code verdict.
+
+rules:
+  - id: INDUSTRIAL_REQUIRED_FLOW_TYPES
+    kind: required_flow_types
+    title: Industrial material, personnel, vehicle, hazardous-material, maintenance and waste flows are declared
+    source: https://www.osha.gov/laws-regs/regulations/standardnumber/1910/1910.176
+    edition: OSHA 29 CFR 1910.176, Handling materials—general
+    effective_date: not-stated-by-source
+    evidence:
+      - OSHA material-handling rules address safe clearances for aisles, loading docks, doorways, turns and passages.
+      - This rule checks only that project flow categories are explicit; it does not calculate a safe clearance or certify an industrial workplace.
+    parameters:
+      flow_types: [material, people, vehicle, hazardous_material, maintenance, waste]
+
+  - id: INDUSTRIAL_FLOW_SEPARATION
+    kind: flow_separation
+    title: Industrial incompatible flow types do not share intermediate rooms
+    source: https://www.osha.gov/powered-industrial-trucks/standards
+    edition: OSHA powered industrial trucks standards
+    effective_date: not-stated-by-source
+    evidence:
+      - The project profile makes vehicle, pedestrian, hazardous-material and waste route conflicts explicit for review.
+      - The result is coordination evidence and does not replace a task-specific hazard assessment or the applicable authority having jurisdiction.
+    parameters:
+      incompatible_flow_type_pairs:
+        - [people, vehicle]
+        - [material, hazardous_material]
+        - [material, waste]
+        - [hazardous_material, waste]
+        - [maintenance, hazardous_material]
+
 drawing:
   sheet_id: A-101
   discipline: Industrial layout

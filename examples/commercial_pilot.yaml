@@ -162,29 +162,47 @@ equipment:
 flows:
   - id: material_in
     type: material
+    stage: raw_material
     from_ids: [loading_dock_01]
     to_ids: [cold_store_01]
     minimum_clear_width_mm: 1800
   - id: material_to_production
     type: material
+    stage: raw_material
     from_ids: [cold_store_01]
     to_ids: [mixer_01]
     minimum_clear_width_mm: 1800
   - id: production_transfer
     type: material
+    stage: production
     from_ids: [mixer_01]
     to_ids: [production_line_01]
     minimum_clear_width_mm: 1800
+  - id: packaging_transfer
+    type: material
+    stage: packaging
+    from_ids: [production_line_01]
+    to_ids: [packaging_line_01]
+    minimum_clear_width_mm: 1800
   - id: finished_goods
     type: finished_goods
+    stage: finished_goods
     from_ids: [packaging_line_01]
     to_ids: [finished_storage, dispatch]
     minimum_clear_width_mm: 1800
   - id: staff_access
     type: people
+    stage: personnel
     from_ids: [staff_changing]
     to_ids: [production]
     minimum_clear_width_mm: 1200
+  - id: waste_out
+    type: waste
+    stage: waste
+    from_ids: [production_line_01]
+    to_ids: [receiving]
+    minimum_clear_width_mm: 1800
+    required: false
 
 structural_grid:
   axes_x_mm: [0, 6000, 12000, 18000, 24000, 30000, 36000, 42000]

@@ -1,0 +1,94 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/facility-profile-0.2.json",
+  "title": "Facility Layout Compiler domain rule pack 0.2",
+  "description": "Versioned project/domain policy with auditable rule provenance. It is not a regulatory verdict.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["name", "version", "domain", "jurisdiction", "provenance", "rules", "drawing"],
+  "properties": {
+    "name": {"type": "string", "minLength": 1},
+    "version": {"type": "string", "minLength": 1},
+    "domain": {"type": "string", "minLength": 1},
+    "jurisdiction": {"type": "string", "minLength": 1},
+    "provenance": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    },
+    "flow_separation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "incompatible_flow_type_pairs": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+    "incompatible_flow_type_pairs": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {"type": "string", "minLength": 1},
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "rules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"$ref": "#/$defs/rule"}
+    },
+    "drawing": {"type": "object"}
+  },
+  "$defs": {
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "title",
+        "source",
+        "edition",
+        "effective_date",
+        "evidence",
+        "parameters"
+      ],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "kind": {
+          "enum": [
+            "flow_separation",
+            "required_flow_types",
+            "process_sequence",
+            "required_zone_fields",
+            "airlock_presence",
+            "pressure_cascade"
+          ]
+        },
+        "title": {"type": "string", "minLength": 1},
+        "source": {"type": "string", "minLength": 1},
+        "edition": {"type": "string", "minLength": 1},
+        "effective_date": {"type": "string", "minLength": 1},
+        "evidence": {
+          "oneOf": [
+            {"type": "string", "minLength": 1},
+            {
+              "type": "array",
+              "minItems": 1,
+              "items": {"type": "string", "minLength": 1}
+            }
+          ]
+        },
+        "parameters": {"type": "object"},
+        "severity": {"enum": ["ERROR", "WARNING", "INFO"]}
+      }
+    }
+  }
+}

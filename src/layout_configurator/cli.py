@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
         "--profile",
         type=Path,
         default=None,
-        help="facility profile YAML; defaults to the built-in pharma-like profile",
+        help="facility profile YAML; defaults to the YAML-backed compatibility profile",
     )
     generate_building.add_argument(
         "--bcf-input",
