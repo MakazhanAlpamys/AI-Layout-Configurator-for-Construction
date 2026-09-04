@@ -10,7 +10,8 @@ class BuildingIRTests(unittest.TestCase):
 
         self.assertEqual(building.layout.project_name, "Pharmaceutical clean-production pilot")
         self.assertEqual(building.layout.boundary.width_mm, 42000)
-        self.assertEqual(len(building.layout.rooms), 10)
+        self.assertEqual(len(building.layout.rooms), 11)
+        self.assertIn("waste_hold", {room.id for room in building.layout.rooms})
         self.assertEqual(len(building.zones), 3)
         self.assertEqual(len(building.equipment), 5)
         self.assertEqual(len(building.flows), 7)

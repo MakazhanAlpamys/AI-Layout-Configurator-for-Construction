@@ -48,6 +48,14 @@ layout:
       min_width: 10000
       min_depth: 10000
       required_adjacency: [preparation, packaging]
+    - id: waste_hold
+      type: waste_hold
+      target_area: 30
+      min_area: 24
+      max_area: 40
+      min_width: 4000
+      min_depth: 5000
+      required_adjacency: [production]
     - id: packaging
       type: packaging
       target_area: 90
@@ -151,8 +159,6 @@ equipment:
     depth_mm: 3200
     clearance_mm: 900
     rotation_allowed: false
-    anchor_side: bottom
-    anchor_offset_mm: 1900
   - id: loading_dock_01
     type: loading_dock
     room_id: receiving
@@ -202,9 +208,9 @@ flows:
     type: waste
     stage: waste
     from_ids: [production_line_01]
-    to_ids: [receiving]
+    to_ids: [waste_hold]
     minimum_clear_width_mm: 1800
-    required: false
+    required: true
 
 structural_grid:
   axes_x_mm: [0, 6000, 12000, 18000, 24000, 30000, 36000, 42000]

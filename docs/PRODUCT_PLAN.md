@@ -247,4 +247,7 @@ BCF-XML 2.1 exchange уже формируется поверх экспорти
 и equipment conflicts, статусы `OPEN`/`RESOLVED`, фильтр issues и BCF history;
 issue workflow поддерживает Resolve/Reopen/comment/assign с audit sidecar и
 обновлением BCF/coordination JSON. Для проверки полного комплекта также есть
-`qa-building`.
+`qa-building`. Для acceptance-набора добавлена read-only команда
+`qa-building-set`: она запускает полный bundle QA для каждого варианта и
+сравнивает semantic IDs, топологию маршрутов, IFC read-back IDs и BCF 2.1 topic
+identities между вариантами.

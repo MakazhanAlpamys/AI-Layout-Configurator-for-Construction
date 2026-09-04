@@ -31,7 +31,7 @@ from .io import (
 )
 from .norms import check_layout, load_ruleset, retrieve_rule_citations
 from .multifloor import MultiFloorSpec, solve_multifloor
-from .qa import validate_building_bundle
+from .qa import validate_building_bundle, validate_building_set
 from .schema import load_canonical_spec, normalize_mapping, validate_mapping, validate_spec, load_mapping
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import validate_layout
@@ -97,6 +97,14 @@ def main(argv: list[str] | None = None) -> int:
     qa_building.add_argument("--coordination", type=Path, default=None)
     qa_building.add_argument("--manifest", type=Path, default=None)
     qa_building.add_argument("--json", action="store_true", dest="json_output")
+    qa_building_set = subparsers.add_parser(
+        "qa-building-set",
+        help="run full bundle QA and cross-variant identity checks",
+    )
+    qa_building_set.add_argument("output", type=Path)
+    qa_building_set.add_argument("--variants", type=int, default=None)
+    qa_building_set.add_argument("--profile", type=Path, default=None)
+    qa_building_set.add_argument("--json", action="store_true", dest="json_output")
     edit = subparsers.add_parser("edit", help="apply typed edits to an existing layout JSON and re-export it")
     edit.add_argument("input", type=Path)
     edit.add_argument("--output", "-o", type=Path, default=Path("edited"))
@@ -416,6 +424,26 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Bundle QA: {'PASS' if qa_report.ok else 'FAIL'}")
             for check in qa_report.checks:
                 print(f"{'PASS' if check.ok else 'FAIL'}: {check.id}: {check.message}")
+        return 0 if qa_report.ok else 4
+    if args.command == "qa-building-set":
+        try:
+            profile = load_facility_profile(args.profile) if args.profile else None
+            qa_report = validate_building_set(
+                args.output,
+                expected_variants=args.variants,
+                profile=profile,
+            )
+        except (OSError, KeyError, TypeError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: building set QA failed: {exc}", file=sys.stderr)
+            return 2
+        if args.json_output:
+            print(json.dumps(qa_report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(f"Building set QA: {'PASS' if qa_report.ok else 'FAIL'} ({len(qa_report.variant_reports)} variants)")
+            for report in qa_report.variant_reports:
+                print(f"{'PASS' if report.ok else 'FAIL'}: {report.input_path.name}")
+            check = qa_report.consistency
+            print(f"{'PASS' if check.ok else 'FAIL'}: {check.id}: {check.message}")
         return 0 if qa_report.ok else 4
     if args.command == "check-building":
         try:

@@ -5,12 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 import json
 from pathlib import Path
+import re
 from typing import Any
+from zipfile import BadZipFile
+import xml.etree.ElementTree as ET
 
 from .bcf import read_bcf_package
 from .facility import FacilityProfile, default_facility_profile, validate_building
 from .flows import route_flows, validate_flow_routes
-from .ifc import validate_ifc_roundtrip
+from .ifc import read_ifc_summary, validate_ifc_roundtrip
 from .issue_management import issue_state_map, load_issue_management
 from .io import load_building_result
 from .equipment import validate_equipment_layout
@@ -45,6 +48,32 @@ class BundleQAReport:
             "input": str(self.input_path),
             "checks": [check.to_dict() for check in self.checks],
         }
+
+
+@dataclass(frozen=True)
+class BuildingSetQAReport:
+    """QA result for a generated multi-variant coordination bundle."""
+
+    output_dir: Path
+    variant_reports: tuple[BundleQAReport, ...]
+    consistency: BundleQACheck
+    expected_variants: int | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.consistency.ok and all(report.ok for report in self.variant_reports)
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "ok": self.ok,
+            "output": str(self.output_dir),
+            "variant_count": len(self.variant_reports),
+            "variants": [report.to_dict() for report in self.variant_reports],
+            "consistency": self.consistency.to_dict(),
+        }
+        if self.expected_variants is not None:
+            payload["expected_variants"] = self.expected_variants
+        return payload
 
 
 def validate_building_bundle(
@@ -118,6 +147,162 @@ def validate_building_bundle(
     checks.append(_qa_bcf(bcf, {issue.issue_id for issue in facility_report.issues}, expected_open=expected_open))
     checks.append(_qa_coordination(coordination, facility_report, schema_path, expected_open=expected_open))
     return BundleQAReport(source, tuple(checks))
+
+
+def validate_building_set(
+    output_dir: str | Path,
+    *,
+    expected_variants: int | None = None,
+    profile: FacilityProfile | None = None,
+) -> BuildingSetQAReport:
+    """Run full bundle QA and cross-variant identity checks in read-only mode."""
+
+    root = Path(output_dir)
+    if not root.is_dir():
+        raise OSError(f"Building set directory does not exist: {root}")
+    if expected_variants is not None and expected_variants < 1:
+        raise ValueError("expected_variants must be positive")
+
+    variant_paths = sorted(
+        (path for path in root.iterdir() if _VARIANT_JSON_RE.fullmatch(path.name)),
+        key=_variant_sort_key,
+    )
+    reports: list[BundleQAReport] = []
+    signatures: list[dict[str, Any] | None] = []
+    for path in variant_paths:
+        try:
+            report = validate_building_bundle(path, profile=profile)
+        except (BadZipFile, ET.ParseError, OSError, KeyError, TypeError, ValueError, RuntimeError) as exc:
+            report = BundleQAReport(
+                path,
+                (BundleQACheck("BUNDLE_READ", False, f"Bundle QA failed: {exc}"),),
+            )
+        reports.append(report)
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            signatures.append(_variant_exchange_signature(root, path, payload))
+        except (BadZipFile, ET.ParseError, OSError, TypeError, ValueError, RuntimeError) as exc:
+            signatures.append(None)
+
+    mismatches: list[dict[str, Any]] = []
+    if not variant_paths:
+        mismatches.append({"code": "NO_VARIANTS", "message": "No building_XX.json variants found"})
+    if expected_variants is not None and len(variant_paths) != expected_variants:
+        mismatches.append(
+            {
+                "code": "VARIANT_COUNT",
+                "expected": expected_variants,
+                "actual": len(variant_paths),
+            }
+        )
+    if any(signature is None for signature in signatures):
+        mismatches.append({"code": "SIGNATURE_READ", "message": "One or more variant signatures could not be read"})
+    elif signatures:
+        baseline = signatures[0]
+        for path, signature in zip(variant_paths[1:], signatures[1:]):
+            if baseline is None or signature is None:
+                continue
+            for key in ("semantic_ids", "route_topology", "ifc", "bcf"):
+                if signature[key] != baseline[key]:
+                    mismatches.append(
+                        {
+                            "code": "IDENTITY_DRIFT",
+                            "variant": path.name,
+                            "field": key,
+                            "expected": baseline[key],
+                            "actual": signature[key],
+                        }
+                    )
+
+    details: dict[str, Any] = {
+        "variant_count": len(variant_paths),
+        "variants": [path.name for path in variant_paths],
+        "mismatches": mismatches,
+    }
+    if signatures and signatures[0] is not None:
+        details["baseline"] = signatures[0]
+    consistency = BundleQACheck(
+        "CROSS_VARIANT_CONSISTENCY",
+        not mismatches,
+        "Semantic IDs and BCF/IFC exchange identities match across variants"
+        if not mismatches
+        else "Cross-variant identity checks failed",
+        details,
+    )
+    return BuildingSetQAReport(root, tuple(reports), consistency, expected_variants)
+
+
+_VARIANT_JSON_RE = re.compile(r"building_(\d+)\.json$")
+
+
+def _variant_sort_key(path: Path) -> tuple[int, str]:
+    match = _VARIANT_JSON_RE.fullmatch(path.name)
+    return (int(match.group(1)), path.name) if match else (10**9, path.name)
+
+
+def _variant_exchange_signature(root: Path, path: Path, payload: dict[str, Any]) -> dict[str, Any]:
+    spec = payload.get("spec", {})
+    if not isinstance(spec, dict):
+        raise ValueError("Variant is missing the spec object")
+    layout = spec.get("layout", {})
+    if not isinstance(layout, dict):
+        raise ValueError("Variant is missing spec.layout")
+
+    semantic_ids = {
+        "rooms": _id_tuple(layout.get("rooms", ())),
+        "equipment": _id_tuple(spec.get("equipment", ())),
+        "flows": _id_tuple(spec.get("flows", ())),
+    }
+    flow_routes = payload.get("flow_routes", {})
+    if not isinstance(flow_routes, dict):
+        raise ValueError("Variant is missing flow_routes")
+    route_topology = tuple(
+        sorted(
+            (
+                str(route.get("flow_id")),
+                str(route.get("from_id")),
+                str(route.get("to_id")),
+                str(route.get("from_room_id")),
+                str(route.get("to_room_id")),
+                float(route.get("minimum_clear_width_mm", 0)),
+                tuple(str(room_id) for room_id in route.get("room_path", ())),
+            )
+            for route in flow_routes.get("routes", ())
+            if isinstance(route, dict)
+        )
+    )
+
+    bcf_summary = read_bcf_package(root / f"{path.stem}.bcf")
+    bcf_topics = tuple(
+        sorted(
+            (
+                topic.issue_id or "",
+                topic.topic_id,
+                topic.normalized_status,
+            )
+            for topic in bcf_summary.topics
+        )
+    )
+    ifc_summary = read_ifc_summary(root / f"{path.stem}.ifc")
+    return {
+        "semantic_ids": semantic_ids,
+        "route_topology": route_topology,
+        "ifc": {
+            "project_global_id": ifc_summary.project_global_id,
+            "equipment_ids": tuple(ifc_summary.equipment_ids),
+            "flow_ids": tuple(ifc_summary.flow_ids),
+        },
+        "bcf": {
+            "version": bcf_summary.version,
+            "topics": bcf_topics,
+        },
+    }
+
+
+def _id_tuple(items: Any) -> tuple[str, ...]:
+    if not isinstance(items, (list, tuple)):
+        raise ValueError("Expected a list of objects with IDs")
+    return tuple(sorted(str(item["id"]) for item in items if isinstance(item, dict) and "id" in item))
 
 
 def _profile_from_payload(payload: dict[str, Any]) -> FacilityProfile:

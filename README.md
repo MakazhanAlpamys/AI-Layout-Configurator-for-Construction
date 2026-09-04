@@ -214,6 +214,22 @@ sets. Derived flow routes также экспортируются как `IfcBui
 Команда сверяет JSON sidecar, DXF, PDF, IFC read-back и BCF 2.1 с текущим
 facility validation report.
 
+Для acceptance-проверки набора вариантов используйте:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate-building `
+  examples\commercial_pilot.yaml --output out\commercial_pilot_acceptance `
+  --variants 3 --time-limit 30 --seed 42 `
+  --profile rules\pharma_clean_production.yaml
+.venv\Scripts\python.exe -m layout_configurator.cli qa-building-set `
+  out\commercial_pilot_acceptance --variants 3 `
+  --profile rules\pharma_clean_production.yaml --json
+```
+
+`qa-building-set` запускает полный bundle QA для каждого `building_XX` и проверяет
+совпадение semantic room/equipment/flow IDs, топологии маршрутов, IFC read-back
+идентификаторов и BCF 2.1 topic identities между вариантами.
+
 ### Facility review и BCF issue history
 
 Команда `ui` автоматически открывает существующий `building_01.json` как
