@@ -64,6 +64,16 @@ function formPayload() {
   return payload;
 }
 
+function projectionUnit(svg, width, height) {
+  // The viewBox is fitted with the default xMidYMid meet, so the axis that runs
+  // out of room first sets the scale. Returning user units per rendered CSS
+  // pixel lets the plan size text, markers and label offsets in screen terms
+  // while the geometry stays in millimetres.
+  const bounds = svg.getBoundingClientRect();
+  if (!bounds.width || !bounds.height) return 40;
+  return Math.max(width / bounds.width, height / bounds.height);
+}
+
 function modelPoint(event) {
   const svg = $("#plan");
   const bounds = svg.getBoundingClientRect();
@@ -159,7 +169,8 @@ async function submitIssueAction(action) {
   }
 }
 
-function flowLabelAnchor(flow, index) {
+function flowLabelAnchor(flow, index, unitsPerPixel) {
+  const px = (value) => value * unitsPerPixel;
   const points = flow.points || [];
   const middleIndex = Math.floor(points.length / 2);
   const anchor = points[middleIndex] || points[0] || { x: 0, y: 0 };
@@ -169,41 +180,60 @@ function flowLabelAnchor(flow, index) {
   const dy = Number(following.y) - Number(previous.y);
   const length = Math.hypot(dx, dy) || 1;
   const side = index % 2 === 0 ? 1 : -1;
-  const offset = 260 + (index % 3) * 120;
+  const offset = px(16) + (index % 3) * px(11);
   return {
     x: Number(anchor.x) - (dy / length) * offset * side,
     y: Number(anchor.y) + (dx / length) * offset * side,
+    // Labels of routes that share a corridor sit on opposite sides; letting each
+    // run away from its own anchor keeps two long names from printing over
+    // each other.
+    side,
   };
 }
 
-function drawFacilityOverlay(svg, data, height) {
+function drawFacilityOverlay(svg, data, height, unitsPerPixel) {
   if (data.mode !== "facility-review") return;
+  const px = (value) => value * unitsPerPixel;
   const currentIssues = data.facility?.issues || data.validation?.issues || [];
   const openIssues = currentIssues.filter((issue) => issueStatus(issue) === "OPEN");
   const structuralGrid = data.structural_grid;
   if (structuralGrid) {
     for (const [index, x] of (structuralGrid.axes_x_mm || []).entries()) {
       const label = (structuralGrid.labels_x || [])[index] || `X${index + 1}`;
-      svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="${x}" y1="0" x2="${x}" y2="${height}"></line><text class="structural-label" x="${x + 70}" y="260">${escapeHtml(label)}</text>`);
+      svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="${x}" y1="0" x2="${x}" y2="${height}"></line><text class="structural-label" x="${x + px(4)}" y="${px(14)}">${escapeHtml(label)}</text>`);
     }
     for (const [index, y] of (structuralGrid.axes_y_mm || []).entries()) {
       const label = (structuralGrid.labels_y || [])[index] || `Y${index + 1}`;
-      svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="0" y1="${height - y}" x2="${data.boundary.width}" y2="${height - y}"></line><text class="structural-label" x="180" y="${height - y - 70}">${escapeHtml(label)}</text>`);
+      svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="0" y1="${height - y}" x2="${data.boundary.width}" y2="${height - y}"></line><text class="structural-label" x="${px(10)}" y="${height - y - px(4)}">${escapeHtml(label)}</text>`);
     }
   }
   for (const [index, flow] of (data.flows || []).entries()) {
     const points = (flow.points || []).map((point) => `${point.x},${height - point.y}`).join(" ");
     if (!points) continue;
     const labelPoint = flow.points[Math.floor(flow.points.length / 2)] || flow.points[0];
-    const labelAnchor = flowLabelAnchor(flow, index);
+    const labelAnchor = flowLabelAnchor(flow, index, unitsPerPixel);
     const label = `${flow.flow_id} · ${flow.type || "flow"}`;
+    // Running the label away from its anchor separates routes that share a
+    // corridor, but near an edge that direction would push the text off the
+    // sheet, so fall back to the side that still has room.
+    const estimatedWidth = label.length * px(11) * 0.55;
+    let textAnchor = labelAnchor.side > 0 ? "start" : "end";
+    if (textAnchor === "end" && labelAnchor.x - estimatedWidth < 0) textAnchor = "start";
+    else if (textAnchor === "start" && labelAnchor.x + estimatedWidth > data.boundary.width) textAnchor = "end";
     const selected = state.selectedCoordinationTarget?.kind === "flow" && state.selectedCoordinationTarget.id === flow.flow_id;
     const conflicts = openIssues.filter((issue) => issue.flow_id === flow.flow_id);
     const conflictClass = conflicts.length ? " conflict" : "";
-    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${escapeHtml(flowClass(flow.type))}${conflictClass}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" x="${labelAnchor.x}" y="${height - labelAnchor.y - 90}">${escapeHtml(label)}${conflicts.length ? ` · ${conflicts.length} conflict` : ""}</text>`);
+    // The corridor keeps the declared clear width in millimetres so a reviewer
+    // sees the real envelope; the centreline is a hairline drawn over it.
+    const clearWidth = Number(flow.minimum_clear_width_mm) || 0;
+    const typeClass = escapeHtml(flowClass(flow.type));
+    if (clearWidth > 0) {
+      svg.insertAdjacentHTML("beforeend", `<polyline class="flow-corridor flow-${typeClass}${conflictClass}${selected ? " selected" : ""}" style="stroke-width:${clearWidth}" points="${points}"></polyline>`);
+    }
+    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${typeClass}${conflictClass}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" style="text-anchor:${textAnchor}" x="${labelAnchor.x}" y="${height - labelAnchor.y - px(6)}">${escapeHtml(label)}${conflicts.length ? ` · ${conflicts.length} conflict` : ""}</text>`);
     for (const issue of conflicts) {
       const location = issueLocation(issue) || labelPoint;
-      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="280"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
+      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="${px(7)}"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
     }
   }
   for (const item of data.equipment || []) {
@@ -216,17 +246,44 @@ function drawFacilityOverlay(svg, data, height) {
       svg.insertAdjacentHTML("beforeend", `<rect class="equipment-clearance${conflictClass}${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${clearance.x}" y="${clearanceY}" width="${clearance.width}" height="${clearance.depth}" rx="24"></rect>`);
     }
     const y = height - item.y - item.depth;
-    svg.insertAdjacentHTML("beforeend", `<rect class="equipment${conflictClass}${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${item.x}" y="${y}" width="${item.width}" height="${item.depth}" rx="18"></rect><text class="equipment-label" x="${item.x + item.width / 2}" y="${y + item.depth / 2 + 45}">${escapeHtml(item.equipment_id)}${conflicts.length ? ` · ${conflicts.length}` : ""}</text>`);
+    svg.insertAdjacentHTML("beforeend", `<rect class="equipment${conflictClass}${selected ? " selected" : ""}" data-equipment-id="${escapeHtml(item.equipment_id)}" x="${item.x}" y="${y}" width="${item.width}" height="${item.depth}" rx="18"></rect><text class="equipment-label" x="${item.x + item.width / 2}" y="${y + item.depth / 2 + px(3)}">${escapeHtml(item.equipment_id)}${conflicts.length ? ` · ${conflicts.length}` : ""}</text>`);
     for (const issue of conflicts) {
       const location = issueLocation(issue) || { x: item.x + item.width / 2, y: item.y + item.depth / 2 };
-      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="280"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
+      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="${px(7)}"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
     }
   }
   for (const issue of data.issue_history || []) {
     if (issueStatus(issue) !== "RESOLVED" || issue.record_type !== "bcf") continue;
     const location = issueLocation(issue);
     if (!location) continue;
-    svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-resolved" cx="${location.x}" cy="${height - location.y}" r="230"><title>${escapeHtml(issue.code || "Resolved issue")}</title></circle>`);
+    svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-resolved" cx="${location.x}" cy="${height - location.y}" r="${px(6)}"><title>${escapeHtml(issue.code || "Resolved issue")}</title></circle>`);
+  }
+}
+
+function fitRoomLabels(svg, rects, unitsPerPixel) {
+  const px = (value) => value * unitsPerPixel;
+  const minimumLegibleRatio = 0.62;
+  const dropped = new Set();
+  // Document order puts each room name immediately before its own area, so a
+  // dropped name is already known when that area is examined.
+  for (const text of svg.querySelectorAll("text[data-label-room]")) {
+    const rect = rects.get(text.dataset.labelRoom);
+    if (!rect) continue;
+    const isArea = text.classList.contains("room-area");
+    if (isArea && (rect.height < px(26) || dropped.has(text.dataset.labelRoom))) {
+      text.remove();
+      continue;
+    }
+    const available = rect.width - px(6);
+    const length = text.getComputedTextLength();
+    if (!length || length <= available) continue;
+    const ratio = available / length;
+    if (ratio < minimumLegibleRatio) {
+      if (!isArea) dropped.add(text.dataset.labelRoom);
+      text.remove();
+      continue;
+    }
+    text.style.fontSize = `${parseFloat(getComputedStyle(text).fontSize) * ratio}px`;
   }
 }
 
@@ -235,8 +292,17 @@ function drawPlan(data, preview = null) {
   const width = data.boundary.width;
   const height = data.boundary.height;
   const grid = Number(data.spec.grid_mm) || 100;
+  const unitsPerPixel = projectionUnit(svg, width, height);
+  const px = (value) => value * unitsPerPixel;
+  state.unitsPerPixel = unitsPerPixel;
+  // CSS sizes text and label strokes as calc(var(--u) * Npx), so a millimetre
+  // model still renders type at a fixed screen size.
+  svg.style.setProperty("--u", String(unitsPerPixel));
+  // Keep the reference grid at least nine pixels apart; the raw 100 mm step
+  // collapses into a solid field on a facility-sized boundary.
+  const gridStep = Math.max(grid, Math.ceil(px(9) / grid) * grid);
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svg.innerHTML = `<defs><pattern id="grid-pattern" width="${grid}" height="${grid}" patternUnits="userSpaceOnUse"><path class="preview-grid" d="M ${grid} 0 L 0 0 0 ${grid}"></path></pattern></defs><rect x="0" y="0" width="${width}" height="${height}" fill="url(#grid-pattern)"></rect><rect class="boundary" x="0" y="0" width="${width}" height="${height}"></rect>`;
+  svg.innerHTML = `<defs><pattern id="grid-pattern" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse"><path class="preview-grid" d="M ${gridStep} 0 L 0 0 0 ${gridStep}"></path></pattern></defs><rect x="0" y="0" width="${width}" height="${height}" fill="url(#grid-pattern)"></rect><rect class="boundary" x="0" y="0" width="${width}" height="${height}"></rect>`;
   for (const room of data.rooms) {
     const r = preview && preview.roomId === room.id ? preview.rect : room.rect;
     const y = height - r.y - r.height;
@@ -244,21 +310,29 @@ function drawPlan(data, preview = null) {
     const cls = room.is_heated ? "room heated" : "room unheated";
     svg.insertAdjacentHTML("beforeend", `<g class="room-group" data-room-id="${escapeHtml(room.id)}"><rect class="${cls}${selected ? " selected" : ""}" data-room-id="${escapeHtml(room.id)}" x="${r.x}" y="${y}" width="${r.width}" height="${r.height}" rx="35"></rect>`);
     const area = (r.width * r.height / 1000000).toFixed(1);
-    svg.insertAdjacentHTML("beforeend", `<text class="room-label" x="${r.x + r.width / 2}" y="${y + r.height / 2 - 30}">${escapeHtml(room.id)}</text><text class="room-area" x="${r.x + r.width / 2}" y="${y + r.height / 2 + 140}">${area} m²</text>`);
+    svg.insertAdjacentHTML("beforeend", `<text class="room-label" data-label-room="${escapeHtml(room.id)}" x="${r.x + r.width / 2}" y="${y + r.height / 2 - px(2)}">${escapeHtml(room.id)}</text><text class="room-area" data-label-room="${escapeHtml(room.id)}" x="${r.x + r.width / 2}" y="${y + r.height / 2 + px(11)}">${area} m²</text>`);
     if (selected) {
-      const handle = Math.min(500, Math.max(180, Math.min(r.width, r.height) * 0.05));
+      const handle = Math.max(px(10), Math.min(r.width, r.height) * 0.05);
       svg.insertAdjacentHTML("beforeend", `<rect class="resize-handle" data-resize-room="${escapeHtml(room.id)}" x="${r.x + r.width - handle / 2}" y="${height - r.y - handle / 2}" width="${handle}" height="${handle}" rx="35"></rect>`);
     }
     svg.insertAdjacentHTML("beforeend", "</g>");
   }
-  drawFacilityOverlay(svg, data, height);
+  fitRoomLabels(
+    svg,
+    new Map(data.rooms.map((room) => [
+      room.id,
+      preview && preview.roomId === room.id ? preview.rect : room.rect,
+    ])),
+    unitsPerPixel,
+  );
+  drawFacilityOverlay(svg, data, height, unitsPerPixel);
   if (preview) {
     const r = preview.rect;
     const y = height - r.y - r.height;
     const label = preview.kind === "move"
       ? `Δ ${Math.round(r.x - preview.initial.x)}, ${Math.round(r.y - preview.initial.y)} мм`
       : `${Math.round(r.width)} × ${Math.round(r.height)} мм`;
-    const labelY = y > 220 ? y - 90 : y + r.height + 210;
+    const labelY = y > px(14) ? y - px(6) : y + r.height + px(14);
     svg.insertAdjacentHTML("beforeend", `<text class="preview-dimension" x="${r.x + r.width / 2}" y="${labelY}">${escapeHtml(label)}</text>`);
   }
   for (const opening of data.openings) {
@@ -454,6 +528,15 @@ function render(data) {
   $("#legend").innerHTML = `<span><i class="swatch heated"></i> отапливаемая</span><span><i class="swatch unheated"></i> неотапливаемая</span><span><i class="swatch entry"></i> внешний вход</span><span><i class="swatch window"></i> окно</span>`;
   renderFields();
 }
+
+let resizeFrame = 0;
+window.addEventListener("resize", () => {
+  if (!state.current || resizeFrame) return;
+  resizeFrame = requestAnimationFrame(() => {
+    resizeFrame = 0;
+    if (state.current) drawPlan(state.current);
+  });
+});
 
 $("#operation").addEventListener("change", renderFields);
 $("#issues").addEventListener("click", (event) => {

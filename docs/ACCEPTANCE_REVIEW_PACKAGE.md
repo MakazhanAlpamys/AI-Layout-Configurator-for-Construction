@@ -37,7 +37,7 @@ PDF, IFC4 и BCF 2.1.
 
 | Проверка | Команда | Результат 2026-09-05 |
 | --- | --- | --- |
-| Регрессия | `python -m unittest discover -s tests` | 123 теста, OK |
+| Регрессия | `python -m unittest discover -s tests` | 126 тестов, OK |
 | Матрица приёмки | `acceptance-building-matrix ... --seeds 1 7 42 --variants 3` | все девять комплектов приняты, cross-seed identity `PASS` |
 | Bundle QA каждого варианта | `qa-building bundle\building_0N.json --profile ...` | PROGRAM/GEOMETRY/EQUIPMENT/FLOW/PROFILE/MANIFEST/DXF/PDF/IFC/BCF/COORDINATION — `PASS` |
 | IDS-профиль обмена | `validate bundle\building_0N.ifc --ids ids\layout_baseline.ids` | 13/13 spaces, 50–51/… walls, 12/12 doors, 1/1 window, 13/13 openings — `PASS` |
@@ -144,4 +144,4 @@ DXF-слои: `A-WALL`, `A-DOOR`, `A-WINDOW`, `A-EQUIP`, `A-CLEARANCE`, `A-FLOW`
 | Process and quality review | технолог / QA | **открыт** — пакет и чек-лист готовы, ревью не проводилось |
 | Cleanroom/HVAC review | инженер чистых помещений / HVAC | **открыт** — пакет и чек-лист готовы, ревью не проводилось |
 | Architectural/BIM review | архитектор / BIM-координатор | **открыт** — DXF/IFC/PDF/BCF готовы и прошли машинный read-back; открытие в принимающих CAD/BIM не выполнено, в окружении их нет |
-| Viewer screenshot QA | browser runtime | **выполнен, не закрыт** — скриншоты получены, найдены дефекты VQ-01…VQ-11, см. [VIEWER_QA_2026-09-05.md](VIEWER_QA_2026-09-05.md) |
+| Viewer screenshot QA | browser runtime | **закрыт** — скриншоты получены, дефект единиц проекции VQ-01…VQ-04 исправлен и прогон повторён; остаются несблокирующие VQ-05…VQ-12, см. [VIEWER_QA_2026-09-05.md](VIEWER_QA_2026-09-05.md) |

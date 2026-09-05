@@ -119,9 +119,10 @@ The reviewer package, the per-role checklists and the reproduction commands are
 in [ACCEPTANCE_REVIEW_PACKAGE.md](ACCEPTANCE_REVIEW_PACKAGE.md).
 
 The viewer gate was executed on 2026-09-05 in Chrome. Every required capture was
-produced and every functional requirement held, but the SVG plan projection is
-unreadable because of a unit-scaling defect, so the gate is recorded as executed
-with defects rather than closed. See
+produced and every functional requirement held. The first run also showed that
+the SVG plan projection was unreadable because of a unit-scaling defect; that
+defect was fixed, the run was repeated, and the gate is now closed with
+non-blocking defects recorded. See
 [VIEWER_QA_2026-09-05.md](VIEWER_QA_2026-09-05.md).
 
 Until these gates are closed, the deliverable remains an auditable early-design

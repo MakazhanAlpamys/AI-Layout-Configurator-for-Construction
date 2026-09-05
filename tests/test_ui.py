@@ -393,5 +393,89 @@ class UiTests(unittest.TestCase):
                 thread.join(timeout=5)
 
 
+class PlanProjectionUnitTests(unittest.TestCase):
+    """Guard the SVG projection against mixing screen pixels and millimetres.
+
+    ``vector-effect: non-scaling-stroke`` makes ``stroke-width`` a screen-pixel
+    value, so a millimetre-looking width covers the drawing. Text sizes and
+    marker radii live in user units instead, so a pixel-looking value becomes
+    invisible. Both mistakes were shipped at once and made the plan unreadable.
+    """
+
+    MAX_NON_SCALING_STROKE_PX = 6.0
+    SCALED_TEXT_CLASSES = (
+        ".room-label",
+        ".room-area",
+        ".flow-label",
+        ".structural-label",
+        ".equipment-label",
+        ".preview-dimension",
+    )
+
+    @staticmethod
+    def _blocks(css: str) -> list[tuple[str, str]]:
+        blocks = []
+        for rule in css.split("}"):
+            if "{" not in rule:
+                continue
+            selector, _, body = rule.partition("{")
+            blocks.append((selector.strip(), body.strip()))
+        return blocks
+
+    @staticmethod
+    def _declaration(body: str, name: str) -> str | None:
+        for declaration in body.split(";"):
+            key, _, value = declaration.partition(":")
+            if key.strip() == name:
+                return value.strip()
+        return None
+
+    def setUp(self) -> None:
+        css_path = Path(__file__).resolve().parents[1] / "src" / "layout_configurator" / "static" / "style.css"
+        self.css = css_path.read_text(encoding="utf-8")
+        self.blocks = self._blocks(self.css)
+
+    def test_non_scaling_strokes_stay_within_screen_pixel_range(self):
+        non_scaling = {
+            selector
+            for selector, body in self.blocks
+            if self._declaration(body, "vector-effect") == "non-scaling-stroke"
+        }
+        self.assertTrue(non_scaling, "no non-scaling-stroke rule was found")
+        oversized = []
+        for selector, body in self.blocks:
+            base = selector.split(":")[0].split(".selected")[0]
+            if not any(base.startswith(root) or selector.startswith(root) for root in non_scaling):
+                continue
+            width = self._declaration(body, "stroke-width")
+            if width is None or "var(" in width or "calc(" in width:
+                continue
+            value = float(width.replace("px", "").strip())
+            if value > self.MAX_NON_SCALING_STROKE_PX:
+                oversized.append((selector, value))
+        self.assertEqual(oversized, [], f"non-scaling strokes wider than {self.MAX_NON_SCALING_STROKE_PX} px")
+
+    def test_plan_text_scales_with_the_rendered_viewbox(self):
+        for name in self.SCALED_TEXT_CLASSES:
+            body = next((body for selector, body in self.blocks if selector == name), None)
+            self.assertIsNotNone(body, f"{name} rule is missing")
+            font_size = self._declaration(body, "font-size")
+            self.assertIsNotNone(font_size, f"{name} has no font-size")
+            self.assertIn(
+                "var(--u",
+                font_size,
+                f"{name} font-size must scale with the projection unit, got {font_size}",
+            )
+
+    def test_projection_unit_is_published_by_the_client(self):
+        app_js = (
+            Path(__file__).resolve().parents[1] / "src" / "layout_configurator" / "static" / "app.js"
+        ).read_text(encoding="utf-8")
+        self.assertIn("--u", app_js)
+        self.assertIn("unitsPerPixel", app_js)
+        self.assertIn("flow-corridor", app_js)
+        self.assertIn("minimum_clear_width_mm", app_js)
+
+
 if __name__ == "__main__":
     unittest.main()
