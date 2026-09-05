@@ -247,6 +247,12 @@ semantic room/equipment/flow IDs, топологии маршрутов, IFC rea
 нужного набора. Лимит времени применяется к каждому запуску solver, а не ко всей
 матрице.
 
+Состав пакета для внешних рецензентов, чек-листы технолога/QA, cleanroom/HVAC и
+архитектора/BIM и команды воспроизведения — в
+[`docs/ACCEPTANCE_REVIEW_PACKAGE.md`](docs/ACCEPTANCE_REVIEW_PACKAGE.md).
+Результаты браузерного QA read-only viewer, включая открытые дефекты проекции, —
+в [`docs/VIEWER_QA_2026-09-05.md`](docs/VIEWER_QA_2026-09-05.md).
+
 Локальные регрессионные тесты: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
 Workflow `.github/workflows/ci.yml` запускает тесты на Windows/Linux и затем
 полную pharma-cleanroom матрицу на Windows. Комплекты и отчёты, включая ошибки,

@@ -115,6 +115,15 @@ the named human/runtime:
 | Architectural/BIM review | Architect / BIM coordinator | Open DXF and IFC in the receiving tools and record findings through BCF. |
 | Viewer screenshot QA | Browser runtime | Captured screenshots of all variants, visible route conflicts, issue filters and resolved-history viewpoints. |
 
+The reviewer package, the per-role checklists and the reproduction commands are
+in [ACCEPTANCE_REVIEW_PACKAGE.md](ACCEPTANCE_REVIEW_PACKAGE.md).
+
+The viewer gate was executed on 2026-09-05 in Chrome. Every required capture was
+produced and every functional requirement held, but the SVG plan projection is
+unreadable because of a unit-scaling defect, so the gate is recorded as executed
+with defects rather than closed. See
+[VIEWER_QA_2026-09-05.md](VIEWER_QA_2026-09-05.md).
+
 Until these gates are closed, the deliverable remains an auditable early-design
 coordination package.
 
