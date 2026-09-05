@@ -1,0 +1,71 @@
+name: Facility acceptance
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: facility-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUTF8: "1"
+
+jobs:
+  tests:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e .
+      - run: python -m unittest discover -s tests -v
+
+  pharma-cleanroom:
+    needs: tests
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e .
+      - name: Record installed dependencies
+        run: |
+          python -c "from pathlib import Path; Path('out/ci-acceptance').mkdir(parents=True, exist_ok=True)"
+          python -VV > out/ci-acceptance/python.txt
+          python -m pip list --format=json > out/ci-acceptance/dependencies.json
+      - name: Generate and validate three variants for each seed
+        run: >-
+          python -m layout_configurator.cli acceptance-building-matrix
+          examples/pharma_cleanroom_pilot.yaml
+          --profile rules/pharma_cleanroom_pilot.yaml
+          --output out/ci-acceptance
+          --variants 3 --seeds 1 7 42 --max-attempts 9 --time-limit 30
+      - name: Retain bundles and acceptance evidence, including failures
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pharma-cleanroom-acceptance
+          path: out/ci-acceptance/
+          if-no-files-found: warn
+          retention-days: 14

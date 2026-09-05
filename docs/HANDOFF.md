@@ -1,6 +1,6 @@
 # Передача контекста
 
-## Актуальная продуктовая цель — 2026-09-02
+## Актуальная продуктовая цель — 2026-09-05
 
 Проект — **Facility Layout Compiler**, а не общий генератор планировок. Целевая
 ниша: фармацевтика, cleanrooms, лаборатории, больницы и промышленные объекты,
@@ -8,6 +8,48 @@
 картинки. Первый узкий клин — pharma-like clean production. Полная формулировка
 и границы: [FACILITY_PRODUCT_BRIEF.md](FACILITY_PRODUCT_BRIEF.md); технический
 план: [PRODUCT_PLAN.md](PRODUCT_PLAN.md).
+
+## Текущий этап и порядок продолжения
+
+Первый приёмочный пример — `examples/pharma_cleanroom_pilot.yaml`: 13 помещений,
+6 зон, 5 единиц оборудования, 7 потоков и составной профиль
+`rules/pharma_cleanroom_pilot.yaml`. Программа на 20–40 помещений и 10–30 единиц
+оборудования в `PRODUCT_PLAN.md` — следующий этап масштаба после его приёмки.
+
+`facility_generation.py` передаёт CP-SAT обязательные/запрещённые связи зон,
+минимальную общую границу с запасом на стены и необходимые габариты оборудования.
+Независимые geometry/equipment/flow/profile проверки отбирают полный набор
+вариантов. Исправлена также длина общей границы в CP-SAT: обе стороны должны
+вмещать требуемый проём, в том числе при вложении одной проекции в другую.
+
+`manifest.json` сохраняет настройки поиска, полученные и проверенные кандидаты.
+При неполном наборе `generation-failure.json` сохраняет программу, профиль и
+причины отказа; ошибка ограниченного поиска не является доказательством
+математической невозможности. Матрица сохраняет этот отчёт и не ставит `PASS`
+сравнению идентификаторов без успешного QA всех seeds.
+
+Локально прошли 123 теста через `python -m unittest discover -s tests -v`.
+CI описан в `.github/workflows/ci.yml`: тесты на Windows/Linux, затем матрица
+из трёх вариантов для seeds 1/7/42 с лимитом 30 секунд на solver и девятью
+кандидатами на seed. CI сохраняет артефакты и отчёты при успехе и ошибке.
+Наличие workflow не означает, что он уже выполнен на GitHub.
+
+Полная локальная матрица 2026-09-05 прошла: seeds 1/7/42, по три варианта,
+30 секунд на solver, максимум девять кандидатов, два equipment retries.
+Все девять комплектов прошли bundle QA и cross-seed identity checks.
+Для seeds 1/7/42 проверено соответственно 3/6/5 кандидатов; отклонено 0/3/2.
+Отчёт: `out/pharma_cleanroom_stabilized_2026-09-05/acceptance-matrix-report.json`;
+рядом `environment.json` с версиями среды. Эти локальные артефакты исключены из
+Git; CI формирует и сохраняет свой комплект. Локальная среда: Python 3.11.15,
+OR-Tools 9.15.6755, Shapely 2.1.2, IfcOpenShell 0.8.5.
+
+Дальше: выполнить screenshot QA viewer,
+открыть DXF/IFC в принимающих CAD/BIM инструментах и получить process/QA и
+cleanroom/HVAC review по `PILOT_ACCEPTANCE_SPEC.md`. На 2026-09-05 browser runtime
+сообщает, что подключённых браузеров нет; визуальная приёмка не закрыта.
+После этих условий развивать масштабирование и остальные domain packs.
+
+## Архив исходного MVP
 
 Старый текст ниже — исторический контекст исходного residential MVP. Он полезен
 как доказательство принятых архитектурных решений, но не ограничивает новый
@@ -172,8 +214,9 @@ Reopen, comment и assign; audit trail сохраняется в отдельн�
 классы ISO, parent-child ordering, personnel/material airlock roles, parent link и
 10 Pa guidance value из Annex 1. Для отсутствующего входного доказательства
 сохраняется `UNKNOWN`; это по-прежнему project policy, а не нормативный verdict.
-Следующий крупный шаг — такой же отдельный spec → implementation → acceptance
-цикл для laboratory, hospital и industrial с подтверждёнными источниками.
+После закрытия текущего pharma-cleanroom пилота — отдельный
+spec → implementation → acceptance цикл для laboratory, hospital и industrial
+с подтверждёнными источниками. Актуальный порядок указан в начале документа.
 ### Facility review surface
 
 The `ui` command now auto-detects a generated `BuildingIR` result (`building_01.json`) and opens a read-only facility review. The server independently recomputes equipment, flow, and facility validation; the SVG projection overlays equipment footprints, service-clearance envelopes, derived flow routes, open conflict markers, and resolved BCF viewpoints. The side panel shows profile evidence, `OPEN`/`RESOLVED` filters, current coordination issues, BCF issue history, and JSON/DXF/PDF/IFC/BCF artifacts. A selected issue can be resolved, reopened, assigned, or commented; the audit trail is stored in `building_01.issue-management.json` and refreshes the BCF/coordination JSON projections. Geometry edit, undo, redo, and reset endpoints still return HTTP 405 in this mode.

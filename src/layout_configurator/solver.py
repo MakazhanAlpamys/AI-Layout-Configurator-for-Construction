@@ -255,6 +255,9 @@ def _add_adjacency_indicator(model, a: _RoomVars, b: _RoomVars, minimum_shared: 
 
 
 def _add_overlap(model, orientation, a_start, a_size, b_start, b_size, minimum: int, name: str) -> None:
+    # Both edges must be long enough, including when one contains the other.
+    model.Add(a_size >= minimum).OnlyEnforceIf(orientation)
+    model.Add(b_size >= minimum).OnlyEnforceIf(orientation)
     a_first = model.NewBoolVar(f"{name}_a_first")
     b_first = model.NewBoolVar(f"{name}_b_first")
     model.AddAtMostOne(a_first, b_first)

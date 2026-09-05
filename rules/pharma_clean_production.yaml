@@ -13,7 +13,7 @@ rules:
     title: Pharmaceutical process flow categories are declared
     source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
     edition: EU GMP Annex 1 (2022 revision)
-    effective_date: "2024-08-25"
+    effective_date: "2023-08-25"
     evidence:
       - EU GMP Annex 1 covers the manufacture of sterile medicinal products and frames facility/process design through Quality Risk Management.
       - This rule checks project declarations for raw material, production access, packaging, finished goods and waste; it does not determine GMP compliance.
@@ -25,7 +25,7 @@ rules:
     title: Pharmaceutical process sequence is explicitly connected
     source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
     edition: EU GMP Annex 1 (2022 revision)
-    effective_date: "2024-08-25"
+    effective_date: "2023-08-25"
     evidence:
       - EU GMP Annex 1 places sterile-manufacturing facility and process design within documented Quality Risk Management.
       - The project must declare stage labels and endpoint transitions for raw material, production, packaging, finished goods and waste; this rule does not certify the process.
@@ -47,7 +47,7 @@ rules:
     title: Pharmaceutical incompatible flow types do not share intermediate rooms
     source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
     edition: EU GMP Annex 1 (2022 revision)
-    effective_date: "2024-08-25"
+    effective_date: "2023-08-25"
     evidence:
       - EU GMP Annex 1 section 4.11 describes separate unidirectional movement for transfers into and out of higher-grade areas.
       - The project profile models raw-material, personnel, finished-goods and waste separation as explicit route evidence.

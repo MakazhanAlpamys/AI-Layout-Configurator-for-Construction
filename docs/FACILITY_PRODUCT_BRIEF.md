@@ -95,11 +95,18 @@ DXF + vector PDF + IFC + JSON evidence bundle
 - versioned YAML rule packs for `pharma`, `cleanroom`, `laboratory`, `hospital`
   and `industrial` domains;
 - `check-building` round-trip validation command;
-- пример `examples/commercial_pilot.yaml`, теперь обозначенный как
-  pharmaceutical clean-production pilot with explicit process stages and a
-  waste branch with a dedicated `waste_hold` room for waste routing. The
-  generated three-variant acceptance set passes deterministic facility/bundle
-  QA and cross-variant identity checks.
+- полный acceptance-пример `examples/pharma_cleanroom_pilot.yaml`: 13 помещений,
+  personnel/material airlocks, parent-linked ISO class labels, declared pressure
+  cascade, process stages и waste branch. `rules/pharma_cleanroom_pilot.yaml`
+  объединяет process, cleanroom и flow checks с provenance; публикация варианта
+  возможна только после независимой geometry/equipment/flow/profile проверки.
+  `acceptance-building-matrix` запускает несколько seeds и не выдаёт частичный
+  набор вариантов как успешный результат.
+
+Техническая проверка от 2026-09-05: 123 теста прошли; стандартная матрица
+seeds 1/7/42 выпустила по три принятых варианта с успешным bundle QA и проверкой
+идентификаторов. Параметры: 30 секунд на solver, до девяти кандидатов на seed.
+Подробности и оставшиеся внешние условия — в [HANDOFF.md](HANDOFF.md).
 
 Это ещё не готовая фармацевтическая или медицинская система. Текущие комнаты
 прямоугольные, flow routing ограничен 2D pilot-логикой, а rule packs не заменяют
@@ -114,6 +121,9 @@ BCF-like issues.
 
 В репозитории зафиксированы отдельные пакеты:
 
+- `rules/pharma_cleanroom_pilot.yaml` — составной acceptance-профиль первого
+  клина: process stages, dirty/clean route separation, airlock roles, ISO
+  vocabulary, pressure ordering и waste branch;
 - `rules/cleanroom_pilot.yaml` — vocabulary/order классов ISO-зон, pressure
   ordering с sourced guidance value, parent-linked personnel/material airlocks и
   clean/dirty flow separation;
@@ -147,17 +157,17 @@ Pharma/cleanroom, laboratory, hospital и industrial profiles версионир
 
 ## Ближайшая последовательность
 
-1. **Domain profile pack.** Провести expert review controlled vocabulary,
-   allowed/forbidden flow relations и evidence каждого правила. YAML-пакеты для
-   pharma, cleanroom, laboratory, hospital и industrial уже реализованы; до
-   такого review они остаются project policies, а не нормативными verdicts.
+1. **External acceptance.** Пройти экспертный review pharma process/quality и
+   cleanroom/HVAC допущений на контрактах из
+   [`PILOT_ACCEPTANCE_SPEC.md`](PILOT_ACCEPTANCE_SPEC.md). До него profile
+   остаётся project policy, а не нормативным verdict.
 2. **Coordination exchange.** Повторное чтение IFC flow proxies, BCF-XML 2.1
-   topics/viewpoints и read-only viewer QA: конфликтные маршруты/оборудование
-   подсвечиваются, `OPEN`/`RESOLVED` фильтруются, а BCF history видна на плане.
-3. **Confirmed domain packs.** Следующий implementation cycle — laboratory,
-   hospital и industrial; расширять YAML-профили отдельными spec →
-   implementation → acceptance циклами только вместе с domain experts и
-   подтверждёнными источниками норм.
+   topics/viewpoints и read-only viewer screenshot-QA: конфликтные
+   маршруты/оборудование подсвечиваются, `OPEN`/`RESOLVED` фильтруются, а BCF
+   history видна на плане.
+3. **Confirmed domain packs.** Только после закрытия pharma-cleanroom пилота
+   начинать laboratory, hospital и industrial отдельными spec → implementation
+   → acceptance циклами вместе с domain experts и подтверждёнными источниками.
 
 ## Что не обещаем
 

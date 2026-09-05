@@ -114,17 +114,19 @@ undo/redo восстанавливают валидные снимки `EditorSt
 ## Основной продуктовый слой: FacilityIR на базе BuildingIR
 
 Первый узкий клин — фармацевтическое clean production / cleanroom-планирование.
-Он хорошо проверяет ценность продукта: отдельные зоны, equipment clearance,
-маршруты персонала и материалов, конструктивные оси и доказуемая проверка.
+Его acceptance-сценарий включает отдельные personnel/material airlocks,
+декларируемые классы зон и pressure cascade, equipment clearance, маршруты
+персонала/материалов/отходов, конструктивные оси и доказуемую проверку.
 Лаборатории, больницы и промышленные профили подключаются отдельными
 domain/rule packs поверх того же контракта, а не смешиваются в один набор
 непроверяемых правил.
 
 Текущий `BuildingIR` — канонический вход без координат: зоны, оборудование с
 обслуживающими габаритами, направленные технологические потоки и
-конструктивные оси. Пример clean-production программы находится в
-[`examples/commercial_pilot.yaml`](examples/commercial_pilot.yaml), а целевой
-план — в [`docs/PRODUCT_PLAN.md`](docs/PRODUCT_PLAN.md).
+конструктивные оси. Полный acceptance-вход находится в
+[`examples/pharma_cleanroom_pilot.yaml`](examples/pharma_cleanroom_pilot.yaml),
+а его границы и external review gates — в
+[`docs/PILOT_ACCEPTANCE_SPEC.md`](docs/PILOT_ACCEPTANCE_SPEC.md).
 
 `generate-building` уже решает комнаты CP-SAT, затем размещает оборудование
 вторым CP-SAT с учётом clearance и выпускает `building_01.json`. Для плотных
@@ -132,7 +134,8 @@ facility-программ default time limit этой команды — 60 се
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
-  examples\commercial_pilot.yaml --output out\commercial_pilot --variants 1
+  examples\pharma_cleanroom_pilot.yaml --output out\pharma_cleanroom --variants 1 `
+  --profile rules\pharma_cleanroom_pilot.yaml
 ```
 
 По умолчанию команда применяет YAML-backed compatibility-профиль
@@ -141,11 +144,11 @@ facility-программ default time limit этой команды — 60 се
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
-  examples\commercial_pilot.yaml --profile rules\pharma_clean_production.yaml `
-  --output out\commercial_pilot
+  examples\pharma_cleanroom_pilot.yaml --profile rules\pharma_cleanroom_pilot.yaml `
+  --output out\pharma_cleanroom --variants 3 --max-attempts 9
 ```
 
-В репозитории также есть domain rule packs
+В репозитории также есть отдельные domain rule packs
 `rules\cleanroom_pilot.yaml`, `rules\laboratory_pilot.yaml`,
 `rules\hospital_pilot.yaml` и `rules\industrial_pilot.yaml`. Они содержат
 типизированные проверки потоков, а cleanroom-пакет также vocabulary/order классов
@@ -216,32 +219,46 @@ sets. Derived flow routes также экспортируются как `IfcBui
 Команда сверяет JSON sidecar, DXF, PDF, IFC read-back и BCF 2.1 с текущим
 facility validation report.
 
-Для acceptance-проверки набора вариантов используйте:
+Для полной acceptance-проверки используйте seed-matrix. Команда публикует
+только варианты, прошедшие room/equipment/flow/profile gates; отклонённые
+кандидаты и использованные seeds остаются в `manifest.json`. Если для любого
+seed не найден весь запрошенный набор в заданном бюджете поиска, команда
+возвращает ошибку. Это не доказательство математической невозможности программы.
+`generation-failure.json` сохраняет входную программу, профиль, параметры поиска
+и все причины отклонения проверенных кандидатов. Матрица включает этот отчёт
+в результат seed; без успешной проверки всех seeds сравнение идентификаторов
+не получает `PASS`.
 
 ```powershell
-.venv\Scripts\python.exe -m layout_configurator.cli generate-building `
-  examples\commercial_pilot.yaml --output out\commercial_pilot_acceptance `
-  --variants 3 --time-limit 30 --seed 1 `
-  --profile rules\pharma_clean_production.yaml
-.venv\Scripts\python.exe -m layout_configurator.cli qa-building-set `
-  out\commercial_pilot_acceptance --variants 3 `
-  --profile rules\pharma_clean_production.yaml `
-  --report out\commercial_pilot_acceptance\acceptance-report.json --json
+.venv\Scripts\python.exe -m layout_configurator.cli acceptance-building-matrix `
+  examples\pharma_cleanroom_pilot.yaml `
+  --profile rules\pharma_cleanroom_pilot.yaml `
+  --output out\pharma_cleanroom_acceptance `
+  --variants 3 --seeds 1 7 42 --max-attempts 9 --time-limit 30
 ```
 
-`qa-building-set` запускает полный bundle QA для каждого `building_XX` и проверяет
-совпадение semantic room/equipment/flow IDs, топологии маршрутов, IFC read-back
-идентификаторов и BCF 2.1 topic identities между вариантами.
-При указании `--report` дополнительно сохраняются SHA-256 и размеры каждого
-required variant/shared-артефакта; optional issue-management sidecars также
-отмечаются, если присутствуют.
+Для каждого seed команда запускает `qa-building-set`: он проверяет совпадение
+semantic room/equipment/flow IDs, топологии маршрутов, IFC read-back
+идентификаторов и BCF 2.1 topic identities между вариантами. Общий
+`acceptance-matrix-report.json` хранит результаты каждого запуска, SHA-256
+артефактов, параметры поиска и проверку semantic IDs между seeds.
+`attempted_candidates` — число полученных от room solver кандидатов;
+`evaluated_candidates` — число кандидатов, прошедших через отбор до получения
+нужного набора. Лимит времени применяется к каждому запуску solver, а не ко всей
+матрице.
+
+Локальные регрессионные тесты: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
+Workflow `.github/workflows/ci.yml` запускает тесты на Windows/Linux и затем
+полную pharma-cleanroom матрицу на Windows. Комплекты и отчёты, включая ошибки,
+сохраняются как CI artifacts. Внешние экспертные условия приёмки остаются
+отдельным этапом.
 
 Для read-only viewer можно передать весь acceptance-каталог и выбрать вариант:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli ui `
-  out\commercial_pilot_acceptance --variant 2 `
-  --profile rules\pharma_clean_production.yaml
+  out\pharma_cleanroom_acceptance\seed_1 --variant 2 `
+  --profile rules\pharma_cleanroom_pilot.yaml
 ```
 
 `--variant` выбирает `building_02.json` и его соседние DXF/PDF/IFC/BCF/JSON

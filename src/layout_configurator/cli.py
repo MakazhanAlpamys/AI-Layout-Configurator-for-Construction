@@ -14,9 +14,10 @@ from .building import BuildingSpecError
 from .compliance import validate_ids
 from .commands import AddDoor, AddWindow, EditError, MoveRoom, RemoveDoor, RemoveExternalEntry, RemoveWindow, ResizeRoom, SetExternalEntry
 from .editor import EditorState
-from .equipment import EquipmentPlacementError, place_equipment, validate_equipment_layout
 from .export import export_building_bundle, export_bundle
+from .equipment import validate_equipment_layout
 from .facility import default_facility_profile, load_facility_profile, validate_building
+from .facility_generation import InfeasibleFacilityGeneration, solve_feasible_facility_variants
 from .flows import route_flows, validate_flow_routes
 from .ifc import export_building_ifc, export_ifc, export_multifloor_ifc, validate_ifc_roundtrip
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
@@ -61,6 +62,18 @@ def main(argv: list[str] | None = None) -> int:
         help="CP-SAT time limit in seconds; dense facility defaults to 60",
     )
     generate_building.add_argument("--seed", type=int, default=42)
+    generate_building.add_argument(
+        "--max-attempts",
+        type=int,
+        default=None,
+        help="maximum room-layout candidates evaluated before generation is declared infeasible; default is max(3, variants * 3)",
+    )
+    generate_building.add_argument(
+        "--equipment-retries",
+        type=int,
+        default=2,
+        help="deterministic equipment-packing retries per room-layout candidate",
+    )
     generate_building.add_argument(
         "--profile",
         type=Path,
@@ -110,6 +123,24 @@ def main(argv: list[str] | None = None) -> int:
         type=Path,
         default=None,
         help="write the machine-readable QA evidence report to this JSON file",
+    )
+    acceptance_matrix = subparsers.add_parser(
+        "acceptance-building-matrix",
+        help="generate and QA a full facility acceptance set for several deterministic seeds",
+    )
+    acceptance_matrix.add_argument("spec", type=Path)
+    acceptance_matrix.add_argument("--profile", type=Path, required=True)
+    acceptance_matrix.add_argument("--output", "-o", type=Path, default=Path("out/facility_acceptance_matrix"))
+    acceptance_matrix.add_argument("--variants", type=int, default=3)
+    acceptance_matrix.add_argument("--time-limit", type=float, default=30)
+    acceptance_matrix.add_argument("--seeds", type=int, nargs="+", default=[1, 7, 42])
+    acceptance_matrix.add_argument("--max-attempts", type=int, default=None)
+    acceptance_matrix.add_argument("--equipment-retries", type=int, default=2)
+    acceptance_matrix.add_argument(
+        "--report",
+        type=Path,
+        default=None,
+        help="write matrix evidence JSON; defaults to OUTPUT/acceptance-matrix-report.json",
     )
     edit = subparsers.add_parser("edit", help="apply typed edits to an existing layout JSON and re-export it")
     edit.add_argument("input", type=Path)
@@ -222,31 +253,143 @@ def main(argv: list[str] | None = None) -> int:
             print(f"variant {result.variant}: {dxf_path} | {pdf_path} | {ifc_path}")
         (args.output / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
         return 0
+    if args.command == "acceptance-building-matrix":
+        if args.variants < 1:
+            print("ERROR: variants must be at least 1", file=sys.stderr)
+            return 2
+        if not args.seeds:
+            print("ERROR: at least one seed is required", file=sys.stderr)
+            return 2
+        try:
+            profile = load_facility_profile(args.profile)
+        except (OSError, ValueError) as exc:
+            print(f"ERROR: facility profile cannot be loaded: {exc}", file=sys.stderr)
+            return 2
+
+        args.output.mkdir(parents=True, exist_ok=True)
+        runs = []
+        semantic_baseline = None
+        semantic_mismatches = []
+        for seed in args.seeds:
+            seed_output = args.output / f"seed_{seed}"
+            generate_argv = [
+                "generate-building",
+                str(args.spec),
+                "--profile",
+                str(args.profile),
+                "--output",
+                str(seed_output),
+                "--variants",
+                str(args.variants),
+                "--time-limit",
+                str(args.time_limit),
+                "--seed",
+                str(seed),
+                "--equipment-retries",
+                str(args.equipment_retries),
+            ]
+            if args.max_attempts is not None:
+                generate_argv.extend(["--max-attempts", str(args.max_attempts)])
+            generation_code = main(generate_argv)
+            run = {
+                "seed": seed,
+                "output": str(seed_output),
+                "generation_exit_code": generation_code,
+            }
+            if generation_code != 0:
+                failure_path = seed_output / "generation-failure.json"
+                if failure_path.exists():
+                    run["generation_failure"] = json.loads(failure_path.read_text(encoding="utf-8"))
+            if generation_code == 0:
+                try:
+                    qa_report = validate_building_set(
+                        seed_output,
+                        expected_variants=args.variants,
+                        profile=profile,
+                    )
+                except (OSError, KeyError, TypeError, ValueError, RuntimeError) as exc:
+                    run["qa_error"] = str(exc)
+                else:
+                    run["qa"] = qa_report.to_dict()
+                    semantic_ids = qa_report.consistency.details.get("baseline", {}).get("semantic_ids")
+                    if semantic_baseline is None:
+                        semantic_baseline = semantic_ids
+                    elif semantic_ids != semantic_baseline:
+                        semantic_mismatches.append({"seed": seed, "semantic_ids": semantic_ids})
+            runs.append(run)
+
+        ok = (
+            not semantic_mismatches
+            and all(
+                run["generation_exit_code"] == 0
+                and isinstance(run.get("qa"), dict)
+                and bool(run["qa"].get("ok"))
+                for run in runs
+            )
+        )
+        matrix_report = {
+            "ok": ok,
+            "spec": str(args.spec),
+            "profile": profile.to_dict(),
+            "requested_variants": args.variants,
+            "seeds": list(args.seeds),
+            "search": {
+                "time_limit_seconds": args.time_limit,
+                "max_attempts": args.max_attempts if args.max_attempts is not None else max(3, args.variants * 3),
+                "equipment_retries": args.equipment_retries,
+            },
+            "runs": runs,
+            "cross_seed_semantic_ids": {
+                "status": (
+                    "FAIL" if semantic_mismatches else
+                    "PASS" if all(run.get("qa", {}).get("ok") for run in runs) else
+                    "UNKNOWN"
+                ),
+                "baseline": semantic_baseline,
+                "mismatches": semantic_mismatches,
+            },
+        }
+        report_path = args.report or args.output / "acceptance-matrix-report.json"
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        report_path.write_text(json.dumps(matrix_report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"Acceptance matrix: {'PASS' if ok else 'FAIL'}; report: {report_path}")
+        return 0 if ok else 4
     if args.command == "generate-building":
         try:
+            (args.output / "generation-failure.json").unlink(missing_ok=True)
             building = load_building(args.spec).with_required_flow_opening_width()
             profile = load_facility_profile(args.profile) if args.profile else default_facility_profile()
-            equipment_fit_options = {}
-            for item in building.equipment:
-                if item.room_id is not None:
-                    equipment_fit_options.setdefault(item.room_id, []).append(
-                        (item.id, item.room_fit_dimensions(building.layout.wall_thickness_mm))
-                    )
-            results = solve_layouts(
-                building.layout,
-                args.variants,
-                args.time_limit,
-                args.seed,
-                required_adjacency_groups=building.zone_relation_groups("required_adjacency"),
-                forbidden_adjacency_groups=building.zone_relation_groups("forbidden_adjacency"),
-                minimum_adjacency_mm=(
-                    building.layout.door_width_mm + 2 * building.layout.wall_thickness_mm
-                    if building.flows
-                    else None
-                ),
-                equipment_fit_options=equipment_fit_options,
+            generation = solve_feasible_facility_variants(
+                building,
+                profile,
+                variants=args.variants,
+                time_limit_seconds=args.time_limit,
+                seed=args.seed,
+                max_attempts=args.max_attempts,
+                equipment_retries=args.equipment_retries,
             )
-        except (OSError, ValueError, BuildingSpecError, InfeasibleLayout, RuntimeError) as exc:
+        except InfeasibleFacilityGeneration as exc:
+            args.output.mkdir(parents=True, exist_ok=True)
+            failure = {
+                "ok": False,
+                "status": "NO_ACCEPTED_SET_WITHIN_BUDGET",
+                "message": str(exc),
+                "spec": building.to_dict(),
+                "profile": profile.to_dict(),
+                "generation": exc.generation.to_dict(),
+            }
+            (args.output / "generation-failure.json").write_text(
+                json.dumps(failure, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+            )
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        except (
+            OSError,
+            ValueError,
+            BuildingSpecError,
+            InfeasibleLayout,
+            RuntimeError,
+        ) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
 
@@ -255,39 +398,18 @@ def main(argv: list[str] | None = None) -> int:
             "project": building.layout.project_name,
             "facility_profile": profile.to_dict(),
             "drawing_profile": profile.drawing.to_dict(),
+            "generation": generation.to_dict(),
             "variants": [],
         }
-        facility_reports = []
-        for result in results:
-            report = validate_layout(building.layout, result)
-            if not report.ok:
-                print(f"ERROR: вариант {result.variant} не прошёл валидацию", file=sys.stderr)
-                for issue in report.issues:
-                    print(f"  - {issue.code}: {issue.message}", file=sys.stderr)
-                return 3
+        for candidate in generation.accepted:
+            result = candidate.result
+            report = candidate.layout_report
+            equipment = candidate.equipment
+            equipment_report = candidate.equipment_report
+            flow_routes = candidate.flow_routes
+            flow_report = candidate.flow_report
+            facility_report = candidate.facility_report
             try:
-                equipment = place_equipment(
-                    building,
-                    result,
-                    time_limit_seconds=args.time_limit,
-                    seed=args.seed,
-                )
-                equipment_report = validate_equipment_layout(building, result, equipment)
-                if not equipment_report.ok:
-                    raise EquipmentPlacementError(
-                        "; ".join(issue.message for issue in equipment_report.issues)
-                    )
-                flow_routes = route_flows(building, result, equipment)
-                flow_report = validate_flow_routes(building, result, flow_routes, equipment)
-                facility_report = validate_building(
-                    building,
-                    result,
-                    equipment,
-                    flow_routes,
-                    flow_report,
-                    profile=profile,
-                    equipment_report=equipment_report,
-                )
                 ifc_path = args.output / f"building_{result.variant:02d}.ifc"
                 ifc_summary = export_building_ifc(
                     ifc_path,
@@ -304,8 +426,8 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 if not ifc_readback.ok:
                     raise RuntimeError("; ".join(ifc_readback.issues))
-            except (EquipmentPlacementError, ValueError, RuntimeError) as exc:
-                print(f"ERROR: оборудование в варианте {result.variant} не размещено: {exc}", file=sys.stderr)
+            except (ValueError, RuntimeError) as exc:
+                print(f"ERROR: экспорт/IFC QA варианта {result.variant} не пройден: {exc}", file=sys.stderr)
                 return 3
             dxf_path, pdf_path = export_building_bundle(
                 args.output,
@@ -327,6 +449,7 @@ def main(argv: list[str] | None = None) -> int:
                 flow_report,
                 equipment_report=equipment_report,
                 facility_report=facility_report,
+                generation_evidence=candidate.generation_evidence(),
             )
             issues_path = args.output / f"building_{result.variant:02d}.coordination.json"
             write_coordination_issues(
@@ -360,10 +483,10 @@ def main(argv: list[str] | None = None) -> int:
             except (OSError, ValueError, RuntimeError) as exc:
                 print(f"ERROR: BCF-пакет варианта {result.variant} не сформирован: {exc}", file=sys.stderr)
                 return 3
-            facility_reports.append(facility_report)
             manifest["variants"].append(
                 {
                     "variant": result.variant,
+                    "generation": candidate.generation_evidence(),
                     "rooms": len(result.placements),
                     "equipment": len(equipment.placements),
                     "equipment_issues": len(equipment_report.issues),
@@ -408,7 +531,7 @@ def main(argv: list[str] | None = None) -> int:
         (args.output / "manifest.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        return 0 if all(report.ok for report in facility_reports) else 4
+        return 0
     if args.command == "qa-building":
         try:
             profile = load_facility_profile(args.profile) if args.profile else None

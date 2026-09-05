@@ -1,0 +1,126 @@
+name: Pharma cleanroom acceptance pilot
+version: "1.0"
+domain: pharma-cleanroom
+jurisdiction: project-profile-not-a-regulatory-verdict
+provenance:
+  source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+  purpose: auditable early-design coordination for a declared sterile-product-like clean-production program
+  note: This combined project policy is not GMP, ISO 14644, HVAC, containment, healthcare, fire or construction-code approval.
+
+rules:
+  - id: PHARMA_CLEANROOM_REQUIRED_FLOW_TYPES
+    kind: required_flow_types
+    title: Declared clean-production flow categories are complete
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision), sections 2.1 and 4.1-4.2
+    effective_date: "2023-08-25"
+    evidence:
+      - EU GMP Annex 1 identifies personnel, materials, equipment and surrounding environment as contamination sources to be addressed through facility, equipment and process design.
+      - This project policy requires material, dirty-material, personnel, finished-goods and waste route declarations; it does not certify a contamination-control strategy.
+    parameters:
+      flow_types: [material, dirty_material, people, finished_goods, waste]
+
+  - id: PHARMA_CLEANROOM_PROCESS_SEQUENCE
+    kind: process_sequence
+    title: Declared raw-material-to-finished-goods sequence and waste branch are connected
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision), sections 2.2, 2.3 and 4.2
+    effective_date: "2023-08-25"
+    evidence:
+      - EU GMP Annex 1 requires quality-risk-management consideration of facility, equipment and process design, including documented contamination-control interactions.
+      - The ordered stages and waste branch are an explicit project process contract, not a universal GMP process sequence.
+    parameters:
+      sequence: [raw_material, production, packaging, finished_goods]
+      branches:
+        - [production, waste]
+      stage_flow_types:
+        raw_material: [material]
+        production: [material]
+        packaging: [material]
+        finished_goods: [finished_goods]
+        waste: [waste]
+      require_required_flows: true
+      require_routed: true
+
+  - id: PHARMA_CLEANROOM_FLOW_SEPARATION
+    kind: flow_separation
+    title: Declared clean and dirty route categories use separate intermediate rooms
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision), sections 4.2, 4.11 and 4.12
+    effective_date: "2023-08-25"
+    evidence:
+      - EU GMP Annex 1 calls for technical and operational separation to prevent mix-up and contamination and describes separate or controlled movement of materials, personnel and waste.
+      - This deterministic check reports shared intermediate rooms as a coordination conflict. It does not evaluate time-based procedures, transfer disinfection, airflow visualisation or a CCS.
+    parameters:
+      incompatible_flow_type_pairs:
+        - [material, dirty_material]
+        - [material, waste]
+        - [people, waste]
+        - [finished_goods, waste]
+
+  - id: CLEANROOM_REQUIRED_ZONE_FIELDS
+    kind: required_zone_fields
+    title: Applicable cleanroom and airlock zones carry class and pressure evidence
+    source: https://www.iso.org/standard/53394.html
+    edition: ISO 14644-1:2015
+    effective_date: "2015-12"
+    evidence:
+      - ISO 14644-1:2015 specifies classification of air cleanliness in cleanrooms and clean zones by particle concentration.
+      - EU GMP Annex 1 section 4.14 makes pressure/airflow part of the facility strategy. This project check requires declared data only and does not calculate classification, ventilation or airflow.
+    parameters:
+      zone_types: [cleanroom, clean_zone, personnel_airlock, material_airlock]
+      fields: [cleanroom_class, pressure_pa]
+
+  - id: CLEANROOM_ZONE_CLASSIFICATION
+    kind: zone_classification
+    title: Cleanroom labels use the project ISO vocabulary and declared parent ordering
+    source: https://www.iso.org/standard/53394.html
+    edition: ISO 14644-1:2015
+    effective_date: "2015-12"
+    evidence:
+      - ISO 14644-1:2015 covers classification of air cleanliness in cleanrooms and clean zones by airborne particle concentration.
+      - The vocabulary and hierarchy are a project data contract. This check does not calculate particle concentrations or certify a room classification.
+    parameters:
+      zone_types: [cleanroom, clean_zone, personnel_airlock, material_airlock]
+      allowed_classes: [ISO 1, ISO 2, ISO 3, ISO 4, ISO 5, ISO 6, ISO 7, ISO 8, ISO 9]
+      direction: parent_cleaner_or_equal
+
+  - id: CLEANROOM_AIRLOCK_ROLES
+    kind: airlock_presence
+    title: Separate personnel and material airlock roles have declared parent cleanroom zones
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision), sections 4.1 and 4.12
+    effective_date: "2023-08-25"
+    evidence:
+      - EU GMP Annex 1 describes entry through change rooms acting as airlocks and states that personnel and material airlocks should be separated wherever possible.
+      - This check requires roles and parent-zone evidence. It does not verify door interlocking, transfer procedures or final airlock-stage conditions.
+    parameters:
+      zone_types: [personnel_airlock, material_airlock]
+      minimum_count: 2
+      required_types: [personnel_airlock, material_airlock]
+      require_parent_zone: true
+
+  - id: CLEANROOM_PRESSURE_CASCADE
+    kind: pressure_cascade
+    title: Declared cleanroom-to-airlock pressure ordering meets the sourced project guidance
+    source: https://health.ec.europa.eu/system/files/2022-08/20220825_gmp-an1_en_0.pdf
+    edition: EU GMP Annex 1 (2022 revision), section 4.14
+    effective_date: "2023-08-25"
+    evidence:
+      - EU GMP Annex 1 section 4.14 calls for positive pressure and/or airflow relative to a lower-grade background and gives 10 Pascals as a guidance value for adjacent rooms of different grades.
+      - Containment scenarios can require another justified strategy. This project check compares declared zone values only; it does not model HVAC, adjacency interfaces or airflow visualisation.
+    parameters:
+      zone_types: [cleanroom, clean_zone, personnel_airlock, material_airlock]
+      direction: parent_gt_child
+      minimum_delta_pa: 10
+
+drawing:
+  sheet_id: A-101
+  discipline: Pharma cleanroom coordination
+  title: Pharma cleanroom acceptance pilot
+  revision: P01
+  show_room_dimensions: true
+  show_flow_legend: true
+  show_flow_labels: true
+  show_equipment_clearance: true
+  show_structural_grid: true

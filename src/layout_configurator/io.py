@@ -111,6 +111,7 @@ def write_building_result(
     *,
     equipment_report: EquipmentValidationReport | None = None,
     facility_report: FacilityValidationReport | None = None,
+    generation_evidence: dict[str, int] | None = None,
 ) -> None:
     """Write room and equipment solver outputs without converting to drawing data."""
 
@@ -127,6 +128,8 @@ def write_building_result(
         payload["equipment_validation"] = equipment_report.to_dict()
     if facility_report is not None:
         payload["facility_validation"] = facility_report.to_dict()
+    if generation_evidence is not None:
+        payload["generation"] = dict(generation_evidence)
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

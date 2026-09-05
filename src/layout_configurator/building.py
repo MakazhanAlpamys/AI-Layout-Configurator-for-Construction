@@ -409,12 +409,20 @@ class BuildingIR:
         ``LayoutIR.door_width_mm`` is the minimum generated opening width. A
         process flow can demand a wider passage, so the facility compiler
         promotes the effective width before solving instead of producing a
-        geometrically plausible but unusable route. The canonical result keeps
-        the promoted value visible in its evidence bundle.
+        geometrically plausible but unusable route. A small, explicit routing
+        margin makes the swept 2D corridor unambiguous at the generated door
+        jambs; it is a geometry-model margin, not a regulatory clearance. The
+        canonical result keeps the promoted value visible in its evidence
+        bundle.
         """
 
+        routing_margin_mm = 200.0
         required_width = max(
-            (flow.minimum_clear_width_mm for flow in self.flows if flow.required),
+            (
+                flow.minimum_clear_width_mm + routing_margin_mm
+                for flow in self.flows
+                if flow.required
+            ),
             default=self.layout.door_width_mm,
         )
         if required_width <= self.layout.door_width_mm + 1e-6:
