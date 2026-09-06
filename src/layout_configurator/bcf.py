@@ -9,6 +9,7 @@ viewpoints only; it does not claim that a layout is a regulatory approval.
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Mapping
@@ -159,6 +160,15 @@ def write_bcf_package(
     entries: list[tuple[str, bytes]] = []
     entries.append(("bcf.version", _version_xml().encode("utf-8")))
     entries.append(("project.bcfp", _project_xml(name, variant).encode("utf-8")))
+
+    # One coordination issue is one topic directory. Writing two issues under
+    # the same id would produce duplicate ZIP members, which is a package a
+    # receiving BIM tool cannot read back reliably, so refuse it here instead of
+    # shipping the ambiguity downstream.
+    counts = Counter(issue.issue_id for issue in report.issues)
+    duplicates = sorted(issue_id for issue_id, count in counts.items() if count > 1)
+    if duplicates:
+        raise ValueError("Coordination issues share BCF topic identities: " + ", ".join(duplicates))
 
     for index, issue in enumerate(report.issues):
         topic_id = _topic_uuid(issue.issue_id)

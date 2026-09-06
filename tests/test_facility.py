@@ -11,6 +11,7 @@ from layout_configurator.building import BuildingIR
 from layout_configurator.bcf import read_bcf_package, write_bcf_package
 from layout_configurator.equipment import EquipmentLayoutResult
 from layout_configurator.facility import (
+    CoordinationIssue,
     FacilityValidationReport,
     FacilityProfile,
     default_facility_profile,
@@ -939,6 +940,36 @@ def _building(*, zones=(), flows=()):
             "flows": list(flows),
         }
     )
+
+
+class BcfTopicIdentityTests(unittest.TestCase):
+    """A BCF package must never carry two topics under one GUID.
+
+    Duplicate coordination issue ids used to be written as duplicate ZIP
+    members, which produces a package that a receiving BIM tool cannot read
+    back reliably and makes the issue workflow act on both at once.
+    """
+
+    def test_duplicate_issue_ids_are_refused_instead_of_duplicating_zip_entries(self):
+        issue = CoordinationIssue(
+            issue_id="FLC-DUPLICATE01",
+            code="WALL_COLLISION",
+            title="Flow coordination issue",
+            message="Flow demo corridor intersects wall geometry",
+            severity="ERROR",
+            source="FLOW_COMPLETENESS",
+        )
+        report = FacilityValidationReport(
+            profile=default_facility_profile(),
+            checks=(),
+            issues=(issue, issue),
+        )
+
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(ValueError) as raised:
+                write_bcf_package(Path(directory) / "coordination.bcf", report, project_name="facility test")
+
+        self.assertIn("FLC-DUPLICATE01", str(raised.exception))
 
 
 if __name__ == "__main__":

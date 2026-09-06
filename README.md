@@ -247,6 +247,20 @@ semantic room/equipment/flow IDs, топологии маршрутов, IFC rea
 нужного набора. Лимит времени применяется к каждому запуску solver, а не ко всей
 матрице.
 
+Для трёх внешних gate'ов принятый комплект проецируется в досье по ролям:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli review-dossier `
+  out\acceptance-2026-09-06\bundle --profile rules\pharma_cleanroom_pilot.yaml `
+  --output out\acceptance-2026-09-06\review
+```
+
+Команда пишет `building_0N.technologist.md`, `building_0N.cleanroom-hvac.md`,
+`building_0N.architect-bim.md` и `building_0N.artifact-inventory.json` с
+сущностями IFC, слоями DXF и SHA-256 файлов варианта. Досье содержит только то,
+что уже есть в каноническом результате, блок решений для рецензента и явный
+список непроверенного; `PASS` в нём не превращается в нормативный verdict.
+
 Состав пакета для внешних рецензентов, чек-листы технолога/QA, cleanroom/HVAC и
 архитектора/BIM и команды воспроизведения — в
 [`docs/ACCEPTANCE_REVIEW_PACKAGE.md`](docs/ACCEPTANCE_REVIEW_PACKAGE.md).

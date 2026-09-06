@@ -7,7 +7,7 @@ import ifcopenshell
 
 from layout_configurator.building import BuildingIR
 from layout_configurator.equipment import EquipmentLayoutResult, EquipmentPlacement
-from layout_configurator.export import _flow_label_anchor, export_building_bundle
+from layout_configurator.export import export_building_bundle, flow_label_anchor
 from layout_configurator.facility import FacilityDrawingProfile
 from layout_configurator.flows import route_flows, validate_flow_routes
 from layout_configurator.ifc import export_building_ifc, validate_ifc_roundtrip
@@ -17,9 +17,10 @@ from layout_configurator.models import LayoutResult, Rect
 class FlowRoutingTests(unittest.TestCase):
     def test_flow_label_anchors_are_offset_and_alternated(self):
         points = ((0.0, 0.0), (1000.0, 0.0), (2000.0, 0.0))
+        boundary = (12000.0, 8000.0)
 
-        first = _flow_label_anchor(points, 0)
-        second = _flow_label_anchor(points, 1)
+        first = flow_label_anchor(points, 0, boundary)
+        second = flow_label_anchor(points, 1, boundary)
 
         self.assertNotEqual(first, points[1])
         self.assertGreater(first[1], 0.0)
@@ -279,3 +280,37 @@ def _layout():
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MultiRouteIssueIdentityTests(unittest.TestCase):
+    """A flow with several endpoint pairs must report each route separately.
+
+    The per-route messages used to name only the flow, so two routes of one flow
+    produced byte-identical coordination issues. Those collapsed into a single
+    BCF topic id and the package ended up with duplicate ZIP entries.
+    """
+
+    def test_route_issue_messages_identify_their_own_endpoints(self):
+        from layout_configurator.flows import FlowRoute, FlowRoutingResult
+
+        building = _building(minimum_width=800)
+        layout = _layout()
+        flow = building.flows[0]
+        blocked = tuple(
+            FlowRoute(
+                flow_id=flow.id,
+                from_id=from_id,
+                to_id=to_id,
+                from_room_id="a",
+                to_room_id="b",
+                room_path=("a", "b"),
+                points=((100.0, 100.0), (100.0, 100.0)),
+                minimum_clear_width_mm=flow.minimum_clear_width_mm,
+            )
+            for from_id, to_id in (("a", "b"), ("a", "b2"))
+        )
+
+        report = validate_flow_routes(building, layout, FlowRoutingResult(blocked))
+
+        messages = [issue.message for issue in report.issues]
+        self.assertEqual(len(messages), len(set(messages)), f"duplicate issue messages: {messages}")

@@ -73,6 +73,16 @@ class FlowValidationReport:
         return {"ok": self.ok, "issues": [issue.to_dict() for issue in self.issues]}
 
 
+def _route_label(route: FlowRoute) -> str:
+    """Name a route by its own endpoints, not just by its flow.
+
+    A flow can declare several sources or targets, so ``flow_id`` alone does not
+    identify which route a finding belongs to.
+    """
+
+    return f"{route.flow_id} ({route.from_id} → {route.to_id})"
+
+
 @dataclass(frozen=True)
 class _Endpoint:
     source_id: str
@@ -160,37 +170,38 @@ def validate_flow_routes(
     seen: set[tuple[str, str, str, str, str]] = set()
     for route in routes.routes:
         key = (route.flow_id, route.from_id, route.to_id, route.from_room_id, route.to_room_id)
+        label = _route_label(route)
         flow = flow_by_id.get(route.flow_id)
         if flow is None:
             issues.append(FlowValidationIssue("unknown_flow", f"Route references unknown flow {route.flow_id}", route.flow_id))
             continue
         if key in seen:
-            issues.append(FlowValidationIssue("duplicate_route", f"Flow route {route.flow_id} is duplicated", route.flow_id))
+            issues.append(FlowValidationIssue("duplicate_route", f"Flow route {label} is duplicated", route.flow_id))
         seen.add(key)
         if key not in expected:
-            issues.append(FlowValidationIssue("unexpected_route", f"Route {route.flow_id} does not match declared endpoints", route.flow_id))
+            issues.append(FlowValidationIssue("unexpected_route", f"Route {label} does not match declared endpoints", route.flow_id))
         if len(route.points) < 2:
-            issues.append(FlowValidationIssue("degenerate_route", f"Flow {route.flow_id} has fewer than two points", route.flow_id))
+            issues.append(FlowValidationIssue("degenerate_route", f"Flow {label} has fewer than two points", route.flow_id))
             continue
         if route.minimum_clear_width_mm + 1e-6 < flow.minimum_clear_width_mm:
-            issues.append(FlowValidationIssue("route_width_mismatch", f"Flow {route.flow_id} route width is below its declared minimum", route.flow_id))
+            issues.append(FlowValidationIssue("route_width_mismatch", f"Flow {label} route width is below its declared minimum", route.flow_id))
 
         route_line = LineString(route.points)
         corridor = route_line.buffer(route.minimum_clear_width_mm / 2, cap_style=2, join_style=3)
         for room_a, room_b in zip(route.room_path, route.room_path[1:]):
             opening = _graph_opening(graph, room_a, room_b)
             if opening is None:
-                issues.append(FlowValidationIssue("route_missing_door", f"Flow {route.flow_id} crosses {room_a}–{room_b} without a generated door", route.flow_id))
+                issues.append(FlowValidationIssue("route_missing_door", f"Flow {label} crosses {room_a}–{room_b} without a generated door", route.flow_id))
             elif opening.width + 1e-6 < flow.minimum_clear_width_mm:
                 issues.append(
                     FlowValidationIssue(
                         "opening_too_narrow",
-                        f"Flow {route.flow_id} needs {flow.minimum_clear_width_mm:.0f} mm but {room_a}–{room_b} opening is {opening.width:.0f} mm",
+                        f"Flow {label} needs {flow.minimum_clear_width_mm:.0f} mm but {room_a}–{room_b} opening is {opening.width:.0f} mm",
                         route.flow_id,
                     )
                 )
         if wall_plan.geometry.intersection(corridor).area > 1e-6:
-            issues.append(FlowValidationIssue("wall_collision", f"Flow {route.flow_id} corridor intersects wall geometry", route.flow_id))
+            issues.append(FlowValidationIssue("wall_collision", f"Flow {label} corridor intersects wall geometry", route.flow_id))
 
         for placement in equipment.placements if equipment else ():
             if placement.equipment_id in {route.from_id, route.to_id}:
@@ -205,7 +216,7 @@ def validate_flow_routes(
                 issues.append(
                     FlowValidationIssue(
                         "equipment_clearance_collision",
-                        f"Flow {route.flow_id} corridor intersects clearance of {placement.equipment_id}",
+                        f"Flow {label} corridor intersects clearance of {placement.equipment_id}",
                         route.flow_id,
                     )
                 )

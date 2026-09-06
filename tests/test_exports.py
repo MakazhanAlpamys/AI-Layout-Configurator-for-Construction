@@ -166,5 +166,82 @@ class ExportTests(unittest.TestCase):
             self.assertTrue(room_values["IsHeated"])
 
 
+class SheetLabelLayoutTests(unittest.TestCase):
+    """Flow annotations must stay separated on a facility-sized sheet.
+
+    The separation used to be a fixed millimetre value, which is a fraction of a
+    point once a 54 x 30 m boundary is fitted to A3, so labels of routes that
+    share a corridor printed on top of each other.
+    """
+
+    BOUNDARY = (54000.0, 30000.0)
+
+    @staticmethod
+    def _boxes(anchors, texts, height):
+        return [
+            (x, y, x + len(text) * height * 0.62, y + height)
+            for (x, y), text in zip(anchors, texts)
+        ]
+
+    @staticmethod
+    def _overlap(first, second):
+        return (
+            first[0] < second[2]
+            and second[0] < first[2]
+            and first[1] < second[3]
+            and second[1] < first[3]
+        )
+
+    def test_labels_of_routes_sharing_a_corridor_do_not_overlap(self):
+        from layout_configurator.export import place_annotation_labels
+
+        # Two routes running along the same short corridor, the case observed on
+        # the pilot sheet with waste_out and dirty_material_out.
+        anchors = [(6000.0, 12000.0), (6000.0, 12000.0), (6100.0, 12050.0)]
+        texts = [
+            "FLOW waste_out [waste] / 1200 mm",
+            "FLOW dirty_material_out [dirty_material] / 1800 mm",
+            "FLOW personnel_access [people] / 1200 mm",
+        ]
+        height = 240.0
+        placed = place_annotation_labels(
+            anchors,
+            [(len(text) * height * 0.62, height) for text in texts],
+            step=height * 1.6,
+        )
+        boxes = self._boxes(placed, texts, height)
+        for first in range(len(boxes)):
+            for second in range(first + 1, len(boxes)):
+                self.assertFalse(
+                    self._overlap(boxes[first], boxes[second]),
+                    f"labels {first} and {second} overlap: {boxes[first]} {boxes[second]}",
+                )
+
+    def test_flow_label_separation_scales_with_the_drawn_boundary(self):
+        from layout_configurator.export import flow_label_anchor
+
+        points = ((0.0, 0.0), (0.0, 10000.0), (0.0, 20000.0))
+        first = flow_label_anchor(points, 0, self.BOUNDARY)
+        second = flow_label_anchor(points, 1, self.BOUNDARY)
+        separation = abs(first[0] - second[0]) + abs(first[1] - second[1])
+        # A fixed 260 mm offset is about half a point on this sheet; the
+        # separation has to be a visible fraction of the drawing instead.
+        self.assertGreater(separation, 0.02 * min(self.BOUNDARY))
+
+    def test_flow_labels_avoid_room_labels_on_the_sheet(self):
+        from layout_configurator.export import place_annotation_labels
+
+        height = 240.0
+        room_label = (20000.0, 15000.0, 26000.0, 15000.0 + height)
+        placed = place_annotation_labels(
+            [(20500.0, 15050.0)],
+            [(5000.0, height)],
+            step=height * 1.6,
+            reserved=[room_label],
+        )
+        box = (placed[0][0], placed[0][1], placed[0][0] + 5000.0, placed[0][1] + height)
+        self.assertFalse(self._overlap(box, room_label))
+
+
 if __name__ == "__main__":
     unittest.main()

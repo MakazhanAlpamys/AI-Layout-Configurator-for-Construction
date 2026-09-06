@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 
 from .building import BuildingIR, EquipmentSpec, StructuralGridSpec
@@ -136,7 +136,14 @@ def export_dxf(
             show_clearance=drawing.show_equipment_clearance,
         )
     if flows is not None:
-        _draw_flows_dxf(modelspace, flows, flow_types or {}, show_labels=drawing.show_flow_labels)
+        _draw_flows_dxf(
+            modelspace,
+            flows,
+            flow_types or {},
+            show_labels=drawing.show_flow_labels,
+            boundary=(boundary.width_mm, boundary.height_mm),
+            reserved=_room_label_boxes(spec, result),
+        )
     if structural_grid is not None and drawing.show_structural_grid:
         _draw_structural_grid_dxf(modelspace, spec, structural_grid)
     if drawing.show_flow_legend and (equipment is not None or flows is not None):
@@ -263,12 +270,35 @@ def export_pdf(
             show_clearance=drawing.show_equipment_clearance,
         )
     if flows is not None:
+        reserved = []
+        for room in spec.rooms:
+            rect = result.placements[room.id]
+            room_x, room_y = point(rect.x, rect.y)
+            size = max(5, min(11, rect.width * scale / 16))
+            text = f"{room.id} ({rect.area_m2:.1f} m2)"
+            width = pdf.stringWidth(text, "Helvetica", size)
+            center_x = room_x + rect.width * scale / 2
+            center_y = room_y + rect.height * scale / 2
+            reserved.append((center_x - width / 2, center_y - size * 0.3, center_x + width / 2, center_y + size))
+            if drawing.show_room_dimensions:
+                dimension = f"{rect.width:.0f} x {rect.height:.0f} mm"
+                dimension_width = pdf.stringWidth(dimension, "Helvetica", 4.5)
+                reserved.append(
+                    (
+                        center_x - dimension_width / 2,
+                        room_y + 5 - 1.5,
+                        center_x + dimension_width / 2,
+                        room_y + 5 + 4.5,
+                    )
+                )
         _draw_flows_pdf(
             pdf,
             point,
             flows,
             flow_types or {},
             show_labels=drawing.show_flow_labels,
+            boundary=(spec.boundary.width_mm, spec.boundary.height_mm),
+            reserved=reserved,
         )
     if structural_grid is not None and drawing.show_structural_grid:
         _draw_structural_grid_pdf(pdf, point, spec, structural_grid)
@@ -405,19 +435,30 @@ def _draw_flows_dxf(
     flow_types: Mapping[str, str],
     *,
     show_labels: bool = True,
+    boundary: tuple[float, float] = (0.0, 0.0),
+    reserved: Sequence[tuple[float, float, float, float]] = (),
 ) -> None:
-    for index, route in enumerate(flows.routes):
-        if len(route.points) < 2:
-            continue
+    drawn = [route for route in flows.routes if len(route.points) >= 2]
+    for route in drawn:
         modelspace.add_lwpolyline(
             route.points,
             dxfattribs={"layer": "A-FLOW", "linetype": "DASHED", "lineweight": 18},
         )
-        if show_labels:
-            modelspace.add_text(
-                f"FLOW {route.flow_id} [{flow_types.get(route.flow_id, 'unspecified')}] / {route.minimum_clear_width_mm:.0f} mm",
-                dxfattribs={"height": 90, "layer": "A-FLOW"},
-            ).set_placement(_flow_label_anchor(route.points, index))
+    if not show_labels or not drawn:
+        return
+    height = _flow_label_height(boundary)
+    texts = [
+        f"FLOW {route.flow_id} [{flow_types.get(route.flow_id, 'unspecified')}] / {route.minimum_clear_width_mm:.0f} mm"
+        for route in drawn
+    ]
+    positions = place_annotation_labels(
+        [flow_label_anchor(route.points, index, boundary) for index, route in enumerate(drawn)],
+        [(_text_extent(text, height), height) for text in texts],
+        step=height * 1.6,
+        reserved=reserved,
+    )
+    for text, position in zip(texts, positions):
+        modelspace.add_text(text, dxfattribs={"height": height, "layer": "A-FLOW"}).set_placement(position)
 
 
 def _draw_facility_legend_dxf(
@@ -529,32 +570,107 @@ def _draw_flows_pdf(
     flow_types: Mapping[str, str],
     *,
     show_labels: bool = True,
+    boundary: tuple[float, float] = (0.0, 0.0),
+    reserved: Sequence[tuple[float, float, float, float]] = (),
 ) -> None:
     pdf.setStrokeColorRGB(0.9, 0.45, 0.05)
     pdf.setLineWidth(1.0)
     pdf.setDash(5, 3)
-    pdf.setFont("Helvetica", 5)
-    for index, route in enumerate(flows.routes):
-        if len(route.points) < 2:
-            continue
+    pdf.setFont("Helvetica", FLOW_LABEL_POINTS)
+    drawn = [route for route in flows.routes if len(route.points) >= 2]
+    for route in drawn:
         path = pdf.beginPath()
         first_x, first_y = point(*route.points[0])
         path.moveTo(first_x, first_y)
         for x, y in route.points[1:]:
             path.lineTo(*point(x, y))
         pdf.drawPath(path, stroke=1, fill=0)
-        if show_labels:
-            label_x, label_y = point(*_flow_label_anchor(route.points, index))
-            pdf.drawString(
-                label_x + 2,
-                label_y + 2,
-                f"FLOW {route.flow_id} [{flow_types.get(route.flow_id, 'unspecified')}] / {route.minimum_clear_width_mm:.0f} mm",
-            )
     pdf.setDash()
+    if not show_labels or not drawn:
+        return
+    texts = [
+        f"FLOW {route.flow_id} [{flow_types.get(route.flow_id, 'unspecified')}] / {route.minimum_clear_width_mm:.0f} mm"
+        for route in drawn
+    ]
+    # Sheet points, so the boxes are measured where the collision actually
+    # happens rather than estimated in millimetres.
+    anchors = []
+    for index, route in enumerate(drawn):
+        label_x, label_y = point(*flow_label_anchor(route.points, index, boundary))
+        anchors.append((label_x + 2, label_y + 2))
+    positions = place_annotation_labels(
+        anchors,
+        [(pdf.stringWidth(text, "Helvetica", FLOW_LABEL_POINTS), FLOW_LABEL_POINTS) for text in texts],
+        step=FLOW_LABEL_POINTS * 1.6,
+        reserved=reserved,
+    )
+    for text, (label_x, label_y) in zip(texts, positions):
+        pdf.drawString(label_x, label_y, text)
 
 
-def _flow_label_anchor(points: Iterable[tuple[float, float]], index: int) -> tuple[float, float]:
-    """Return a deterministic offset anchor so nearby route labels remain legible."""
+FLOW_LABEL_POINTS = 5.0
+"""Point size of the flow annotation on the generated sheet."""
+
+
+def _flow_label_height(boundary: tuple[float, float]) -> float:
+    """Model-space height of a flow annotation in the DXF."""
+
+    return max(90.0, 0.008 * min(boundary)) if min(boundary) else 90.0
+
+
+def _text_extent(text: str, height: float) -> float:
+    """Conservative width estimate for a single-line label of that height."""
+
+    return max(1, len(text)) * height * 0.62
+
+
+def _room_label_boxes(
+    spec: LayoutIR, result: LayoutResult
+) -> list[tuple[float, float, float, float]]:
+    """Boxes already taken by the centred room annotations, in model units."""
+
+    boxes = []
+    for room in spec.rooms:
+        rect = result.placements[room.id]
+        label = f"{room.id} ({rect.area_m2:.2f} m2)"
+        height = _room_label_height(label, rect)
+        width = _text_extent(label, height)
+        center_x, center_y = rect.center
+        boxes.append(
+            (
+                center_x - width / 2,
+                center_y - height * 0.75,
+                center_x + width / 2,
+                center_y + height * 0.75,
+            )
+        )
+        # The dimension line under each room is annotation too, and a flow label
+        # landing on it is just as unreadable as one landing on the room name.
+        dimension = f"{rect.width:.0f} x {rect.height:.0f} mm"
+        dimension_width = _text_extent(dimension, 75.0)
+        boxes.append(
+            (
+                center_x - dimension_width / 2,
+                rect.y + 180 - 56.0,
+                center_x + dimension_width / 2,
+                rect.y + 180 + 56.0,
+            )
+        )
+    return boxes
+
+
+def flow_label_anchor(
+    points: Iterable[tuple[float, float]],
+    index: int,
+    boundary: tuple[float, float],
+) -> tuple[float, float]:
+    """Offset a route label off its own polyline, proportionally to the drawing.
+
+    The offset used to be a fixed 260 mm. On a facility-sized boundary fitted to
+    a sheet that is a fraction of a point, so routes sharing a corridor printed
+    their labels on top of each other. Scaling the offset to the drawn extent
+    keeps the separation visible at whatever scale the sheet is produced.
+    """
 
     points = tuple(points)
     if not points:
@@ -567,11 +683,59 @@ def _flow_label_anchor(points: Iterable[tuple[float, float]], index: int) -> tup
     dy = float(following[1]) - float(previous[1])
     length = (dx * dx + dy * dy) ** 0.5 or 1.0
     side = 1.0 if index % 2 == 0 else -1.0
-    offset = 260.0 + (index % 3) * 120.0
+    separation = max(300.0, 0.025 * min(boundary))
+    offset = separation * (1.0 + (index % 3) * 0.6)
     return (
         float(anchor[0]) - (dy / length) * offset * side,
         float(anchor[1]) + (dx / length) * offset * side,
     )
+
+
+def _annotation_box(
+    position: tuple[float, float], size: tuple[float, float]
+) -> tuple[float, float, float, float]:
+    """Box of a left-baseline label, with a little room under the baseline."""
+
+    width, height = size
+    return (position[0], position[1] - height * 0.25, position[0] + width, position[1] + height)
+
+
+def _boxes_overlap(
+    first: tuple[float, float, float, float], second: tuple[float, float, float, float]
+) -> bool:
+    return first[0] < second[2] and second[0] < first[2] and first[1] < second[3] and second[1] < first[3]
+
+
+def place_annotation_labels(
+    anchors: Sequence[tuple[float, float]],
+    sizes: Sequence[tuple[float, float]],
+    *,
+    step: float,
+    reserved: Sequence[tuple[float, float, float, float]] = (),
+    max_shifts: int = 12,
+) -> list[tuple[float, float]]:
+    """Nudge labels off each other, deterministically and in drawing order.
+
+    This is not a general label-placement solver. It only walks a label along
+    the vertical axis until its box is clear, which is enough to separate the
+    annotations of routes that share one corridor. A label that cannot be freed
+    within ``max_shifts`` stays at its anchor so the drawing never silently
+    loses an annotation.
+    """
+
+    placed = [tuple(box) for box in reserved]
+    positions: list[tuple[float, float]] = []
+    for anchor, size in zip(anchors, sizes):
+        chosen = tuple(anchor)
+        for attempt in range(max_shifts + 1):
+            shift = 0.0 if attempt == 0 else step * ((attempt + 1) // 2) * (1.0 if attempt % 2 else -1.0)
+            candidate = (float(anchor[0]), float(anchor[1]) + shift)
+            if not any(_boxes_overlap(_annotation_box(candidate, size), other) for other in placed):
+                chosen = candidate
+                break
+        placed.append(_annotation_box(chosen, size))
+        positions.append(chosen)
+    return positions
 
 
 def _draw_structural_grid_pdf(pdf, point, spec: LayoutIR, grid: StructuralGridSpec) -> None:

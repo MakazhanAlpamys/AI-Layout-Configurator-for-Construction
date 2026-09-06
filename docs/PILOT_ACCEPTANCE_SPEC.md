@@ -116,7 +116,16 @@ the named human/runtime:
 | Viewer screenshot QA | Browser runtime | Captured screenshots of all variants, visible route conflicts, issue filters and resolved-history viewpoints. |
 
 The reviewer package, the per-role checklists and the reproduction commands are
-in [ACCEPTANCE_REVIEW_PACKAGE.md](ACCEPTANCE_REVIEW_PACKAGE.md).
+in [ACCEPTANCE_REVIEW_PACKAGE.md](ACCEPTANCE_REVIEW_PACKAGE.md). Each of the
+three human gates is served by a generated dossier: `layout-configurator
+review-dossier` projects an accepted bundle into one document per role, holding
+the declarations that role must confirm, the deterministic evidence already
+produced and the explicit list of what the tool did not evaluate.
+
+A fixed seed reproduces the search configuration, not the coordinates: the
+solver budget is wall-clock, so a rerun yields a different accepted layout with
+the same semantic identities. A review therefore applies to the artifacts pinned
+by hash in the dossier inventory, not to a regenerated set.
 
 The viewer gate was executed on 2026-09-05 in Chrome. Every required capture was
 produced and every functional requirement held. The first run also showed that

@@ -15,7 +15,7 @@ PDF, IFC4 и BCF 2.1.
 
 ## Состав
 
-Каталог `out/acceptance-2026-09-05/` (не версионируется, воспроизводится
+Каталог `out/acceptance-2026-09-06/` (не версионируется, воспроизводится
 командами ниже):
 
 | Путь | Содержимое |
@@ -24,7 +24,8 @@ PDF, IFC4 и BCF 2.1.
 | `bundle/manifest.json` | параметры поиска, seeds, принятые и отклонённые кандидаты |
 | `acceptance-matrix-report.json` | матрица seeds 1/7/42 × 3 варианта, хеши артефактов, cross-seed сверка идентификаторов |
 | `environment.json` | версии Python и решающих библиотек локального прогона |
-| `artifact-inventory.json` | сущности IFC, слои и блоки DXF, страницы PDF, содержимое BCF, SHA-256 каждого файла |
+| `review/*.md` | по одному досье на каждый внешний gate для каждого варианта |
+| `review/*.artifact-inventory.json` | сущности IFC, слои и блоки DXF, содержимое BCF и SHA-256 файлов варианта |
 | `previews/building_0N.pdf.p1.png` | растровые превью листов (200 dpi) для быстрого просмотра |
 | `previews/building_0N.dxf.svg` | SVG-рендер DXF нативным бэкендом ezdxf |
 | `viewer-qa/screenshots/` | 23 скриншота браузерного QA и пять `*-observations.json` |
@@ -35,9 +36,9 @@ PDF, IFC4 и BCF 2.1.
 Эти проверки выполнены и их не нужно повторять вручную; они не заменяют
 экспертную оценку.
 
-| Проверка | Команда | Результат 2026-09-05 |
+| Проверка | Команда | Результат 2026-09-06 |
 | --- | --- | --- |
-| Регрессия | `python -m unittest discover -s tests` | 126 тестов, OK |
+| Регрессия | `python -m unittest discover -s tests` | 134 теста, OK |
 | Матрица приёмки | `acceptance-building-matrix ... --seeds 1 7 42 --variants 3` | все девять комплектов приняты, cross-seed identity `PASS` |
 | Bundle QA каждого варианта | `qa-building bundle\building_0N.json --profile ...` | PROGRAM/GEOMETRY/EQUIPMENT/FLOW/PROFILE/MANIFEST/DXF/PDF/IFC/BCF/COORDINATION — `PASS` |
 | IDS-профиль обмена | `validate bundle\building_0N.ifc --ids ids\layout_baseline.ids` | 13/13 spaces, 50–51/… walls, 12/12 doors, 1/1 window, 13/13 openings — `PASS` |
@@ -102,10 +103,10 @@ DXF-слои: `A-WALL`, `A-DOOR`, `A-WINDOW`, `A-EQUIP`, `A-CLEARANCE`, `A-FLOW`
    `IfcRelSpaceBoundary` и property sets оборудования и маршрутов.
 4. Сравнить три варианта: идентификаторы помещений, оборудования и потоков
    должны совпадать, геометрия — различаться.
-5. Учесть известные дефекты выдачи `DR-01` и `DR-02` из
-   [VIEWER_QA_2026-09-05.md](VIEWER_QA_2026-09-05.md) — наложение подписей.
-   Не тратить время на их повторное описание, кроме случаев, когда наложение
-   мешает конкретной проверке.
+5. Учесть, что комплект — один из многих допустимых вариантов. Повторный
+   запуск с тем же seed даёт другую принятую геометрию (`RP-01`), поэтому
+   проверяйте файлы, зафиксированные хешами в
+   `review/*.artifact-inventory.json`, а не пересобранный комплект.
 6. Замечания возвращать в `*.bcf`; следующая итерация переносит исчезнувшие
    topics в новый пакет как `Closed`.
 
@@ -119,25 +120,25 @@ DXF-слои: `A-WALL`, `A-DOOR`, `A-WINDOW`, `A-EQUIP`, `A-CLEARANCE`, `A-FLOW`
 .venv\Scripts\python.exe -m layout_configurator.cli acceptance-building-matrix `
   examples\pharma_cleanroom_pilot.yaml `
   --profile rules\pharma_cleanroom_pilot.yaml `
-  --output out\acceptance-2026-09-05\matrix `
+  --output out\acceptance-2026-09-06\matrix `
   --variants 3 --seeds 1 7 42 --max-attempts 9 --time-limit 30
 
 # 3. Независимая перепроверка каждого варианта
 .venv\Scripts\python.exe -m layout_configurator.cli qa-building `
-  out\acceptance-2026-09-05\bundle\building_01.json `
+  out\acceptance-2026-09-06\bundle\building_01.json `
   --profile rules\pharma_cleanroom_pilot.yaml
 
 # 4. Проверка IFC по IDS
 .venv\Scripts\python.exe -m layout_configurator.cli validate `
-  out\acceptance-2026-09-05\bundle\building_01.ifc --ids ids\layout_baseline.ids
+  out\acceptance-2026-09-06\bundle\building_01.ifc --ids ids\layout_baseline.ids
 
 # 5. Read-only review в браузере
 .venv\Scripts\python.exe -m layout_configurator.cli ui `
-  out\acceptance-2026-09-05\bundle --variant 1 `
+  out\acceptance-2026-09-06\bundle --variant 1 `
   --profile rules\pharma_cleanroom_pilot.yaml
 ```
 
-## Статус gate’ов на 2026-09-05
+## Статус gate’ов на 2026-09-06
 
 | Gate | Владелец | Статус |
 | --- | --- | --- |

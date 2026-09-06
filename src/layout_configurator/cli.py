@@ -33,9 +33,34 @@ from .io import (
 from .norms import check_layout, load_ruleset, retrieve_rule_citations
 from .multifloor import MultiFloorSpec, solve_multifloor
 from .qa import validate_building_bundle, validate_building_set
+from .review import write_review_dossier
 from .schema import load_canonical_spec, normalize_mapping, validate_mapping, validate_spec, load_mapping
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import validate_layout
+
+
+def _dossier_sources(input_path: Path, variant: int | None) -> list[Path]:
+    """Resolve one building result, or every variant of a generated bundle."""
+
+    if input_path.is_dir():
+        if variant is not None:
+            # ui.py owns the bundle-variant convention; importing it lazily keeps
+            # the HTTP server out of the import path of every other command.
+            from .ui import resolve_ui_input
+
+            return [resolve_ui_input(input_path, variant=variant)]
+        found = sorted(input_path.glob("building_*.json"))
+        results = [
+            path
+            for path in found
+            if not path.name.endswith((".coordination.json", ".issue-management.json"))
+        ]
+        if not results:
+            raise ValueError(f"No building result was found in {input_path}")
+        return results
+    if not input_path.is_file():
+        raise ValueError(f"Building result was not found: {input_path}")
+    return [input_path]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -97,6 +122,14 @@ def main(argv: list[str] | None = None) -> int:
     check_building.add_argument("--bcf-output", type=Path, default=None)
     check_building.add_argument("--bcf-input", type=Path, default=None)
     check_building.add_argument("--ifc", type=Path, default=None, help="optional IFC projection to read back")
+    review_dossier = subparsers.add_parser(
+        "review-dossier",
+        help="project an accepted bundle into one dossier per external review gate",
+    )
+    review_dossier.add_argument("input", type=Path, help="building result JSON or a generated bundle directory")
+    review_dossier.add_argument("--profile", type=Path, default=None)
+    review_dossier.add_argument("--output", "-o", type=Path, default=Path("review"))
+    review_dossier.add_argument("--variant", type=int, default=None, help="single variant when input is a bundle directory")
     qa_building = subparsers.add_parser(
         "qa-building",
         help="read back and cross-check a complete BuildingIR coordination bundle",
@@ -581,6 +614,51 @@ def main(argv: list[str] | None = None) -> int:
             check = qa_report.consistency
             print(f"{'PASS' if check.ok else 'FAIL'}: {check.id}: {check.message}")
         return 0 if qa_report.ok else 4
+    if args.command == "review-dossier":
+        try:
+            sources = _dossier_sources(args.input, args.variant)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        profile_path = args.profile
+        for source in sources:
+            try:
+                building, result, equipment = load_building_result(source)
+                profile = load_facility_profile(profile_path) if profile_path else default_facility_profile()
+                equipment_report = validate_equipment_layout(building, result, equipment)
+                flow_routes = route_flows(building, result, equipment)
+                flow_report = validate_flow_routes(building, result, flow_routes, equipment)
+                facility_report = validate_building(
+                    building,
+                    result,
+                    equipment,
+                    flow_routes,
+                    flow_report,
+                    profile=profile,
+                    equipment_report=equipment_report,
+                )
+                written = write_review_dossier(
+                    args.output,
+                    building,
+                    result,
+                    equipment,
+                    flow_routes,
+                    facility_report,
+                    profile,
+                    source=source,
+                )
+            except (OSError, ValueError, KeyError, RuntimeError) as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
+                return 2
+            print(f"{source.name}: " + " | ".join(str(path) for path in written.values()))
+            if not facility_report.ok:
+                print(
+                    f"WARNING: {source.name} is not a fully accepted variant; "
+                    "the dossier records its open coordination issues",
+                    file=sys.stderr,
+                )
+        return 0
+
     if args.command == "check-building":
         try:
             building, result, equipment = load_building_result(args.input)
