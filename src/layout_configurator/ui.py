@@ -181,6 +181,9 @@ class FacilityReviewSession:
             managed_issues = self._current_issue_records()
             facility = self.facility_report.to_dict()
             facility["issues"] = managed_issues
+            # The plan, the issue list and the badge all read these counts, so
+            # closing or reopening a finding moves the three surfaces together.
+            resolved_count = sum(item.get("status") == "RESOLVED" for item in managed_issues)
             return {
                 "mode": "facility-review",
                 "read_only": True,
@@ -216,8 +219,15 @@ class FacilityReviewSession:
                 "openings": [_opening_to_dict(opening) for opening in wall_plan.openings],
                 "windows": [_opening_to_dict(window) for window in wall_plan.windows],
                 "validation": {
+                    # The deterministic report stays the authority: resolving a
+                    # finding in the workflow does not make the geometry valid.
                     "ok": self.facility_report.ok,
                     "issues": managed_issues,
+                },
+                "issue_counts": {
+                    "open": len(managed_issues) - resolved_count,
+                    "resolved": resolved_count,
+                    "total": len(managed_issues),
                 },
                 "facility": facility,
                 "bcf": self.bcf_summary.to_dict() if self.bcf_summary else None,

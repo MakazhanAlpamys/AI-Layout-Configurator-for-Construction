@@ -393,6 +393,105 @@ class UiTests(unittest.TestCase):
                 thread.join(timeout=5)
 
 
+class IssueStatusConsistencyTests(unittest.TestCase):
+    """Closing and reopening a finding must move the plan, the list and the count together.
+
+    The badge used to count every issue regardless of status, and a finding
+    resolved in-session vanished from the plan instead of becoming a resolved
+    viewpoint, so the three surfaces disagreed with each other.
+    """
+
+    def _session(self, root):
+        building = BuildingIR.from_mapping(
+            {
+                "project_name": "Issue status review",
+                "boundary": {"width": 8000, "height": 6000},
+                "rooms": [
+                    {
+                        "id": "production",
+                        "type": "production",
+                        "target_area": 48,
+                        "min_area": 30,
+                        "max_area": 60,
+                        "min_width": 5000,
+                        "min_depth": 5000,
+                    }
+                ],
+                "equipment": [
+                    {
+                        "id": "machine",
+                        "type": "process_machine",
+                        "room_id": "production",
+                        "width_mm": 1000,
+                        "depth_mm": 1000,
+                        "clearance_mm": 300,
+                    }
+                ],
+                "flows": [],
+            }
+        )
+        result = solve_layouts(building.layout, variants=1, time_limit_seconds=5, seed=42)[0]
+        equipment = EquipmentLayoutResult(
+            (
+                EquipmentPlacement(
+                    equipment_id="machine",
+                    room_id="production",
+                    rect=Rect(7600, 5000, 1000, 1000),
+                    rotated=False,
+                ),
+            )
+        )
+        source = root / "building_01.json"
+        write_building_result(source, building, result, equipment)
+        initial = FacilityReviewSession.from_input(source, root)
+        write_bcf_package(root / "building_01.bcf", initial.facility_report, project_name="Issue status review", variant=1)
+        return FacilityReviewSession.from_input(source, root)
+
+    def test_counts_follow_resolve_and_reopen(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            session = self._session(root)
+            total = len(session.facility_report.issues)
+            self.assertGreater(total, 0)
+            issue_id = session.snapshot()["facility"]["issues"][0]["issue_id"]
+
+            counts = session.snapshot()["issue_counts"]
+            self.assertEqual(counts, {"open": total, "resolved": 0, "total": total})
+
+            session.apply_issue_payload(
+                {"action": "resolve", "issue_id": issue_id, "author": "qa", "comment": "checked"}
+            )
+            resolved = session.snapshot()
+            self.assertEqual(
+                resolved["issue_counts"], {"open": total - 1, "resolved": 1, "total": total}
+            )
+            # The deterministic report is the authority and still reports the
+            # geometry problem; only the workflow status moved.
+            self.assertFalse(resolved["validation"]["ok"])
+            statuses = {item["issue_id"]: item["status"] for item in resolved["facility"]["issues"]}
+            self.assertEqual(statuses[issue_id], "RESOLVED")
+
+            session.apply_issue_payload(
+                {"action": "reopen", "issue_id": issue_id, "author": "qa", "comment": "still there"}
+            )
+            reopened = session.snapshot()
+            self.assertEqual(
+                reopened["issue_counts"], {"open": total, "resolved": 0, "total": total}
+            )
+
+    def test_client_draws_resolved_current_issues_and_counts_open_only(self):
+        app_js = (
+            Path(__file__).resolve().parents[1] / "src" / "layout_configurator" / "static" / "app.js"
+        ).read_text(encoding="utf-8")
+        # The badge must not report a resolved finding as open.
+        self.assertNotIn("data.validation.issues.length} issue(s)", app_js)
+        self.assertIn("issue_counts", app_js)
+        # A current issue that was resolved becomes a resolved viewpoint rather
+        # than disappearing from the plan.
+        self.assertNotIn('issue.record_type !== "bcf"', app_js)
+        self.assertIn("resolvedIssues", app_js)
+
+
 class PlanProjectionUnitTests(unittest.TestCase):
     """Guard the SVG projection against mixing screen pixels and millimetres.
 

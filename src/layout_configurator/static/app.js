@@ -191,11 +191,25 @@ function flowLabelAnchor(flow, index, unitsPerPixel) {
   };
 }
 
+function resolvedFallbackLocation(issue, data) {
+  if (issue.equipment_id) {
+    const item = (data.equipment || []).find((entry) => entry.equipment_id === issue.equipment_id);
+    if (item) return { x: item.x + item.width / 2, y: item.y + item.depth / 2 };
+  }
+  if (issue.flow_id) {
+    const flow = (data.flows || []).find((entry) => entry.flow_id === issue.flow_id);
+    const points = flow?.points || [];
+    if (points.length) return points[Math.floor(points.length / 2)];
+  }
+  return null;
+}
+
 function drawFacilityOverlay(svg, data, height, unitsPerPixel) {
   if (data.mode !== "facility-review") return;
   const px = (value) => value * unitsPerPixel;
   const currentIssues = data.facility?.issues || data.validation?.issues || [];
   const openIssues = currentIssues.filter((issue) => issueStatus(issue) === "OPEN");
+  const resolvedIssues = currentIssues.filter((issue) => issueStatus(issue) === "RESOLVED");
   const structuralGrid = data.structural_grid;
   if (structuralGrid) {
     for (const [index, x] of (structuralGrid.axes_x_mm || []).entries()) {
@@ -252,9 +266,11 @@ function drawFacilityOverlay(svg, data, height, unitsPerPixel) {
       svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="${px(7)}"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
     }
   }
-  for (const issue of data.issue_history || []) {
-    if (issueStatus(issue) !== "RESOLVED" || issue.record_type !== "bcf") continue;
-    const location = issueLocation(issue);
+  const historyResolved = (data.issue_history || []).filter(
+    (issue) => issueStatus(issue) === "RESOLVED" && issue.record_type === "bcf",
+  );
+  for (const issue of [...resolvedIssues, ...historyResolved]) {
+    const location = issueLocation(issue) || resolvedFallbackLocation(issue, data);
     if (!location) continue;
     svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-resolved" cx="${location.x}" cy="${height - location.y}" r="${px(6)}"><title>${escapeHtml(issue.code || "Resolved issue")}</title></circle>`);
   }
@@ -493,8 +509,19 @@ function render(data) {
   document.body.classList.toggle("facility-review", review);
   $("#project-name").textContent = data.spec.project_name;
   const status = $("#status");
-  status.textContent = data.validation.ok ? "VALID" : `${data.validation.issues.length} issue(s)`;
-  status.classList.toggle("bad", !data.validation.ok);
+  const counts = data.issue_counts || {
+    open: data.validation.issues.length,
+    resolved: 0,
+    total: data.validation.issues.length,
+  };
+  status.textContent = data.validation.ok
+    ? "VALID"
+    : counts.resolved
+      ? `${counts.open} open · ${counts.resolved} resolved`
+      : `${counts.open} issue(s)`;
+  // Red only while something is still open; a fully triaged result stays marked
+  // as failing the deterministic check without shouting about it.
+  status.classList.toggle("bad", !data.validation.ok && counts.open > 0);
   $("#undo").disabled = review || !data.can_undo;
   $("#redo").disabled = review || !data.can_redo;
   $("#reset").disabled = review;
