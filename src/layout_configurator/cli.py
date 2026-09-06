@@ -71,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--output", "-o", type=Path, default=Path("out"))
     generate.add_argument("--variants", type=int, default=1)
     generate.add_argument("--time-limit", type=float, default=30)
+    generate.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
     generate.add_argument("--seed", type=int, default=42)
     generate.add_argument("--strict-input", action="store_true", help="require canonical LayoutIR input before solving")
     generate.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
@@ -84,7 +85,14 @@ def main(argv: list[str] | None = None) -> int:
         "--time-limit",
         type=float,
         default=60,
-        help="CP-SAT time limit in seconds; dense facility defaults to 60",
+        help="CP-SAT wall-clock limit in seconds; dense facility defaults to 60",
+    )
+    generate_building.add_argument(
+        "--deterministic-budget",
+        type=float,
+        default=None,
+        dest="deterministic_units",
+        help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine",
     )
     generate_building.add_argument("--seed", type=int, default=42)
     generate_building.add_argument(
@@ -166,6 +174,7 @@ def main(argv: list[str] | None = None) -> int:
     acceptance_matrix.add_argument("--output", "-o", type=Path, default=Path("out/facility_acceptance_matrix"))
     acceptance_matrix.add_argument("--variants", type=int, default=3)
     acceptance_matrix.add_argument("--time-limit", type=float, default=30)
+    acceptance_matrix.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
     acceptance_matrix.add_argument("--seeds", type=int, nargs="+", default=[1, 7, 42])
     acceptance_matrix.add_argument("--max-attempts", type=int, default=None)
     acceptance_matrix.add_argument("--equipment-retries", type=int, default=2)
@@ -241,7 +250,13 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "generate":
         try:
             spec = load_canonical_spec(args.spec, args.schema) if args.strict_input else load_spec(args.spec)
-            results = solve_layouts(spec, args.variants, args.time_limit, args.seed)
+            results = solve_layouts(
+                spec,
+                args.variants,
+                args.time_limit,
+                args.seed,
+                deterministic_units=args.deterministic_units,
+            )
         except (OSError, ValueError, InfeasibleLayout, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
@@ -316,6 +331,11 @@ def main(argv: list[str] | None = None) -> int:
                 str(args.variants),
                 "--time-limit",
                 str(args.time_limit),
+                *(
+                    ["--deterministic-budget", str(args.deterministic_units)]
+                    if args.deterministic_units is not None
+                    else []
+                ),
                 "--seed",
                 str(seed),
                 "--equipment-retries",
@@ -368,6 +388,8 @@ def main(argv: list[str] | None = None) -> int:
             "seeds": list(args.seeds),
             "search": {
                 "time_limit_seconds": args.time_limit,
+                "deterministic_units": args.deterministic_units,
+                "repeatable": args.deterministic_units is not None,
                 "max_attempts": args.max_attempts if args.max_attempts is not None else max(3, args.variants * 3),
                 "equipment_retries": args.equipment_retries,
             },
@@ -400,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
                 seed=args.seed,
                 max_attempts=args.max_attempts,
                 equipment_retries=args.equipment_retries,
+                deterministic_units=args.deterministic_units,
             )
         except InfeasibleFacilityGeneration as exc:
             args.output.mkdir(parents=True, exist_ok=True)

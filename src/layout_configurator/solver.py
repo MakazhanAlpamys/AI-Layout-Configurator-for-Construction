@@ -7,6 +7,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from .models import LayoutIR, LayoutResult, Rect
+from .search import configure_solver
 
 
 class InfeasibleLayout(RuntimeError):
@@ -35,6 +36,7 @@ def solve_layouts(
     forbidden_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
     minimum_adjacency_mm: float | None = None,
     equipment_fit_options: Mapping[str, Iterable[tuple[str, Iterable[tuple[float, float]]]]] | None = None,
+    deterministic_units: float | None = None,
 ) -> list[LayoutResult]:
     """Solve grid-snapped layouts with optional fixed rectangles and axes.
 
@@ -195,10 +197,12 @@ def solve_layouts(
     results: list[LayoutResult] = []
     for variant in range(1, variants + 1):
         solver = cp_model.CpSolver()
-        solver.parameters.max_time_in_seconds = float(time_limit_seconds)
-        solver.parameters.random_seed = seed + variant - 1
-        solver.parameters.num_search_workers = 1
-        solver.parameters.log_search_progress = False
+        configure_solver(
+            solver,
+            seed=seed + variant - 1,
+            time_limit_seconds=time_limit_seconds,
+            deterministic_units=deterministic_units,
+        )
         status = solver.Solve(model)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:

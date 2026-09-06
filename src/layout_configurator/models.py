@@ -334,13 +334,21 @@ class LayoutIR:
     def room_by_id(self) -> dict[str, RoomSpec]:
         return {room.id: room for room in self.rooms}
 
-    def relation_pairs(self, relation: str) -> set[tuple[str, str]]:
+    def relation_pairs(self, relation: str) -> tuple[tuple[str, str], ...]:
+        """Return deduplicated room pairs in a stable order.
+
+        The solver turns these into constraints, and CP-SAT explores a model in
+        the order it was built. Returning a set made that order depend on
+        Python's per-process string hash seed, so two runs of the same seed and
+        budget built different models and returned different layouts.
+        """
+
         pairs: set[tuple[str, str]] = set()
         for room in self.rooms:
             for other in getattr(room, relation):
                 if room.id != other:
                     pairs.add(tuple(sorted((room.id, other))))
-        return pairs
+        return tuple(sorted(pairs))
 
     def to_dict(self) -> dict[str, Any]:
         return {

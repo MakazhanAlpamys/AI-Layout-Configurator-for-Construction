@@ -247,6 +247,22 @@ semantic room/equipment/flow IDs, топологии маршрутов, IFC rea
 нужного набора. Лимит времени применяется к каждому запуску solver, а не ко всей
 матрице.
 
+Для воспроизводимого прогона есть отдельный режим: `--deterministic-budget UNITS`
+тратит машинно-независимый объём работы CP-SAT вместо секунд, фиксирует
+однопоточный поиск и снимает ограничение по реальному времени. Смысл
+`--time-limit` при этом не меняется — он остаётся бюджетом по часам.
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate-building `
+  examples\pharma_cleanroom_pilot.yaml --profile rules\pharma_cleanroom_pilot.yaml `
+  --output out\repeatable --variants 2 --max-attempts 9 --deterministic-budget 10 --seed 1
+```
+
+Единица бюджета — не секунда: на машине разработки ≈ 3.4 с, то есть 10 единиц
+примерно соответствуют прежним `--time-limit 30`. Калибровка, условие стабильного
+порядка модели и полный список ограничений —
+в [`docs/DETERMINISTIC_BUDGET.md`](docs/DETERMINISTIC_BUDGET.md).
+
 Для трёх внешних gate'ов принятый комплект проецируется в досье по ролям:
 
 ```powershell

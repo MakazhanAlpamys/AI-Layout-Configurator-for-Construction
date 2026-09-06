@@ -79,6 +79,7 @@ class FacilityGenerationResult:
     seed: int
     time_limit_seconds: float
     equipment_retries: int
+    deterministic_units: float | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -90,6 +91,10 @@ class FacilityGenerationResult:
             "rejected_candidates": [item.to_dict() for item in self.rejected],
             "seed": self.seed,
             "time_limit_seconds": self.time_limit_seconds,
+            # Without the budget mode a manifest cannot say whether the run it
+            # describes can be reproduced at all.
+            "deterministic_units": self.deterministic_units,
+            "repeatable": self.deterministic_units is not None,
             "equipment_retries": self.equipment_retries,
         }
 
@@ -111,6 +116,7 @@ def solve_feasible_facility_variants(
     seed: int,
     max_attempts: int | None = None,
     equipment_retries: int = 2,
+    deterministic_units: float | None = None,
 ) -> FacilityGenerationResult:
     """Return only candidates that pass every deterministic facility gate.
 
@@ -153,12 +159,14 @@ def solve_feasible_facility_variants(
                 else None
             ),
             equipment_fit_options=equipment_fit_options,
+            deterministic_units=deterministic_units,
         )
     except InfeasibleLayout as exc:
         generation = FacilityGenerationResult(
             requested_variants=variants, max_attempts=max_attempts,
             attempted_candidates=0, accepted=(), rejected=(), seed=seed,
             time_limit_seconds=time_limit_seconds, equipment_retries=equipment_retries,
+            deterministic_units=deterministic_units,
         )
         raise InfeasibleFacilityGeneration(
             f"The room solver returned no candidate within the configured search budget: {exc}",
@@ -193,6 +201,7 @@ def solve_feasible_facility_variants(
                     room_candidate,
                     time_limit_seconds=time_limit_seconds,
                     seed=equipment_seed,
+                    deterministic_units=deterministic_units,
                 )
                 equipment_report = validate_equipment_layout(prepared, room_candidate, packed)
                 if equipment_report.ok:
@@ -260,6 +269,7 @@ def solve_feasible_facility_variants(
         seed=seed,
         time_limit_seconds=time_limit_seconds,
         equipment_retries=equipment_retries,
+        deterministic_units=deterministic_units,
     )
     if len(accepted) != variants:
         detail = "; ".join(

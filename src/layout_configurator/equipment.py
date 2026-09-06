@@ -9,6 +9,7 @@ from shapely.geometry import box
 
 from .building import BuildingIR, EquipmentSpec
 from .models import LayoutResult, Rect
+from .search import configure_solver
 from .walls import build_wall_plan
 
 
@@ -94,6 +95,7 @@ def place_equipment(
     *,
     time_limit_seconds: float = 10.0,
     seed: int = 42,
+    deterministic_units: float | None = None,
 ) -> EquipmentLayoutResult:
     """Place equipment with a CP-SAT rectangle packer.
 
@@ -200,9 +202,12 @@ def place_equipment(
     model.Minimize(sum(position_terms) * 100 + sum(option_terms))
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = float(time_limit_seconds)
-    solver.parameters.random_seed = int(seed)
-    solver.parameters.num_search_workers = 1
+    configure_solver(
+        solver,
+        seed=seed,
+        time_limit_seconds=time_limit_seconds,
+        deterministic_units=deterministic_units,
+    )
     solver.parameters.log_search_progress = False
     status = solver.Solve(model)
     if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
