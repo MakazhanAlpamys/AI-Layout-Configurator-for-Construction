@@ -34,6 +34,11 @@ uv pip install --python .venv\Scripts\python.exe -e .
 .venv\Scripts\python.exe -m layout_configurator.cli generate examples/basic.yaml --output out --variants 2
 ```
 
+`.venv` создаётся заново на каждой машине: он содержит абсолютный путь к
+интерпретатору и при копировании рабочей копии на другой компьютер перестаёт
+запускаться. Каталог исключён из Git — просто удалите его и повторите две первые
+команды.
+
 Результаты появятся в `out/`: `layout_01.dxf`, `layout_01.pdf`,
 `layout_01.ifc`, JSON-снимок и `manifest.json`. Если в окружении уже есть обычный Python с `pip`, достаточно
 заменить две первые команды на `python -m pip install -e .`. То же самое можно
