@@ -1,4 +1,4 @@
-const state = { current: null, interaction: null, busy: false, issueActionBusy: false, selectedRoomId: null, selectedCoordinationTarget: null, selectedIssueId: null, issueFilter: "ALL" };
+const state = { current: null, interaction: null, busy: false, issueActionBusy: false, selectedRoomId: null, selectedCoordinationTarget: null, selectedIssueId: null, issueFilter: "ALL", view: null, pan: null };
 
 const $ = (selector) => document.querySelector(selector);
 const escapeHtml = (value) => String(value)
@@ -74,18 +74,67 @@ function projectionUnit(svg, width, height) {
   return Math.max(width / bounds.width, height / bounds.height);
 }
 
-function modelPoint(event) {
+function fullView(data) {
+  return { x: 0, y: 0, width: data.boundary.width, height: data.boundary.height };
+}
+
+function currentView(data) {
+  // The view is kept in SVG user units (millimetres, y down). A null view means
+  // "fit the whole boundary", which is also what a fresh load and Fit restore.
+  return state.view || fullView(data);
+}
+
+function svgPoint(event) {
+  // Inverse of the default xMidYMid meet fit of the current viewBox.
   const svg = $("#plan");
   const bounds = svg.getBoundingClientRect();
-  const width = state.current.boundary.width;
-  const height = state.current.boundary.height;
-  const scale = Math.min(bounds.width / width, bounds.height / height);
-  const offsetX = (bounds.width - width * scale) / 2;
-  const offsetY = (bounds.height - height * scale) / 2;
+  const view = currentView(state.current);
+  const scale = Math.min(bounds.width / view.width, bounds.height / view.height);
+  const offsetX = (bounds.width - view.width * scale) / 2;
+  const offsetY = (bounds.height - view.height * scale) / 2;
   return {
-    x: (event.clientX - bounds.left - offsetX) / scale,
-    y: height - (event.clientY - bounds.top - offsetY) / scale,
+    x: view.x + (event.clientX - bounds.left - offsetX) / scale,
+    y: view.y + (event.clientY - bounds.top - offsetY) / scale,
   };
+}
+
+function modelPoint(event) {
+  const point = svgPoint(event);
+  return { x: point.x, y: state.current.boundary.height - point.y };
+}
+
+function clampView(view, data) {
+  // Never zoom out past the whole boundary, and never so far in that a single
+  // millimetre grid step fills the screen.
+  const full = fullView(data);
+  const minimum = Math.max(500, Math.min(full.width, full.height) / 40);
+  const ratio = view.width / view.height;
+  let width = Math.min(full.width, Math.max(minimum, view.width));
+  let height = width / ratio;
+  if (height > full.height) {
+    height = full.height;
+    width = height * ratio;
+  }
+  if (width >= full.width - 1 && height >= full.height - 1) return null;
+  return {
+    x: Math.min(Math.max(view.x, 0), full.width - width),
+    y: Math.min(Math.max(view.y, 0), full.height - height),
+    width,
+    height,
+  };
+}
+
+function zoomAt(factor, center = null) {
+  if (!state.current) return;
+  const view = currentView(state.current);
+  const focus = center || { x: view.x + view.width / 2, y: view.y + view.height / 2 };
+  state.view = clampView({
+    x: focus.x - (focus.x - view.x) / factor,
+    y: focus.y - (focus.y - view.y) / factor,
+    width: view.width / factor,
+    height: view.height / factor,
+  }, state.current);
+  drawPlan(state.current);
 }
 
 function snap(value, grid) {
@@ -169,26 +218,112 @@ async function submitIssueAction(action) {
   }
 }
 
-function flowLabelAnchor(flow, index, unitsPerPixel) {
-  const px = (value) => value * unitsPerPixel;
-  const points = flow.points || [];
-  const middleIndex = Math.floor(points.length / 2);
-  const anchor = points[middleIndex] || points[0] || { x: 0, y: 0 };
-  const previous = points[Math.max(0, middleIndex - 1)] || anchor;
-  const following = points[Math.min(points.length - 1, middleIndex + 1)] || anchor;
-  const dx = Number(following.x) - Number(previous.x);
-  const dy = Number(following.y) - Number(previous.y);
-  const length = Math.hypot(dx, dy) || 1;
-  const side = index % 2 === 0 ? 1 : -1;
-  const offset = px(16) + (index % 3) * px(11);
-  return {
-    x: Number(anchor.x) - (dy / length) * offset * side,
-    y: Number(anchor.y) + (dx / length) * offset * side,
-    // Labels of routes that share a corridor sit on opposite sides; letting each
-    // run away from its own anchor keeps two long names from printing over
-    // each other.
-    side,
-  };
+function flowLabelAnchor(flow, fraction, side, offset) {
+  // A point at `fraction` of the route's length, pushed `offset` user units to
+  // one side of the segment it lies on.
+  const points = (flow.points || []).map((point) => ({ x: Number(point.x), y: Number(point.y) }));
+  if (!points.length) return { x: 0, y: 0, side };
+  const lengths = [];
+  let total = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    const length = Math.hypot(points[i].x - points[i - 1].x, points[i].y - points[i - 1].y);
+    lengths.push(length);
+    total += length;
+  }
+  if (!total) return { x: points[0].x, y: points[0].y + offset * side, side };
+  let remaining = total * fraction;
+  for (let i = 1; i < points.length; i += 1) {
+    const length = lengths[i - 1];
+    if (remaining > length && i < points.length - 1) {
+      remaining -= length;
+      continue;
+    }
+    const t = length ? Math.min(1, remaining / length) : 0;
+    const dx = (points[i].x - points[i - 1].x) / (length || 1);
+    const dy = (points[i].y - points[i - 1].y) / (length || 1);
+    return {
+      x: points[i - 1].x + dx * length * t - dy * offset * side,
+      y: points[i - 1].y + dy * length * t + dx * offset * side,
+      side,
+    };
+  }
+  return { x: points[0].x, y: points[0].y, side };
+}
+
+function boxesOverlap(a, b) {
+  return a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2;
+}
+
+function overlapArea(box, others) {
+  let area = 0;
+  for (const other of others) {
+    if (!boxesOverlap(box, other)) continue;
+    area += (Math.min(box.x2, other.x2) - Math.max(box.x1, other.x1))
+      * (Math.min(box.y2, other.y2) - Math.max(box.y1, other.y1));
+  }
+  return area;
+}
+
+function placeFlowLabel(flow, label, index, context) {
+  // Greedy collision avoidance: walk candidate positions along the route, on
+  // both sides and at two distances, and keep the first whose estimated text
+  // box stays on the sheet and clear of labels that are already placed. When
+  // nothing is clear the candidate with the least overlap wins, so a dense plan
+  // degrades gracefully instead of stacking every label on the midpoint.
+  const { px, height, width, placed, obstacles } = context;
+  const textWidth = label.length * px(11) * 0.58;
+  const textHeight = px(13);
+  const pad = px(3);
+  const fractions = [0.5, 0.35, 0.65, 0.2, 0.8, 0.1, 0.9];
+  const preferred = index % 2 === 0 ? 1 : -1;
+  let best = null;
+  for (const fraction of fractions) {
+    for (const side of [preferred, -preferred]) {
+      for (const offset of [px(14), px(30)]) {
+        const anchor = flowLabelAnchor(flow, fraction, side, offset);
+        const baseline = height - anchor.y + px(4);
+        for (const textAnchor of side > 0 ? ["start", "end"] : ["end", "start"]) {
+          const x1 = textAnchor === "start" ? anchor.x : anchor.x - textWidth;
+          const box = { x1: x1 - pad, x2: x1 + textWidth + pad, y1: baseline - textHeight - pad, y2: baseline + pad };
+          if (box.x1 < 0 || box.x2 > width || box.y1 < 0 || box.y2 > height) continue;
+          const labelOverlap = overlapArea(box, placed);
+          const score = labelOverlap * 10 + overlapArea(box, obstacles);
+          if (!best || score < best.score) best = { x: anchor.x, y: baseline, textAnchor, box, score };
+          if (score === 0) return best;
+        }
+      }
+    }
+  }
+  if (best) return best;
+  // A route hugging a tiny sheet: keep the old midpoint behaviour.
+  const anchor = flowLabelAnchor(flow, 0.5, preferred, px(14));
+  const baseline = height - anchor.y + px(4);
+  return { x: anchor.x, y: baseline, textAnchor: "start", box: { x1: anchor.x, x2: anchor.x + textWidth, y1: baseline - textHeight, y2: baseline }, score: 0 };
+}
+
+function issueRouteMatch(issue, flow) {
+  // Route findings name their own endpoints ("flow (from → to)"), so a finding
+  // belongs to exactly one route of a multi-route flow when that text matches.
+  const message = `${issue.title || ""} ${issue.message || ""}`;
+  return message.includes(`${flow.from_id} → ${flow.to_id}`);
+}
+
+function routeConflicts(flow, flows, openIssues) {
+  const flowIssues = openIssues.filter((issue) => issue.flow_id === flow.flow_id);
+  const siblings = flows.filter((entry) => entry.flow_id === flow.flow_id);
+  if (siblings.length < 2) return flowIssues;
+  return flowIssues.filter((issue) => {
+    if (issueRouteMatch(issue, flow)) return true;
+    // A flow-level finding names no route; it is drawn once, on the first one.
+    return !siblings.some((sibling) => issueRouteMatch(issue, sibling)) && siblings[0] === flow;
+  });
+}
+
+function flowTypesInUse(data) {
+  const types = new Set();
+  for (const flow of data.flow_declarations || []) types.add(flowClass(flow.type));
+  for (const flow of data.flows || []) types.add(flowClass(flow.type));
+  return [...types].sort();
 }
 
 function resolvedFallbackLocation(issue, data) {
@@ -221,21 +356,19 @@ function drawFacilityOverlay(svg, data, height, unitsPerPixel) {
       svg.insertAdjacentHTML("beforeend", `<line class="structural-axis" x1="0" y1="${height - y}" x2="${data.boundary.width}" y2="${height - y}"></line><text class="structural-label" x="${px(10)}" y="${height - y - px(4)}">${escapeHtml(label)}</text>`);
     }
   }
-  for (const [index, flow] of (data.flows || []).entries()) {
+  const flows = data.flows || [];
+  const labels = [];
+  const drawnMarkers = new Set();
+  for (const flow of flows) {
     const points = (flow.points || []).map((point) => `${point.x},${height - point.y}`).join(" ");
     if (!points) continue;
     const labelPoint = flow.points[Math.floor(flow.points.length / 2)] || flow.points[0];
-    const labelAnchor = flowLabelAnchor(flow, index, unitsPerPixel);
-    const label = `${flow.flow_id} · ${flow.type || "flow"}`;
-    // Running the label away from its anchor separates routes that share a
-    // corridor, but near an edge that direction would push the text off the
-    // sheet, so fall back to the side that still has room.
-    const estimatedWidth = label.length * px(11) * 0.55;
-    let textAnchor = labelAnchor.side > 0 ? "start" : "end";
-    if (textAnchor === "end" && labelAnchor.x - estimatedWidth < 0) textAnchor = "start";
-    else if (textAnchor === "start" && labelAnchor.x + estimatedWidth > data.boundary.width) textAnchor = "end";
+    const multiRoute = flows.filter((entry) => entry.flow_id === flow.flow_id).length > 1;
+    const routeName = multiRoute ? ` (${flow.from_id} → ${flow.to_id})` : "";
     const selected = state.selectedCoordinationTarget?.kind === "flow" && state.selectedCoordinationTarget.id === flow.flow_id;
-    const conflicts = openIssues.filter((issue) => issue.flow_id === flow.flow_id);
+    const conflicts = routeConflicts(flow, flows, openIssues);
+    const label = `${flow.flow_id}${routeName} · ${flow.type || "flow"}${conflicts.length ? ` · ${conflicts.length} conflict` : ""}`;
+    labels.push({ flow, label });
     const conflictClass = conflicts.length ? " conflict" : "";
     // The corridor keeps the declared clear width in millimetres so a reviewer
     // sees the real envelope; the centreline is a hairline drawn over it.
@@ -244,11 +377,32 @@ function drawFacilityOverlay(svg, data, height, unitsPerPixel) {
     if (clearWidth > 0) {
       svg.insertAdjacentHTML("beforeend", `<polyline class="flow-corridor flow-${typeClass}${conflictClass}${selected ? " selected" : ""}" style="stroke-width:${clearWidth}" points="${points}"></polyline>`);
     }
-    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${typeClass}${conflictClass}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline><text class="flow-label" style="text-anchor:${textAnchor}" x="${labelAnchor.x}" y="${height - labelAnchor.y - px(6)}">${escapeHtml(label)}${conflicts.length ? ` · ${conflicts.length} conflict` : ""}</text>`);
+    svg.insertAdjacentHTML("beforeend", `<polyline class="flow-route flow-${typeClass}${conflictClass}${selected ? " selected" : ""}" points="${points}" data-flow-id="${escapeHtml(flow.flow_id)}"></polyline>`);
     for (const issue of conflicts) {
+      // One finding, one marker, even when several routes share its flow.
+      const key = issue.issue_id || `${issue.code}:${issue.flow_id}:${issue.message}`;
+      if (drawnMarkers.has(key)) continue;
+      drawnMarkers.add(key);
       const location = issueLocation(issue) || labelPoint;
-      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" cx="${location.x}" cy="${height - location.y}" r="${px(7)}"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
+      svg.insertAdjacentHTML("beforeend", `<circle class="issue-marker issue-marker-open" data-issue-marker="${escapeHtml(key)}" cx="${location.x}" cy="${height - location.y}" r="${px(7)}"><title>${escapeHtml(issue.code || "Open issue")}</title></circle>`);
     }
+  }
+  // Labels go on top of every route and are placed after all of them, so each
+  // one can avoid the labels already on the sheet and the room names.
+  const obstacles = [...svg.querySelectorAll("text[data-label-room]")].map((text) => {
+    try {
+      const box = text.getBBox();
+      return { x1: box.x, x2: box.x + box.width, y1: box.y, y2: box.y + box.height };
+    } catch (_) {
+      return null;
+    }
+  }).filter((box) => box && box.x2 > box.x1);
+  const placed = [];
+  const context = { px, height, width: data.boundary.width, placed, obstacles };
+  for (const [index, { flow, label }] of labels.entries()) {
+    const position = placeFlowLabel(flow, label, index, context);
+    placed.push(position.box);
+    svg.insertAdjacentHTML("beforeend", `<text class="flow-label" data-flow-label="${escapeHtml(flow.flow_id)}" style="text-anchor:${position.textAnchor}" x="${position.x}" y="${position.y}">${escapeHtml(label)}</text>`);
   }
   for (const item of data.equipment || []) {
     const clearance = item.clearance;
@@ -308,7 +462,9 @@ function drawPlan(data, preview = null) {
   const width = data.boundary.width;
   const height = data.boundary.height;
   const grid = Number(data.spec.grid_mm) || 100;
-  const unitsPerPixel = projectionUnit(svg, width, height);
+  if (state.view) state.view = clampView(state.view, data);
+  const view = currentView(data);
+  const unitsPerPixel = projectionUnit(svg, view.width, view.height);
   const px = (value) => value * unitsPerPixel;
   state.unitsPerPixel = unitsPerPixel;
   // CSS sizes text and label strokes as calc(var(--u) * Npx), so a millimetre
@@ -317,7 +473,8 @@ function drawPlan(data, preview = null) {
   // Keep the reference grid at least nine pixels apart; the raw 100 mm step
   // collapses into a solid field on a facility-sized boundary.
   const gridStep = Math.max(grid, Math.ceil(px(9) / grid) * grid);
-  svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  svg.setAttribute("viewBox", `${view.x} ${view.y} ${view.width} ${view.height}`);
+  $("#zoom-fit").disabled = !state.view;
   svg.innerHTML = `<defs><pattern id="grid-pattern" width="${gridStep}" height="${gridStep}" patternUnits="userSpaceOnUse"><path class="preview-grid" d="M ${gridStep} 0 L 0 0 0 ${gridStep}"></path></pattern></defs><rect x="0" y="0" width="${width}" height="${height}" fill="url(#grid-pattern)"></rect><rect class="boundary" x="0" y="0" width="${width}" height="${height}"></rect>`;
   for (const room of data.rooms) {
     const r = preview && preview.roomId === room.id ? preview.rect : room.rect;
@@ -365,11 +522,23 @@ function drawPlan(data, preview = null) {
   }
 }
 
+function startPan(event) {
+  state.pan = { start: svgPoint(event), view: { ...currentView(state.current) }, moved: false };
+  $("#plan").setPointerCapture(event.pointerId);
+  $("#plan").classList.add("panning");
+  event.preventDefault();
+}
+
 function canvasPointerDown(event) {
-  if (!state.current || state.busy || state.current.mode === "facility-review") return;
+  if (!state.current || state.busy) return;
+  const review = state.current.mode === "facility-review";
   const handle = event.target.closest("[data-resize-room]");
   const roomNode = event.target.closest("[data-room-id]");
-  if (!roomNode) return;
+  // Rooms are draggable only in the editor; everywhere else a drag pans.
+  if (review || !roomNode || event.button === 1) {
+    if (state.view) startPan(event);
+    return;
+  }
   const roomId = handle ? handle.dataset.resizeRoom : roomNode.dataset.roomId;
   const room = state.current.rooms.find((item) => item.id === roomId);
   if (!room) return;
@@ -387,6 +556,21 @@ function canvasPointerDown(event) {
 }
 
 function canvasPointerMove(event) {
+  if (state.pan) {
+    // The view moves with the pointer, so measure against the view the pan
+    // started from rather than the one being dragged.
+    const saved = state.view;
+    state.view = state.pan.view;
+    const point = svgPoint(event);
+    state.view = saved;
+    const dx = point.x - state.pan.start.x;
+    const dy = point.y - state.pan.start.y;
+    state.pan.moved = state.pan.moved || Math.abs(dx) > 0 || Math.abs(dy) > 0;
+    state.view = clampView({ ...state.pan.view, x: state.pan.view.x - dx, y: state.pan.view.y - dy }, state.current);
+    drawPlan(state.current);
+    event.preventDefault();
+    return;
+  }
   const interaction = state.interaction;
   if (!interaction) return;
   const point = modelPoint(event);
@@ -411,7 +595,16 @@ function canvasPointerMove(event) {
   event.preventDefault();
 }
 
+function endPan(event) {
+  if (!state.pan) return false;
+  state.pan = null;
+  $("#plan").classList.remove("panning");
+  try { $("#plan").releasePointerCapture(event.pointerId); } catch (_) { /* already released */ }
+  return true;
+}
+
 async function canvasPointerUp(event) {
+  if (endPan(event)) return;
   const interaction = state.interaction;
   if (!interaction) return;
   state.interaction = null;
@@ -443,6 +636,7 @@ async function canvasPointerUp(event) {
 }
 
 function canvasPointerCancel(event) {
+  if (endPan(event)) return;
   if (!state.interaction) return;
   state.interaction = null;
   try { $("#plan").releasePointerCapture(event.pointerId); } catch (_) { /* no-op */ }
@@ -472,7 +666,7 @@ function renderFacilityReview(data) {
   const routedCount = (data.flows || []).length;
   const passCount = checks.filter((check) => check.status === "PASS").length;
   const profile = facility.profile || {};
-  $("#summary").innerHTML = `<dt>Rooms</dt><dd>${data.rooms.length}</dd><dt>Equipment</dt><dd>${equipmentCount}</dd><dt>Flow declarations</dt><dd>${flowCount} / ${routedCount} routed</dd><dt>Checks</dt><dd>${passCount} / ${checks.length} pass</dd><dt>Issues</dt><dd><span class="status-open">${openCount} open</span> · <span class="status-resolved">${resolvedCount} resolved</span></dd><dt>Profile</dt><dd>${escapeHtml(profile.domain || "facility")}</dd><dt>Sheet</dt><dd>${escapeHtml((profile.drawing || {}).sheet_id || "A-101")}</dd>`;
+  $("#summary").innerHTML = `<dt>Rooms</dt><dd>${data.rooms.length}</dd><dt>Equipment</dt><dd>${equipmentCount}</dd><dt>Flows declared</dt><dd>${flowCount}</dd><dt>Derived routes</dt><dd>${routedCount}</dd><dt>Checks</dt><dd>${passCount} / ${checks.length} pass</dd><dt>Issues</dt><dd><span class="status-open">${openCount} open</span> · <span class="status-resolved">${resolvedCount} resolved</span></dd><dt>Profile</dt><dd>${escapeHtml(profile.domain || "facility")}</dd><dt>Sheet</dt><dd>${escapeHtml((profile.drawing || {}).sheet_id || "A-101")}</dd>`;
   $("#issue-controls").hidden = false;
   for (const button of document.querySelectorAll("[data-issue-filter]")) {
     button.classList.toggle("active", button.dataset.issueFilter === state.issueFilter);
@@ -492,7 +686,8 @@ function renderFacilityReview(data) {
     : "";
   $("#journal").innerHTML = `<div class="journal-title">Review mode</div><p class="journal-empty">Read-only projection. Edit the BuildingIR program and regenerate the bundle to create a new revision.</p>`;
   $("#files").innerHTML = data.files.map((file) => `<a href="${file.url}" download>${escapeHtml(file.name)}</a>`).join("");
-  $("#legend").innerHTML = `<span><i class="swatch flow-people"></i> people flow</span><span><i class="swatch flow-material"></i> material flow</span><span><i class="swatch equipment"></i> equipment</span><span><i class="swatch clearance"></i> service clearance</span><span><i class="swatch entry"></i> external entry</span>`;
+  const flowLegend = flowTypesInUse(data).map((type) => `<span><i class="swatch flow-${escapeHtml(type)}"></i> ${escapeHtml(type.replaceAll("_", " "))} flow</span>`).join("");
+  $("#legend").innerHTML = `${flowLegend}<span><i class="swatch equipment"></i> equipment</span><span><i class="swatch clearance"></i> service clearance</span><span><i class="swatch entry"></i> external entry</span><span><i class="swatch issue-open"></i> open issue</span><span><i class="swatch issue-resolved"></i> resolved issue</span>`;
 }
 
 function selectCoordinationIssue(issueId) {
@@ -522,6 +717,14 @@ function render(data) {
   // Red only while something is still open; a fully triaged result stays marked
   // as failing the deterministic check without shouting about it.
   status.classList.toggle("bad", !data.validation.ok && counts.open > 0);
+  // A reviewer gets a review surface, not a disabled editor (VQ-07).
+  $("#mode-eyebrow").textContent = review ? "FACILITY REVIEW · READ-ONLY" : "SOLVER-FIRST EDITOR";
+  $("#mode-title").textContent = review ? "Facility review" : "Редактор планировки";
+  $("#mode-subtitle").textContent = review
+    ? "Deterministic checks, derived flow routes and coordination issues of a generated BuildingIR bundle. Geometry cannot be edited here."
+    : "Браузер отправляет typed-команды; геометрию пересчитывает CP-SAT.";
+  document.title = review ? `Facility review — ${data.spec.project_name}` : "Layout Configurator — editor";
+  $("#edit-toolbar").hidden = review;
   $("#undo").disabled = review || !data.can_undo;
   $("#redo").disabled = review || !data.can_redo;
   $("#reset").disabled = review;
@@ -529,8 +732,8 @@ function render(data) {
   $("#issue-controls").hidden = !review;
   $("#issue-actions").hidden = !review;
   $(".canvas-help").textContent = review
-    ? "Read-only facility review: flows, equipment footprints, service clearances and deterministic checks are projected from the generated BuildingIR bundle."
-    : "Перетащите комнату или resize-маркер; отпускание отправляет одну typed-команду.";
+    ? "Read-only facility review: flows, equipment footprints, service clearances and deterministic checks are projected from the generated BuildingIR bundle. Wheel zooms, drag pans, double-click fits."
+    : "Перетащите комнату или resize-маркер; отпускание отправляет одну typed-команду. Колесо — масштаб, перетаскивание пустого места — панорама, двойной клик — весь план.";
   drawPlan(data);
   if (review) {
     renderFacilityReview(data);
@@ -602,6 +805,23 @@ $("#plan").addEventListener("pointerdown", canvasPointerDown);
 $("#plan").addEventListener("pointermove", canvasPointerMove);
 $("#plan").addEventListener("pointerup", canvasPointerUp);
 $("#plan").addEventListener("pointercancel", canvasPointerCancel);
+$("#plan").addEventListener("wheel", (event) => {
+  if (!state.current || state.interaction) return;
+  event.preventDefault();
+  const factor = Math.exp(-Math.max(-300, Math.min(300, event.deltaY)) / 600);
+  zoomAt(factor, svgPoint(event));
+}, { passive: false });
+$("#plan").addEventListener("dblclick", () => {
+  if (!state.current || state.interaction) return;
+  state.view = null;
+  drawPlan(state.current);
+});
+$("#zoom-in").addEventListener("click", () => zoomAt(1.5));
+$("#zoom-out").addEventListener("click", () => zoomAt(1 / 1.5));
+$("#zoom-fit").addEventListener("click", () => {
+  state.view = null;
+  if (state.current) drawPlan(state.current);
+});
 $("#command-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const error = $("#command-error");

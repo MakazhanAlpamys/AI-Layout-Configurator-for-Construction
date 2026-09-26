@@ -111,7 +111,7 @@ def write_building_result(
     *,
     equipment_report: EquipmentValidationReport | None = None,
     facility_report: FacilityValidationReport | None = None,
-    generation_evidence: dict[str, int] | None = None,
+    generation_evidence: dict[str, object] | None = None,
 ) -> None:
     """Write room and equipment solver outputs without converting to drawing data."""
 

@@ -752,6 +752,13 @@ class _UiHandler(BaseHTTPRequestHandler):
             name = route[1:]
             self._send_text(200, _asset(name), ASSET_TYPES[name])
             return
+        if route == "/favicon.ico":
+            # index.html carries an inline icon; this only stops legacy clients
+            # from logging a 404 on every page load.
+            self.send_response(204)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if route == "/api/health":
             self._send_json(200, {"ok": True})
             return

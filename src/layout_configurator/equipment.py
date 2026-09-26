@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 import math
 
@@ -89,6 +90,64 @@ class EquipmentValidationReport:
         return {"ok": self.ok, "issues": [issue.to_dict() for issue in self.issues]}
 
 
+def flow_portal_offset_mm(minimum_clear_width_mm: float, wall_thickness_mm: float) -> float:
+    """Distance from a door centreline to where a routed flow turns inside a room.
+
+    Flow routing and equipment placement share this value: the router starts
+    each in-room leg here, and the packer keeps equipment clearances out of the
+    approach it defines.
+    """
+
+    return max(500.0, minimum_clear_width_mm / 2 + wall_thickness_mm / 2 + 50.0)
+
+
+def door_approach_zones(building: BuildingIR, layout: LayoutResult) -> dict[str, tuple[Rect, ...]]:
+    """Return, per room, the door approaches that routed flows need kept clear.
+
+    Each generated door gets a rectangle on both sides of the wall: as wide as
+    the door or the widest required flow corridor, and deep enough to hold the
+    corridor up to the point where the router turns inside the room. A service
+    clearance placed over that rectangle leaves the router no way into the
+    room, which is what rejected most pilot candidates before the packer knew
+    about doors. Buildings without required flows get no zones.
+    """
+
+    clear_width = max(
+        (flow.minimum_clear_width_mm for flow in building.flows if flow.required),
+        default=0.0,
+    )
+    if clear_width <= 0:
+        return {}
+    wall = building.layout.wall_thickness_mm
+    # Same small numerical margin the router keeps around obstacles.
+    margin = 10.0
+    depth = flow_portal_offset_mm(clear_width, wall) + clear_width / 2 + margin
+    zones: dict[str, list[Rect]] = {}
+    for opening in build_wall_plan(building.layout, layout).openings:
+        half_span = max(opening.width, clear_width) / 2 + margin
+        center = (opening.start + opening.end) / 2
+        for room_id in (opening.room_a, opening.room_b):
+            room = layout.placements.get(room_id)
+            if room is None:
+                continue
+            if opening.orientation == "vertical":
+                if abs(opening.fixed - room.x) <= 1e-6:
+                    zone = Rect(room.x, center - half_span, depth, 2 * half_span)
+                elif abs(opening.fixed - room.right) <= 1e-6:
+                    zone = Rect(room.right - depth, center - half_span, depth, 2 * half_span)
+                else:
+                    continue
+            else:
+                if abs(opening.fixed - room.y) <= 1e-6:
+                    zone = Rect(center - half_span, room.y, 2 * half_span, depth)
+                elif abs(opening.fixed - room.top) <= 1e-6:
+                    zone = Rect(center - half_span, room.top - depth, 2 * half_span, depth)
+                else:
+                    continue
+            zones.setdefault(room_id, []).append(zone)
+    return {room_id: tuple(items) for room_id, items in sorted(zones.items())}
+
+
 def place_equipment(
     building: BuildingIR,
     layout: LayoutResult,
@@ -96,6 +155,7 @@ def place_equipment(
     time_limit_seconds: float = 10.0,
     seed: int = 42,
     deterministic_units: float | None = None,
+    keep_out: Mapping[str, Sequence[Rect]] | None = None,
 ) -> EquipmentLayoutResult:
     """Place equipment with a CP-SAT rectangle packer.
 
@@ -104,6 +164,10 @@ def place_equipment(
     packs its *clearance rectangle* with ``NoOverlap2D``.  Equipment coordinates
     remain solver output; the independent validator below is still the final
     authority for the returned result.
+
+    ``keep_out`` maps a room to rectangles that no free-standing clearance may
+    overlap, typically :func:`door_approach_zones`. Anchored equipment keeps
+    its declared position and ignores them.
     """
 
     if time_limit_seconds <= 0:
@@ -154,6 +218,17 @@ def place_equipment(
                 clearance_y_start = y - _solver_units(bottom, scale)
                 clearance_x_end = clearance_x_start + clearance_width
                 clearance_y_end = clearance_y_start + clearance_height
+                if item.anchor_side is None:
+                    for zone_index, zone in enumerate((keep_out or {}).get(room_id, ())):
+                        # Clearance must lie wholly left of, right of, below or
+                        # above the zone; the disjunction binds only when this
+                        # room/orientation is the chosen option.
+                        sides = [model.NewBoolVar(f"equipment_{item.id}_{room_id}_{int(rotated)}_keepout_{zone_index}_{side}") for side in range(4)]
+                        model.Add(clearance_x_end <= _floor_solver_units(zone.x, scale)).OnlyEnforceIf(sides[0])
+                        model.Add(clearance_x_start >= _ceil_solver_units(zone.right, scale)).OnlyEnforceIf(sides[1])
+                        model.Add(clearance_y_end <= _floor_solver_units(zone.y, scale)).OnlyEnforceIf(sides[2])
+                        model.Add(clearance_y_start >= _ceil_solver_units(zone.top, scale)).OnlyEnforceIf(sides[3])
+                        model.AddBoolOr(sides).OnlyEnforceIf(choice)
                 clearance_x_intervals.append(
                     model.NewOptionalIntervalVar(
                         clearance_x_start,
@@ -236,6 +311,52 @@ def place_equipment(
         details = "; ".join(issue.message for issue in report.issues)
         raise EquipmentPlacementError(f"Equipment placement failed independent validation: {details}")
     return result
+
+
+def place_equipment_clear_of_doors(
+    building: BuildingIR,
+    layout: LayoutResult,
+    *,
+    time_limit_seconds: float = 10.0,
+    seed: int = 42,
+    deterministic_units: float | None = None,
+) -> tuple[EquipmentLayoutResult, tuple[str, ...]]:
+    """Pack equipment keeping door approaches clear wherever a room allows it.
+
+    Returns the placement and the rooms whose approaches had to be given up.
+    A room too small to host its equipment with every approach clear keeps the
+    unconstrained packing, so this never fails where :func:`place_equipment`
+    would have succeeded; the flow validator still judges the result.
+    """
+
+    zones = door_approach_zones(building, layout)
+    hosting = {room_id for item in building.equipment for room_id in _candidate_rooms(building, item)}
+    zones = {room_id: items for room_id, items in zones.items() if room_id in hosting}
+    options = dict(
+        time_limit_seconds=time_limit_seconds,
+        seed=seed,
+        deterministic_units=deterministic_units,
+    )
+    if not zones:
+        return place_equipment(building, layout, **options), ()
+    try:
+        return place_equipment(building, layout, keep_out=zones, **options), ()
+    except EquipmentPlacementError:
+        pass
+    feasible: dict[str, tuple[Rect, ...]] = {}
+    for room_id, items in zones.items():
+        try:
+            place_equipment(building, layout, keep_out={room_id: items}, **options)
+        except EquipmentPlacementError:
+            continue
+        feasible[room_id] = items
+    dropped = tuple(sorted(set(zones) - set(feasible)))
+    if feasible:
+        try:
+            return place_equipment(building, layout, keep_out=feasible, **options), dropped
+        except EquipmentPlacementError:
+            pass
+    return place_equipment(building, layout, **options), tuple(sorted(zones))
 
 
 def validate_equipment_layout(

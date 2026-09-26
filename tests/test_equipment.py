@@ -11,8 +11,11 @@ from layout_configurator.cli import main
 from layout_configurator.equipment import (
     EquipmentLayoutResult,
     EquipmentPlacement,
+    door_approach_zones,
     place_equipment,
+    place_equipment_clear_of_doors,
     EquipmentPlacementError,
+    clearance_rect,
     validate_equipment_layout,
 )
 from layout_configurator.models import LayoutResult, Rect
@@ -305,7 +308,88 @@ class EquipmentTests(unittest.TestCase):
             self.assertTrue(qa_report.ok, qa_report.to_dict())
 
 
-def _building(equipment, *, room_width=6000, room_height=5000, zones=()):
+MACHINE = {
+    "id": "machine",
+    "type": "machine",
+    "room_id": "production",
+    "width_mm": 2000,
+    "depth_mm": 1000,
+    "clearance_front_mm": 1200,
+    "clearance_left_mm": 500,
+    "clearance_right_mm": 500,
+    "rotation_allowed": False,
+}
+TRANSFER = {
+    "id": "transfer",
+    "type": "material",
+    "from_ids": ["production"],
+    "to_ids": ["storage"],
+    "minimum_clear_width_mm": 1200,
+}
+
+
+def _overlaps(a, b):
+    return a.x < b.right and b.x < a.right and a.y < b.top and b.y < a.top
+
+
+class DoorApproachTests(unittest.TestCase):
+    """The packer must not park a service clearance over a door approach.
+
+    It used to minimise x + y with no notion of doors, so on the pharma pilot
+    the mixer clearance covered the preparation door in 7 of 9 candidates and
+    the flow router had no way into the room.
+    """
+
+    def test_keep_out_moves_clearance_off_the_zone(self):
+        building = _building([MACHINE])
+        zone = Rect(0, 0, 3500, 2500)
+        unconstrained = place_equipment(building, _rooms())
+        spec = building.equipment[0]
+        self.assertTrue(_overlaps(clearance_rect(spec, unconstrained.placements[0].rect), zone))
+
+        constrained = place_equipment(building, _rooms(), keep_out={"production": (zone,)})
+        self.assertFalse(_overlaps(clearance_rect(spec, constrained.placements[0].rect), zone))
+        self.assertTrue(validate_equipment_layout(building, _rooms(), constrained).ok)
+
+    def test_keep_out_that_cannot_be_met_is_infeasible(self):
+        building = _building([MACHINE])
+        with self.assertRaises(EquipmentPlacementError):
+            place_equipment(building, _rooms(), keep_out={"production": (Rect(0, 0, 6000, 5000),)})
+
+    def test_zones_follow_generated_doors_only_when_flows_exist(self):
+        self.assertEqual(door_approach_zones(_building([MACHINE]), _rooms()), {})
+        building = _building([MACHINE], flows=[TRANSFER]).with_required_flow_opening_width()
+        zones = door_approach_zones(building, _rooms())
+        self.assertEqual(set(zones), {"production", "storage"})
+        production = _rooms().placements["production"]
+        (zone,) = zones["production"]
+        # The shared wall is the right side of production; the approach runs
+        # inward from it far enough to hold the corridor past the router's turn.
+        self.assertAlmostEqual(zone.right, production.right)
+        self.assertGreaterEqual(zone.width, 750 + 600)
+        self.assertGreaterEqual(zone.height, 1200)
+        (storage_zone,) = zones["storage"]
+        self.assertAlmostEqual(storage_zone.x, production.right)
+
+    def test_clear_of_doors_keeps_approach_or_reports_the_room_it_gave_up(self):
+        building = _building([MACHINE], flows=[TRANSFER]).with_required_flow_opening_width()
+        spec = building.equipment[0]
+        placement, dropped = place_equipment_clear_of_doors(building, _rooms())
+        self.assertEqual(dropped, ())
+        for zone in door_approach_zones(building, _rooms())["production"]:
+            self.assertFalse(_overlaps(clearance_rect(spec, placement.placements[0].rect), zone))
+
+        # A room that only just fits its machine cannot also keep the approach
+        # clear: packing still succeeds and the exception is reported.
+        small = _building([MACHINE], room_width=3200, room_height=3000, flows=[TRANSFER]).with_required_flow_opening_width()
+        rooms = _rooms(room_width=3200, room_height=3000)
+        self.assertIn("production", door_approach_zones(small, rooms))
+        placement, dropped = place_equipment_clear_of_doors(small, rooms)
+        self.assertEqual(dropped, ("production",))
+        self.assertTrue(validate_equipment_layout(small, rooms, placement).ok)
+
+
+def _building(equipment, *, room_width=6000, room_height=5000, zones=(), flows=()):
     return BuildingIR.from_mapping(
         {
             "version": "0.2",
@@ -339,7 +423,7 @@ def _building(equipment, *, room_width=6000, room_height=5000, zones=()):
             },
             "zones": list(zones),
             "equipment": equipment,
-            "flows": [],
+            "flows": list(flows),
         }
     )
 

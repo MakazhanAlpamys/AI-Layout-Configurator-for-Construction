@@ -9,7 +9,7 @@ from typing import Iterable
 
 from shapely.geometry import LineString, box
 from .building import BuildingIR, FlowSpec
-from .equipment import EquipmentLayoutResult, EquipmentPlacement, clearance_rect
+from .equipment import EquipmentLayoutResult, EquipmentPlacement, clearance_rect, flow_portal_offset_mm
 from .models import LayoutResult, Rect
 from .walls import DoorOpening, WallPlan, build_wall_plan
 
@@ -347,10 +347,7 @@ def _route_points(
         end = target.point or layout.placements[room_path[0]].center
         return _deduplicate_points((start, end))
 
-    portal_offset = max(
-        500.0,
-        minimum_clear_width_mm / 2 + building.layout.wall_thickness_mm / 2 + 50.0,
-    )
+    portal_offset = flow_portal_offset_mm(minimum_clear_width_mm, building.layout.wall_thickness_mm)
     points: list[tuple[float, float]] = []
     for index, room_id in enumerate(room_path):
         room_points: list[tuple[float, float]] = []

@@ -16,7 +16,7 @@ from .equipment import (
     EquipmentLayoutResult,
     EquipmentPlacementError,
     EquipmentValidationReport,
-    place_equipment,
+    place_equipment_clear_of_doors,
     validate_equipment_layout,
 )
 from .facility import FacilityProfile, FacilityValidationReport, validate_building
@@ -57,13 +57,17 @@ class FeasibleFacilityCandidate:
     flow_routes: FlowRoutingResult
     flow_report: FlowValidationReport
     facility_report: FacilityValidationReport
+    # Rooms too small to host their equipment with every door approach clear;
+    # there the packer fell back to the unconstrained placement.
+    door_approach_exceptions: tuple[str, ...] = ()
 
-    def generation_evidence(self) -> dict[str, int]:
+    def generation_evidence(self) -> dict[str, object]:
         return {
             "candidate_attempt": self.attempt,
             "layout_seed": self.layout_seed,
             "equipment_seed": self.equipment_seed,
             "equipment_attempts": self.equipment_attempts,
+            "door_approach_exceptions": list(self.door_approach_exceptions),
         }
 
 
@@ -193,10 +197,14 @@ def solve_feasible_facility_variants(
         equipment_report: EquipmentValidationReport | None = None
         equipment_seed = layout_seed
         equipment_errors: list[str] = []
+        door_exceptions: tuple[str, ...] = ()
         for retry in range(equipment_retries):
             equipment_seed = layout_seed + retry
             try:
-                packed = place_equipment(
+                # The packer knows where the doors are: a service clearance over
+                # a door approach leaves the router no way into the room, which
+                # used to reject most pilot candidates after packing succeeded.
+                packed, door_exceptions = place_equipment_clear_of_doors(
                     prepared,
                     room_candidate,
                     time_limit_seconds=time_limit_seconds,
@@ -255,6 +263,7 @@ def solve_feasible_facility_variants(
                 flow_routes=flow_routes,
                 flow_report=flow_report,
                 facility_report=facility_report,
+                door_approach_exceptions=door_exceptions,
             )
         )
         if len(accepted) == variants:
