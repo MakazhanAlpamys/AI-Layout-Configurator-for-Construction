@@ -49,8 +49,9 @@ it). The order below follows that.
 
 ## Order of work
 
-1. Finish 1.2 and put the scale series into CI as a nightly job, so a
-   regression in the solver is visible the next morning.
+1. ~~Finish 1.2 and put the scale series into CI as a nightly job~~ — done
+   2026-09-27: `.github/workflows/scale.yml` runs 20/30/40 rooms nightly and on
+   demand.
 2. 1.3 flow-aware search — the scaling study showed that a better objective
    value can still fail the gates.
 3. 3.3 and 3.4 — comparison and the client report make the output usable today
