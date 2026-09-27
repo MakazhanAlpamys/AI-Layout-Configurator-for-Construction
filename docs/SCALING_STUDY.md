@@ -115,6 +115,63 @@ CP-SAT formulation and a budget of up to 300 seconds, no feasible packing was fo
    the objective function, the best candidate by area may be one that does not pass.
 4. The stages after the room solver need no headroom: they are two orders of magnitude cheaper.
 
+## Hierarchical room solver — 2026-09-27
+
+The monolithic model was replaced as the default room stage for facility
+generation by the hierarchical solver in `src/layout_configurator/hierarchy.py`
+(`--room-solver auto`, which falls back to the monolithic model). Nothing in the
+gates, the profile or the programs was changed.
+
+### What the diagnosis showed first
+
+On `scale_30_rooms.yaml`, first-solution search only:
+
+| Variant of the monolithic model | Result |
+| --- | --- |
+| as is, 60 s, 1 or 8 workers | no solution |
+| without required adjacencies | solution in about 16 s |
+| minimum contact reduced to 1300 mm or even 100 mm | no solution |
+| 500 mm or 1000 mm grid instead of 100 mm | no solution |
+| area as a full size table or a 8–32 shape menu instead of `width × height` | no solution |
+
+The contact tree (30 rooms, 29 required pairs, corridors with 8 contacts each)
+is what the single `NoOverlap2D` cannot search; domain size, area
+formulation and contact length are not.
+
+### Method
+
+Hubs (three or more required neighbours, usually corridors) are grouped with
+their leaf rooms; daylight, external-entry and zone-relation rooms stay single.
+Each cluster is solved as a small layout in a few box proportions, with the hub
+touching as many box sides as it has outside neighbours. The top level places
+only clusters (offset, shape, mirror, quarter turn); room coordinates are linear
+in these choices, so every cross-cluster contact, daylight and entry constraint
+is exact, and rooms rather than cluster boxes may not overlap.
+
+### Same series, same settings
+
+`--variants 2 --max-attempts 3 --time-limit 40`, seeds 1 / 7 / 42, Linux,
+Python 3.11.15, OR-Tools 9.15.6755 (a different machine from the 2026-09-06
+series, so absolute seconds are not comparable one to one; success rates are).
+
+| Program | 2026-09-06, monolithic | 2026-09-27, `auto` | Solver used |
+| --- | --- | --- | --- |
+| pilot 13 / 5 | 2 of 3 | 3 of 3 (CI matrix, 3 variants, 9 attempts: 11 s for all seeds) | hierarchical |
+| 20 / 10 | 1 of 3 (42 s, 52 s, 3842 s) | **3 of 3** — 5.8 s, 14.0 s, 29.3 s; 0 rejected candidates | hierarchical |
+| 30 / 20 | 0 of 3 | 0 of 3 — about 85 s each | fallback to monolithic |
+| 40 / 30 | 0 of 3 | 0 of 3 — about 87 s each | fallback to monolithic |
+
+At 30 and 40 rooms the hierarchy fails at the top level. With a longer budget
+and four workers the top level for 30 rooms was **proven infeasible** for the
+cluster shapes it was given (145 s). That is a statement about the shapes, not
+the program: corridor segments there declare `min_depth` 12 000 mm, and
+minimum dimensions are per axis, so a corridor cluster cannot be turned and
+its few box proportions do not interlock. When quarter turns were allowed
+regardless (which violates those minimums), a top-level placement was found in
+3.6 s. The next step is a richer shape search per cluster (more proportions,
+hub position and side choices, or shapes generated on demand from top-level
+conflicts), not a larger budget.
+
 ## Reproduction
 
 ```powershell

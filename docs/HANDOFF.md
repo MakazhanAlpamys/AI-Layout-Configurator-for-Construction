@@ -276,6 +276,25 @@ rejections. The full run took 13.5 min, almost all of it in the room solver (the
 9 candidates are solved up front). This is local confirmation, not CI evidence:
 item 4 remains blocked by billing.
 
+## CI green, English documentation, hierarchical solver — 2026-09-27
+
+- The repository was made public, which lifted the Actions billing block. Run
+  11 on `db831f4` was the first fully green CI run: tests on Ubuntu and Windows
+  and the Windows pharma-cleanroom matrix. Condition 4 above is no longer
+  blocked by billing.
+- README, `docs/`, the Russian parts of `research/`, the viewer and error
+  messages are English. Russian stays only where it is behaviour (the text-brief
+  parser vocabulary, citation search over the Russian-language KZ profile) or a
+  legal source (official SN RK 3.02-02-2023 title and quoted clauses).
+- `hierarchy.py` adds a hierarchical room solver (clusters → cluster shapes →
+  top-level placement) and facility generation uses it by default with a
+  monolithic fallback (`--room-solver auto|hierarchical|monolithic`; the
+  manifest records `room_solver_used`). The local CI matrix now passes in 11 s
+  instead of 13.5 min; the 20-room program passes on all three seeds instead of
+  one in three. 30 and 40 rooms are still unsolved — details and the next step
+  are in [SCALING_STUDY.md](SCALING_STUDY.md).
+- 160 tests pass locally.
+
 ## Archive of the original MVP
 
 The old text below is historical context for the original residential MVP. It
