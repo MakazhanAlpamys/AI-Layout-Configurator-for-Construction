@@ -186,6 +186,13 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="write matrix evidence JSON; defaults to OUTPUT/acceptance-matrix-report.json",
     )
+    compare_variants = subparsers.add_parser(
+        "compare-variants",
+        help="rank the variants of a generated facility bundle and write JSON, CSV and a client PDF",
+    )
+    compare_variants.add_argument("bundle", type=Path, help="directory with building_NN.json variants")
+    compare_variants.add_argument("--output", "-o", type=Path, default=None, help="defaults to the bundle directory")
+    compare_variants.add_argument("--no-pdf", action="store_true", help="skip comparison.pdf")
     edit = subparsers.add_parser("edit", help="apply typed edits to an existing layout JSON and re-export it")
     edit.add_argument("input", type=Path)
     edit.add_argument("--output", "-o", type=Path, default=Path("edited"))
@@ -414,6 +421,22 @@ def main(argv: list[str] | None = None) -> int:
         report_path.write_text(json.dumps(matrix_report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"Acceptance matrix: {'PASS' if ok else 'FAIL'}; report: {report_path}")
         return 0 if ok else 4
+    if args.command == "compare-variants":
+        from .compare import compare_bundle, write_comparison
+
+        try:
+            written = write_comparison(args.bundle, args.output, pdf=not args.no_pdf)
+        except FileNotFoundError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        for metrics in compare_bundle(args.bundle):
+            print(
+                f"#{metrics.rank} variant {metrics.variant}: "
+                f"{'PASS' if metrics.facility_ok else 'FAIL'}, {metrics.open_issues} open issue(s), "
+                f"routes {metrics.route_length_m:.1f} m, area deviation {metrics.area_deviation_pct:.1f} %"
+            )
+        print(" | ".join(str(path) for path in written.values()))
+        return 0
     if args.command == "generate-building":
         try:
             (args.output / "generation-failure.json").unlink(missing_ok=True)

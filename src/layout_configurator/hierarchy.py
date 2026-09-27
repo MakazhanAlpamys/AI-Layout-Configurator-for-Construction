@@ -201,6 +201,8 @@ def solve_layouts_hierarchical(
     model = cp_model.CpModel()
     room_vars: dict[str, _RoomVars] = {}
     cluster_vars: list[object] = []
+    # (x, y, shape choices) per placed unit, for the diversity cut between variants.
+    anchors: list[tuple[object, object, tuple[object, ...]]] = []
     x_intervals = []
     y_intervals = []
     area_deviations = []
@@ -238,12 +240,14 @@ def solve_layouts_hierarchical(
         y_intervals.append(model.NewIntervalVar(y, height, y_end, f"{room.id}_y_interval"))
         room_vars[room.id] = _RoomVars(x=x, y=y, width=width, height=height, area=area)
         cluster_vars.extend((x, y, width, height))
+        anchors.append((x, y, ()))
     for cluster_id, options in shapes.items():
         cx = model.NewIntVar(0, boundary_width, f"cluster_{cluster_id}_x")
         cy = model.NewIntVar(0, boundary_height, f"cluster_{cluster_id}_y")
         choices = [model.NewBoolVar(f"cluster_{cluster_id}_shape_{index}") for index in range(len(options))]
         model.AddExactlyOne(choices)
         cluster_vars.extend((cx, cy, *choices))
+        anchors.append((cx, cy, tuple(choices)))
 
         def pick(values: list[int]):
             return sum(choice * value for choice, value in zip(choices, values))
@@ -320,10 +324,30 @@ def solve_layouts_hierarchical(
         # done afterwards by the independent gates.
         solver.parameters.stop_after_first_solution = True
         status = solver.Solve(model)
+        if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE) and model.Proto().assumptions:
+            # No clearly different layout within the budget: accept one that
+            # differs only in detail rather than returning fewer variants.
+            model.ClearAssumptions()
+            solver = cp_model.CpSolver()
+            configure_solver(
+                solver,
+                seed=seed + variant - 1,
+                time_limit_seconds=time_limit_seconds,
+                deterministic_units=deterministic_units,
+                workers=_top_level_workers(),
+            )
+            solver.parameters.stop_after_first_solution = True
+            status = solver.Solve(model)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
                 raise InfeasibleLayout("The hierarchical solver found no placement of the room clusters")
             break
+        if area_deviations and solver.Value(sum(area_deviations)) > 0:
+            # The first placement settles the hard part; a short second pass
+            # starting from it brings the free single rooms back towards
+            # their programmed areas without searching the placement again.
+            solver = _polish_areas(model, solver, cluster_vars, area_deviations, seed + variant - 1,
+                                   time_limit_seconds, deterministic_units)
         placements = {
             room.id: Rect(
                 solver.Value(room_vars[room.id].x) * grid,
@@ -335,6 +359,7 @@ def solve_layouts_hierarchical(
         }
         results.append(LayoutResult(variant=variant, placements=placements, objective_value=_area_objective(spec, placements)))
         model.AddForbiddenAssignments(cluster_vars, [[solver.Value(value) for value in cluster_vars]])
+        _require_distinct_variant(model, solver, anchors, grid, variant)
     return results
 
 
@@ -501,6 +526,60 @@ def _orientations(shape: Mapping[str, Rect], rooms_by_id, fit_options) -> list[_
                 if legal:
                     result.append(_Placement(box_width, box_height, tuple(rooms)))
     return result
+
+
+# A later variant should be a different option, not the same plan shifted by one
+# grid step: a quarter of the placed units must move this far or change shape.
+_DIVERSITY_MOVE_MM = 3000
+_DIVERSITY_SHARE = 0.25
+
+
+def _require_distinct_variant(model, solver, anchors, grid: int, variant: int) -> None:
+    distance = max(1, round(_DIVERSITY_MOVE_MM / grid))
+    moved = []
+    for index, (x, y, choices) in enumerate(anchors):
+        name = f"variant_{variant}_unit_{index}"
+        vx, vy = solver.Value(x), solver.Value(y)
+        reasons = []
+        for var, value, axis in ((x, vx, "x"), (y, vy, "y")):
+            below = model.NewBoolVar(f"{name}_{axis}_below")
+            above = model.NewBoolVar(f"{name}_{axis}_above")
+            model.Add(var <= value - distance).OnlyEnforceIf(below)
+            model.Add(var >= value + distance).OnlyEnforceIf(above)
+            reasons.extend((below, above))
+        chosen = [choice for choice in choices if solver.Value(choice)]
+        if chosen and len(choices) > 1:
+            reasons.append(chosen[0].Not())
+        unit_moved = model.NewBoolVar(f"{name}_moved")
+        model.AddBoolOr(reasons).OnlyEnforceIf(unit_moved)
+        moved.append(unit_moved)
+    enforce = model.NewBoolVar(f"variant_{variant}_distinct")
+    model.Add(sum(moved) >= max(1, math.ceil(len(moved) * _DIVERSITY_SHARE))).OnlyEnforceIf(enforce)
+    # Enforced through assumptions, one per earlier variant, so a later solve
+    # can drop them all if no clearly different layout exists.
+    model.AddAssumptions([enforce])
+
+
+def _polish_areas(model, first, decision_vars, area_deviations, seed, time_limit_seconds, deterministic_units):
+    from ortools.sat.python import cp_model
+
+    model.ClearHints()
+    for var in decision_vars:
+        model.AddHint(var, first.Value(var))
+    model.Minimize(sum(area_deviations))
+    polish = cp_model.CpSolver()
+    configure_solver(
+        polish,
+        seed=seed,
+        time_limit_seconds=min(time_limit_seconds, max(2.0, time_limit_seconds / 6)),
+        deterministic_units=None if deterministic_units is None else max(1.0, deterministic_units / 6),
+        workers=_top_level_workers(),
+    )
+    status = polish.Solve(model)
+    model.ClearHints()
+    if status in (cp_model.OPTIMAL, cp_model.FEASIBLE) and polish.Value(sum(area_deviations)) <= first.Value(sum(area_deviations)):
+        return polish
+    return first
 
 
 def _top_level_workers() -> int:

@@ -287,6 +287,24 @@ roughly correspond to the former `--time-limit 30`. Calibration, the condition f
 model order and the full list of limitations are
 in [`docs/DETERMINISTIC_BUDGET.md`](docs/DETERMINISTIC_BUDGET.md).
 
+To choose between accepted variants, `compare-variants` ranks them and writes
+`comparison.json`, `comparison.csv` and a one-page client PDF with a plan
+thumbnail per variant:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli compare-variants out\pharma_cleanroom_acceptance\seed_1
+```
+
+The ranking key is printed with the result: failed gates, then open issues,
+then total route length, then deviation from the programmed areas. Every number
+comes from the saved `building_NN.json`; nothing is re-solved. It is a design
+aid for choosing between valid options, not a quality or compliance verdict.
+
+The hierarchical solver asks each further variant to be a different option: at
+least a quarter of the placed clusters and rooms must move by 3 m or change
+shape (relaxed only when no such layout is found in the budget), and a short
+second pass brings single rooms back to their programmed areas.
+
 For the three external gates, the accepted bundle is projected into role-specific dossiers:
 
 ```powershell

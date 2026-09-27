@@ -16,7 +16,7 @@ it). The order below follows that.
 | --- | --- | --- | --- |
 | 1.1 | Hierarchical room solver (clusters → shapes → top level) | pilot and 20 rooms pass all gates on seeds 1/7/42 | **done** 2026-09-27 |
 | 1.2 | 30–40 rooms: `rotatable` rooms, free-size single rooms at the top level, parallel top-level search in wall-clock mode | 30 and 40 rooms pass all gates on seeds 1/7/42 with `--time-limit 40` | **done** 2026-09-27; 40 rooms needs an idle machine at 40 s |
-| 1.3 | Flow-aware search: route length and door contention in the objective; reject flow-impossible candidates inside the search, not after it | share of candidates rejected by `FLOW_COMPLETENESS` drops to zero on the scale series | open |
+| 1.3 | Flow-aware search: route length and door contention in the objective; reject flow-impossible candidates inside the search, not after it | share of candidates rejected by `FLOW_COMPLETENESS` drops to zero on the scale series | criterion met 2026-09-27 (0 rejections on pilot, 20, 30 and 40 rooms after the door-approach fix and the hierarchy); route length now ranks variants in 3.3 |
 | 1.4 | Multi-storey facility programs: floors, shared structural grid, stairs, lifts and shafts through `generate-multifloor` for `BuildingIR` | a two-floor 40-room program passes the same gates per floor plus vertical-core checks | open |
 | 1.5 | 60–100 rooms: a third level (zones → clusters → rooms) and incremental re-solve after an edit | 80 rooms in under two minutes on CI hardware | open |
 
@@ -35,8 +35,8 @@ it). The order below follows that.
 | --- | --- | --- |
 | 3.1 | Input without YAML: text brief (parser exists) and a browser form that writes the same `BuildingIR` | the pilot can be entered in the browser and regenerates identically |
 | 3.2 | Browser editing for facility results: move/resize a room, re-run equipment, routing and gates instantly, keep the BCF history | an edit round-trip under two seconds on the pilot |
-| 3.3 | Side-by-side comparison of variants: area deviation, route lengths, conflicts, clean/dirty separation | a comparison view and a JSON/CSV export |
-| 3.4 | A client-facing PDF report "why this variant": metrics, gate evidence, open issues, disclaimer | generated for every accepted bundle |
+| 3.3 | Side-by-side comparison of variants: area deviation, route lengths, conflicts, clean/dirty separation | a comparison view and a JSON/CSV export — **done** 2026-09-27: `compare-variants` (JSON, CSV, PDF); variants are now forced to differ |
+| 3.4 | A client-facing PDF report "why this variant": metrics, gate evidence, open issues, disclaimer | generated for every accepted bundle — first version in `comparison.pdf`; next: per-check gate evidence pages |
 | 3.5 | Import an existing plan (DXF room polylines or IFC spaces) as a fixed starting point | a re-plan of an imported pilot passes the gates |
 
 ## 4. Product
