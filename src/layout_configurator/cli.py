@@ -94,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
         dest="deterministic_units",
         help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine",
     )
+    generate_building.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto", help="room stage: hierarchical clusters with a monolithic fallback (auto), or force one solver")
     generate_building.add_argument("--seed", type=int, default=42)
     generate_building.add_argument(
         "--max-attempts",
@@ -175,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     acceptance_matrix.add_argument("--variants", type=int, default=3)
     acceptance_matrix.add_argument("--time-limit", type=float, default=30)
     acceptance_matrix.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
+    acceptance_matrix.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto", help="room stage: hierarchical clusters with a monolithic fallback (auto), or force one solver")
     acceptance_matrix.add_argument("--seeds", type=int, nargs="+", default=[1, 7, 42])
     acceptance_matrix.add_argument("--max-attempts", type=int, default=None)
     acceptance_matrix.add_argument("--equipment-retries", type=int, default=2)
@@ -340,6 +342,8 @@ def main(argv: list[str] | None = None) -> int:
                 str(seed),
                 "--equipment-retries",
                 str(args.equipment_retries),
+                "--room-solver",
+                args.room_solver,
             ]
             if args.max_attempts is not None:
                 generate_argv.extend(["--max-attempts", str(args.max_attempts)])
@@ -392,6 +396,7 @@ def main(argv: list[str] | None = None) -> int:
                 "repeatable": args.deterministic_units is not None,
                 "max_attempts": args.max_attempts if args.max_attempts is not None else max(3, args.variants * 3),
                 "equipment_retries": args.equipment_retries,
+                "room_solver": args.room_solver,
             },
             "runs": runs,
             "cross_seed_semantic_ids": {
@@ -423,6 +428,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_attempts=args.max_attempts,
                 equipment_retries=args.equipment_retries,
                 deterministic_units=args.deterministic_units,
+                room_solver=args.room_solver,
             )
         except InfeasibleFacilityGeneration as exc:
             args.output.mkdir(parents=True, exist_ok=True)

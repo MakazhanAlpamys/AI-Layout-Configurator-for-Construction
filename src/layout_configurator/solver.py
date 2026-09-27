@@ -37,6 +37,7 @@ def solve_layouts(
     minimum_adjacency_mm: float | None = None,
     equipment_fit_options: Mapping[str, Iterable[tuple[str, Iterable[tuple[float, float]]]]] | None = None,
     deterministic_units: float | None = None,
+    boundary_side_contacts: Mapping[str, int] | None = None,
 ) -> list[LayoutResult]:
     """Solve grid-snapped layouts with optional fixed rectangles and axes.
 
@@ -50,6 +51,9 @@ def solve_layouts(
     ``equipment_fit_options`` adds necessary room width/height constraints for
     fixed room equipment; the second-stage equipment solver still packs all
     clearances exactly.
+    ``boundary_side_contacts`` requires a room to touch at least that many
+    distinct sides of the boundary; the hierarchical solver uses it to keep a
+    cluster's hub reachable from rooms placed outside the cluster.
     """
 
     if variants < 1:
@@ -154,6 +158,10 @@ def solve_layouts(
 
     if spec.external_entry is not None:
         _constrain_external_entry(model, room_vars[spec.external_entry.room_id], spec, boundary_width, boundary_height)
+    for room_id, count in sorted((boundary_side_contacts or {}).items()):
+        if room_id not in room_vars:
+            raise InfeasibleLayout(f"Boundary side contact references unknown room {room_id}")
+        _require_boundary_sides(model, room_vars[room_id], boundary_width, boundary_height, count, room_id)
 
     model.AddNoOverlap2D(x_intervals, y_intervals)
     minimum_shared = max(1, _ceil_grid(adjacency_width_mm, grid))
@@ -225,6 +233,16 @@ def solve_layouts(
             ]],
         )
     return results
+
+
+def _require_boundary_sides(model, room: _RoomVars, boundary_width: int, boundary_height: int, count: int, room_id: str) -> None:
+    sides = [model.NewBoolVar(f"boundary_side_{room_id}_{side}") for side in ("left", "right", "bottom", "top")]
+    left, right, bottom, top = sides
+    model.Add(room.x == 0).OnlyEnforceIf(left)
+    model.Add(room.x + room.width == boundary_width).OnlyEnforceIf(right)
+    model.Add(room.y == 0).OnlyEnforceIf(bottom)
+    model.Add(room.y + room.height == boundary_height).OnlyEnforceIf(top)
+    model.Add(sum(sides) >= min(4, max(0, int(count))))
 
 
 def _add_required_adjacency(model, a: _RoomVars, b: _RoomVars, minimum_shared: int, name: str) -> None:

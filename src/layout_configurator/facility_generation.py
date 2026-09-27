@@ -22,7 +22,8 @@ from .equipment import (
 from .facility import FacilityProfile, FacilityValidationReport, validate_building
 from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
 from .models import LayoutResult
-from .solver import InfeasibleLayout, solve_layouts
+from .hierarchy import solve_layouts_auto
+from .solver import InfeasibleLayout
 from .validation import ValidationReport, validate_layout
 
 
@@ -84,6 +85,9 @@ class FacilityGenerationResult:
     time_limit_seconds: float
     equipment_retries: int
     deterministic_units: float | None = None
+    room_solver: str = "auto"
+    room_solver_used: str | None = None
+    hierarchy_fallback_reason: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -100,6 +104,9 @@ class FacilityGenerationResult:
             "deterministic_units": self.deterministic_units,
             "repeatable": self.deterministic_units is not None,
             "equipment_retries": self.equipment_retries,
+            "room_solver": self.room_solver,
+            "room_solver_used": self.room_solver_used,
+            "hierarchy_fallback_reason": self.hierarchy_fallback_reason,
         }
 
 
@@ -121,6 +128,7 @@ def solve_feasible_facility_variants(
     max_attempts: int | None = None,
     equipment_retries: int = 2,
     deterministic_units: float | None = None,
+    room_solver: str = "auto",
 ) -> FacilityGenerationResult:
     """Return only candidates that pass every deterministic facility gate.
 
@@ -129,6 +137,9 @@ def solve_feasible_facility_variants(
     routing.  A failed candidate is retained as evidence; it is never exported
     as one of the requested options.  If the pool cannot supply all requested
     variants, generation fails with a concise, reproducible explanation.
+
+    ``room_solver`` picks the room stage: ``auto`` (hierarchical, falling back
+    to monolithic), ``hierarchical`` or ``monolithic``.
     """
 
     if variants < 1:
@@ -149,8 +160,9 @@ def solve_feasible_facility_variants(
             equipment_fit_options.setdefault(item.room_id, []).append(
                 (item.id, item.room_fit_dimensions(prepared.layout.wall_thickness_mm))
             )
+    solver_evidence: dict[str, str] = {}
     try:
-        room_candidates = solve_layouts(
+        room_candidates = solve_layouts_auto(
             prepared.layout,
             max_attempts,
             time_limit_seconds,
@@ -164,6 +176,8 @@ def solve_feasible_facility_variants(
             ),
             equipment_fit_options=equipment_fit_options,
             deterministic_units=deterministic_units,
+            strategy=room_solver,
+            evidence=solver_evidence,
         )
     except InfeasibleLayout as exc:
         generation = FacilityGenerationResult(
@@ -171,6 +185,9 @@ def solve_feasible_facility_variants(
             attempted_candidates=0, accepted=(), rejected=(), seed=seed,
             time_limit_seconds=time_limit_seconds, equipment_retries=equipment_retries,
             deterministic_units=deterministic_units,
+            room_solver=room_solver,
+            room_solver_used=solver_evidence.get("room_solver_used"),
+            hierarchy_fallback_reason=solver_evidence.get("hierarchy_fallback_reason"),
         )
         raise InfeasibleFacilityGeneration(
             f"The room solver returned no candidate within the configured search budget: {exc}",
@@ -279,6 +296,9 @@ def solve_feasible_facility_variants(
         time_limit_seconds=time_limit_seconds,
         equipment_retries=equipment_retries,
         deterministic_units=deterministic_units,
+        room_solver=room_solver,
+        room_solver_used=solver_evidence.get("room_solver_used"),
+        hierarchy_fallback_reason=solver_evidence.get("hierarchy_fallback_reason"),
     )
     if len(accepted) != variants:
         detail = "; ".join(

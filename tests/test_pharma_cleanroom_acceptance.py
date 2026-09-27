@@ -99,7 +99,7 @@ class PharmaCleanroomAcceptanceTests(unittest.TestCase):
         profile = load_facility_profile("rules/default_facility.yaml")
 
         with (
-            patch("layout_configurator.facility_generation.solve_layouts", return_value=[first, second]),
+            patch("layout_configurator.facility_generation.solve_layouts_auto", return_value=[first, second]),
             patch("layout_configurator.facility_generation.validate_layout", return_value=ValidationReport(())),
             patch(
                 "layout_configurator.facility_generation.place_equipment_clear_of_doors",
@@ -220,7 +220,7 @@ class PharmaCleanroomAcceptanceTests(unittest.TestCase):
         profile = load_facility_profile("rules/default_facility.yaml")
 
         with (
-            patch("layout_configurator.facility_generation.solve_layouts", return_value=[candidate, second]),
+            patch("layout_configurator.facility_generation.solve_layouts_auto", return_value=[candidate, second]),
             patch(
                 "layout_configurator.facility_generation.place_equipment_clear_of_doors",
                 side_effect=[(EquipmentLayoutResult(()), ()), EquipmentPlacementError("does not fit")],

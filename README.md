@@ -252,6 +252,25 @@ artifacts, search parameters and the check of semantic IDs across seeds.
 required set was obtained. The time limit applies to each solver run, not to the whole
 matrix.
 
+The room stage is chosen with `--room-solver` (on `generate-building` and
+`acceptance-building-matrix`):
+
+- `auto` (default) — the hierarchical solver in `hierarchy.py` first: rooms are
+  grouped into hub-and-leaf clusters (a corridor with the rooms that hang off
+  it), each cluster is solved as a small layout, and the top level only places
+  the clusters (offset, shape, mirror, quarter turn) with every cross-cluster
+  contact, daylight and entry constraint posted exactly on the rooms. If the
+  hierarchy does not apply (for example boundary cutouts) or returns too few
+  candidates, it falls back to the monolithic model.
+- `hierarchical` — hierarchy only; fails instead of falling back.
+- `monolithic` — the original single CP-SAT model for all rooms.
+
+`manifest.json` records `room_solver`, `room_solver_used` and, after a fallback,
+`hierarchy_fallback_reason`. The independent gates judge every candidate the
+same way whichever solver produced it. On the pilot, the seeds 1/7/42 matrix
+drops from about 13.5 minutes to about 11 seconds; measurements are in
+[`docs/SCALING_STUDY.md`](docs/SCALING_STUDY.md).
+
 For a reproducible run there is a separate mode: `--deterministic-budget UNITS`
 spends a machine-independent amount of CP-SAT work instead of seconds, forces
 single-threaded search and removes the wall-clock limit. The meaning of
