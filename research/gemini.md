@@ -1,291 +1,291 @@
-Архитектура ИИ-конфигуратора планировок для строительства: от технических спецификаций до DXF, IFC и векторных PDF-чертежей
-Анализ открытых технологий: CAD/BIM ядра, генерация DXF/DWG/PDF и безголовый рендеринг
-Проектирование архитектуры программного комплекса для автоматизированной генерации планировочных решений требует строгого разделения функциональных обязанностей между математическим ядром геометрических вычислений, специализированными библиотеками сериализации 2D-чертежей, объектной моделью BIM и подсистемой генерации исполнительной документации. Разработка масштабируемого бессерверного сервиса основывается на оценке существующих открытых библиотек по их способности обрабатывать сложные строительные примитивы, сохранять целостность данных при обратных преобразованиях (round-tripping) и функционировать в автономном сервисе без графического интерфейса (headless mode).
-Функциональные возможности открытых библиотек и платформ
-Проведенный анализ ключевых открытых инструментов показывает существенные различия в поддержке базовых строительных примитивов и графических структур:
-Инструмент
-Стены и перегородки
-Двери и окна
-Структура слоев
-Блоки и внедренные сущности
-Штриховки (Hatches)
-Размерные линии
-Заголовочные блоки (Title Blocks)
-Экспорт векторного PDF
+Architecture of an AI Layout Configurator for Construction: from Technical Specifications to DXF, IFC and Vector PDF Drawings
+Analysis of Open Technologies: CAD/BIM Kernels, DXF/DWG/PDF Generation and Headless Rendering
+Designing the architecture of a software system for automated generation of layout solutions requires a strict separation of functional responsibilities between the mathematical kernel for geometric computation, specialized 2D drawing serialization libraries, the BIM object model and the subsystem for generating construction documentation. Developing a scalable serverless service is based on evaluating existing open libraries by their ability to handle complex construction primitives, preserve data integrity in reverse transformations (round-tripping) and operate in an autonomous service without a graphical interface (headless mode).
+Functional Capabilities of Open Libraries and Platforms
+The analysis of key open tools shows substantial differences in support for basic construction primitives and graphical structures:
+Tool
+Walls and partitions
+Doors and windows
+Layer structure
+Blocks and embedded entities
+Hatches
+Dimension lines
+Title Blocks
+Vector PDF export
 DXF Round-tripping
 ezdxf
-Линии / Полилинии
-Блоки (INSERT)
-Поддерживается (LAYERS)
-Поддерживается (BLOCKS)
-Поддерживается (HATCH)
-Поддерживается (DIMENSION)
-Поддерживается в Paperspace
-Поддерживается (ezdxf.draw)
-Да (Сохраняет сторонние XData)
+Lines / Polylines
+Blocks (INSERT)
+Supported (LAYERS)
+Supported (BLOCKS)
+Supported (HATCH)
+Supported (DIMENSION)
+Supported in Paperspace
+Supported (ezdxf.draw)
+Yes (Preserves third-party XData)
 LibreDWG
-Низкоуровневые C-структуры
-Низкоуровневые C-структуры
-Таблицы слоев DWG
-Блоки DWG
-Частично
-Частично
-В составе чертежа
-Нет (Требует конвертеров)
-Частично (DWG ↔ DXF)
+Low-level C structures
+Low-level C structures
+DWG layer tables
+DWG blocks
+Partial
+Partial
+As part of the drawing
+No (Requires converters)
+Partial (DWG ↔ DXF)
 FreeCAD
-Параметрика Arch/Draft
-Компоненты Arch
-Полная поддержка
-Поддерживается
-Поддерживается
-Поддерживается
-Автогенерация в TechDraw
-Да (через TechDraw / Qt)
-Да (через ezdxf/ODA)
+Arch/Draft parametrics
+Arch components
+Full support
+Supported
+Supported
+Supported
+Auto-generation in TechDraw
+Yes (via TechDraw / Qt)
+Yes (via ezdxf/ODA)
 Open CASCADE
-B-Rep топология
-B-Rep топология
-Концептуально в XDE
-Поддерживается в XDE
-Неприменимо (3D ядро)
-3D-аннотации
-Нет
-Нет (Только 3D)
-Через внешние конвертеры
+B-Rep topology
+B-Rep topology
+Conceptually in XDE
+Supported in XDE
+Not applicable (3D kernel)
+3D annotations
+No
+No (3D only)
+Via external converters
 CadQuery
 Solid Extrusions / Workplanes
-Сборки (Assemblies)
-Ограничено
-Вложенные сборки
-Нет
-2D-эскизы
-Нет
-Экспорт в SVG/DXF
-Выходной DXF
+Assemblies
+Limited
+Nested assemblies
+No
+2D sketches
+No
+Export to SVG/DXF
+Output DXF
 IfcOpenShell
 IfcWallStandardCase
 IfcDoor, IfcWindow
 IfcPresentationLayer
-IfcTypeProduct (Стили)
+IfcTypeProduct (Styles)
 IfcFillAreaStyle
 IfcDimensionCurve
 IfcDocumentInformation
-Нет (Чистый IFC)
-Импорт/Экспорт IFC
+No (Pure IFC)
+IFC Import/Export
 Bonsai (BlenderBIM)
-Native IFC Стены
-Native IFC Заполнения
-Слои и классы IFC
-Компоненты IFC
-Заливка разрезов
-Аннотации Blender/IFC
-Компоновка листов
-Да (через SVG/PDF рендер)
-Выходной DXF/IFC
+Native IFC Walls
+Native IFC Fillings (openings)
+IFC layers and classes
+IFC components
+Section fill
+Blender/IFC annotations
+Sheet layout
+Yes (via SVG/PDF render)
+Output DXF/IFC
 ReportLab
-2D Векторные пути
-2D Векторные пути
-Нет (Контекст Canvas)
-Шаблоны (Flowables)
-Плитчатая заливка
-Ручные линии/текст
-Полная поддержка (Canvas)
-Прямой генератор PDF
-Нет
+2D vector paths
+2D vector paths
+No (Canvas context)
+Templates (Flowables)
+Tiled fill
+Manual lines/text
+Full support (Canvas)
+Direct PDF generator
+No
 WeasyPrint
-Элементы CSS Border
-Блоки CSS
-Нет
-HTML шаблоны
+CSS Border elements
+CSS blocks
+No
+HTML templates
 CSS Patterns
 CSS absolute positioning
 HTML/CSS Paged Media
-Да (HTML/CSS в PDF)
-Нет
+Yes (HTML/CSS to PDF)
+No
 
-Системный разбор открытых проектов
+Systematic Review of Open Projects
 ezdxf
-Библиотека ezdxf представляет собой специализированный Python-пакет для чтения, создания и модификации файлов DXF независимых версий (от R12 до R2018)1.
-Официальная ссылка: https://github.com/mozman/ezdxf
+The ezdxf library is a specialized Python package for reading, creating and modifying DXF files of independent versions (from R12 to R2018)1.
+Official link: https://github.com/mozman/ezdxf
 [cite: 1]
-Назначение: Манипуляция структурами данных DXF без зависания от проприетарных CAD-систем с сохранением сторонних расширенных данных (XData)1.
-Технологический стек: Python, Cython (C-расширения для ускорения парсинга)1.
-Лицензия / SPDX: MIT1.
-Показатели репозитория: 3,3k звезд, 400 форков, активная поддержка1.
-Доступность дистрибутива: Исходный код на GitHub, пакеты в PyPI (pip install ezdxf) и Conda-Forge1.
-Источник производительности: Заявлено разработчиком (применение Cython обеспечивает высокую скорость обработки файлов размером более 100 МБ)1.
-Статус обслуживания: Активный проект, регулярное обновление1.
-Ограничения: Не является вычислительным геометрическим ядром. Библиотека не выполняет автономное вычисление пересечений стен или зачистку углов. Модуль экспорта в PDF (ezdxf.addons.drawing) опирается на тяжелые сторонние зависимостей (Matplotlib или PySide6), что затрудняет его использование в сверхлегких контейнерах1.
+Purpose: Manipulation of DXF data structures without dependence on proprietary CAD systems, preserving third-party extended data (XData)1.
+Technology stack: Python, Cython (C extensions to speed up parsing)1.
+License / SPDX: MIT1.
+Repository metrics: 3.3k stars, 400 forks, active maintenance1.
+Distribution availability: Source code on GitHub, packages on PyPI (pip install ezdxf) and Conda-Forge1.
+Performance source: Claimed by the developer (use of Cython provides high processing speed for files larger than 100 MB)1.
+Maintenance status: Active project, regular updates1.
+Limitations: Not a computational geometry kernel. The library does not autonomously compute wall intersections or clean up corners. The PDF export module (ezdxf.addons.drawing) relies on heavy third-party dependencies (Matplotlib or PySide6), which makes it harder to use in ultra-lightweight containers1.
 LibreDWG
-Библиотека GNU LibreDWG обеспечивает низкоуровневое декодирование и кодирование бинарного формата DWG5.
-Официальная ссылка: https://github.com/libredwg/libredwg
+The GNU LibreDWG library provides low-level decoding and encoding of the binary DWG format5.
+Official link: https://github.com/libredwg/libredwg
 [cite: 7]
-Назначение: Чтение и запись файлов DWG без использования библиотек Autodesk или ODA5.
-Технологический стек: C (ANSI C), C++5.
-Лицензия / SPDX: GPL-3.0-or-later5.
-Показатели репозитория: 1,2k звезд, 250 форков5.
-Доступность дистрибутива: Исходный код C, сборки Conda-Forge, пакеты Linux5.
-Источник производительности: Независимые измерения производственного сообщества.
-Статус обслуживания: Активный проект в рамках свободной инициативы GNU5.
-Ограничения: Жесткие вирусно-копилефтные ограничения GPLv3 исключают возможность прямого динамического или статического связывания с проприетарным кодом облачной SaaS-платформы5. Обратная запись DWG для сложных параметрических BIM-объектов остается нестабильной.
+Purpose: Reading and writing DWG files without using Autodesk or ODA libraries5.
+Technology stack: C (ANSI C), C++5.
+License / SPDX: GPL-3.0-or-later5.
+Repository metrics: 1.2k stars, 250 forks5.
+Distribution availability: C source code, Conda-Forge builds, Linux packages5.
+Performance source: Independent measurements by the production community.
+Maintenance status: Active project within the GNU free software initiative5.
+Limitations: The strict viral copyleft restrictions of GPLv3 rule out direct dynamic or static linking with the proprietary code of a cloud SaaS platform5. Writing DWG back for complex parametric BIM objects remains unstable.
 FreeCAD
-FreeCAD — это параметрическая система трехмерного моделирования с развитыми модулями Arch (BIM) и Draft (2D-черчение)9.
-Официальная ссылка: https://github.com/FreeCAD/FreeCAD
+FreeCAD is a parametric 3D modelling system with mature Arch (BIM) and Draft (2D drafting) modules9.
+Official link: https://github.com/FreeCAD/FreeCAD
 [cite: 10]
-Назначение: Полнофункциональное CAD/BIM проектирование, параметрический анализ и документация9.
-Технологический стек: C++, Python, Qt, Open CASCADE Technology10.
-Лицензия / SPDX: LGPL-2.1-or-later10.
-Показатели репозитория: 33k звезд, 5.9k форков10.
-Доступность дистрибутива: Бинарные сборки для всех ОС, Headless Python-модуль FreeCAD.so9.
-Источник производительности: Независимо измеряемая производительность ядра OCCT.
-Статус обслуживания: Активный проект со множеством участников10.
-Ограничения: Высокие издержки на инициализацию графических и архитектурных подсистем при вызове в безголовом режиме, повышенный расход оперативной памяти при параллельной обработке сотен планировок.
+Purpose: Full-featured CAD/BIM design, parametric analysis and documentation9.
+Technology stack: C++, Python, Qt, Open CASCADE Technology10.
+License / SPDX: LGPL-2.1-or-later10.
+Repository metrics: 33k stars, 5.9k forks10.
+Distribution availability: Binary builds for all OSes, headless Python module FreeCAD.so9.
+Performance source: Independently measured performance of the OCCT kernel.
+Maintenance status: Active project with many contributors10.
+Limitations: High overhead for initializing the graphical and architectural subsystems when invoked in headless mode; increased RAM consumption when processing hundreds of layouts in parallel.
 Open CASCADE Technology (OCCT)
-Промышленное ядро граничного представления (B-Rep), используемое для вычисления сложных трехмерных операций и пересечений геометрических тел.
-Официальная ссылка: https://dev.opencascade.org / https://github.com/Open-Cascade-SAS
+An industrial boundary representation (B-Rep) kernel used to compute complex 3D operations and intersections of geometric solids.
+Official link: https://dev.opencascade.org / https://github.com/Open-Cascade-SAS
 [cite: 13]
-Назначение: Вычислительная геометрическая основа для создания инженерного и строительного ПО.
-Технологический стек: C++11/C++14.
-Лицензия / SPDX: LGPL-2.1-only с исключением для библиотеки (LGPL Exception).
-Показатели репозитория: Корпоративный репозиторий под управлением Open Cascade SAS.
-Доступность дистрибутива: C++ SDK, Python-обертки (Python-OCC, OCP).
-Источник производительности: Промышленные бенчмарки машиностроительного и архитектурного CAD.
-Статус обслуживания: Активный коммерческий open-source.
-Ограничения: Низкоуровневый C++ API. Отсутствуют встроенные доменные понятия строительных конструкций (стены, пироги перекрытий, проемы), что требует написания собственной надстройки архитектурных примитивов.
+Purpose: Computational geometry foundation for building engineering and construction software.
+Technology stack: C++11/C++14.
+License / SPDX: LGPL-2.1-only with a library exception (LGPL Exception).
+Repository metrics: Corporate repository managed by Open Cascade SAS.
+Distribution availability: C++ SDK, Python wrappers (Python-OCC, OCP).
+Performance source: Industrial benchmarks of mechanical and architectural CAD.
+Maintenance status: Active commercial open-source.
+Limitations: Low-level C++ API. No built-in domain concepts of building structures (walls, floor build-ups, openings), which requires writing a custom layer of architectural primitives.
 CadQuery
-CadQuery — это система параметрического скриптового моделирования на базе C++ оберток ядра Open CASCADE (OCP)14.
-Официальная ссылка: https://github.com/cadquery/cadquery
+CadQuery is a parametric script-based modelling system built on C++ wrappers of the Open CASCADE kernel (OCP)14.
+Official link: https://github.com/cadquery/cadquery
 [cite: 15]
-Назначение: Программное создание 3D CAD моделей и 2D эскизов через сжатый Python API14.
-Технологический стек: Python, C++ (OCP / Open CASCADE)14.
-Лицензия / SPDX: Apache-2.015.
-Показатели репозитория: 5.6k звезд, 434 форка16.
-Доступность дистрибутива: PyPI (pip install cadquery), Conda-Forge14.
-Источник производительности: Заявлено разработчиками (высокая скорость вычислений за счет выполнения булевых операций на стороне C++ ядра)14.
-Статус обслуживания: Активный проект16.
-Ограничения: Отсутствует нативная поддержка AEC-специфики: нет слоев DXF «из коробки», отсутствуют механизмы для автоматического построения строительных размерных сеток и штриховок многослойных стен.
+Purpose: Programmatic creation of 3D CAD models and 2D sketches via a concise Python API14.
+Technology stack: Python, C++ (OCP / Open CASCADE)14.
+License / SPDX: Apache-2.015.
+Repository metrics: 5.6k stars, 434 forks16.
+Distribution availability: PyPI (pip install cadquery), Conda-Forge14.
+Performance source: Claimed by the developers (high computation speed thanks to performing boolean operations on the C++ kernel side)14.
+Maintenance status: Active project16.
+Limitations: No native support for AEC specifics: no DXF layers "out of the box", no mechanisms for automatically building construction dimension grids and hatching of multi-layer walls.
 IfcOpenShell
-Инфраструктурный open-source проект для манипуляции данными OpenBIM стандарта IFC19.
-Официальная ссылка: https://github.com/ifcopenshell/ifcopenshell
+An infrastructure open-source project for manipulating OpenBIM IFC standard data19.
+Official link: https://github.com/ifcopenshell/ifcopenshell
 [cite: 19]
-Назначение: Синтаксический анализ, создание, проверка и геометрический рендеринг BIM-моделей в форматах IFC2x3, IFC4 и IFC4x319.
-Технологический стек: C++, Python, Open CASCADE (геометрический вычислитель)19.
-Лицензия / SPDX: LGPL-3.0-or-later19.
-Показатели репозитория: 2.7k звезд, 952 форка19.
-Доступность дистрибутива: PyPI (pip install ifcopenshell), Conda-Forge, C++ SDK19.
-Источник производительности: Независимо измеряемый отраслевой стандарт OpenBIM.
-Статус обслуживания: Активный проект, финансируемый сообществом buildingSMART19.
-Ограничения: Высокая сложность стандарта IFC требует написания собственных алгоритмов проецирования трехмерных тел IfcWall и IfcWindow в ортогональные 2D-проекции для векторного вывода в DXF.
-Bonsai (ранее BlenderBIM)
-Нативная графическая среда для авторского проектирования в формате IFC на базе Blender19.
-Официальная ссылка: https://github.com/ifcopenshell/ifcopenshell (в составе монорепозитория IfcOpenShell)19
-Назначение: Создание, редактирование и документация BIM-моделей в визуальном интерфейсе19.
-Технологический стек: Python, Blender API, IfcOpenShell19.
-Лицензия / SPDX: GPL-3.0-or-later19.
-Показатели репозитория: Объединен в единую экосистему IfcOpenShell19.
-Доступность дистрибутива: Аддон для графического редактора Blender.
-Источник производительности: Заявлено разработчиками.
-Статус обслуживания: Активный проект.
-Ограничения: Наличие жесткой зависимости от среды Blender усложняет развертывание сервиса в легких серверных контейнерах.
+Purpose: Parsing, creation, validation and geometric rendering of BIM models in IFC2x3, IFC4 and IFC4x3 formats19.
+Technology stack: C++, Python, Open CASCADE (geometry evaluator)19.
+License / SPDX: LGPL-3.0-or-later19.
+Repository metrics: 2.7k stars, 952 forks19.
+Distribution availability: PyPI (pip install ifcopenshell), Conda-Forge, C++ SDK19.
+Performance source: Independently measured OpenBIM industry standard.
+Maintenance status: Active project funded by the buildingSMART community19.
+Limitations: The high complexity of the IFC standard requires writing custom algorithms to project 3D IfcWall and IfcWindow solids into orthogonal 2D projections for vector output to DXF.
+Bonsai (formerly BlenderBIM)
+A native graphical environment for authoring design in IFC format, based on Blender19.
+Official link: https://github.com/ifcopenshell/ifcopenshell (part of the IfcOpenShell monorepo)19
+Purpose: Creating, editing and documenting BIM models in a visual interface19.
+Technology stack: Python, Blender API, IfcOpenShell19.
+License / SPDX: GPL-3.0-or-later19.
+Repository metrics: Merged into the unified IfcOpenShell ecosystem19.
+Distribution availability: Add-on for the Blender graphical editor.
+Performance source: Claimed by the developers.
+Maintenance status: Active project.
+Limitations: The hard dependency on the Blender environment complicates deploying the service in lightweight server containers.
 ReportLab
-Профессиональная библиотека для прямого программного синтеза векторных документов формата PDF.
-Официальная ссылка: PyPI reportlab / https://www.reportlab.com/
-Назначение: Формирование многостраничных векторных чертежных документов с точно позиционируемыми графическими примитивами и текстовыми штампами.
-Технологический стек: Python, C-ускорители визуализации.
-Лицензия / SPDX: BSD-3-Clause (ReportLab Open Source Edition).
-Показатели репозитория: Стандартный компонент инфраструктуры Python.
-Доступность дистрибутива: PyPI (pip install reportlab).
-Источник производительности: Независимо подтвержденная высокая скорость генерации страниц.
-Статус обслуживания: Активно поддерживаемый коммерческий и open-source продукт.
-Ограничения: Отсутствуют встроенные функции черчения AEC (двойные линии стен с автоматической зачисткой проемов, динамические архитектурные размерные засечки), что требует написания собственного векторного транслятора.
+A professional library for direct programmatic synthesis of vector PDF documents.
+Official link: PyPI reportlab / https://www.reportlab.com/
+Purpose: Producing multi-page vector drawing documents with precisely positioned graphic primitives and text title stamps.
+Technology stack: Python, C rendering accelerators.
+License / SPDX: BSD-3-Clause (ReportLab Open Source Edition).
+Repository metrics: Standard component of the Python infrastructure.
+Distribution availability: PyPI (pip install reportlab).
+Performance source: Independently confirmed high page generation speed.
+Maintenance status: Actively maintained commercial and open-source product.
+Limitations: No built-in AEC drafting functions (double wall lines with automatic opening cleanup, dynamic architectural dimension ticks), which requires writing a custom vector translator.
 WeasyPrint
-Служебный инструмент конвертации сверстанных документов HTML5/CSS3 в векторный формат PDF.
-Официальная ссылка: https://github.com/Kozea/WeasyPrint
-Назначение: Преобразование веб-страниц и верстки в полиграфические PDF-документы.
-Технологический стек: Python, Pango, cairo, GDF.
-Лицензия / SPDX: BSD-3-Clause.
-Показатели репозитория: 6k звезд.
-Доступность дистрибутива: PyPI (pip install weasyprint).
-Источник производительности: Заявлено разработчиками.
-Статус обслуживания: Активный проект.
-Ограничения: Программа разработана для полиграфической верстки. При генерации архитектурных чертежей масштаба 1:100 или 1:50 возникают погрешности округления при пересчете CSS-пикселей в типографские пункты, что ведет к микро-щелям на стыках векторных элементов.
-Исследование ИИ и алгоритмических методов генерации планировок
-Формирование топологии помещений на основе неструктурированных спецификаций прошло трансформацию от генеративных нейросетевых подходов до математических решателей систем пространственных ограничений.
-Сравнительный анализ алгоритмических семейств
-Каждая математическая парадигма обладает собственными характеристиками соблюдения геометрических ограничений:
-Генеративно-состязательные сети (GAN) и диффузионные модели
-Архитектуры уровня HouseGAN20, HouseGAN++21 и Graph2Plan22 используют графы смежности комнат  для генерации топологии пола. Модель HouseGAN++ применяет механизмы графового внимания (GAT) для итеративного уточнения границ помещений21. Диффузионные модели рассматривают процесс как обратное шумоподавление над координатами углов комнат или семантическими растровыми масками.
-Входные данные: Граф смежности помещений, внешняя контурная рамка здания21.
-Выходные данные: Семантические растровые маски или нечеткие наборы полигонов21.
-Поддержка жестких ограничений: Не поддерживается. Модели не гарантируют соблюдение точной целевой площади комнат с допуском меньше .
-Геометрические пороки: Возникают неортогональные стены, взаимные наложения пространств и изолированные замкнутые зоны без проходов. Модели не учитывают физическую толщину стен (300–400 мм для наружных и 100–120 мм для внутренних), что вызывает фатальные смещения при автоматической векторизации.
-Трансформеры и авторегрессионные архитектуры
-Модели класса LayoutTransformer и VecFormer23 токенизируют элементы планировки в виде последовательностей .
-Входные данные: Последовательность текстовых требований к составу помещений.
-Выходные данные: Набор габаритных прямоугольников (bounding boxes) элементов23.
-Поддержка жестких ограничений: Ограниченная. Модели допускают накапливание пространственных погрешностей при увеличении числа помещений и не способны гарантировать вертикальную соосность несущих стен на разных этажах.
-Процедурные методы и математические солверы (Constraint Solvers)
-Подходы на основе смешанно-целочисленного линейного программирования (MILP), выполнимости формул в теориях (SMT / Z3 Solver) и прямоугольного дуализирования (Rectangular Dualization / REL) обеспечивают строго детерминированное соблюдение заданной спецификации.
-Формализация пространственной задачи в Constraint Solver строится на задании системы равенств и неравенств. Для каждого помещения  вводятся переменные координат левого нижнего угла , ширины  и высоты :
-Точное соответствие целевой площади:
+A utility tool for converting laid-out HTML5/CSS3 documents into vector PDF format.
+Official link: https://github.com/Kozea/WeasyPrint
+Purpose: Converting web pages and layouts into print-ready PDF documents.
+Technology stack: Python, Pango, cairo, GDF.
+License / SPDX: BSD-3-Clause.
+Repository metrics: 6k stars.
+Distribution availability: PyPI (pip install weasyprint).
+Performance source: Claimed by the developers.
+Maintenance status: Active project.
+Limitations: The program is designed for print layout. When generating architectural drawings at 1:100 or 1:50 scale, rounding errors arise when converting CSS pixels to typographic points, leading to micro-gaps at the joints of vector elements.
+Research into AI and Algorithmic Methods for Layout Generation
+Generating room topology from unstructured specifications has evolved from generative neural approaches to mathematical solvers of spatial constraint systems.
+Comparative Analysis of Algorithmic Families
+Each mathematical paradigm has its own characteristics regarding compliance with geometric constraints:
+Generative Adversarial Networks (GAN) and Diffusion Models
+Architectures such as HouseGAN20, HouseGAN++21 and Graph2Plan22 use room adjacency graphs  to generate floor topology. The HouseGAN++ model applies graph attention mechanisms (GAT) for iterative refinement of room boundaries21. Diffusion models treat the process as reverse denoising over room corner coordinates or semantic raster masks.
+Input data: Room adjacency graph, outer boundary frame of the building21.
+Output data: Semantic raster masks or fuzzy sets of polygons21.
+Hard constraint support: Not supported. The models do not guarantee compliance with an exact target room area with a tolerance smaller than .
+Geometric defects: Non-orthogonal walls, overlapping spaces and isolated enclosed zones without passages occur. The models do not account for physical wall thickness (300–400 mm for exterior and 100–120 mm for interior walls), which causes fatal offsets during automatic vectorization.
+Transformers and Autoregressive Architectures
+Models of the LayoutTransformer and VecFormer23 class tokenize layout elements as sequences .
+Input data: A sequence of textual requirements for the room program.
+Output data: A set of bounding boxes of elements23.
+Hard constraint support: Limited. The models allow spatial errors to accumulate as the number of rooms grows and cannot guarantee vertical alignment of load-bearing walls across floors.
+Procedural Methods and Mathematical Solvers (Constraint Solvers)
+Approaches based on mixed-integer linear programming (MILP), satisfiability modulo theories (SMT / Z3 Solver) and rectangular dualization (Rectangular Dualization / REL) provide strictly deterministic compliance with the given specification.
+Formalizing the spatial problem in a Constraint Solver is based on defining a system of equalities and inequalities. For each room  variables are introduced for the bottom-left corner coordinates , width  and height :
+Exact match of the target area:
 
-Ограничение пропорций помещения (Aspect Ratio):
+Room proportion constraint (Aspect Ratio):
 
-Условие взаимного непересечения комнат:
-Для любой пары помещений  и  вводятся бинарные переменные пространственного разделения :
+Condition of mutual non-overlap of rooms:
+For any pair of rooms  and  binary spatial separation variables are introduced :
 
-Ограничение физической смежности:
-Длина линии соприкосновения смежных комнат  и  должна превышать ширину дверного блока  с учетом технологических отступов:
+Physical adjacency constraint:
+The length of the contact line between adjacent rooms  and  must exceed the width of the door unit  taking technological offsets into account:
 
-Аналитический реестр исследовательских ИИ-проектов и датасетов
+Analytical Registry of AI Research Projects and Datasets
 HouseGAN / HouseGAN++
-Генеративно-состязательная сеть для итеративного построения планировок на основе графа смежности20.
-Официальная ссылка: https://github.com/sepidsh/Housegan-data-reader
+A generative adversarial network for iterative construction of layouts based on an adjacency graph20.
+Official link: https://github.com/sepidsh/Housegan-data-reader
 [cite: 21]
-Назначение: Генерация векторных граней комнат из концептуального графа связей21.
-Технологический стек: Python, PyTorch21.
-Лицензия / SPDX: Некоммерческая исследовательская лицензия.
-Датасет: RPLAN21.
-Доступность кода и весов: Исходный код доступен, веса предоставляются по запросу в исследовательских целях21.
-Поддержка жестких ограничений: Отсутствует.
+Purpose: Generating vector room faces from a conceptual connection graph21.
+Technology stack: Python, PyTorch21.
+License / SPDX: Non-commercial research license.
+Dataset: RPLAN21.
+Code and weights availability: Source code is available; weights are provided on request for research purposes21.
+Hard constraint support: None.
 Graph2Plan
-Нейросетевой пайплайн генерации планировок с учетом внешнего контура здания и графа смежности22.
-Официальная ссылка: https://github.com/HangZhangZ/MaskPLAN
+A neural pipeline for layout generation that takes into account the building's outer boundary and the adjacency graph22.
+Official link: https://github.com/HangZhangZ/MaskPLAN
 [cite: 22]
-Назначение: Поиск и подгонка пространственной структуры под заданный внешнеочерченный контур22.
-Технологический стек: Python, PyTorch, C++ layout helpers22.
-Лицензия / SPDX: Unverified (Исследовательский репозиторий).
-Датасет: RPLAN21.
-Доступность кода и весов: Код доступен на GitHub22.
-Поддержка жестких ограничений: Частично. Осуществляется поиск похожих вариантов из базы с последующей деформацией, что нарушает точные целевые площади комнат.
+Purpose: Searching and fitting a spatial structure to a given outer boundary contour22.
+Technology stack: Python, PyTorch, C++ layout helpers22.
+License / SPDX: Unverified (Research repository).
+Dataset: RPLAN21.
+Code and weights availability: Code available on GitHub22.
+Hard constraint support: Partial. Similar variants are retrieved from a database and then deformed, which violates exact target room areas.
 CubiCasa5K
-Крупнейший датасет и базовое нейросетевое ядро векторизации растровых строительных планов24.
-Официальная ссылка: https://github.com/CubiCasa/CubiCasa5k
+The largest dataset and a baseline neural kernel for vectorizing raster building plans24.
+Official link: https://github.com/CubiCasa/CubiCasa5k
 [cite: 24]
-Назначение: Сегментация и векторизация изображений планировок на 80+ классов архитектурных объектов24.
-Технологический стек: Python, PyTorch, OpenCV24.
-Лицензия / SPDX: CC-BY-NC-4.0 (Датасет)25, MIT (Код модели)25.
-Показатели репозитория: 567 звезд, 155 форков24.
-Доступность кода и весов: Код и предреализованные веса (model_best_val_loss_var.pkl) доступны для скачивания24.
-Поддержка жестких ограничений: Неприменимо (Инструмент распознавания, а не синтеза).
+Purpose: Segmentation and vectorization of floor plan images into 80+ classes of architectural objects24.
+Technology stack: Python, PyTorch, OpenCV24.
+License / SPDX: CC-BY-NC-4.0 (Dataset)25, MIT (Model code)25.
+Repository metrics: 567 stars, 155 forks24.
+Code and weights availability: Code and pretrained weights (model_best_val_loss_var.pkl) are available for download24.
+Hard constraint support: Not applicable (a recognition tool, not a synthesis tool).
 FloorPlanCAD
-Набор данных векторных чертежей CAD для задач детекции и сегментации символов элементов27.
-Официальная ссылка: https://github.com/bertjiazheng/Awesome-CAD
+A dataset of vector CAD drawings for element symbol detection and segmentation tasks27.
+Official link: https://github.com/bertjiazheng/Awesome-CAD
 [cite: 27]
-Назначение: Обучение нейросетевых систем панорамной детекции CAD-символов27.
-Технологический стек: Python, JSON/CAD аннотации.
-Лицензия / SPDX: MIT27.
-Показатели репозитория: 331 звезда, 46 форков27.
-Поддержка жестких ограничений: Неприменимо.
-Проверка строительных норм (ACC), BIM-интероперабельность и RAG над регуляторной документацией
-Программная проверка пространственных решений на соответствие государственным нормам (СП, СНиП, IBC) требует перевода нормативных текстов в строго детерминированные математические правила validation engine.
-Архитектура перевода нормативного текста в детерминированные ограничения
-Применение больших языковых моделей (LLM) непосредственно для проверки геометрической корректности вычерченных стен недопустимо ввиду статистической природы LLM и их склонности к галлюцинациям. Валидация строительных норм строится на разделении обязанностей:
-Модуль RAG (Retrieval-Augmented Generation): Выполняет поиск по нормативной базе знаний (например, СП 54.13330.2022) и извлекает численные пороговые значения (минимальная ширина коридоров, предельная длина путей эвакуации, коэффициенты естественной освещенности).
-Компилятор правил: Преобразует извлеченные параметры в машиночитаемый структурированный формат (JSON Schema).
-Детерминированный Rule Engine: Выполняет вычисление геометрических параметров поверх реального векторного графа здания без участия LLM.
-Формат машиночитаемого правила представлен следующей структурой данных:
+Purpose: Training neural systems for panoptic detection of CAD symbols27.
+Technology stack: Python, JSON/CAD annotations.
+License / SPDX: MIT27.
+Repository metrics: 331 stars, 46 forks27.
+Hard constraint support: Not applicable.
+Building Code Checking (ACC), BIM Interoperability and RAG over Regulatory Documentation
+Programmatic checking of spatial solutions for compliance with national norms (SP, SNiP, IBC) requires translating regulatory texts into strictly deterministic mathematical rules of a validation engine.
+Architecture for Translating Regulatory Text into Deterministic Constraints
+Using large language models (LLMs) directly to check the geometric correctness of drawn walls is unacceptable because of the statistical nature of LLMs and their tendency to hallucinate. Building code validation is built on a separation of responsibilities:
+RAG module (Retrieval-Augmented Generation): Searches the regulatory knowledge base (e.g. SP 54.13330.2022) and extracts numeric thresholds (minimum corridor width, maximum evacuation route length, daylight factors).
+Rule compiler: Converts the extracted parameters into a machine-readable structured format (JSON Schema).
+Deterministic Rule Engine: Computes geometric parameters over the real vector graph of the building without LLM involvement.
+The machine-readable rule format is represented by the following data structure:
 
 
 
@@ -302,209 +302,209 @@ JSON
 }
 
 
-Стандарт IDS (Information Delivery Specification) и инструмент ifctester
-В экосистеме OpenBIM проверка семантической и геометрической полноты осуществляется с использованием открытого стандарта IDS, разрабатываемого международным консорциумом buildingSMART. Для исполнения IDS-проверок используется open-source библиотека ifctester, входящая в проект IfcOpenShell19.
-ifctester производит программную валидацию IFC-файлов по следующим параметрам:
-Проверка наличия классов: Подтверждение того, что все помещения представлены экземплярами IfcSpace, а стены — IfcWallStandardCase19.
-Проверка атрибутов и Pset: Валидация заполнения наборов пользовательских свойств (Property Sets, например, Pset_SpaceCommon.GrossFloorArea).
-Аудит пространственных границ: Контроль корректности генерации объектов IfcRelSpaceBoundary для связи геометрии комнат с ограждающими конструкциями стен.
-Анализ существующих продуктов и рыночных пробелов
-Современный рынок программного обеспечения для генеративного проектирования представлен как проприетарными SaaS-платформами, так и исследовательскими системами.
-Сравнительная характеристика генеративных архитектурных платформ
-Продукт
-Тип ПО
-Входные данные
-Выходные данные
-Стоимость / Модель
-Поддержка DXF/IFC
-Геометрический вычислитель
-Ключевые ограничения
+The IDS Standard (Information Delivery Specification) and the ifctester Tool
+In the OpenBIM ecosystem, semantic and geometric completeness is checked using the open IDS standard developed by the international buildingSMART consortium. IDS checks are executed with the open-source ifctester library, part of the IfcOpenShell project19.
+ifctester performs programmatic validation of IFC files on the following parameters:
+Class presence check: Confirming that all rooms are represented by IfcSpace instances and walls by IfcWallStandardCase19.
+Attribute and Pset check: Validating that custom property sets are populated (Property Sets, e.g. Pset_SpaceCommon.GrossFloorArea).
+Space boundary audit: Checking the correct generation of IfcRelSpaceBoundary objects linking room geometry to the enclosing wall structures.
+Analysis of Existing Products and Market Gaps
+The modern market for generative design software consists of both proprietary SaaS platforms and research systems.
+Comparative Characteristics of Generative Architectural Platforms
+Product
+Software type
+Input data
+Output data
+Cost / Model
+DXF/IFC support
+Geometry engine
+Key limitations
 Maket.ai
-Проприетарный SaaS
-Текст ТЗ, габариты, растровые планы
-2D-планы, 3D-рендеры, PDF, DXF
-Freemium (от $20/мес до $100/мес)
-DXF (Да), IFC (Нет)
-Вероятностный ИИ (Diffusion/GAN)
-Отсутствие строгого вычисления толщины стен, отсутствие проверки норм
+Proprietary SaaS
+Brief text, dimensions, raster plans
+2D plans, 3D renders, PDF, DXF
+Freemium (from $20/mo to $100/mo)
+DXF (Yes), IFC (No)
+Probabilistic AI (Diffusion/GAN)
+No rigorous computation of wall thickness, no code checking
 TestFit
-Проприетарный Desktop/SaaS
-Границы участка, отступы, Unit Mix
-3D-массинг, паркинг, DXF, IFC, Revit
-Commercial Enterprise ($3000–$6000/год)
-DXF (Да), IFC (Да)
-Детерминированный MILP Solver
-Узкая специализация на типовых жилых блоках и паркингах
+Proprietary Desktop/SaaS
+Site boundaries, setbacks, Unit Mix
+3D massing, parking, DXF, IFC, Revit
+Commercial Enterprise ($3000–$6000/year)
+DXF (Yes), IFC (Yes)
+Deterministic MILP Solver
+Narrow specialization in standard residential blocks and parking
 Finch3D
-Проприетарный SaaS
-3D-ядро здания, внешние грани
-2D/3D этажные планы, IFC, Grasshopper
-Commercial SaaS ($100–$250/мес)
-DXF (Частично), IFC (Да)
-Графовая процедурная декомпозиция
-Необходимость предварительного моделирования формы здания
+Proprietary SaaS
+3D building core, outer faces
+2D/3D floor plans, IFC, Grasshopper
+Commercial SaaS ($100–$250/mo)
+DXF (Partial), IFC (Yes)
+Graph-based procedural decomposition
+Requires prior modelling of the building shape
 Autodesk Forma
-Проприетарный SaaS
-ГИС-данные участка, отступы
-3D-массинг, карты инсоляции/шума, IFC
-Подписка Autodesk ($180/мес)
-DXF (Да), IFC (Да)
-Процедурный макро-анализ
-Ограничен степенью детализации массинга, не генерирует внутренние комнаты
+Proprietary SaaS
+GIS site data, setbacks
+3D massing, sun exposure/noise maps, IFC
+Autodesk subscription ($180/mo)
+DXF (Yes), IFC (Yes)
+Procedural macro analysis
+Limited by massing level of detail, does not generate interior rooms
 Hypar
-Открытая/Коммерческая
-C#/Python скрипты, текстовые параметры
-3D BIM модели, IFC, DXF, JSON
-Free tier, $25–$75/мес
-DXF (Да), IFC (Да)
-Функция-ориентированный скриптинг
-Требует ручной разработки алгоритмов под каждый новый тип объекта
+Open/Commercial
+C#/Python scripts, text parameters
+3D BIM models, IFC, DXF, JSON
+Free tier, $25–$75/mo
+DXF (Yes), IFC (Yes)
+Function-oriented scripting
+Requires manual development of algorithms for each new object type
 Planner5D
-Проприетарный SaaS
-Drag-and-drop, растровые сканы
-2D/3D интерьеры, рендеры, PDF
+Proprietary SaaS
+Drag-and-drop, raster scans
+2D/3D interiors, renders, PDF
 Freemium
-DXF (Ограничено), IFC (Нет)
-Эвристический визуальный планер
-Ориентирован на DIY-дизайн, отсутствие инженерного BIM-экспорта
+DXF (Limited), IFC (No)
+Heuristic visual planner
+Oriented toward DIY design, no engineering BIM export
 
-Системный разбор продуктов
+Systematic Review of Products
 Maket.ai
-Облачный сервис для быстрой генерации концептуальных эскизов жилых домов28.
-Входные данные: Текстовые промпты, параметры количества комнат, целевые площади, загружаемые картинки планов28.
-Выходные данные: Изображения планов, PDF, DXF файлы28.
-Ценовая политика: Бесплатные кредиты, далее $20/мес (Homeowner) или $100/мес (Pro)29.
-Целевая аудитория: Частные домовладельцы, архитекторы на этапе концепта28.
-Ограничения: Программа использует вероятностную нейросетевую модель28. В выгружаемых DXF-файлах стены представляют собой некоординированные полигоны без учета реальной физической толщины несущих конструкций и инженерных каналов28. Проверка строительных норм отсутствует.
+A cloud service for rapid generation of conceptual sketches of residential houses28.
+Input data: Text prompts, room count parameters, target areas, uploaded plan images28.
+Output data: Plan images, PDF, DXF files28.
+Pricing: Free credits, then $20/mo (Homeowner) or $100/mo (Pro)29.
+Target audience: Private homeowners, architects at the concept stage28.
+Limitations: The program uses a probabilistic neural model28. In the exported DXF files, walls are uncoordinated polygons that ignore the real physical thickness of load-bearing structures and service ducts28. There is no building code checking.
 TestFit
-Промышленный конфигуратор зданий, паркингов и мастер-планов на основе алгоритмов оптимизации.
-Входные данные: Градостроительные отступы, контур участка, этажность, типология квартир.
-Выходные данные: Исполнительные 3D-объемы, планировки этажей, экспорт в DXF, IFC и нативная интеграция с Autodesk Revit.
-Ценовая политика: Промышленный B2B SaaS (от $3000 до $6000 за рабочее место в год).
-Целевая аудитория: Девелоперы, проектировщики жилых микрорайонов.
-Ограничения: Вычислитель системы нацелен на жестко запрограммированные типологии (жилые секции коридорного типа, паркинги). Система не может обработать произвольный текстовый промпт со сложной неортогональной внутренней архитектурой.
+An industrial configurator for buildings, parking and master plans based on optimization algorithms.
+Input data: Urban planning setbacks, site boundary, number of storeys, apartment typology.
+Output data: Construction-grade 3D volumes, floor layouts, export to DXF, IFC and native integration with Autodesk Revit.
+Pricing: Industrial B2B SaaS (from $3000 to $6000 per seat per year).
+Target audience: Developers, designers of residential neighbourhoods.
+Limitations: The system's engine targets hard-coded typologies (corridor-type residential sections, parking). The system cannot process an arbitrary text prompt with complex non-orthogonal interior architecture.
 Finch3D
-Облачная система автоматического заклинивания планировочных решений внутри заданной трехмерной оболочки здания.
-Входные данные: Объемные границы здания, целевые площади комнат.
-Выходные данные: Топология распределения квартир, нативный экспорт в Rhino/Grasshopper и IFC.
-Ценовая политика: От $100 до $250 за пользователя в месяц.
-Целевая аудитория: Крупные архитектурные бюро.
-Ограничения: Система не работает «с нуля» от текста ТЗ; необходима предварительная загрузка точной 3D-геометрии внешнего объема здания.
+A cloud system for automatically fitting layout solutions inside a given 3D building envelope.
+Input data: Volumetric building boundaries, target room areas.
+Output data: Apartment distribution topology, native export to Rhino/Grasshopper and IFC.
+Pricing: From $100 to $250 per user per month.
+Target audience: Large architectural firms.
+Limitations: The system does not work "from scratch" from the brief text; the exact 3D geometry of the building's outer volume must be uploaded first.
 Hypar
-Открытая платформа автоматизации проектирования с использованием бессерверных функций на C# и Python33.
-Входные данные: Параметры из веб-интерфейса, пользовательские скрипты33.
-Выходные данные: Валидные IFC и DXF файлы, 3D-модели33.
-Ценовая политика: Бесплатный базовый тариф, $25–$75/мес для профессионалов33.
-Целевая аудитория: Инженеры по автоматизации BIM, вычислительные дизайнеры33.
-Ограничения: Отсутствует готовый «коробочный» ИИ-генератор; система требует программирования логики генерации для каждого типа зданий.
-Идентифицированные рыночные пробелы (Market Gaps)
-Разрыв между ИИ-интерфейсом и инженерной точностью: Существующие ИИ-инструменты (Maket.ai) дают высокую гибкость текстового ввода, но выдают непригодную для строительства «картинку»28. Профессиональные инструменты (TestFit) дают высокую инженерную точность, но требуют ручного задания сотен числовых параметров.
-Отсутствие сквозной валидации строительных норм на этапе генерации: Ни один из продуктов не производит динамическое переформулирование ограничений солвера на основе текстов нормативных документов (RAG over Building Codes).
-Рекомендуемая архитектура и стек технологий
-Для реализации стабильного, точно следующего спецификации ИИ-конфигуратора планировок рекомендуется гибридная четырехслойная архитектура.
-Состав слоев гибридной системы
-Слой парсинга спецификации и взаимодействия с пользователем (LLM Layer)
-Технологический стек: FastAPI, Python 3.11, Pydantic v2, библиотека instructor для обеспечения строгой типизации вывода LLM (OpenAI GPT-4o / Claude 3.5 Sonnet).
-Назначение: Преобразование неструктурированного текста ТЗ пользователя в детерминированный JSON-объект спецификации (список комнат, целевые площади, коэффициенты смежности).
-Слой математической оптимизации топологии (Constraint Solver Engine)
-Технологический стек: Google OR-Tools (модули CP-SAT и MILP), библиотека Z3 Theorem Prover, вычислительная библиотека Shapely.
-Назначение: Точный расчет точечных координат прямоугольных или полигональных блоков комнат на основе уравнений смежности, площадей и непроницаемости границ.
-Слой формирования строительной геометрии и BIM (Procedural CAD/BIM Engine)
-Технологический стек: CadQuery / Open CASCADE (для 3D операций), ezdxf (для генерации 2D DXF)1, IfcOpenShell (для генерации IFC4)19.
-Назначение: Придание точечным блокам комнат реальных строительных свойств (наложение слоев внешних и внутренних стен, вырезание оконных и дверных проемов, формирование таблиц слоев).
-Слой рендеринга и документирования (Export & Render Engine)
-Технологический стек: ReportLab (для прямого создания векторных PDF 1:100 с штампом), Three.js / WebGL (для браузерного визуализатора).
-Назначение: Формирование финального пакета чертежей и интерактивной 3D-модели.
-Разграничение сфер применения LLM
-В рамках предложенной архитектуры устанавливаются жесткие границы применения больших языковых моделей:
-Разрешенные сферы применения LLM:
-Извлечение параметров из текстов технического задания и протоколов встреч с заказчиком.
-Ведение диалогового интерфейса («Перенеси кухню ближе к балкону»).
-Семантический поиск по нормативным документам (RAG) для выбора соответствующего JSON-профиля ограничений.
-Категорически запрещенные сферы применения LLM:
-Расчет численных значений координат () углов стен.
-Вычисление геометрических пересечений и толщин конструкций.
-Принятие финального решения о соответствии проекта строительным нормам.
-Прямая генерация текстового содержимого файлов DXF или IFC.
-Дорожная карта разработки MVP (Minimum Viable Product)
-План реализации минимально жизнеспособного продукта рассчитан на 24 недели регулярного инженерного цикла:
-Этап 1: Разработка парсера спецификаций и схемы данных (Недели 1–4)
-Проектирование валидируемой JSON-схемы входной спецификации здания.
-Создание FastAPI сервиса с интеграцией LLM через подсистему structured output (instructor).
-Формирование сквозных юнит-тестов для проверки точности экстракции параметров комнат из неструктурированных ТЗ.
-Этап 2: Создание ядра математической оптимизации (Недели 5–10)
-Формулирование математической задачи MILP/CP-SAT для размещения прямоугольных блоков комнат.
-Интеграция библиотеки Shapely для вычисления булевых пространственных операций.
-Реализация модуля автоматического распределения коридоров и циркуляционных путей.
-Этап 3: Создание генератора векторной 2D-документации (Недели 11–16)
-Интеграция библиотеки ezdxf для формирования структуры слоев чертежа (A-WALL, A-DOOR, A-WIND, A-ANNO-DIMS)1.
-Разработка процедурных модулей зачистки сопряжений стен и размещения динамических блоков дверей и окон.
-Создание подсистемы рендеринга векторных PDF-файлов на базе ReportLab с поддержкой заголовочных блоков (штампов) по стандартам ISO/ГОСТ.
-Этап 4: Интеграция OpenBIM, валидатора норм и пользовательского UI (Недели 17–24)
-Разработка модуля трансляции топологии в формат IFC4 с использованием IfcOpenShell19.
-Интеграция ifctester для автоматической проверки полученной модели по IDS-сценариям19.
-Создание фронтенд-интерфейса на React и Three.js для 2D-редактирования и 3D-просмотра сгенерированных вариантов.
-Стратегия валидации
-Каждый сгенерированный вариант планировки проходит автоматизированный четырехступенчатый конвейер проверки качества.
+An open design automation platform using serverless functions in C# and Python33.
+Input data: Parameters from the web interface, user scripts33.
+Output data: Valid IFC and DXF files, 3D models33.
+Pricing: Free basic tier, $25–$75/mo for professionals33.
+Target audience: BIM automation engineers, computational designers33.
+Limitations: There is no ready "out-of-the-box" AI generator; the system requires programming the generation logic for each building type.
+Identified Market Gaps
+Gap between the AI interface and engineering precision: Existing AI tools (Maket.ai) offer high flexibility of text input but output a "picture" unsuitable for construction28. Professional tools (TestFit) offer high engineering precision but require manual entry of hundreds of numeric parameters.
+No end-to-end building code validation at the generation stage: None of the products dynamically reformulates solver constraints based on the texts of regulatory documents (RAG over Building Codes).
+Recommended Architecture and Technology Stack
+To implement a stable AI layout configurator that precisely follows the specification, a hybrid four-layer architecture is recommended.
+Layers of the Hybrid System
+Specification parsing and user interaction layer (LLM Layer)
+Technology stack: FastAPI, Python 3.11, Pydantic v2, the instructor library to ensure strict typing of LLM output (OpenAI GPT-4o / Claude 3.5 Sonnet).
+Purpose: Converting the user's unstructured brief text into a deterministic JSON specification object (list of rooms, target areas, adjacency coefficients).
+Topology mathematical optimization layer (Constraint Solver Engine)
+Technology stack: Google OR-Tools (CP-SAT and MILP modules), the Z3 Theorem Prover library, the Shapely computational library.
+Purpose: Exact calculation of point coordinates of rectangular or polygonal room blocks based on equations of adjacency, areas and boundary impermeability.
+Construction geometry and BIM layer (Procedural CAD/BIM Engine)
+Technology stack: CadQuery / Open CASCADE (for 3D operations), ezdxf (for 2D DXF generation)1, IfcOpenShell (for IFC4 generation)19.
+Purpose: Giving the room point blocks real construction properties (applying exterior and interior wall layers, cutting window and door openings, building layer tables).
+Rendering and documentation layer (Export & Render Engine)
+Technology stack: ReportLab (for direct creation of 1:100 vector PDFs with a title block), Three.js / WebGL (for the browser viewer).
+Purpose: Producing the final drawing package and an interactive 3D model.
+Delimiting the Scope of LLM Use
+Within the proposed architecture, strict boundaries are set on the use of large language models:
+Permitted uses of LLMs:
+Extracting parameters from brief texts and minutes of client meetings.
+Running the conversational interface ("Move the kitchen closer to the balcony").
+Semantic search over regulatory documents (RAG) to select the appropriate JSON constraint profile.
+Strictly prohibited uses of LLMs:
+Calculating numeric coordinate values () of wall corners.
+Computing geometric intersections and thicknesses of structures.
+Making the final decision on the project's compliance with building codes.
+Directly generating the text content of DXF or IFC files.
+MVP (Minimum Viable Product) Development Roadmap
+The implementation plan for the minimum viable product is designed for 24 weeks of a regular engineering cycle:
+Stage 1: Development of the specification parser and data schema (Weeks 1–4)
+Designing a validatable JSON schema for the input building specification.
+Creating a FastAPI service with LLM integration via the structured output subsystem (instructor).
+Building end-to-end unit tests to check the accuracy of extracting room parameters from unstructured briefs.
+Stage 2: Building the mathematical optimization core (Weeks 5–10)
+Formulating the MILP/CP-SAT mathematical problem for placing rectangular room blocks.
+Integrating the Shapely library for computing boolean spatial operations.
+Implementing a module for automatic allocation of corridors and circulation paths.
+Stage 3: Building the vector 2D documentation generator (Weeks 11–16)
+Integrating the ezdxf library to build the drawing layer structure (A-WALL, A-DOOR, A-WIND, A-ANNO-DIMS)1.
+Developing procedural modules for cleaning up wall junctions and placing dynamic door and window blocks.
+Creating a vector PDF rendering subsystem based on ReportLab with support for title blocks (stamps) per ISO/GOST standards.
+Stage 4: Integration of OpenBIM, the code validator and the user UI (Weeks 17–24)
+Developing a module for translating topology into IFC4 format using IfcOpenShell19.
+Integrating ifctester for automatic checking of the resulting model against IDS scenarios19.
+Creating a React and Three.js front-end for 2D editing and 3D viewing of the generated variants.
+Validation Strategy
+Every generated layout variant passes through an automated four-stage quality-check pipeline.
 
 
 
-                      [ Исходный макет ]
+                      [ Initial layout ]
                               │
                               ▼
 ┌────────────────────────────────────────────────────────────┐
-│ 1. Геометрическая валидация (Shapely / Open CASCADE)       │
-│    • Проверка самопересечений полигонов (is_valid)         │
-│    • Проверка совпадения площадей: SUM(A_комнат) == A_общая │
+│ 1. Geometric validation (Shapely / Open CASCADE)           │
+│    • Polygon self-intersection check (is_valid)            │
+│    • Area match check: SUM(A_rooms) == A_total             │
 └──────────────┬─────────────────────────────────────────────┘
-               │ Успех
+               │ Success
                ▼
 ┌────────────────────────────────────────────────────────────┐
-│ 2. Проверка строительных норм (ACC Rules Engine)           │
-│    • Ширина коридорных проходов >= 1.2 м                   │
-│    • Расстояние эвакуационных путей <= R_max               │
+│ 2. Building code check (ACC Rules Engine)                  │
+│    • Corridor passage width >= 1.2 m                       │
+│    • Evacuation route distance <= R_max                    │
 └──────────────┬─────────────────────────────────────────────┘
-               │ Успех
+               │ Success
                ▼
 ┌────────────────────────────────────────────────────────────┐
-│ 3. Валидация синтаксиса структур DXF и IFC                 │
-│    • ezdxf.audit() (Проверка ссылок слоев и блоков)       │
-│    • ifctester IDS Audit (Проверка валидности схемы IFC4)   │
+│ 3. Syntax validation of DXF and IFC structures             │
+│    • ezdxf.audit() (Layer and block reference check)       │
+│    • ifctester IDS Audit (IFC4 schema validity check)      │
 └──────────────┬─────────────────────────────────────────────┘
-               │ Успех
+               │ Success
                ▼
 ┌────────────────────────────────────────────────────────────┐
-│ 4. Графическая проверка векторного PDF                     │
-│    • Валидация вырезания вьюпортов и целостности штампа    │
+│ 4. Graphical check of the vector PDF                       │
+│    • Viewport clipping and title block integrity check     │
 └────────────────────────────────────────────────────────────┘
 
 
-1. Геометрическая валидация
-Построенные полигоны стен проверяются с помощью метода Shapely polygon.is_valid на отсутствие самопересечений и вырожденных граней. Проверяется абсолютное равенство площадей: сумма площадей комнат плюс площадь толщины стен должна равняться общей площади здания по внешнему контуру:
+1. Geometric validation
+The constructed wall polygons are checked with the Shapely polygon.is_valid method for absence of self-intersections and degenerate edges. Absolute equality of areas is checked: the sum of room areas plus the area of wall thicknesses must equal the total building area measured by the outer contour:
 
-2. Валидация строительных норм (Code Compliance)
-Осуществляется автоматическое построение графа видимости (Visibility Graph) внутри геометрии этажа и вычисление кратчайшего пути от любой точки комнат до эвакуационного выхода методом Дейкстры. Расстояние не должно превышать предельное значение , заданное в нормативном файле.
-3. Проверка синтаксиса и структуры файлов DXF и IFC
-DXF Аудит: Выполнение вызова ezdxf.audit(doc) для выявления поврежденных ссылок на таблицы слоев, отсутствующих handles объектов и незамкнутых контуров1.
-IFC Аудит: Вызов ifctester для сопоставления сгенерированной структуры данных с нормативным XML-файлом IDS19.
-Ключевые МЕРТВЫЕ ЗОНЫ (Dead Zones)
-В процессе проектирования архитектуры ИИ-конфигуратора следует учитывать тупиковые инженерные подходы:
-Мертвая зона 1: Попытка обучения end-to-end нейросети для прямой генерации байтов DXF/DWG.
-Структура CAD-файлов строго векторизована и синтаксически чувствительна. Ошибки на уровне отдельных байтов приводят к нечитаемости файлов в AutoCAD и Revit. Нейросети не способны стабильно воспроизводить жесткие бинарные спецификации.
-Мертвая зона 2: Делегирование геометрических вычислений и проверки норм языковой модели.
-Языковые модели не обладают встроенным механизмом вычисления пространственных координат и дают ложные подтверждения успешности прохождения норм на некорректных чертежах.
-Мертвая зона 3: Использование библиотек под лицензией GPL (LibreDWG, Bonsai) внутри проприетарного облачного SaaS. Прямой импорт или связывание кода под лицензией GPLv3 в закрытый коммерческий сервис влечет юридические риски вынужденного раскрытия исходного кода всей платформы5. Все GPL-компоненты должны быть вынесены в изолированные микросервисы, общающиеся через сетевой REST/gRPC API.
-Мертвая зона 4: Генерация планов этажей без учета вертикальной соосности многоэтажных зданий.
-Независимый расчет каждого этажа приводит к провисанию несущих стен второго этажа над открытыми пространствами первого этажа. Оптимизационный солвер обязан рассчитывать все этажи одновременно в единой вертикальной сетке осей (Structural Grid).
-Три сильнейших продуктовых возможности
-На основе проведенного технологического и рыночного анализа выделяются следующие ключевые продуктовые направления:
-1. B2B SaaS экспресс-тестирования участка (Automated Site Test-Fit Engine)
-Автоматизированная платформа для инвестиционных девелоперов, принимающая ГИС-координаты земельного участка и желаемые параметры строительного объема. Система за минуты генерирует не просто абстрактный 3D-массинг, а проработанную поэтажную планировку с прорисованной структурой квартир, проходов и инженерных шахт с готовой выгрузкой в DXF и IFC.
-2. API-инфраструктура оптимизационного ядра для BIM-систем (Generative Layout API)
-Безголовый (Headless) API-сервис для разработчиков программного обеспечения AEC, позволяющий интегрировать функцию «генерации планировки по требованиям ТЗ» прямо в интерфейсы Autodesk Revit, Archicad или Renga.
-3. Интеллектуальный аудитор и исправитель чертежей (AI Blueprint Code-Checker & Fixer)
-B2B-инструмент автоматической проверки инженерных чертежей и BIM-моделей на соответствие государственным нормам. Система не только находит геометрические нарушения, но и задействует математический Constraint Solver для автоматического исправления положения перегородок и формирования обновленного пакета чертежей в формате DXF/PDF.
-Источники
+2. Building code validation (Code Compliance)
+A visibility graph (Visibility Graph) is automatically built inside the floor geometry, and the shortest path from any point of the rooms to an evacuation exit is computed using Dijkstra's method. The distance must not exceed the limit value  specified in the regulatory file.
+3. Syntax and structure check of DXF and IFC files
+DXF Audit: Calling ezdxf.audit(doc) to detect broken references to layer tables, missing object handles and unclosed contours1.
+IFC Audit: Calling ifctester to match the generated data structure against the normative IDS XML file19.
+Key DEAD ZONES
+When designing the architecture of the AI configurator, the following dead-end engineering approaches should be taken into account:
+Dead zone 1: Attempting to train an end-to-end neural network to directly generate DXF/DWG bytes.
+The structure of CAD files is strictly vectorized and syntactically sensitive. Errors at the level of individual bytes make files unreadable in AutoCAD and Revit. Neural networks are not capable of stably reproducing rigid binary specifications.
+Dead zone 2: Delegating geometric computation and code checking to a language model.
+Language models have no built-in mechanism for computing spatial coordinates and give false confirmations of passing code checks on incorrect drawings.
+Dead zone 3: Using GPL-licensed libraries (LibreDWG, Bonsai) inside a proprietary cloud SaaS. Directly importing or linking GPLv3-licensed code into a closed commercial service entails legal risks of forced disclosure of the source code of the entire platform5. All GPL components must be moved into isolated microservices that communicate via a network REST/gRPC API.
+Dead zone 4: Generating floor plans without accounting for vertical alignment in multi-storey buildings.
+Computing each floor independently leads to load-bearing walls of the second floor hanging over open spaces of the first floor. The optimization solver must compute all floors simultaneously in a single vertical grid of axes (Structural Grid).
+Three Strongest Product Opportunities
+Based on the technology and market analysis, the following key product directions stand out:
+1. B2B SaaS for express site testing (Automated Site Test-Fit Engine)
+An automated platform for investment developers that takes the GIS coordinates of a land plot and the desired parameters of the building volume. Within minutes the system generates not just an abstract 3D massing but a worked-out floor-by-floor layout with a drawn structure of apartments, passages and service shafts, with ready export to DXF and IFC.
+2. Optimization core API infrastructure for BIM systems (Generative Layout API)
+A headless API service for AEC software developers that allows integrating a "generate a layout from the brief requirements" function directly into the interfaces of Autodesk Revit, Archicad or Renga.
+3. Intelligent drawing auditor and fixer (AI Blueprint Code-Checker & Fixer)
+A B2B tool for automatically checking engineering drawings and BIM models for compliance with national norms. The system not only finds geometric violations but also uses a mathematical Constraint Solver to automatically correct the position of partitions and produce an updated drawing package in DXF/PDF format.
+Sources
 mozman/ezdxf: Python interface to DXF - GitHub, https://github.com/mozman/ezdxf
 GitHub - aka863/ezdxf: dxf library, https://github.com/aka863/ezdxf
 DatacloudIntl/dc_ezdxf: DataCloud's fork of ezdxf - GitHub, https://github.com/DatacloudIntl/dc_ezdxf
@@ -532,7 +532,7 @@ CubiCasa5k floor plan dataset - GitHub, https://github.com/CubiCasa/CubiCasa5k
 GitHub - mageaustralia/FloorPlanAnalyzer: Experimental floor plan, https://github.com/mageaustralia/FloorPlanAnalyzer
 CubiCasa5k/LICENSE at master - GitHub, https://github.com/CubiCasa/CubiCasa5k/blob/master/LICENSE
 A list of awesome Computer-Aided Design (CAD) papers - GitHub, https://github.com/bertjiazheng/Awesome-CAD
-Maket AI: все о нейросети в одном обзоре, https://room-design.ai/maket-ai.php
+Maket AI: все о нейросети в одном обзоре (English: Maket AI: everything about the neural network in one review), https://room-design.ai/maket-ai.php
 Maket Pricing & Plans: Start Free, https://www.maket.ai/pricing
 Maket.ai, https://www.maket.ai/
 How to Use Maket: Design Your Home from Idea to 3D, https://www.maket.ai/blog/how-to-use-maket

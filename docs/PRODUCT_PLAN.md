@@ -1,532 +1,532 @@
-# План продукта: Regulated Facility Layout Compiler
+# Product Plan: Regulated Facility Layout Compiler
 
-## 1. Зачем расширяем проект
+## 1. Why we are expanding the project
 
-Текущий `LayoutIR` MVP остаётся техническим фундаментом: он доказал
-deterministic packing, стеновую геометрию, DXF/PDF/IFC и независимую проверку.
-Он больше не является продуктовой целью.
+The current `LayoutIR` MVP remains the technical foundation: it has proven
+deterministic packing, wall geometry, DXF/PDF/IFC and independent verification.
+It is no longer the product goal.
 
-Продуктовая цель — система для регулируемых и технологически насыщенных
-объектов: фармацевтики, чистых помещений, лабораторий, больниц и
-промышленности. В таких объектах главный результат — не картинка, а
-воспроизводимый и проверяемый вариант: зоны, оборудование, потоки,
-ограничения, DXF/PDF/IFC и evidence.
+The product goal is a system for regulated and technology-intensive
+facilities: pharmaceuticals, cleanrooms, laboratories, hospitals and
+industry. In such facilities the main output is not a picture but a
+reproducible and verifiable variant: zones, equipment, flows,
+constraints, DXF/PDF/IFC and evidence.
 
-Первый коммерчески осмысленный клин — **фармацевтическое clean production /
-cleanroom planning**. Он требует именно тех способностей, которые отличают
-продукт: разделение потоков, clearance, фиксированное оборудование, строгие
-зоны и audit trail. Лабораторные, hospital и другие industrial-профили будут
-подключаться отдельными contract/rule packs, когда их ограничения подтверждены.
+The first commercially meaningful wedge is **pharmaceutical clean production /
+cleanroom planning**. It requires exactly the capabilities that set the
+product apart: flow segregation, clearance, fixed equipment, strict
+zones and an audit trail. Laboratory, hospital and other industrial profiles will
+be added as separate contract/rule packs once their constraints are confirmed.
 
-`ROADMAP.md` считается закрытым как план исходного MVP. Этот документ описывает
-следующий продуктовый слой и не отменяет принятые ограничения: solver-first,
-каноническая модель, производные DXF/PDF/IFC и отсутствие нормативного verdict
-от LLM.
+`ROADMAP.md` is considered closed as the plan for the original MVP. This document describes
+the next product layer and does not revoke the accepted constraints: solver-first,
+a canonical model, derived DXF/PDF/IFC, and no regulatory verdict
+from an LLM.
 
-## 2. Продуктовая формулировка
+## 2. Product statement
 
-**Regulated Facility Layout Compiler** принимает программу объекта и выпускает
-проверяемые варианты пространственной организации.
+The **Regulated Facility Layout Compiler** takes a facility program and produces
+verifiable spatial layout variants.
 
 ```text
-ТЗ / PDF / существующий DXF
+Brief / PDF / existing DXF
         ↓
-Структурированная программа объекта
+Structured facility program
         ↓
-BuildingIR: зоны, помещения, оборудование, потоки, конструкции, правила
+BuildingIR: zones, rooms, equipment, flows, structure, rules
         ↓
-Иерархический solver и геометрический движок
+Hierarchical solver and geometry engine
         ↓
-Геометрическая, функциональная и нормативная проверка
+Geometric, functional and regulatory checks
         ↓
-DXF + vector PDF + IFC + отчёт доказательств
+DXF + vector PDF + IFC + evidence report
 ```
 
-Это не универсальный «генератор красивых картинок», не общий AI floor-planner и
-не автоматическая выдача рабочей документации или GMP/медицинского разрешения
-без инженера. Это design-aid и компилятор вариантов, который делает решения
-воспроизводимыми, редактируемыми и проверяемыми.
+This is not a universal "pretty picture generator", not a general AI floor planner, and
+not an automatic issuer of construction documents or GMP/medical approval
+without an engineer. It is a design aid and variant compiler that makes decisions
+reproducible, editable and verifiable.
 
-## 3. Что входит в целевой продукт
+## 3. What the target product includes
 
-### Вход
+### Input
 
-- габариты и контур здания или существующий floor plate;
-- список помещений с площадями, минимальными габаритами и назначением;
-- иерархия функциональных зон;
-- обязательные, желательные и запрещённые связи;
-- оборудование и обслуживающие габариты;
-- потоки людей, сырья, продукции, отходов и сервиса;
-- колонны, оси, шахты, лестницы и другие фиксированные ограничения;
-- требования к дверям, окнам, проходам, освещению и доступности;
-- юрисдикция, версия правил и drawing standard.
+- building dimensions and outline, or an existing floor plate;
+- a list of rooms with areas, minimum dimensions and purpose;
+- a hierarchy of functional zones;
+- required, preferred and forbidden relations;
+- equipment and service clearances;
+- flows of people, raw materials, product, waste and services;
+- columns, axes, shafts, stairs and other fixed constraints;
+- requirements for doors, windows, passages, lighting and accessibility;
+- jurisdiction, rules version and drawing standard.
 
-### Выход
+### Output
 
-- несколько допустимых вариантов с объяснением компромиссов;
-- канонический BuildingIR с устойчивыми идентификаторами;
-- editable DXF со слоями, блоками, размерами, маркировкой и штампом;
-- vector PDF комплект листов;
-- IFC4 с пространствами, стенами, проёмами, типами и свойствами;
-- отчёт проверок: PASS / FAIL / UNKNOWN, evidence и ссылка на правило;
-- история правок и повторяемый seed.
+- several feasible variants with an explanation of the trade-offs;
+- a canonical BuildingIR with stable identifiers;
+- editable DXF with layers, blocks, dimensions, labels and a title block;
+- a vector PDF sheet set;
+- IFC4 with spaces, walls, openings, types and properties;
+- a check report: PASS / FAIL / UNKNOWN, evidence and a reference to the rule;
+- edit history and a repeatable seed.
 
-## 4. Слои доверия
+## 4. Trust layers
 
-| Слой | Ответственность | Разрешённый уровень доверия |
+| Layer | Responsibility | Permitted trust level |
 |---|---|---|
-| LLM / OCR / RAG | извлечение программы, классификация, вопросы, объяснение | вероятностный помощник |
-| BuildingIR | единственный контракт между вводом и расчётом | типизированная истина |
-| Solver | координаты, размеры, топология и оптимизация | детерминированный |
-| Geometry kernel | полигоны, буферы, пересечения, clearance | детерминированный |
-| Rules engine | применимость и PASS/FAIL/UNKNOWN | детерминированный и аудируемый |
-| DXF/PDF/IFC exporters | проекции BuildingIR/результата | производные артефакты |
+| LLM / OCR / RAG | program extraction, classification, questions, explanation | probabilistic assistant |
+| BuildingIR | the single contract between input and computation | typed truth |
+| Solver | coordinates, dimensions, topology and optimization | deterministic |
+| Geometry kernel | polygons, buffers, intersections, clearance | deterministic |
+| Rules engine | applicability and PASS/FAIL/UNKNOWN | deterministic and auditable |
+| DXF/PDF/IFC exporters | projections of the BuildingIR/result | derived artifacts |
 
-LLM не получает права выдавать финальные координаты, писать DXF/IFC или
-подтверждать соответствие нормам. Даже при импорте чертежа его результат —
-только черновая структурированная модель, которую проверяет геометрический
-движок и подтверждает человек.
+The LLM is not granted the right to output final coordinates, write DXF/IFC or
+confirm code compliance. Even when importing a drawing, its result is
+only a draft structured model, which is checked by the geometry
+engine and confirmed by a human.
 
-## 5. Архитектура целевого solver
+## 5. Target solver architecture
 
-Один огромный CP-SAT на весь объект будет плохо масштабироваться. Нужна
-иерархия задач с отдельной валидацией каждого уровня:
+A single huge CP-SAT model for the whole facility will scale poorly. What is needed is a
+hierarchy of problems with separate validation at each level:
 
-1. **Building/floor fit** — контур, этажи, конструктивная сетка и ядра.
-2. **Zone planning** — функциональные зоны и крупные буферы потоков.
-3. **Room planning** — помещения, площади, смежности и доступность.
-4. **Equipment packing** — оборудование, повороты, зоны обслуживания и проходы.
-5. **Circulation/flow routing** — человеческие и технологические маршруты.
-6. **Documentation projection** — стены, проёмы, символы, размеры и листы.
+1. **Building/floor fit** — outline, storeys, structural grid and cores.
+2. **Zone planning** — functional zones and large flow buffers.
+3. **Room planning** — rooms, areas, adjacencies and accessibility.
+4. **Equipment packing** — equipment, rotations, service zones and passages.
+5. **Circulation/flow routing** — human and process routes.
+6. **Documentation projection** — walls, openings, symbols, dimensions and sheets.
 
-На каждом уровне жёсткие ограничения отделены от мягких целей. Сначала
-получаем feasible-кандидат, затем ранжируем его по площади, длине маршрутов,
-компактности, числу конфликтов и качеству документации.
+At each level, hard constraints are separated from soft objectives. First we
+obtain a feasible candidate, then rank it by area, route length,
+compactness, number of conflicts and documentation quality.
 
-## 6. Пилотная типология
+## 6. Pilot typology
 
-Первый приёмочный пример — `examples/pharma_cleanroom_pilot.yaml`: 13 помещений,
-6 зон, 5 единиц оборудования и 7 потоков. Его технические и внешние условия
-приёмки определены в [PILOT_ACCEPTANCE_SPEC.md](PILOT_ACCEPTANCE_SPEC.md).
+The first acceptance example is `examples/pharma_cleanroom_pilot.yaml`: 13 rooms,
+6 zones, 5 equipment items and 7 flows. Its technical and external acceptance
+conditions are defined in [PILOT_ACCEPTANCE_SPEC.md](PILOT_ACCEPTANCE_SPEC.md).
 
-Следующий этап после его приёмки — расширенный одноэтажный **pharma-like
-clean-production facility**, без заявления о соблюдении GMP или чистоте
-конкретного класса:
+The next stage after its acceptance is an extended single-storey **pharma-like
+clean-production facility**, without any claim of GMP compliance or of a specific
+cleanliness class:
 
-- 20–40 помещений;
-- 4–8 функциональных зон;
-- 10–30 единиц оборудования или фиксированных предметов;
-- отдельные потоки персонала, сырья, продукции, отходов и сервиса;
-- внешние стены, внутренние перегородки, двери, окна;
-- конструктивные оси и минимум одна сервисная зона;
-- без автоматической выдачи разрешения на строительство.
+- 20–40 rooms;
+- 4–8 functional zones;
+- 10–30 equipment items or fixed objects;
+- separate flows of personnel, raw materials, product, waste and services;
+- exterior walls, interior partitions, doors, windows;
+- structural axes and at least one service zone;
+- no automatic issuing of a building permit.
 
-Успешная проверка примера на 13 помещений не закрывает этот этап масштаба.
-Расширенный пилот не пытается сразу решить полноценный завод, больницу, лабораторию или
-весь MEP. Он доказывает только infrastructure нужную для их профилей:
-ограниченное размещение, flow segregation, clearance, audit evidence и
-инженерно редактируемые артефакты.
+A successful check of the 13-room example does not close this scale stage.
+The extended pilot does not attempt to solve a full plant, hospital, laboratory or
+all of MEP at once. It proves only the infrastructure needed for their profiles:
+constrained placement, flow segregation, clearance, audit evidence and
+engineer-editable artifacts.
 
-## 7. Последовательность реализации
+## 7. Implementation sequence
 
-### Цикл A — доменная модель
+### Cycle A — domain model
 
-- добавить обратно совместимый `BuildingIR` поверх `LayoutIR`;
-- описать зоны, оборудование, потоки и конструктивные оси;
-- ввести отдельную JSON Schema;
-- добавить canonical example и тесты ссылочной целостности.
+- add a backward-compatible `BuildingIR` on top of `LayoutIR`;
+- describe zones, equipment, flows and structural axes;
+- introduce a separate JSON Schema;
+- add a canonical example and referential-integrity tests.
 
-### Цикл B — плотная 2D-геометрия
+### Cycle B — dense 2D geometry
 
-- перейти от комнаты только как `Rect` к orthogonal polygon;
-- сделать отдельные компоненты wall/door/window/equipment/clearance;
-- добавить deterministic clearance и equipment collision checks;
-- сохранить текущий прямоугольный режим как быстрый backend.
+- move from rooms as `Rect` only to orthogonal polygons;
+- make separate wall/door/window/equipment/clearance components;
+- add deterministic clearance and equipment collision checks;
+- keep the current rectangular mode as a fast backend.
 
-### Цикл C — иерархический layout solver
+### Cycle C — hierarchical layout solver
 
 - zone placement;
-- room placement внутри зон;
-- equipment packing с clearance;
-- flow graph и маршрутизация;
-- infeasibility explanation по уровням.
+- room placement within zones;
+- equipment packing with clearance;
+- flow graph and routing;
+- per-level infeasibility explanation.
 
-### Цикл D — профессиональный drawing output
+### Cycle D — professional drawing output
 
-- набор drawing profiles;
-- полноценные блоки оборудования и санитарных приборов;
-- размерные цепочки и координатные оси;
-- планы зон, оборудования, потоков и эвакуации;
-- sheet set, легенда, штамп и revision history.
+- a set of drawing profiles;
+- full blocks for equipment and sanitary fixtures;
+- dimension chains and grid axes;
+- zone, equipment, flow and evacuation plans;
+- sheet set, legend, title block and revision history.
 
-### Цикл E — IFC/BIM и координация
+### Cycle E — IFC/BIM and coordination
 
-- IFC-объекты для оборудования, зон, типов и систем;
-- пространственные связи и свойства;
+- IFC objects for equipment, zones, types and systems;
+- spatial relationships and properties;
 - clash/clearance report;
 - BCF issues;
-- round-trip через IfcOpenShell и независимый viewer QA.
+- round-trip via IfcOpenShell and independent viewer QA.
 
-### Цикл F — нормы и jurisdictions
+### Cycle F — codes and jurisdictions
 
-- сначала зафиксировать pharma clean-production domain profile: vocabulary,
-  flow separation и только подтверждённые geometric checks;
-- разделять geometric checks, data/IDS и неизвестные условия;
-- добавлять KZ, Saudi или другую jurisdiction только отдельным versioned profile,
-  когда определены страна, тип facility и первичный источник;
-- ни один pack не называть полной юридической проверкой без экспертной
-  верификации.
+- first fix the pharma clean-production domain profile: vocabulary,
+  flow separation and only confirmed geometric checks;
+- separate geometric checks, data/IDS and unknown conditions;
+- add KZ, Saudi or any other jurisdiction only as a separate versioned profile,
+  once the country, facility type and primary source are determined;
+- never call any pack a complete legal check without expert
+  verification.
 
-### Цикл G — импорт существующих планов и AI-assist
+### Cycle G — import of existing plans and AI assist
 
-- DXF import как предпочтительный источник семантики;
+- DXF import as the preferred source of semantics;
 - PDF/vector import;
-- OCR и vision только для чернового распознавания;
-- human-in-the-loop подтверждение объектов;
-- LLM-команды преобразуются в typed edits и снова проходят solver/checks.
+- OCR and vision only for draft recognition;
+- human-in-the-loop confirmation of objects;
+- LLM commands are converted into typed edits and go through the solver/checks again.
 
-### Цикл H — масштабирование
+### Cycle H — scaling
 
-- несколько этажей с общей structural grid;
-- вертикальные ядра, лестницы, лифты и шахты;
-- многоэтажные facility blocks и связанные сервисные зоны;
-- производительность, кэширование и batch generation;
-- API и локальный/закрытый deployment.
+- multiple storeys with a shared structural grid;
+- vertical cores, stairs, elevators and shafts;
+- multi-storey facility blocks and linked service zones;
+- performance, caching and batch generation;
+- API and local/private deployment.
 
-## 8. Критерии готовности пилота
+## 8. Pilot readiness criteria
 
-Пилот считается готовым, когда он может на одном фиксированном примере:
+The pilot is considered ready when, on a single fixed example, it can:
 
-- принять canonical BuildingIR без координат, ссылающихся на будущий результат;
-- построить не менее трёх feasible вариантов или объяснить infeasible;
-- не допустить overlap оборудования и его clearance-зон;
-- доказать требуемые зоны, смежности, потоки и доступность;
-- выпустить DXF, PDF и IFC из одного результата;
-- повторно прочитать артефакты и сохранить стабильные IDs;
-- выдать отчёт с evidence по каждому проверенному ограничению;
-- пройти автоматические тесты и ручной CAD/BIM review.
+- accept a canonical BuildingIR without coordinates that refer to the future result;
+- build at least three feasible variants or explain infeasibility;
+- prevent overlap of equipment and its clearance zones;
+- prove the required zones, adjacencies, flows and accessibility;
+- produce DXF, PDF and IFC from a single result;
+- read the artifacts back and keep stable IDs;
+- produce a report with evidence for each checked constraint;
+- pass automated tests and a manual CAD/BIM review.
 
-## 9. Что сознательно откладываем
+## 9. What we are deliberately deferring
 
-- end-to-end нейросеть, рисующую финальную геометрию;
-- native DWG writer;
-- универсальную базу строительных норм;
-- полностью автоматическое утверждение проекта;
-- криволинейные и свободные формы до стабилизации orthogonal backend;
-- полноценный MEP и structural engineering calculations;
-- обучение на RPLAN/CubiCasa/FloorPlanCAD без проверки прав и лицензий;
-- замену архитектора, технолога или инженера.
+- an end-to-end neural network that draws the final geometry;
+- a native DWG writer;
+- a universal database of building codes;
+- fully automatic project approval;
+- curved and free-form shapes until the orthogonal backend is stable;
+- full MEP and structural engineering calculations;
+- training on RPLAN/CubiCasa/FloorPlanCAD without checking rights and licenses;
+- replacing the architect, process engineer or engineer.
 
-## 10. Технологические решения
+## 10. Technology choices
 
-Оставляем проверенный фундамент:
+We keep the proven foundation:
 
-- Python и typed dataclasses/JSON Schema;
-- OR-Tools CP-SAT для дискретных layout-задач;
-- Shapely/GEOS для 2D predicates и clearance;
-- ezdxf для editable DXF;
-- ReportLab/SVG для vector PDF;
-- IfcOpenShell для IFC и IDS;
-- FreeCAD/OCCT только как опциональный тяжёлый QA/3D bridge;
-- LLM/RAG только после deterministic contract и с human review.
+- Python and typed dataclasses/JSON Schema;
+- OR-Tools CP-SAT for discrete layout problems;
+- Shapely/GEOS for 2D predicates and clearance;
+- ezdxf for editable DXF;
+- ReportLab/SVG for vector PDF;
+- IfcOpenShell for IFC and IDS;
+- FreeCAD/OCCT only as an optional heavyweight QA/3D bridge;
+- LLM/RAG only after the deterministic contract and with human review.
 
-Нейросетевые floor-plan datasets и HouseGAN/HouseDiffusion не являются
-основой пилота: исследования показывают residential bias и отсутствие
-гарантий для площадей, потоков, оборудования и строительной документации.
+Neural floor-plan datasets and HouseGAN/HouseDiffusion are not the
+basis of the pilot: research shows a residential bias and a lack of
+guarantees for areas, flows, equipment and construction documentation.
 
-## 11. Первый запуск после утверждения плана
+## 11. First run after plan approval
 
-Циклы A и базовая часть B, а также первый срез C уже реализованы: есть canonical
-`BuildingIR`, плотный single-floor pilot, deterministic equipment packing,
+Cycle A and the core part of B, as well as the first slice of C, are already implemented: there is a canonical
+`BuildingIR`, a dense single-floor pilot, deterministic equipment packing,
 clearance/collision checks, hard required/forbidden zone adjacency groups,
-room-graph flow routing с детерминированным обходом прямоугольных препятствий,
-front-edge equipment endpoints, automatic process-door sizing, первичная
-DXF/PDF projection оборудования и потоков, IFC equipment proxies с
-размерами/clearance property sets, IFC flow route proxies и единый facility
-evidence report. Versioned pharma, cleanroom, laboratory, hospital и industrial
-starter profiles уже зафиксированы без непроверенных нормативных чисел.
-BCF-XML 2.1 exchange уже формируется поверх экспортируемых IFC маршрутов:
-каждый вариант получает ZIP с topics/viewpoints и внешними ссылками на модели,
-а BCF-like JSON sidecar и YAML-driven drawing profile остаются локальными
-машиночитаемыми проекциями. `--bcf-input` сохраняет исчезнувшие topics как
-`Closed` при следующей итерации. Read-only viewer QA уже показывает derived flow
-и equipment conflicts, статусы `OPEN`/`RESOLVED`, фильтр issues и BCF history;
-issue workflow поддерживает Resolve/Reopen/comment/assign с audit sidecar и
-обновлением BCF/coordination JSON. Для проверки полного комплекта также есть
-`qa-building`. Для acceptance-набора добавлена read-only команда
-`qa-building-set`: она запускает полный bundle QA для каждого варианта и
-сравнивает semantic IDs, топологию маршрутов, IFC read-back IDs и BCF 2.1 topic
-identities между вариантами.
+room-graph flow routing with deterministic avoidance of rectangular obstacles,
+front-edge equipment endpoints, automatic process-door sizing, an initial
+DXF/PDF projection of equipment and flows, IFC equipment proxies with
+dimension/clearance property sets, IFC flow route proxies and a single facility
+evidence report. Versioned pharma, cleanroom, laboratory, hospital and industrial
+starter profiles are already fixed without unverified regulatory numbers.
+BCF-XML 2.1 exchange is already generated on top of the exported IFC routes:
+each variant gets a ZIP with topics/viewpoints and external references to the models,
+while the BCF-like JSON sidecar and the YAML-driven drawing profile remain local
+machine-readable projections. `--bcf-input` preserves disappeared topics as
+`Closed` on the next iteration. Read-only viewer QA already shows derived flow
+and equipment conflicts, `OPEN`/`RESOLVED` statuses, an issue filter and BCF history;
+the issue workflow supports Resolve/Reopen/comment/assign with an audit sidecar and
+updates to the BCF/coordination JSON. For checking the full bundle there is also
+`qa-building`. For the acceptance set, a read-only command
+`qa-building-set` was added: it runs the full bundle QA for each variant and
+compares semantic IDs, route topology, IFC read-back IDs and BCF 2.1 topic
+identities across variants.
 
-## 12. Будущий цикл I — Технологическое проектирование производства
+## 12. Future Cycle I — Process-Driven Manufacturing Design
 
-**Статус: запланирован после текущих циклов A–H; реализация не начата.**
-Этот раздел добавляет следующий этап развития: Process-driven Facility Design,
-или технологическую планировку производства. Он не меняет порядок, объём,
-приоритеты и критерии готовности существующих разделов, не закрывает их
-незавершённые задачи и не заменяет текущий roadmap.
+**Status: planned after the current cycles A–H; implementation has not started.**
+This section adds the next development stage: Process-driven Facility Design,
+or process-based manufacturing layout. It does not change the order, scope,
+priorities or readiness criteria of the existing sections, does not close their
+unfinished tasks and does not replace the current roadmap.
 
-Цель — получать согласованную планировку производства, в которой помещения,
-оборудование, чистые зоны, переходы и маршруты объясняются производственным
-процессом. Результат должен быть пригоден для инженерной проверки и дальнейшей
-проработки, с размерами, спецификациями и источниками требований.
+The goal is to obtain a consistent manufacturing layout in which rooms,
+equipment, clean zones, transfers and routes are explained by the manufacturing
+process. The result must be suitable for engineering review and further
+development, with dimensions, specifications and sources of requirements.
 
-Основой остаётся канонический `BuildingIR`: новые сущности расширяют его и
-используют общие стабильные идентификаторы. Иерархический solver, геометрические
-валидаторы, профили требований и экспорт из циклов A–H переиспользуются.
-Отдельная конкурирующая модель здания или переписывание текущего ядра для
-этого этапа не требуются.
+The canonical `BuildingIR` remains the foundation: new entities extend it and
+use shared stable identifiers. The hierarchical solver, geometric
+validators, requirement profiles and export from cycles A–H are reused.
+A separate competing building model or a rewrite of the current core is not
+required for this stage.
 
-### 12.1. Отправная точка — программа производства
+### 12.1. Starting point — the production program
 
-До размещения помещений система получает структурированную программу:
-что производится, какими операциями, на каком оборудовании и с какими
-требованиями к среде. Пример последовательности для обсуждения:
-приёмка → хранение → подготовка → изготовление → сборка → контроль качества →
-упаковка → отгрузка. Реальная последовательность задаётся для конкретного
-проекта и может содержать ветвления, возвраты и промежуточное хранение.
+Before placing rooms, the system receives a structured program:
+what is produced, by which operations, on which equipment and with which
+environmental requirements. An example sequence for discussion:
+receiving → storage → preparation → manufacturing → assembly → quality control →
+packaging → shipping. The actual sequence is defined for the specific
+project and may contain branches, returns and intermediate storage.
 
-Для каждой операции фиксируются:
+For each operation the following are recorded:
 
-- входящие и исходящие материалы, продукция, отходы и значимые состояния;
-- оборудование, число операторов и точки взаимодействия с оборудованием;
-- требования к среде, изоляции, уборке и промежуточному хранению;
-- целевая производительность, режим работы и частота перемещений;
-- длительности операций и нагрузки, если они известны и подтверждены;
-- источник требования, допущения и подтверждение технологом.
+- incoming and outgoing materials, products, waste and significant states;
+- equipment, number of operators and points of interaction with the equipment;
+- requirements for environment, isolation, cleaning and intermediate storage;
+- target throughput, operating mode and frequency of movements;
+- operation durations and loads, if known and confirmed;
+- the source of the requirement, assumptions and confirmation by the process engineer.
 
-Из программы выводятся требования к помещениям, соседствам, оборудованию,
-переходам и потокам. Обязательные и запрещённые соседства сохраняют причину
-и ссылку на исходное требование. Отсутствующие данные о производительности
-или циклах не подменяются предположениями без явной отметки.
+Requirements for rooms, adjacencies, equipment, transfers and flows are
+derived from the program. Required and forbidden adjacencies retain their reason
+and a reference to the originating requirement. Missing throughput
+or cycle data is not replaced by assumptions without an explicit flag.
 
-Такой порядок соответствует структуре предпроектной работы, описанной
-[Glatt](https://pharma-engineering.glatt.com/services/planning/): схемы процесса,
-оборудование и мощности, логистика, GMP-зонирование и варианты планировки.
-Это ориентир для архитектуры продукта, а не универсальный набор норм.
+This order matches the structure of pre-design work described by
+[Glatt](https://pharma-engineering.glatt.com/services/planning/): process diagrams,
+equipment and capacities, logistics, GMP zoning and layout variants.
+This is a reference point for the product architecture, not a universal set of codes.
 
-### 12.2. Единая модель данных производства
+### 12.2. Unified manufacturing data model
 
-| Сущность | Что сохраняем |
+| Entity | What we store |
 | --- | --- |
-| Здание | Контур, колонны, высоты, фиксированные проёмы, доступные инженерные подключения, система координат и единицы измерения. |
-| Помещение | Назначение, выполняемые операции, геометрия, площадь, персонал, требования к отделке и уборке. |
-| Чистая зона | Собственная геометрическая граница, ISO-класс и GMP-grade отдельными полями, состояние `at_rest` / `in_operation`, основание применимости. |
-| Оборудование | Производитель и модель, габариты, рабочая зона, зона обслуживания, смена оснастки, точки загрузки и выгрузки, инженерные подключения. |
-| Переход | Дверь, шлюз персонала, материальный шлюз, pass box, конвейерное окно; соединяемые пространства, размеры, направления и допустимые типы перемещений. |
-| Поток | Персонал, материалы, продукция или отходы; начальная и конечная точки, состояние груза, тара, способ транспортировки и частота. |
-| Требование к давлению | Связанные пространства и граница между ними, перепад, направление, сценарий, источник и статус подтверждения. |
-| Ограничение | Обязательное или запрещённое соседство, проход, зазор, доступ или другое условие; область действия, строгость, источник и причина. |
-| Свидетельство | Документ, версия, страница или фрагмент, ссылка, права использования, уровень доверия, допущение и статус проверки. |
+| Building | Outline, columns, heights, fixed openings, available utility connections, coordinate system and units of measurement. |
+| Room | Purpose, operations performed, geometry, area, personnel, finish and cleaning requirements. |
+| Clean zone | Its own geometric boundary, ISO class and GMP grade as separate fields, `at_rest` / `in_operation` state, basis of applicability. |
+| Equipment | Manufacturer and model, dimensions, working zone, service zone, tooling changeover, loading and unloading points, utility connections. |
+| Transfer | Door, personnel airlock, material airlock, pass box, conveyor window; connected spaces, dimensions, directions and permitted movement types. |
+| Flow | Personnel, materials, product or waste; start and end points, load state, container, transport method and frequency. |
+| Pressure requirement | Linked spaces and the boundary between them, differential, direction, scenario, source and confirmation status. |
+| Constraint | Required or forbidden adjacency, passage, clearance, access or other condition; scope, strictness, source and reason. |
+| Evidence | Document, version, page or excerpt, link, usage rights, confidence level, assumption and verification status. |
 
-Для значимых параметров различаются требование, проектное значение и
-результат измерения. Число, введённое в модель, само по себе не является
-подтверждённой характеристикой построенного объекта.
+For significant parameters, the requirement, the design value and the
+measured result are distinguished. A number entered into the model is not, by itself,
+a confirmed characteristic of the built facility.
 
-Функциональная зона, граница чистой среды и вентиляционная зона моделируются
-раздельно: их границы могут не совпадать. В одном помещении могут находиться
-несколько локальных чистых укрытий. Принадлежность оборудования и операций
-к этим зонам задаётся явно.
+The functional zone, the clean environment boundary and the ventilation zone are modeled
+separately: their boundaries may not coincide. A single room may contain
+several local clean enclosures. The assignment of equipment and operations
+to these zones is specified explicitly.
 
-ISO-класс не преобразуется автоматически в GMP-grade. Сохраняются состояние
-помещения, применимость требований и дополнительные условия выбранного
-профиля. Профиль производства медицинских изделий отделяется от профиля
-стерильных лекарственных препаратов. Требования
+An ISO class is not automatically converted into a GMP grade. The room
+state, applicability of requirements and additional conditions of the selected
+profile are stored. The medical device manufacturing profile is kept separate from the
+sterile medicinal products profile. The requirements of
 [EU GMP Annex 1](https://health.ec.europa.eu/document/download/e05af55b-38e9-42bf-8495-194bbf0b9262_en?filename=20220825_gmp-an1_en_0.pdf)
-используются с учётом области применения и редакции документа.
+are applied taking into account the document's scope and edition.
 
-### 12.3. Оборудование и переходы как объекты расчёта
+### 12.3. Equipment and transfers as computational objects
 
-Размещение оборудования учитывает не только прямоугольник корпуса, но и
-взаимодействие с процессом и окружением:
+Equipment placement accounts not only for the rectangle of the housing but also for
+its interaction with the process and surroundings:
 
-- точки загрузки, выгрузки, работы оператора, обслуживания и подключения;
-- открывание панелей, извлечение оснастки и пространство для её смены;
-- подходы персонала и подъезд выбранного средства транспортировки;
-- маршрут доставки, установки и последующей замены оборудования;
-- съёмные панели здания и разрешённые пересечения границ чистых зон.
+- loading, unloading, operator work, service and connection points;
+- panel opening, tooling removal and space for changing it;
+- personnel approaches and access for the selected means of transport;
+- the route for delivering, installing and later replacing equipment;
+- removable building panels and permitted crossings of clean zone boundaries.
 
-Маршруты соединяются с конкретными точками взаимодействия. Pass box может
-пропускать только предусмотренные проектом предметы и не является проходом
-персонала. У шлюзов и дверей задаются назначение, направление и правила
-использования; блокировки назначаются по применимому требованию.
+Routes connect to specific interaction points. A pass box may
+pass only the items provided for in the design and is not a personnel
+passage. Airlocks and doors have a defined purpose, direction and usage
+rules; interlocks are assigned according to the applicable requirement.
 
-Контрольный пример: литьевая машина находится с технической стороны,
-компоненты поступают в чистую зону через конвейерное окно, а обслуживание
-выполняется снаружи этой зоны. Если оборудование пересекает её границу,
-требуется явно описанный интерфейс с проверяемой геометрией.
+Reference example: an injection molding machine sits on the technical side,
+components enter the clean zone through a conveyor window, and servicing is
+performed outside that zone. If equipment crosses its boundary, an
+explicitly described interface with verifiable geometry is required.
 
-Для библиотеки таких решений полезны реальные примеры
+For a library of such solutions, real examples are useful:
 [MECART](https://www.mecart-cleanrooms.com/projects/case-studies/medical-device-manufacturing-clean-room-20000-sqft/)
-с конвейерными окнами и съёмными панелями и
+with conveyor windows and removable panels, and
 [Optimold](https://connect2cleanrooms.com/client-stories/case-studies/optimold/)
-с локальными модульными чистыми зонами и доступом для смены оснастки.
-Параметры конкретного проекта подтверждаются его исходными данными.
+with local modular clean zones and access for tooling changeover.
+The parameters of a specific project are confirmed by its source data.
 
-### 12.4. Сценарии работы и сеть перепадов давления
+### 12.4. Operating scenarios and the pressure differential network
 
-Проверки выполняются как минимум для трёх сценариев:
+Checks are performed for at least three scenarios:
 
-| Сценарий | Что проверяем |
+| Scenario | What we check |
 | --- | --- |
-| Производство | Рабочие зоны оборудования, маршруты персонала, материалов, продукции и отходов, доступность переходов и проходов. |
-| Обслуживание | Открытые панели, доступ к узлам, смену оснастки, пространство для сервисных работ и ограничения на соседние операции. |
-| Монтаж и замена | Путь от внешнего доступа до места установки, размеры проёмов, повороты, временно снимаемые панели и необходимые свободные зоны. |
+| Production | Equipment working zones, routes of personnel, materials, product and waste, accessibility of transfers and passages. |
+| Maintenance | Open panels, access to assemblies, tooling changeover, space for service work and restrictions on adjacent operations. |
+| Installation and replacement | The path from external access to the installation location, opening dimensions, turns, temporarily removable panels and required clear zones. |
 
-У каждого сценария свои занятые области и разрешённые действия. Если
-обслуживание допустимо только при остановленном производстве, это явное
-условие сценария. Нельзя объяснять конфликт незафиксированным предположением
-о том, что соседний станок или маршрут в этот момент не используется.
+Each scenario has its own occupied areas and permitted actions. If
+maintenance is allowed only when production is stopped, that is an explicit
+condition of the scenario. A conflict must not be explained away by an unrecorded assumption
+that the neighboring machine or route is not in use at that moment.
 
-Сеть перепадов давления строится по фактически связанным пространствам и
-переходам между ними, включая локальные чистые зоны. Одной иерархии
-«родительская зона → дочерняя зона» для этого недостаточно.
+The pressure differential network is built from the spaces that are actually connected and the
+transfers between them, including local clean zones. A single
+"parent zone → child zone" hierarchy is not sufficient for this.
 
-Первый объём реализации — проверка заданных направлений, перепадов,
-согласованности сети и требований выбранного профиля. Значения и условия
-задаются с источником; универсальный перепад для всех производств не
-вводится. Расчёт вентиляции и подтверждение фактической работы воздушного
-каскада остаются отдельной задачей HVAC-инженера.
+The first implementation scope is checking the specified directions, differentials,
+network consistency and the requirements of the selected profile. Values and conditions
+are specified with a source; no universal differential for all manufacturing is
+introduced. Ventilation calculations and confirmation of the actual operation of the air
+cascade remain a separate task for the HVAC engineer.
 
-### 12.5. Связь процесса, solver и независимых проверок
+### 12.5. Linking the process, the solver and independent checks
 
-Расчётная последовательность:
+Computation sequence:
 
-1. Программа производства и подтверждённые исходные данные.
-2. Операции, оборудование, потоки и требования к среде.
-3. Зоны, помещения, переходы и ограничения размещения.
-4. Иерархическое размещение средствами существующего solver.
-5. Независимая проверка геометрии, маршрутов и сценариев.
-6. Объяснение конфликтов, уточнение ограничений и повторный расчёт.
-7. Сравнение допустимых вариантов и выпуск согласованного комплекта.
+1. Production program and confirmed source data.
+2. Operations, equipment, flows and environmental requirements.
+3. Zones, rooms, transfers and placement constraints.
+4. Hierarchical placement using the existing solver.
+5. Independent verification of geometry, routes and scenarios.
+6. Conflict explanation, constraint refinement and recomputation.
+7. Comparison of feasible variants and release of a consistent bundle.
 
-Обратная связь должна быть предметной: узкий проём, неподходящий тип
-перехода, недостаточное место для поворота, перекрытая зона обслуживания
-или невозможность замены оборудования. Сообщение связывается со стабильными
-ID объектов и исходным требованием.
+Feedback must be concrete: a narrow opening, an unsuitable transfer
+type, insufficient room to turn, a blocked service zone
+or the impossibility of replacing equipment. Each message is linked to stable
+object IDs and the originating requirement.
 
-Жёсткие ограничения не компенсируются улучшением общего рейтинга.
-Недостаток обязательных данных даёт `UNKNOWN` с перечнем недостающих
-свидетельств, а не положительный результат проверки.
+Hard constraints are not compensated by an improvement in the overall ranking.
+Missing required data yields `UNKNOWN` with a list of the missing
+evidence, not a positive check result.
 
-Допустимые варианты сравниваются по длине перемещений с учётом частоты,
-площади чистых зон, доступности обслуживания и резерву расширения.
-Пропускная способность и очереди оцениваются только при наличии данных
-о времени операций и нагрузках. Подробная динамическая симуляция выделяется
-в последующий объём работ и не является условием первого результата цикла I.
+Feasible variants are compared by frequency-weighted travel distance,
+clean zone area, service accessibility and expansion reserve.
+Throughput and queues are assessed only when data on
+operation times and loads is available. Detailed dynamic simulation is split off
+into a later scope of work and is not a condition for the first result of cycle I.
 
-### 12.6. Инженерная библиотека и работа с источниками
+### 12.6. Engineering library and working with sources
 
-Материалы библиотеки разделяются по назначению:
+Library materials are separated by purpose:
 
-- `real_case_study` — описание реализованного объекта;
-- `functional_diagram` — схема операций, связей или потоков;
-- `engineering_rule` — требование с областью применения и редакцией;
-- `visual_reference` — визуальный пример;
-- `cad_geometry` — геометрия и CAD-компоненты;
-- `manufacturer_spec` — характеристики и требования производителя.
+- `real_case_study` — a description of a completed facility;
+- `functional_diagram` — a diagram of operations, relationships or flows;
+- `engineering_rule` — a requirement with its scope and edition;
+- `visual_reference` — a visual example;
+- `cad_geometry` — geometry and CAD components;
+- `manufacturer_spec` — manufacturer characteristics and requirements.
 
-Из подтверждённых материалов создаются параметрические шаблоны: переодевание,
-материальный шлюз, литьевая ячейка, упаковочная ячейка, сервисная зона.
-Каждый шаблон содержит параметры, допустимые варианты, интерфейсы,
-ограничения, область применения и источники.
+Parametric templates are created from confirmed materials: gowning,
+material airlock, injection molding cell, packaging cell, service zone.
+Each template contains parameters, permitted variants, interfaces,
+constraints, scope and sources.
 
-Раздельно сохраняются факты из источника, предположения при восстановлении
-плана и сведения, подтверждённые инженером. Размер, оценённый по нечёткому
-скриншоту, остаётся оценкой. Масштаб и координаты привязываются к известной
-геометрии и подтверждённым размерам. Case study не становится нормативным
-правилом; функциональная схема не считается готовым архитектурным планом.
+Facts from the source, assumptions made while reconstructing a
+plan, and information confirmed by an engineer are stored separately. A dimension estimated from a blurry
+screenshot remains an estimate. Scale and coordinates are anchored to known
+geometry and confirmed dimensions. A case study does not become a regulatory
+rule; a functional diagram is not considered a finished architectural plan.
 
-Для каждого материала фиксируются происхождение, версия, ссылка, уровень
-доверия и права использования. Материал без идентифицируемого источника
-не считается проверенным. Использование в библиотеке или обучающем наборе
-определяется разрешениями; платный доступ сам по себе их не заменяет.
+For each material, its origin, version, link, confidence
+level and usage rights are recorded. A material without an identifiable source
+is not considered verified. Use in the library or in a training set
+is determined by permissions; paid access by itself does not replace them.
 
-Первый результат не зависит от массового обучения модели на чертежах.
-ИИ может помогать извлекать требования и предлагать шаблоны с источниками,
-а каноническая геометрия формируется solver и проходит независимую проверку.
+The first result does not depend on mass training of a model on drawings.
+AI can help extract requirements and propose templates with sources,
+while the canonical geometry is produced by the solver and undergoes independent verification.
 
-### 12.7. Следующий эталонный объект
+### 12.7. Next reference facility
 
-После завершения текущего плана следующий benchmark — **производство
-пластиковых медицинских изделий: литьё → чистая сборка → упаковка**.
-Он дополняет текущий pharma-cleanroom pilot и не заменяет его acceptance.
+After the current plan is completed, the next benchmark is **plastic medical
+device manufacturing: molding → clean assembly → packaging**.
+It complements the current pharma-cleanroom pilot and does not replace its acceptance.
 
-Состав эталона:
+Contents of the benchmark:
 
-- фиксированный контур здания, колонны и внешние точки доступа;
-- литьевое оборудование и локальные чистые зоны;
-- конвейерный переход, материальные и персональные переходы;
-- сборка, контроль, упаковка и необходимые места хранения;
-- потоки персонала, материалов, продукции и отходов;
-- сценарии производства, обслуживания и замены оборудования;
-- отдельный применимый профиль требований для выбранного производства.
+- a fixed building outline, columns and external access points;
+- injection molding equipment and local clean zones;
+- a conveyor transfer, material and personnel transfers;
+- assembly, inspection, packaging and the necessary storage locations;
+- flows of personnel, materials, product and waste;
+- production, maintenance and equipment replacement scenarios;
+- a separate applicable requirements profile for the selected manufacturing type.
 
-Исходные данные берутся из разрешённого реального проекта либо создаются
-как явно обозначенная реконструкция с журналом допущений. Сходство с
-предоставленными скриншотами используется как ориентир по составу и уровню
-детализации; точное восстановление неизвестных параметров не заявляется.
+Source data is taken from a real project with permission, or created
+as an explicitly labeled reconstruction with an assumptions log. Similarity to the
+provided screenshots is used as a reference for composition and level of
+detail; exact reconstruction of unknown parameters is not claimed.
 
-### 12.8. Согласованный комплект результатов
+### 12.8. Consistent output bundle
 
-Все представления выпускаются из одной версии модели:
+All views are produced from a single model version:
 
-- общая планировка с контуром здания, колоннами, помещениями и площадями;
-- размещение оборудования с рабочими и сервисными зонами;
-- план чистых зон с ISO-классом, GMP-grade, состоянием и применимостью;
-- план заданных перепадов давления и соединяемых пространств;
-- планы потоков персонала, материалов, продукции и отходов;
-- схемы доступа для обслуживания, монтажа и замены;
-- ведомости помещений, оборудования, дверей, шлюзов и pass box;
-- размеры, масштаб, оси, легенды, ревизия, стабильные ID и evidence report.
+- general layout with the building outline, columns, rooms and areas;
+- equipment placement with working and service zones;
+- clean zone plan with ISO class, GMP grade, state and applicability;
+- plan of specified pressure differentials and connected spaces;
+- flow plans for personnel, materials, product and waste;
+- access diagrams for maintenance, installation and replacement;
+- schedules of rooms, equipment, doors, airlocks and pass boxes;
+- dimensions, scale, axes, legends, revision, stable IDs and evidence report.
 
-Используются экспорт и QA циклов D–E: DXF, PDF, IFC и BCF в пределах
-поддерживаемой семантики форматов. Проекции и ведомости обновляются
-согласованно после изменения модели. Семантика, которую нельзя передать
-напрямую, сохраняется в документированных свойствах или связанных данных.
+The export and QA from cycles D–E are used: DXF, PDF, IFC and BCF within the
+supported semantics of the formats. Projections and schedules are updated
+consistently after a model change. Semantics that cannot be transferred
+directly are stored in documented properties or linked data.
 
-Ориентир по составу документации —
+Reference for documentation contents —
 [EU Site Master File](https://health.ec.europa.eu/document/download/95af86f8-c82d-4ad0-85cb-27c7f56531b4_en?filename=2011_site_master_file_en.pdf):
-классификация помещений, перепады давления между смежными областями,
-производственные операции, потоки и основное оборудование. Применимость
-этого документа оценивается для конкретного типа производства.
+room classification, pressure differentials between adjacent areas,
+production operations, flows and main equipment. The applicability
+of this document is assessed for the specific type of manufacturing.
 
-### 12.9. Последовательность реализации цикла I
+### 12.9. Cycle I implementation sequence
 
-| Подэтап | Результат |
+| Sub-stage | Result |
 | --- | --- |
-| I.1. Программа производства | Версионируемый контракт операций, материалов, состояний, оборудования, нагрузок и требований; согласованный пример от технолога. |
-| I.2. Расширение BuildingIR | Раздельные чистые и вентиляционные зоны, типизированные переходы, точки взаимодействия оборудования, сценарии, давление и происхождение данных. |
-| I.3. Инженерная библиотека | Проверяемые карточки оборудования и параметрические шаблоны с источниками, правами использования и условиями применимости. |
-| I.4. Расчёт и проверка | Ограничения из процесса, размещение, маршрутизация через допустимые переходы, проверки трёх сценариев и объяснимая обратная связь solver. |
-| I.5. Комплект документации | Согласованные планы, ведомости и evidence report из одной модели с повторным использованием экспортёров и QA. |
-| I.6. Эталон и приёмка | Три проверяемых варианта производства медицинских пластиков, сценарий изменения процесса или оборудования и инженерное ревью. |
+| I.1. Production program | A versioned contract for operations, materials, states, equipment, loads and requirements; an agreed example from the process engineer. |
+| I.2. BuildingIR extension | Separate clean and ventilation zones, typed transfers, equipment interaction points, scenarios, pressure and data provenance. |
+| I.3. Engineering library | Verifiable equipment cards and parametric templates with sources, usage rights and applicability conditions. |
+| I.4. Computation and verification | Constraints from the process, placement, routing through permitted transfers, checks of the three scenarios and explainable solver feedback. |
+| I.5. Documentation bundle | Consistent plans, schedules and evidence report from a single model, reusing the exporters and QA. |
+| I.6. Benchmark and acceptance | Three verifiable variants of medical plastics manufacturing, a process or equipment change scenario, and an engineering review. |
 
-### 12.10. Критерии готовности и границы результата
+### 12.10. Readiness criteria and scope boundaries
 
-Основной критерий: **по утверждённой программе производства система
-выпускает три проверяемых варианта, а после замены станка или изменения
-процесса пересчитывает затронутые помещения, переходы, маршруты и
-документацию**. Существующие семантические ID сохраняются для тех объектов,
-чья идентичность не изменилась; состав изменений доступен для проверки.
+Main criterion: **from an approved production program, the system
+produces three verifiable variants, and after a machine is replaced or the
+process changes, it recomputes the affected rooms, transfers, routes and
+documentation**. Existing semantic IDs are preserved for objects
+whose identity has not changed; the set of changes is available for review.
 
-Acceptance включает допустимые, конфликтные и неполные исходные данные:
+Acceptance covers feasible, conflicting and incomplete source data:
 
-- маршрут персонала через pass box отклоняется с объяснением;
-- недостаточный проём, заблокированное обслуживание или невозможность
-  смены оснастки обнаруживаются в соответствующем сценарии;
-- установка и замена проверяются по всему пути от внешнего доступа;
-- перепады проверяются между фактически связанными пространствами;
-- условия остановки производства и временных действий отражены явно;
-- отсутствующее обязательное свидетельство даёт `UNKNOWN`;
-- жёсткий конфликт не скрывается высоким рейтингом варианта;
-- после изменения процесса или оборудования планы, ведомости, маршруты
-  и отчёты соответствуют одной ревизии модели;
-- эталон воспроизводим, а источники и допущения доступны проверяющему.
+- a personnel route through a pass box is rejected with an explanation;
+- an insufficient opening, blocked servicing or impossible
+  tooling changeover is detected in the corresponding scenario;
+- installation and replacement are checked along the entire path from external access;
+- differentials are checked between spaces that are actually connected;
+- conditions for stopping production and for temporary actions are stated explicitly;
+- missing required evidence yields `UNKNOWN`;
+- a hard conflict is not hidden by a high variant ranking;
+- after a process or equipment change, plans, schedules, routes
+  and reports correspond to a single model revision;
+- the benchmark is reproducible, and sources and assumptions are available to the reviewer.
 
-Программные проверки и инженерная приёмка учитываются раздельно.
-Технолог/QA проверяет процесс и применимость требований, HVAC-инженер —
-воздушные режимы, архитектор/CAD/BIM-специалист — планировку и комплект.
-Результат цикла I — проверяемая технологическая концепция и документация
-для дальнейшего проектирования. Сертификация GMP, полный проект инженерных
-систем и подтверждение построенного объекта не входят в этот цикл.
+Software checks and engineering acceptance are counted separately.
+The process engineer/QA checks the process and the applicability of requirements, the HVAC engineer
+checks air regimes, and the architect/CAD/BIM specialist checks the layout and the bundle.
+The result of cycle I is a verifiable process concept and documentation
+for further design. GMP certification, a complete building services design
+and confirmation of the built facility are not part of this cycle.

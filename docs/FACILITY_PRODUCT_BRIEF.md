@@ -1,88 +1,88 @@
-# Facility Layout Compiler: продуктовая цель
+# Facility Layout Compiler: product goal
 
-## Решение
+## Decision
 
-Проект больше не позиционируется как общий «AI генерирует планировки зданий».
-Его цель — **solver-first компилятор проверяемых планировок для регулируемых и
-технологически насыщенных объектов**:
+The project is no longer positioned as a generic "AI generates building floor plans".
+Its goal is a **solver-first compiler of verifiable layouts for regulated and
+technology-intensive facilities**:
 
-- фармацевтических производств и cleanroom-участков;
-- лабораторий;
-- больничных и медицинских функциональных блоков;
-- промышленных и складско-производственных объектов.
+- pharmaceutical production and cleanroom areas;
+- laboratories;
+- hospital and medical functional units;
+- industrial and warehouse/production facilities.
 
-Название продукта: **Facility Layout Compiler**. `BuildingIR` остаётся текущим
-каноническим контрактом в коде; `FacilityIR` — направление его развития, а не
-переименование ради переименования.
+Product name: **Facility Layout Compiler**. `BuildingIR` remains the current
+canonical contract in the code; `FacilityIR` is the direction in which it will evolve, not
+a rename for the sake of renaming.
 
-## Почему этот продукт отличается
+## Why this product is different
 
-Общий генератор планировок конкурирует по скорости картинки, стилю и количеству
-вариантов. Для целевой ниши этого недостаточно. Решение имеет ценность, только
-если можно проверить и объяснить:
+A generic layout generator competes on image speed, style and number of
+variants. For the target niche that is not enough. A solution has value only
+if it is possible to verify and explain:
 
-1. где размещено оборудование и достаточно ли service clearance;
-2. проходят ли люди, сырьё, продукт, отходы и сервис по разрешённым маршрутам;
-3. разделены ли требуемые зоны и какие связи между ними обязательны;
-4. какие правила проверены, с какой версией и каким evidence;
-5. как один и тот же результат попадает в editable DXF, vector PDF, IFC и JSON.
+1. where the equipment is placed and whether the service clearance is sufficient;
+2. whether people, raw materials, product, waste and service follow permitted routes;
+3. whether the required zones are separated and which relations between them are mandatory;
+4. which rules were checked, with which version and with what evidence;
+5. how one and the same result ends up in editable DXF, vector PDF, IFC and JSON.
 
-Поэтому LLM может помочь извлечь программу из ТЗ или найти ссылку на правило,
-но не производит координаты, DXF/IFC или нормативный verdict. Геометрия и
-проверки остаются детерминированными.
+Therefore an LLM may help extract the program from a design brief or find a reference to a rule,
+but it does not produce coordinates, DXF/IFC or a regulatory verdict. Geometry and
+checks remain deterministic.
 
-## Первый клин
+## First wedge
 
-Первый профиль — **pharma-like clean production / cleanroom planning**. Он
-достаточно узок, чтобы валидировать модель с технологом и архитектором, и
-достаточно сложен, чтобы отличить продукт от бытового floor-planner:
+The first profile is **pharma-like clean production / cleanroom planning**. It is
+narrow enough to validate the model with a process engineer and an architect, and
+complex enough to distinguish the product from a residential floor planner:
 
-- зоны receiving, raw storage, preparation, clean production, packaging,
-  finished storage, dispatch и staff;
-- equipment footprints, fixed wall anchors и обслуживающие зоны;
-- потоки персонала, материалов, готовой продукции, отходов и сервиса;
-- проходы и дверные проёмы с минимальной шириной;
-- конструктивные оси, помещения, стены, проёмы и выходные чертежи.
+- receiving, raw storage, preparation, clean production, packaging,
+  finished storage, dispatch and staff zones;
+- equipment footprints, fixed wall anchors and service zones;
+- flows of personnel, materials, finished goods, waste and service;
+- corridors and door openings with a minimum width;
+- structural grid lines, rooms, walls, openings and output drawings.
 
-Это **не** утверждение GMP compliance, классификации чистоты помещения или
-права выпускать проект. Такие statements появляются только с подтверждённым
-профилем правил, их версией и экспертной проверкой.
+This is **not** a claim of GMP compliance, room cleanliness classification or
+the right to issue a design. Such statements appear only with a confirmed
+rule profile, its version and expert review.
 
-## Пользователи и итог работы
+## Users and outcome
 
-| Роль | Что получает |
+| Role | What they get |
 |---|---|
-| Технолог / facility planner | Варианты layout с оборудованием и потоками вместо ручного перебора. |
-| Архитектор / BIM-координатор | Редактируемые DXF и IFC, а не raster-картинку. |
-| QA / validation / project manager | Версионируемый JSON evidence: ограничения, PASS/FAIL/UNKNOWN и стабильный seed. |
-| Инженер заказчика | Понятные границы автоматизации и список условий, которые требует эксперт. |
+| Process engineer / facility planner | Layout variants with equipment and flows instead of manual trial and error. |
+| Architect / BIM coordinator | Editable DXF and IFC, not a raster image. |
+| QA / validation / project manager | Versioned JSON evidence: constraints, PASS/FAIL/UNKNOWN and a stable seed. |
+| Client's engineer | Clear boundaries of automation and a list of conditions that require an expert. |
 
-## Контракт результата
+## Result contract
 
 ```text
-ТЗ / существующий DXF / табличная программа
+design brief / existing DXF / tabular program
                     ↓
-canonical BuildingIR → будущие facility domain packs
+canonical BuildingIR → future facility domain packs
                     ↓
-CP-SAT: помещения → оборудование → маршруты
+CP-SAT: rooms → equipment → routes
                     ↓
 independent geometry and rule validation
                     ↓
 DXF + vector PDF + IFC + JSON evidence bundle
 ```
 
-Каждая стрелка сохраняет идентификаторы и не превращает производный артефакт в
-источник координат. Изменения идут через typed commands и повторную проверку.
+Each arrow preserves identifiers and does not turn a derived artifact into a
+source of coordinates. Changes go through typed commands and re-validation.
 
-## Состояние на сегодня
+## Current state
 
-Уже реализовано для single-floor pilot:
+Already implemented for the single-floor pilot:
 
-- `BuildingIR`: зоны, equipment, flows и structural grid без входных координат;
-- CP-SAT раскладка помещений и отдельный CP-SAT packing оборудования;
+- `BuildingIR`: zones, equipment, flows and structural grid without input coordinates;
+- CP-SAT room layout and separate CP-SAT equipment packing;
 - hard zone adjacency groups for required/forbidden functional relations;
-- service clearance, повороты, wall anchors и `NoOverlap2D`;
-- независимый equipment/flow/facility validator и JSON audit evidence;
+- service clearance, rotations, wall anchors and `NoOverlap2D`;
+- independent equipment/flow/facility validator and JSON audit evidence;
 - automatic effective door width promotion for required process flows and
   equipment front-edge access points for routing;
 - derived IFC flow route proxies with route metadata and validation status;
@@ -90,93 +90,93 @@ DXF + vector PDF + IFC + JSON evidence bundle
 - IFC read-back of entity counts and route metadata before a bundle is accepted;
 - readable drawing annotations for room sizes, flow types and clear widths;
 - YAML-driven sheet metadata and annotation toggles for DXF/PDF;
-- editable DXF, vector PDF и IFC equipment proxies;
-- конструктивные оси в DXF/PDF;
+- editable DXF, vector PDF and IFC equipment proxies;
+- structural grid lines in DXF/PDF;
 - versioned YAML rule packs for `pharma`, `cleanroom`, `laboratory`, `hospital`
   and `industrial` domains;
 - `check-building` round-trip validation command;
-- полный acceptance-пример `examples/pharma_cleanroom_pilot.yaml`: 13 помещений,
+- a full acceptance example `examples/pharma_cleanroom_pilot.yaml`: 13 rooms,
   personnel/material airlocks, parent-linked ISO class labels, declared pressure
-  cascade, process stages и waste branch. `rules/pharma_cleanroom_pilot.yaml`
-  объединяет process, cleanroom и flow checks с provenance; публикация варианта
-  возможна только после независимой geometry/equipment/flow/profile проверки.
-  `acceptance-building-matrix` запускает несколько seeds и не выдаёт частичный
-  набор вариантов как успешный результат.
+  cascade, process stages and waste branch. `rules/pharma_cleanroom_pilot.yaml`
+  combines process, cleanroom and flow checks with provenance; a variant can be
+  published only after independent geometry/equipment/flow/profile checking.
+  `acceptance-building-matrix` runs several seeds and does not report a partial
+  set of variants as a successful result.
 
-Техническая проверка от 2026-09-05: 126 тестов прошли; стандартная матрица
-seeds 1/7/42 выпустила по три принятых варианта с успешным bundle QA и проверкой
-идентификаторов. Параметры: 30 секунд на solver, до девяти кандидатов на seed.
-Подробности и оставшиеся внешние условия — в [HANDOFF.md](HANDOFF.md).
+Technical check of 2026-09-05: 126 tests passed; the standard matrix of
+seeds 1/7/42 produced three accepted variants each, with successful bundle QA and identifier
+checks. Parameters: 30 seconds per solver, up to nine candidates per seed.
+Details and the remaining external conditions are in [HANDOFF.md](HANDOFF.md).
 
-Это ещё не готовая фармацевтическая или медицинская система. Текущие комнаты
-прямоугольные, flow routing ограничен 2D pilot-логикой, а rule packs не заменяют
-нормативный экспертный review.
+This is not yet a finished pharmaceutical or medical system. Current rooms are
+rectangular, flow routing is limited to 2D pilot logic, and rule packs do not replace
+regulatory expert review.
 
 ## Auditable domain rule packs
 
-Все facility-правила хранятся в YAML-профилях. Каждое правило обязано иметь
-`id`, `kind`, `source`, `edition`, `effective_date`, `evidence` и `parameters`;
-результат проверки сохраняет ту же provenance-связь в `facility_validation` и
+All facility rules are stored in YAML profiles. Every rule must have
+`id`, `kind`, `source`, `edition`, `effective_date`, `evidence` and `parameters`;
+the check result keeps the same provenance link in `facility_validation` and
 BCF-like issues.
 
-В репозитории зафиксированы отдельные пакеты:
+The repository contains separate packs:
 
-- `rules/pharma_cleanroom_pilot.yaml` — составной acceptance-профиль первого
-  клина: process stages, dirty/clean route separation, airlock roles, ISO
-  vocabulary, pressure ordering и waste branch;
-- `rules/cleanroom_pilot.yaml` — vocabulary/order классов ISO-зон, pressure
-  ordering с sourced guidance value, parent-linked personnel/material airlocks и
+- `rules/pharma_cleanroom_pilot.yaml` — composite acceptance profile of the first
+  wedge: process stages, dirty/clean route separation, airlock roles, ISO
+  vocabulary, pressure ordering and waste branch;
+- `rules/cleanroom_pilot.yaml` — vocabulary/order of ISO zone classes, pressure
+  ordering with a sourced guidance value, parent-linked personnel/material airlocks and
   clean/dirty flow separation;
-- `rules/pharma_clean_production.yaml` — material, personnel, finished goods и
-  waste declarations, process-stage type contract и обязательная проверка
+- `rules/pharma_clean_production.yaml` — material, personnel, finished goods and
+  waste declarations, process-stage type contract and mandatory checking of
   derived routes;
-- `rules/laboratory_pilot.yaml` — specimen, personnel, clean supply и waste;
+- `rules/laboratory_pilot.yaml` — specimen, personnel, clean supply and waste;
 - `rules/hospital_pilot.yaml` — patient, personnel, clean supply, dirty supply
-  и waste;
+  and waste;
 - `rules/industrial_pilot.yaml` — material, personnel, vehicles, hazardous
-  materials, maintenance и waste.
+  materials, maintenance and waste.
 
-`schemas/facility_profile.schema.json` проверяет структуру пакета. Отсутствующее
-входное доказательство даёт `UNKNOWN`, а не выдуманный PASS. Нормативные числа
-не добавляются по умолчанию: числовой параметр допускается только как явно
-заданный параметр конкретного проектного профиля с собственной ссылкой и
-evidence. Все профили прямо помечены как project policy, а не regulatory verdict.
+`schemas/facility_profile.schema.json` validates the pack structure. Missing
+input evidence yields `UNKNOWN`, not an invented PASS. Regulatory numbers
+are not added by default: a numeric parameter is allowed only as an explicitly
+set parameter of a specific project profile with its own reference and
+evidence. All profiles are explicitly marked as project policy, not a regulatory verdict.
 
-## Продуктовые профили — не одна универсальная база норм
+## Product profiles — not one universal code database
 
-Профиль состоит из трёх независимых частей:
+A profile consists of three independent parts:
 
-1. **Domain vocabulary** — типы зон, помещений, оборудования и потоков.
-2. **Deterministic geometry checks** — clearance, separation, маршруты,
-   проёмы, эвакуация и другие подтверждённые ограничения.
-3. **Data/IFC exchange contract** — обязательные свойства и IDS-проверки.
+1. **Domain vocabulary** — types of zones, rooms, equipment and flows.
+2. **Deterministic geometry checks** — clearance, separation, routes,
+   openings, egress and other confirmed constraints.
+3. **Data/IFC exchange contract** — required properties and IDS checks.
 
-Pharma/cleanroom, laboratory, hospital и industrial profiles версионируются
-раздельно. Неприменимое правило возвращает `NOT_APPLICABLE`, а неизвестное
-условие — `UNKNOWN`; система не маскирует их как PASS.
+Pharma/cleanroom, laboratory, hospital and industrial profiles are versioned
+separately. An inapplicable rule returns `NOT_APPLICABLE`, and an unknown
+condition returns `UNKNOWN`; the system does not mask them as PASS.
 
-## Ближайшая последовательность
+## Next sequence
 
-1. **External acceptance.** Пройти экспертный review pharma process/quality и
-   cleanroom/HVAC допущений на контрактах из
-   [`PILOT_ACCEPTANCE_SPEC.md`](PILOT_ACCEPTANCE_SPEC.md). До него profile
-   остаётся project policy, а не нормативным verdict.
-2. **Coordination exchange.** Повторное чтение IFC flow proxies, BCF-XML 2.1
-   topics/viewpoints и read-only viewer screenshot-QA: конфликтные
-   маршруты/оборудование подсвечиваются, `OPEN`/`RESOLVED` фильтруются, а BCF
-   history видна на плане.
-3. **Confirmed domain packs.** Только после закрытия pharma-cleanroom пилота
-   начинать laboratory, hospital и industrial отдельными spec → implementation
-   → acceptance циклами вместе с domain experts и подтверждёнными источниками.
+1. **External acceptance.** Pass expert review of the pharma process/quality and
+   cleanroom/HVAC assumptions against the contracts in
+   [`PILOT_ACCEPTANCE_SPEC.md`](PILOT_ACCEPTANCE_SPEC.md). Until then the profile
+   remains project policy, not a regulatory verdict.
+2. **Coordination exchange.** Re-reading IFC flow proxies, BCF-XML 2.1
+   topics/viewpoints and read-only viewer screenshot QA: conflicting
+   routes/equipment are highlighted, `OPEN`/`RESOLVED` are filterable, and BCF
+   history is visible on the plan.
+3. **Confirmed domain packs.** Only after the pharma-cleanroom pilot is closed,
+   start laboratory, hospital and industrial as separate spec → implementation
+   → acceptance cycles together with domain experts and confirmed sources.
 
-## Что не обещаем
+## What we do not promise
 
-- нейросеть, которая рисует финальный чертёж;
-- «полное соответствие GMP», hospital code или любой другой норме без
-  конкретного подтверждённого profile и экспертного sign-off;
-- универсальную базу норм всех стран;
-- выпуск разрешения на строительство;
-- полноценный MEP, process engineering или structural calculation.
+- a neural network that draws the final drawing;
+- "full compliance with GMP", a hospital code or any other regulation without
+  a specific confirmed profile and expert sign-off;
+- a universal database of codes for all countries;
+- issuing a building permit;
+- full MEP, process engineering or structural calculation.
 
-Именно эти границы позволяют делать продукт проверяемым, а не просто убедительно
-выглядящим.
+It is precisely these boundaries that make the product verifiable rather than merely
+convincing-looking.

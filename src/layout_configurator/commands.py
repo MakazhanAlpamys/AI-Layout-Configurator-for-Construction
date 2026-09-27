@@ -37,9 +37,9 @@ class ResizeRoom:
 
     def apply(self, spec: LayoutIR, result: LayoutResult) -> tuple[LayoutIR, LayoutResult]:
         if self.width_mm <= 0 or self.height_mm <= 0:
-            raise EditError("Размеры комнаты должны быть положительными")
+            raise EditError("Room dimensions must be positive")
         if self.anchor not in {"center", "bottom_left"}:
-            raise EditError(f"Неизвестная anchor-точка: {self.anchor}")
+            raise EditError(f"Unknown anchor point: {self.anchor}")
         old = _room_rect(result, self.room_id)
         if self.anchor == "center":
             x = old.x + (old.width - self.width_mm) / 2
@@ -64,12 +64,12 @@ class AddDoor:
 
     def apply(self, spec: LayoutIR, result: LayoutResult) -> tuple[LayoutIR, LayoutResult]:
         if self.room_a == self.room_b:
-            raise EditError("Дверь должна соединять две разные комнаты")
+            raise EditError("A door must connect two different rooms")
         _room_rect(result, self.room_a)
         _room_rect(result, self.room_b)
         room_ids = {room.id for room in spec.rooms}
         if self.room_a not in room_ids or self.room_b not in room_ids:
-            raise EditError("Для двери указана неизвестная комната")
+            raise EditError("Unknown room specified for the door")
 
         rooms = []
         for room in spec.rooms:
@@ -192,4 +192,4 @@ def _room_rect(result: LayoutResult, room_id: str) -> Rect:
     try:
         return result.placements[room_id]
     except KeyError as exc:
-        raise EditError(f"В результате нет комнаты {room_id}") from exc
+        raise EditError(f"Room {room_id} is missing from the result") from exc

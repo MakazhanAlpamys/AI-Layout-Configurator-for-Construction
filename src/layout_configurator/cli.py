@@ -266,7 +266,7 @@ def main(argv: list[str] | None = None) -> int:
         for result in results:
             report = validate_layout(spec, result)
             if not report.ok:
-                print(f"ERROR: вариант {result.variant} не прошёл валидацию", file=sys.stderr)
+                print(f"ERROR: variant {result.variant} failed validation", file=sys.stderr)
                 for issue in report.issues:
                     print(f"  - {issue.code}: {issue.message}", file=sys.stderr)
                 return 3
@@ -483,7 +483,7 @@ def main(argv: list[str] | None = None) -> int:
                 if not ifc_readback.ok:
                     raise RuntimeError("; ".join(ifc_readback.issues))
             except (ValueError, RuntimeError) as exc:
-                print(f"ERROR: экспорт/IFC QA варианта {result.variant} не пройден: {exc}", file=sys.stderr)
+                print(f"ERROR: export/IFC QA failed for variant {result.variant}: {exc}", file=sys.stderr)
                 return 3
             dxf_path, pdf_path = export_building_bundle(
                 args.output,
@@ -537,7 +537,7 @@ def main(argv: list[str] | None = None) -> int:
                     previous=args.bcf_input,
                 )
             except (OSError, ValueError, RuntimeError) as exc:
-                print(f"ERROR: BCF-пакет варианта {result.variant} не сформирован: {exc}", file=sys.stderr)
+                print(f"ERROR: BCF package for variant {result.variant} could not be generated: {exc}", file=sys.stderr)
                 return 3
             manifest["variants"].append(
                 {
@@ -745,7 +745,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if facility_report.ok and (ifc_readback is None or ifc_readback.ok) else 4
     if args.command == "edit":
         if not any((args.move_room, args.resize_room, args.add_door, args.add_door_at, args.remove_door, args.add_window, args.remove_window, args.set_external_entry, args.remove_external_entry)):
-            print("ERROR: укажите хотя бы одну typed-команду правки", file=sys.stderr)
+            print("ERROR: specify at least one typed edit command", file=sys.stderr)
             return 2
         try:
             spec, result = load_result(args.input)

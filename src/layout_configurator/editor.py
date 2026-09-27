@@ -24,7 +24,7 @@ class EditorState:
     def from_layout(cls, spec: LayoutIR, result: LayoutResult) -> "EditorState":
         report = validate_layout(spec, result)
         if not report.ok:
-            raise EditError("Нельзя редактировать невалидную планировку: " + _format_issues(report))
+            raise EditError("Cannot edit an invalid layout: " + _format_issues(report))
         try:
             build_wall_plan(spec, result)
         except (KeyError, ValueError) as exc:
@@ -48,10 +48,10 @@ class EditorState:
                 raise
             raise EditError(str(exc)) from exc
         except (InfeasibleLayout, RuntimeError) as exc:
-            raise EditError(f"Правка не может быть пересчитана: {exc}") from exc
+            raise EditError(f"Edit could not be recalculated: {exc}") from exc
         report = validate_layout(new_spec, recalculated)
         if not report.ok:
-            raise EditError(f"Правка отклонена: {_format_issues(report)}")
+            raise EditError(f"Edit rejected: {_format_issues(report)}")
         try:
             build_wall_plan(new_spec, recalculated)
         except (KeyError, ValueError) as exc:

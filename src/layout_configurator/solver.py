@@ -53,20 +53,20 @@ def solve_layouts(
     """
 
     if variants < 1:
-        raise ValueError("variants должен быть не меньше 1")
+        raise ValueError("variants must be at least 1")
     try:
         from ortools.sat.python import cp_model
     except ImportError as exc:  # pragma: no cover
-        raise RuntimeError("Установите зависимости проекта: pip install -e .") from exc
+        raise RuntimeError("Install the project dependencies: pip install -e .") from exc
 
     fixed_rects = fixed_rects or {}
     unknown_fixed = set(fixed_rects) - {room.id for room in spec.rooms}
     if unknown_fixed:
-        raise InfeasibleLayout(f"Нельзя зафиксировать неизвестные комнаты: {', '.join(sorted(unknown_fixed))}")
+        raise InfeasibleLayout(f"Cannot fix unknown rooms: {', '.join(sorted(unknown_fixed))}")
     axis_room_ids = set(axis_aligned_room_ids or ())
     unknown_axis_rooms = axis_room_ids - {room.id for room in spec.rooms}
     if unknown_axis_rooms:
-        raise InfeasibleLayout(f"Нельзя привязать к осям неизвестные комнаты: {', '.join(sorted(unknown_axis_rooms))}")
+        raise InfeasibleLayout(f"Cannot bind unknown rooms to axes: {', '.join(sorted(unknown_axis_rooms))}")
 
     known_room_ids = {room.id for room in spec.rooms}
     required_groups = _normalise_adjacency_groups(required_adjacency_groups, known_room_ids, "required")
@@ -135,7 +135,7 @@ def solve_layouts(
         max_area = _area_to_grid2(room.max_area_m2, grid, ceil=False)
         target_area = _area_to_grid2(room.target_area_m2, grid, ceil=False)
         if max_area < min_area:
-            raise InfeasibleLayout(f"Диапазон площади комнаты {room.id} меньше шага сетки")
+            raise InfeasibleLayout(f"Area range of room {room.id} is smaller than the grid step")
         model.Add(area >= min_area)
         model.Add(area <= max_area)
         deviation = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area_deviation")
@@ -176,7 +176,7 @@ def solve_layouts(
             if room_a != room_b
         ]
         if not indicators:
-            raise InfeasibleLayout(f"Групповая смежность {group_name} не содержит допустимых комнат")
+            raise InfeasibleLayout(f"Group adjacency {group_name} contains no valid rooms")
         model.AddBoolOr(indicators)
 
     for group_name, left_rooms, right_rooms in forbidden_groups:
@@ -206,7 +206,7 @@ def solve_layouts(
         status = solver.Solve(model)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
-                raise InfeasibleLayout("Солвер не нашёл допустимую планировку. Проверьте площади, границы и смежности.")
+                raise InfeasibleLayout("The solver found no feasible layout. Check areas, boundaries and adjacencies.")
             break
 
         placements = {room.id: _rect_from_solver(solver, room_vars[room.id], grid) for room in spec.rooms}
@@ -309,7 +309,7 @@ def _normalise_adjacency_groups(groups, known_room_ids: set[str], relation: str)
         try:
             name, left_raw, right_raw = raw_group
         except (TypeError, ValueError) as exc:
-            raise InfeasibleLayout(f"Некорректная {relation} group adjacency #{index}") from exc
+            raise InfeasibleLayout(f"Invalid {relation} group adjacency #{index}") from exc
         left = tuple(str(room_id) for room_id in left_raw)
         right = tuple(str(room_id) for room_id in right_raw)
         unknown = (set(left) | set(right)) - known_room_ids
@@ -422,7 +422,7 @@ def _area_to_grid2(area_m2: float, grid: int, ceil: bool) -> int:
 def _fixed_grid_value(value: float, grid: int, room_id: str, field_name: str) -> int:
     grid_value = round(value / grid)
     if abs(value - grid_value * grid) > 1e-6:
-        raise InfeasibleLayout(f"Комната {room_id}: {field_name}={value} не попадает на сетку {grid} мм")
+        raise InfeasibleLayout(f"Room {room_id}: {field_name}={value} is not aligned to the {grid} mm grid")
     return int(grid_value)
 
 
@@ -439,5 +439,5 @@ def _axis_pairs(axes: Iterable[float], boundary: int, grid: int, room_id: str, a
         }
     )
     if not pairs:
-        raise InfeasibleLayout(f"Для комнаты {room_id} нет допустимой пары {axis_name}-осей на границе")
+        raise InfeasibleLayout(f"Room {room_id} has no valid pair of {axis_name} axes on the boundary")
     return [list(pair) for pair in pairs]

@@ -34,29 +34,29 @@ def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
     room_by_id = spec.room_by_id
 
     for room_id in sorted(set(room_by_id) - set(placements)):
-        issues.append(ValidationIssue("missing_room", f"В результате нет комнаты {room_id}"))
+        issues.append(ValidationIssue("missing_room", f"Room {room_id} is missing from the result"))
     for room_id in sorted(set(placements) - set(room_by_id)):
-        issues.append(ValidationIssue("unknown_room", f"В результате неизвестная комната {room_id}"))
+        issues.append(ValidationIssue("unknown_room", f"Result contains unknown room {room_id}"))
 
     for room_id, room in room_by_id.items():
         rect = placements.get(room_id)
         if rect is None:
             continue
         if rect.width <= 0 or rect.height <= 0:
-            issues.append(ValidationIssue("invalid_rect", f"Комната {room_id} имеет неположительный размер"))
+            issues.append(ValidationIssue("invalid_rect", f"Room {room_id} has a non-positive size"))
         room_geometry = box(rect.x, rect.y, rect.right, rect.top)
         if not allowed_geometry.covers(room_geometry):
             if rect.x < 0 or rect.y < 0 or rect.right > boundary.right or rect.top > boundary.top:
-                issues.append(ValidationIssue("outside_boundary", f"Комната {room_id} выходит за bounding box"))
+                issues.append(ValidationIssue("outside_boundary", f"Room {room_id} extends beyond the bounding box"))
             else:
-                issues.append(ValidationIssue("cutout_overlap", f"Комната {room_id} пересекает вычитаемую зону"))
+                issues.append(ValidationIssue("cutout_overlap", f"Room {room_id} overlaps a cutout zone"))
         if rect.width + 1e-6 < room.min_width_mm or rect.height + 1e-6 < room.min_depth_mm:
-            issues.append(ValidationIssue("min_dimension", f"Комната {room_id} меньше минимального габарита"))
+            issues.append(ValidationIssue("min_dimension", f"Room {room_id} is smaller than the minimum dimension"))
         if not room.min_area_m2 - 1e-6 <= rect.area_m2 <= room.max_area_m2 + 1e-6:
             issues.append(
                 ValidationIssue(
                     "area_range",
-                    f"Площадь {room_id}={rect.area_m2:.2f} м² вне диапазона {room.min_area_m2:.2f}–{room.max_area_m2:.2f} м²",
+                    f"Area of {room_id}={rect.area_m2:.2f} m² is outside the range {room.min_area_m2:.2f}–{room.max_area_m2:.2f} m²",
                 )
             )
 
@@ -69,17 +69,17 @@ def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
             if rect_b is not None and box(rect_a.x, rect_a.y, rect_a.right, rect_a.top).intersection(
                 box(rect_b.x, rect_b.y, rect_b.right, rect_b.top)
             ).area > 0:
-                issues.append(ValidationIssue("overlap", f"Комнаты {room_a.id} и {room_b.id} пересекаются"))
+                issues.append(ValidationIssue("overlap", f"Rooms {room_a.id} and {room_b.id} overlap"))
 
     minimum_shared = max(1, spec.door_width_mm)
     for room_a, room_b in spec.relation_pairs("required_adjacency"):
         shared = placements[room_a].shared_boundary(placements[room_b]) if room_a in placements and room_b in placements else 0
         if shared + 1e-6 < minimum_shared:
-            issues.append(ValidationIssue("required_adjacency", f"Обязательная смежность {room_a}–{room_b} не выполнена: общая граница {shared:.0f} мм"))
+            issues.append(ValidationIssue("required_adjacency", f"Required adjacency {room_a}–{room_b} not satisfied: shared boundary {shared:.0f} mm"))
 
     for room_a, room_b in spec.relation_pairs("forbidden_adjacency"):
         if room_a in placements and room_b in placements and placements[room_a].shared_boundary(placements[room_b]) > 0:
-            issues.append(ValidationIssue("forbidden_adjacency", f"Запрещённая смежность {room_a}–{room_b}"))
+            issues.append(ValidationIssue("forbidden_adjacency", f"Forbidden adjacency {room_a}–{room_b}"))
 
     graph = {room.id: set() for room in spec.rooms}
     for index, room_a in enumerate(spec.rooms):
@@ -100,14 +100,14 @@ def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
                 frontier.append(neighbour)
     for room in spec.rooms:
         if room.id not in reachable:
-            issues.append(ValidationIssue("unreachable_room", f"Комната {room.id} недостижима от {spec.entry_room}"))
+            issues.append(ValidationIssue("unreachable_room", f"Room {room.id} is unreachable from {spec.entry_room}"))
     if not (set(room_by_id) - set(placements)):
         from .walls import build_wall_plan
 
         try:
             wall_plan = build_wall_plan(spec, result)
         except (KeyError, ValueError) as exc:
-            issues.append(ValidationIssue("window_opening", f"Некорректное расположение оконного проёма: {exc}"))
+            issues.append(ValidationIssue("window_opening", f"Invalid window opening placement: {exc}"))
         else:
             window_rooms = {window.room_id for window in wall_plan.windows}
             for room in spec.rooms:
@@ -115,7 +115,7 @@ def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
                     issues.append(
                         ValidationIssue(
                             "daylight_opening",
-                            f"Комната {room.id} требует естественного освещения, но наружный оконный проём не выведен",
+                            f"Room {room.id} requires daylight, but no exterior window opening was generated",
                         )
                     )
     return ValidationReport(tuple(issues))

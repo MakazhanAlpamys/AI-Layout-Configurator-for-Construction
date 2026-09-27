@@ -2,31 +2,31 @@
 
 ## Domain rule packs
 
-Правила для regulated facilities задаются YAML-профилями, а не зашиваются в
-валидатор. Пакеты `cleanroom`, `pharma`, `laboratory`, `hospital` и `industrial`
-содержат типизированные правила потоков и собственные `source`, `edition`,
-`effective_date`, `evidence` и `parameters`.
+Rules for regulated facilities are defined by YAML profiles rather than hard-coded
+into the validator. The `cleanroom`, `pharma`, `laboratory`, `hospital` and `industrial`
+packs contain typed flow rules and their own `source`, `edition`,
+`effective_date`, `evidence` and `parameters`.
 
-Структура профиля проверяется схемой
+The profile structure is checked against the schema
 [`schemas/facility_profile.schema.json`](schemas/facility_profile.schema.json).
-Результаты попадают в `facility_validation` и BCF-like issues вместе с ссылкой
-на применённое правило. Если входных данных недостаточно, результатом является
-`UNKNOWN`; система не подставляет нормативные числа и не выдаёт regulatory verdict.
+Results go into `facility_validation` and BCF-like issues together with a reference
+to the applied rule. If the input data is insufficient, the result is
+`UNKNOWN`; the system does not substitute regulatory numbers and does not issue a regulatory verdict.
 
-Solver-first компилятор проверяемых планировок для регулируемых и
-технологически насыщенных объектов: фармацевтики, чистых помещений,
-лабораторий, больниц и промышленности. Он принимает программу объекта,
-размещает помещения и оборудование под жёсткими ограничениями, проверяет
-потоки, зазоры и геометрию, затем выпускает editable DXF, vector PDF, IFC и
-машиночитаемый audit trail.
+A solver-first compiler of verifiable layouts for regulated and
+technology-intensive facilities: pharmaceuticals, cleanrooms,
+laboratories, hospitals and industry. It takes a facility program,
+places rooms and equipment under hard constraints, checks
+flows, clearances and geometry, then produces editable DXF, vector PDF, IFC and a
+machine-readable audit trail.
 
-Это не общий «AI генерирует планировки зданий». Ниша продукта — случаи, где
-правдоподобной картинки недостаточно: нужны воспроизводимые координаты,
-разделение людей/материалов/отходов, clearance оборудования и evidence по
-каждой детерминированной проверке. Полная продуктовая формулировка и границы —
-в [Facility Product Brief](docs/FACILITY_PRODUCT_BRIEF.md).
+This is not a generic "AI generates building layouts". The product's niche is cases where
+a plausible picture is not enough: you need reproducible coordinates,
+separation of people/materials/waste, equipment clearance and evidence for
+every deterministic check. The full product statement and boundaries are
+in the [Facility Product Brief](docs/FACILITY_PRODUCT_BRIEF.md).
 
-## Быстрый старт
+## Quick start
 
 ```powershell
 uv venv --python 3.11 .venv
@@ -34,41 +34,41 @@ uv pip install --python .venv\Scripts\python.exe -e .
 .venv\Scripts\python.exe -m layout_configurator.cli generate examples/basic.yaml --output out --variants 2
 ```
 
-`.venv` создаётся заново на каждой машине: он содержит абсолютный путь к
-интерпретатору и при копировании рабочей копии на другой компьютер перестаёт
-запускаться. Каталог исключён из Git — просто удалите его и повторите две первые
-команды.
+`.venv` is created anew on every machine: it contains an absolute path to the
+interpreter and stops working when the working copy is copied to another computer.
+The directory is excluded from Git — just delete it and repeat the first two
+commands.
 
-Результаты появятся в `out/`: `layout_01.dxf`, `layout_01.pdf`,
-`layout_01.ifc`, JSON-снимок и `manifest.json`. Если в окружении уже есть обычный Python с `pip`, достаточно
-заменить две первые команды на `python -m pip install -e .`. То же самое можно
-запустить без установки entry point:
+Results will appear in `out/`: `layout_01.dxf`, `layout_01.pdf`,
+`layout_01.ifc`, a JSON snapshot and `manifest.json`. If the environment already has a regular Python with `pip`, it is enough
+to replace the first two commands with `python -m pip install -e .`. The same thing can
+be run without installing the entry point:
 
 ```powershell
 python -m layout_configurator.cli generate examples/basic.yaml -o out
 ```
 
-Типизированная правка существующего результата:
+Typed edit of an existing result:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli edit out\layout_01.json `
   --move-room hall 100 0 --output edited
 ```
 
-Доступны `--move-room ROOM DX DY`, `--resize-room ROOM WIDTH HEIGHT`,
+Available options are `--move-room ROOM DX DY`, `--resize-room ROOM WIDTH HEIGHT`,
 `--add-door ROOM_A ROOM_B`, `--add-door-at ROOM_A ROOM_B OFFSET_MM WIDTH_MM`,
-`--remove-door DOOR_ID`, `--add-window ROOM SIDE OFFSET_MM WIDTH_MM` и
+`--remove-door DOOR_ID`, `--add-window ROOM SIDE OFFSET_MM WIDTH_MM` and
 `--remove-window WINDOW_ID`, `--set-external-entry ROOM SIDE OFFSET_MM WIDTH_MM`
-и `--remove-external-entry`. Для `--add-door-at`, внешнего входа и ручного окна
-`OFFSET_MM` —
-центр проёма от нижнего/левого края соответствующей грани. После команды
-изменённая геометрия фиксируется,
-остальные комнаты частично пересчитываются CP-SAT и проходят повторную
-проверку; при нарушении ограничений команда отклоняется, исходный JSON не
-перезаписывается.
+and `--remove-external-entry`. For `--add-door-at`, the external entry and a manual window,
+`OFFSET_MM` is
+the center of the opening measured from the bottom/left end of the corresponding side. After the command,
+the modified geometry is fixed,
+the remaining rooms are partially re-solved by CP-SAT and re-checked;
+if constraints are violated the command is rejected and the original JSON is not
+overwritten.
 
-После правки можно сразу прогнать ruleset; результаты экспорта сохраняются даже
-при нормативном FAIL, а код выхода `4` позволяет использовать команду в CI:
+After an edit you can immediately run a ruleset; export results are saved even
+on a regulatory FAIL, and exit code `4` lets you use the command in CI:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli edit out\layout_01.json `
@@ -76,22 +76,22 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
   --rules rules\baseline.yaml
 ```
 
-Проверка IFC по IDS-шаблону:
+Checking IFC against an IDS template:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli validate `
   out\layout_01.ifc --ids ids\layout_baseline.ids
 ```
 
-Для KZ-проекции доступен отдельный IFC4 exchange-профиль (это контракт данных,
-не нормативный verdict):
+For the KZ projection a separate IFC4 exchange profile is available (this is a data contract,
+not a regulatory verdict):
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli validate `
   out\kz_entry_pass\layout_01.ifc --ids ids\kz_layout_exchange.ids
 ```
 
-Локальный браузерный редактор поверх тех же typed-команд:
+A local browser editor on top of the same typed commands:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli ui out\layout_01.json `
@@ -99,43 +99,43 @@ python -m layout_configurator.cli generate examples/basic.yaml -o out
   --rules rules\kz_sn_3_02_02_2023_partial.yaml --require-provenance
 ```
 
-Откройте `http://127.0.0.1:8765/`. UI показывает SVG-проекцию текущего
-`LayoutIR`, validation status и ссылки на переэкспортированные DXF/PDF/IFC/JSON;
-сервер принимает только известные команды (`MoveRoom`, `ResizeRoom`, двери,
-окна и внешний вход) и не принимает координаты как источник истины. Если передан
-`--rules`, после каждого действия отображаются результаты deterministic ruleset.
-На холсте drag комнаты и resize нижним правым маркером работают как preview;
-при отпускании отправляется ровно одна `MoveRoom` или `ResizeRoom` с привязкой к
-`grid_mm`, после чего сервер валидирует и переэкспортирует результат. Кнопки
-undo/redo восстанавливают валидные снимки `EditorState`, а журнал показывает
-последовательность typed-команд и их payload.
+Open `http://127.0.0.1:8765/`. The UI shows an SVG projection of the current
+`LayoutIR`, the validation status and links to the re-exported DXF/PDF/IFC/JSON;
+the server accepts only known commands (`MoveRoom`, `ResizeRoom`, doors,
+windows and the external entry) and does not accept coordinates as the source of truth. If
+`--rules` is passed, the deterministic ruleset results are shown after each action.
+On the canvas, dragging a room and resizing via the bottom-right handle work as a preview;
+on release exactly one `MoveRoom` or `ResizeRoom` is sent, snapped to
+`grid_mm`, after which the server validates and re-exports the result. The
+undo/redo buttons restore valid `EditorState` snapshots, and the log shows the
+sequence of typed commands and their payloads.
 
-Ядро следует принципу solver-first: координаты выдаёт OR-Tools CP-SAT,
-геометрия независимо проверяется валидатором, а DXF/PDF являются производными
-представлениями `LayoutIR`. IFC/BIM покрывает структуру, стены, проёмы, связи
-пространств, семантические типы и multi-storey projection; UI и LLM-граница
-работают как отдельные слои согласно [актуальной product vision](docs/FACILITY_PRODUCT_BRIEF.md).
+The core follows the solver-first principle: coordinates are produced by OR-Tools CP-SAT,
+geometry is independently checked by the validator, and DXF/PDF are derived
+representations of `LayoutIR`. IFC/BIM covers structure, walls, openings, space
+relationships, semantic types and multi-storey projection; the UI and the LLM boundary
+work as separate layers according to the [current product vision](docs/FACILITY_PRODUCT_BRIEF.md).
 
-## Основной продуктовый слой: FacilityIR на базе BuildingIR
+## Core product layer: FacilityIR on top of BuildingIR
 
-Первый узкий клин — фармацевтическое clean production / cleanroom-планирование.
-Его acceptance-сценарий включает отдельные personnel/material airlocks,
-декларируемые классы зон и pressure cascade, equipment clearance, маршруты
-персонала/материалов/отходов, конструктивные оси и доказуемую проверку.
-Лаборатории, больницы и промышленные профили подключаются отдельными
-domain/rule packs поверх того же контракта, а не смешиваются в один набор
-непроверяемых правил.
+The first narrow wedge is pharmaceutical clean production / cleanroom planning.
+Its acceptance scenario includes separate personnel/material airlocks,
+declared zone classes and a pressure cascade, equipment clearance, personnel/material/waste
+routes, structural axes and verifiable checking.
+Laboratories, hospitals and industrial profiles are plugged in as separate
+domain/rule packs on top of the same contract, rather than being mixed into one set of
+unverifiable rules.
 
-Текущий `BuildingIR` — канонический вход без координат: зоны, оборудование с
-обслуживающими габаритами, направленные технологические потоки и
-конструктивные оси. Полный acceptance-вход находится в
+The current `BuildingIR` is a coordinate-free canonical input: zones, equipment with
+service envelopes, directed process flows and
+structural axes. The full acceptance input is in
 [`examples/pharma_cleanroom_pilot.yaml`](examples/pharma_cleanroom_pilot.yaml),
-а его границы и external review gates — в
+and its boundaries and external review gates are in
 [`docs/PILOT_ACCEPTANCE_SPEC.md`](docs/PILOT_ACCEPTANCE_SPEC.md).
 
-`generate-building` уже решает комнаты CP-SAT, затем размещает оборудование
-вторым CP-SAT с учётом clearance и выпускает `building_01.json`. Для плотных
-facility-программ default time limit этой команды — 60 секунд:
+`generate-building` already solves rooms with CP-SAT, then places equipment
+with a second CP-SAT pass that accounts for clearance, and produces `building_01.json`. For dense
+facility programs, the default time limit of this command is 60 seconds:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
@@ -143,9 +143,9 @@ facility-программ default time limit этой команды — 60 се
   --profile rules\pharma_cleanroom_pilot.yaml
 ```
 
-По умолчанию команда применяет YAML-backed compatibility-профиль
-`rules/default_facility.yaml`. Для регулируемого объекта его нужно заменить
-явным domain profile — например:
+By default the command applies the YAML-backed compatibility profile
+`rules/default_facility.yaml`. For a regulated facility it must be replaced with
+an explicit domain profile — for example:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
@@ -153,86 +153,86 @@ facility-программ default time limit этой команды — 60 се
   --output out\pharma_cleanroom --variants 3 --max-attempts 9
 ```
 
-В репозитории также есть отдельные domain rule packs
+The repository also contains separate domain rule packs
 `rules\cleanroom_pilot.yaml`, `rules\laboratory_pilot.yaml`,
-`rules\hospital_pilot.yaml` и `rules\industrial_pilot.yaml`. Они содержат
-типизированные проверки потоков, а cleanroom-пакет также vocabulary/order классов
-зон, роли и parent links airlock и pressure ordering с явно указанным sourced
-guidance value. Pharma-пакет проверяет stage-flow types и обязательные derived
-routes. Это project policies, а не GMP, healthcare, HSE, ISO или строительные
-code-checks.
-Каждый профиль может содержать секцию `drawing` (`sheet_id`, `discipline`,
-`title`, `revision` и флаги аннотаций), которая управляет DXF/PDF projection.
+`rules\hospital_pilot.yaml` and `rules\industrial_pilot.yaml`. They contain
+typed flow checks, and the cleanroom pack also contains the vocabulary/order of zone classes,
+airlock roles and parent links, and pressure ordering with an explicitly stated sourced
+guidance value. The pharma pack checks stage-flow types and required derived
+routes. These are project policies, not GMP, healthcare, HSE, ISO or building
+code checks.
+Each profile may contain a `drawing` section (`sheet_id`, `discipline`,
+`title`, `revision` and annotation flags) that controls the DXF/PDF projection.
 
-Связи зон становятся жёсткими CP-SAT-ограничениями: обязательная связь требует
-контакт хотя бы одной пары комнат, а запрещённая не допускает касания. Для
-обязательных потоков эффективная ширина генерируемых дверей автоматически
-поднимается до максимальной ширины потока; результат сохраняет это значение в
-каноническом `spec` и evidence.
+Zone relationships become hard CP-SAT constraints: a required relationship requires
+at least one pair of rooms to touch, and a forbidden one does not allow contact. For
+required flows, the effective width of generated doors is automatically
+raised to the maximum flow width; the result stores this value in the
+canonical `spec` and evidence.
 
-`generate-building` выпускает program/solver output и drawing-проекции: editable DXF
-с блоками оборудования на `A-EQUIP` и пунктирными service-clearance на `A-CLEARANCE`,
-а также векторный PDF. В `building_01.json` дополнительно сохраняются
-`equipment_validation`, derived `flow_routes`, независимый `flow_validation` и
-единый `facility_validation` с профилем, статусами и evidence. Необязательные
-потоки (`required: false`) не делают результат FAIL при отсутствии маршрута;
-если маршрут построен, он проходит те же геометрические проверки.
-Рядом с ним команда сохраняет `building_01.coordination.json` — явный
-`FLC-BCF-like-json` sidecar со стабильными issue ID, severity, source,
-endpoint’ами и координатой маршрута, если проблема относится к flow. DXF/PDF
-дополнительно содержат размеры помещений и подписи flow type/clear width.
-Формат sidecar описан в [`schemas/coordination_issues.schema.json`](schemas/coordination_issues.schema.json);
-дополнительно рядом автоматически создаётся настоящий BCF-XML 2.1 ZIP
-`building_01.bcf`: по одному topic на issue, `markup.bcf`, viewpoint `*.bcfv`,
-snapshot и внешние ссылки на program/DXF/PDF/IFC. JSON остаётся компактным
-sidecar для автоматической обработки.
-IFC для оборудования представлен как `IfcBuildingElementProxy` с двумя property
-sets. Derived flow routes также экспортируются как `IfcBuildingElementProxy` с
-`Curve3D` и `Pset_LayoutFlow`: тип, endpoint’ы, room path, ширина, число проблем
-и статус независимой проверки. Это coordination/evidence projection, а не MEP
-или process-system model, не GMP/медицинское разрешение и не автоматический
-нормативный verdict.
+`generate-building` produces program/solver output and drawing projections: an editable DXF
+with equipment blocks on `A-EQUIP` and dashed service clearances on `A-CLEARANCE`,
+as well as a vector PDF. `building_01.json` additionally stores
+`equipment_validation`, derived `flow_routes`, an independent `flow_validation` and
+a unified `facility_validation` with the profile, statuses and evidence. Optional
+flows (`required: false`) do not make the result FAIL when a route is missing;
+if a route is built, it goes through the same geometric checks.
+Next to it the command saves `building_01.coordination.json` — an explicit
+`FLC-BCF-like-json` sidecar with stable issue IDs, severity, source,
+endpoints and the route coordinate if the problem relates to a flow. The DXF/PDF
+additionally contain room dimensions and flow type/clear width labels.
+The sidecar format is described in [`schemas/coordination_issues.schema.json`](schemas/coordination_issues.schema.json);
+in addition, a real BCF-XML 2.1 ZIP
+`building_01.bcf` is automatically created alongside it: one topic per issue, `markup.bcf`, a `*.bcfv` viewpoint,
+a snapshot and external references to the program/DXF/PDF/IFC. The JSON remains a compact
+sidecar for automated processing.
+In IFC, equipment is represented as `IfcBuildingElementProxy` with two property
+sets. Derived flow routes are also exported as `IfcBuildingElementProxy` with
+`Curve3D` and `Pset_LayoutFlow`: type, endpoints, room path, width, number of problems
+and the status of the independent check. This is a coordination/evidence projection, not an MEP
+or process-system model, not a GMP/medical approval and not an automatic
+regulatory verdict.
 
-После записи IFC автоматически открывается через IfcOpenShell обратно и сверяет
-ключевые entity counts и flow metadata. В `manifest.json` это отражено в
-`ifc_readback`; для ручной проверки уже существующего результата можно передать
+After writing, the IFC is automatically re-opened via IfcOpenShell and
+key entity counts and flow metadata are cross-checked. In `manifest.json` this is reflected in
+`ifc_readback`; to manually check an existing result you can pass
 `check-building --ifc path\to\building.ifc`.
 
-Сохранённый результат можно перепроверить отдельным детерминированным запуском:
+A saved result can be re-checked with a separate deterministic run:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli check-building `
   out\commercial_pilot\building_01.json --json
 ```
 
-Для повторной проверки с отдельным issue-файлом добавьте
+For a re-check with a separate issue file, add
 `--issues-output out\commercial_pilot\recheck.coordination.json`.
-Для отдельного BCF-пакета при повторной проверке добавьте
+For a separate BCF package on re-check, add
 `--bcf-output out\commercial_pilot\recheck.bcf`.
-При следующей итерации можно передать предыдущий пакет через
+On the next iteration you can pass the previous package via
 `generate-building --bcf-input out\commercial_pilot\building_01.bcf`:
-исчезнувшие из текущего validation report topics попадут в новый BCF как
-`Closed`, а вернувшиеся ошибки снова будут `Open`.
+topics that have disappeared from the current validation report go into the new BCF as
+`Closed`, and errors that return will be `Open` again.
 
-Для полной проверки уже созданного комплекта используйте:
+For a full check of an already generated bundle, use:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli qa-building `
   out\commercial_pilot\building_01.json --json
 ```
 
-Команда сверяет JSON sidecar, DXF, PDF, IFC read-back и BCF 2.1 с текущим
+The command cross-checks the JSON sidecar, DXF, PDF, IFC read-back and BCF 2.1 against the current
 facility validation report.
 
-Для полной acceptance-проверки используйте seed-matrix. Команда публикует
-только варианты, прошедшие room/equipment/flow/profile gates; отклонённые
-кандидаты и использованные seeds остаются в `manifest.json`. Если для любого
-seed не найден весь запрошенный набор в заданном бюджете поиска, команда
-возвращает ошибку. Это не доказательство математической невозможности программы.
-`generation-failure.json` сохраняет входную программу, профиль, параметры поиска
-и все причины отклонения проверенных кандидатов. Матрица включает этот отчёт
-в результат seed; без успешной проверки всех seeds сравнение идентификаторов
-не получает `PASS`.
+For a full acceptance check, use the seed matrix. The command publishes
+only variants that passed the room/equipment/flow/profile gates; rejected
+candidates and the seeds used remain in `manifest.json`. If for any
+seed the full requested set is not found within the given search budget, the command
+returns an error. This is not a proof that the program is mathematically infeasible.
+`generation-failure.json` stores the input program, the profile, the search parameters
+and all rejection reasons for the checked candidates. The matrix includes this report
+in the seed result; without a successful check of all seeds, the identifier comparison
+does not get `PASS`.
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli acceptance-building-matrix `
@@ -242,20 +242,20 @@ seed не найден весь запрошенный набор в задан�
   --variants 3 --seeds 1 7 42 --max-attempts 9 --time-limit 30
 ```
 
-Для каждого seed команда запускает `qa-building-set`: он проверяет совпадение
-semantic room/equipment/flow IDs, топологии маршрутов, IFC read-back
-идентификаторов и BCF 2.1 topic identities между вариантами. Общий
-`acceptance-matrix-report.json` хранит результаты каждого запуска, SHA-256
-артефактов, параметры поиска и проверку semantic IDs между seeds.
-`attempted_candidates` — число полученных от room solver кандидатов;
-`evaluated_candidates` — число кандидатов, прошедших через отбор до получения
-нужного набора. Лимит времени применяется к каждому запуску solver, а не ко всей
-матрице.
+For each seed the command runs `qa-building-set`: it checks that
+semantic room/equipment/flow IDs, route topologies, IFC read-back
+identifiers and BCF 2.1 topic identities match across variants. The shared
+`acceptance-matrix-report.json` stores the results of each run, SHA-256 of
+artifacts, search parameters and the check of semantic IDs across seeds.
+`attempted_candidates` is the number of candidates obtained from the room solver;
+`evaluated_candidates` is the number of candidates that went through selection until the
+required set was obtained. The time limit applies to each solver run, not to the whole
+matrix.
 
-Для воспроизводимого прогона есть отдельный режим: `--deterministic-budget UNITS`
-тратит машинно-независимый объём работы CP-SAT вместо секунд, фиксирует
-однопоточный поиск и снимает ограничение по реальному времени. Смысл
-`--time-limit` при этом не меняется — он остаётся бюджетом по часам.
+For a reproducible run there is a separate mode: `--deterministic-budget UNITS`
+spends a machine-independent amount of CP-SAT work instead of seconds, forces
+single-threaded search and removes the wall-clock limit. The meaning of
+`--time-limit` does not change — it remains a wall-clock budget.
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
@@ -263,12 +263,12 @@ semantic room/equipment/flow IDs, топологии маршрутов, IFC rea
   --output out\repeatable --variants 2 --max-attempts 9 --deterministic-budget 10 --seed 1
 ```
 
-Единица бюджета — не секунда: на машине разработки ≈ 3.4 с, то есть 10 единиц
-примерно соответствуют прежним `--time-limit 30`. Калибровка, условие стабильного
-порядка модели и полный список ограничений —
-в [`docs/DETERMINISTIC_BUDGET.md`](docs/DETERMINISTIC_BUDGET.md).
+A budget unit is not a second: on the development machine it is ≈ 3.4 s, so 10 units
+roughly correspond to the former `--time-limit 30`. Calibration, the condition for stable
+model order and the full list of limitations are
+in [`docs/DETERMINISTIC_BUDGET.md`](docs/DETERMINISTIC_BUDGET.md).
 
-Для трёх внешних gate'ов принятый комплект проецируется в досье по ролям:
+For the three external gates, the accepted bundle is projected into role-specific dossiers:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli review-dossier `
@@ -276,25 +276,25 @@ semantic room/equipment/flow IDs, топологии маршрутов, IFC rea
   --output out\acceptance-2026-09-06\review
 ```
 
-Команда пишет `building_0N.technologist.md`, `building_0N.cleanroom-hvac.md`,
-`building_0N.architect-bim.md` и `building_0N.artifact-inventory.json` с
-сущностями IFC, слоями DXF и SHA-256 файлов варианта. Досье содержит только то,
-что уже есть в каноническом результате, блок решений для рецензента и явный
-список непроверенного; `PASS` в нём не превращается в нормативный verdict.
+The command writes `building_0N.technologist.md`, `building_0N.cleanroom-hvac.md`,
+`building_0N.architect-bim.md` and `building_0N.artifact-inventory.json` with
+IFC entities, DXF layers and SHA-256 of the variant's files. A dossier contains only what
+is already in the canonical result, a decision block for the reviewer and an explicit
+list of what has not been checked; `PASS` in it does not become a regulatory verdict.
 
-Состав пакета для внешних рецензентов, чек-листы технолога/QA, cleanroom/HVAC и
-архитектора/BIM и команды воспроизведения — в
+The contents of the package for external reviewers, the checklists for the process technologist/QA, cleanroom/HVAC and
+architect/BIM, and the reproduction commands are in
 [`docs/ACCEPTANCE_REVIEW_PACKAGE.md`](docs/ACCEPTANCE_REVIEW_PACKAGE.md).
-Результаты браузерного QA read-only viewer, включая открытые дефекты проекции, —
-в [`docs/VIEWER_QA_2026-09-05.md`](docs/VIEWER_QA_2026-09-05.md).
+The results of browser QA of the read-only viewer, including open projection defects, are
+in [`docs/VIEWER_QA_2026-09-05.md`](docs/VIEWER_QA_2026-09-05.md).
 
-Локальные регрессионные тесты: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
-Workflow `.github/workflows/ci.yml` запускает тесты на Windows/Linux и затем
-полную pharma-cleanroom матрицу на Windows. Комплекты и отчёты, включая ошибки,
-сохраняются как CI artifacts. Внешние экспертные условия приёмки остаются
-отдельным этапом.
+Local regression tests: `.venv\Scripts\python.exe -m unittest discover -s tests -v`.
+The `.github/workflows/ci.yml` workflow runs the tests on Windows/Linux and then
+the full pharma-cleanroom matrix on Windows. Bundles and reports, including errors,
+are saved as CI artifacts. External expert acceptance conditions remain
+a separate stage.
 
-Для read-only viewer можно передать весь acceptance-каталог и выбрать вариант:
+For the read-only viewer you can pass the whole acceptance directory and select a variant:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli ui `
@@ -302,63 +302,63 @@ Workflow `.github/workflows/ci.yml` запускает тесты на Windows/L
   --profile rules\pharma_cleanroom_pilot.yaml
 ```
 
-`--variant` выбирает `building_02.json` и его соседние DXF/PDF/IFC/BCF/JSON
-артефакты; варианты 1 и 3 открываются тем же способом.
+`--variant` selects `building_02.json` and its neighboring DXF/PDF/IFC/BCF/JSON
+artifacts; variants 1 and 3 are opened the same way.
 
-### Facility review и BCF issue history
+### Facility review and BCF issue history
 
-Команда `ui` автоматически открывает существующий `building_01.json` как
-read-only facility review. SVG показывает производные маршруты, service
-clearance оборудования и автоматически подсвечивает текущие flow/equipment
-конфликты. Боковая панель отображает статусы `OPEN`/`RESOLVED`, фильтр issues,
-текущий список конфликтов и историю BCF topics; закрытые viewpoints отмечаются
-на плане по координатам BCF. Для выбранного issue доступны `Resolve`, `Reopen`,
-comment и assign; действия сохраняются в `building_01.issue-management.json`,
-обновляют BCF/coordination JSON и manifest counters. Геометрия остаётся
-read-only: edit/undo/redo/reset в review возвращают HTTP 405.
+The `ui` command automatically opens an existing `building_01.json` as a
+read-only facility review. The SVG shows derived routes, equipment service
+clearances and automatically highlights current flow/equipment
+conflicts. The side panel shows `OPEN`/`RESOLVED` statuses, an issue filter,
+the current list of conflicts and the history of BCF topics; closed viewpoints are marked
+on the plan using BCF coordinates. For the selected issue, `Resolve`, `Reopen`,
+comment and assign are available; actions are saved to `building_01.issue-management.json`
+and update the BCF/coordination JSON and manifest counters. Geometry remains
+read-only: edit/undo/redo/reset in review return HTTP 405.
 
-## Ограничения MVP
+## MVP limitations
 
-- один этаж и ортогональные прямоугольные комнаты;
-- сетка координат по умолчанию 100 мм;
-- контур — bounding box с прямоугольными вычитаемыми зонами;
-- смежность означает общую границу не меньше ширины двери;
-- стены экспортируются двойными линиями с толщиной и вырезами дверей;
-- окна для комнат с `needs_daylight` экспортируются автоматически; ручные окна
-  можно добавить через `edit --add-window ROOM SIDE OFFSET_MM WIDTH_MM`;
-- solver требует для `needs_daylight` контакт комнаты с наружной гранью или
-  вырезом, чтобы автоматическое окно не исчезало из результата;
-- внешний вход задаётся через `external_entry`, фиксируется solver-ом на наружной
-  стороне комнаты и экспортируется как отдельный `IfcDoor`/проём;
-- `is_heated` хранится у комнаты и используется jurisdiction-проверками, но не
-  заменяет расчёт отопления или инженерных систем; профиль KZ проверяет только
-  полноту этой декларации по выбранным типам комнат;
-- IFC содержит пространственную структуру, комнаты, непрерывные стены, двери,
-  окна и `IfcOpeningElement` с `IfcRelVoidsElement`/`IfcRelFillsElement`;
-  `IfcRelSpaceBoundary`, базовые property sets, материалы и IDS-шаблон уже есть;
-  юрисдикционные
-  нормативные проверки будут отдельным этапом;
-- DXF/PDF — чертёжная выдача, не разрешение на строительство и не итоговая
-  проверка строительных норм.
+- a single storey and orthogonal rectangular rooms;
+- the default coordinate grid is 100 mm;
+- the outline is a bounding box with rectangular subtracted zones;
+- adjacency means a shared boundary no shorter than the door width;
+- walls are exported as double lines with thickness and door cutouts;
+- windows for rooms with `needs_daylight` are exported automatically; manual windows
+  can be added via `edit --add-window ROOM SIDE OFFSET_MM WIDTH_MM`;
+- for `needs_daylight` the solver requires the room to touch an exterior side or
+  a cutout, so that the automatic window does not disappear from the result;
+- the external entry is set via `external_entry`, fixed by the solver on an exterior
+  side of the room and exported as a separate `IfcDoor`/opening;
+- `is_heated` is stored on the room and used by jurisdiction checks, but does not
+  replace heating or building-services calculations; the KZ profile only checks
+  the completeness of this declaration for the selected room types;
+- IFC contains the spatial structure, rooms, continuous walls, doors,
+  windows and `IfcOpeningElement` with `IfcRelVoidsElement`/`IfcRelFillsElement`;
+  `IfcRelSpaceBoundary`, basic property sets, materials and an IDS template are already present;
+  jurisdictional
+  regulatory checks will be a separate stage;
+- DXF/PDF are drawing output, not a building permit and not a final
+  building-code check.
 
-## Детерминированная проверка ruleset
+## Deterministic ruleset check
 
-Для layout JSON можно запустить версионируемый набор проектных правил:
+A versioned set of project rules can be run against layout JSON:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli check `
   out\layout_01.json --rules rules\baseline.yaml
 ```
 
-Для CI-проверки источника нормативного профиля добавляется
-`--require-provenance`; он требует authority, edition, effective_date,
-source_url и document_hash.
+For a CI check of the regulatory profile's source, add
+`--require-provenance`; it requires authority, edition, effective_date,
+source_url and document_hash.
 
-Первый частичный профиль Казахстана (проверенные срезы естественного освещения
-по п. 7.8, запрещённого соседства по п. 6.2.13, тамбура по п. 6.2.8
-и связи вспомогательных помещений по п. 6.2.12, а также декларации отопления
-по п. 8.19
-СН РК 3.02-02-2023):
+The first partial profile for Kazakhstan (verified slices on daylighting
+per cl. 7.8, forbidden adjacency per cl. 6.2.13, vestibule per cl. 6.2.8
+and connection of auxiliary rooms per cl. 6.2.12, as well as the heating declaration
+per cl. 8.19
+of SN RK 3.02-02-2023):
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli check `
@@ -366,8 +366,8 @@ source_url и document_hash.
   --require-provenance
 ```
 
-Для демонстрации проходящего профиля используйте пример, где кухня тоже
-помечена как требующая естественного освещения:
+To demonstrate a passing profile, use the example where the kitchen is also
+marked as requiring daylight:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate `
@@ -377,7 +377,7 @@ source_url и document_hash.
   --require-provenance
 ```
 
-Проверка требования тамбура по п. 6.2.8 демонстрируется отдельными примерами:
+The vestibule requirement check per cl. 6.2.8 is demonstrated by separate examples:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate `
@@ -391,58 +391,58 @@ source_url и document_hash.
 .venv\Scripts\python.exe -m layout_configurator.cli check `
   out\kz_entry_fail\layout_01.json --rules rules\kz_sn_3_02_02_2023_partial.yaml `
   --require-provenance
-# Ожидаемый код выхода последней команды: 4.
+# Expected exit code of the last command: 4.
 ```
 
-`rules/baseline.yaml` проверяет геометрию, минимальные площади по типам комнат,
-ширину коридора, окна для `needs_daylight`, достижимость от входа и максимальную
-длину маршрута. Результат содержит `PASS`/`FAIL`/`NOT_APPLICABLE`, источник,
-пункт ruleset и evidence по каждому правилу; `--json` выдаёт машинный отчёт.
+`rules/baseline.yaml` checks geometry, minimum areas by room type,
+corridor width, windows for `needs_daylight`, reachability from the entry and maximum
+route length. The result contains `PASS`/`FAIL`/`NOT_APPLICABLE`, the source,
+the ruleset clause and evidence for each rule; `--json` produces a machine-readable report.
 
-Юрисдикционный профиль можно держать отдельным YAML и наследовать от baseline
-через `extends: baseline.yaml`, переопределяя только нужные правила и пороги;
-вложенные `params` объединяются с базовыми.
-Для аудита профиль может хранить `provenance` с органом-источником, редакцией,
-датой действия, URL и hash исходного документа; эти данные попадают в JSON-отчёт.
-Профиль должен быть выбран и проверен человеком; без этого baseline остаётся
-проектной самопроверкой, а не строительным кодом.
+A jurisdictional profile can be kept as a separate YAML file and inherit from baseline
+via `extends: baseline.yaml`, overriding only the needed rules and thresholds;
+nested `params` are merged with the base ones.
+For auditing, a profile can store `provenance` with the issuing authority, edition,
+effective date, URL and hash of the source document; this data goes into the JSON report.
+The profile must be selected and verified by a human; without that, baseline remains
+a project self-check, not a building code.
 
-Это настраиваемый generic baseline для проектной самопроверки, а не универсальный
-строительный код и не решение о разрешении на строительство. Юрисдикционные
-профили должны добавляться отдельными ruleset-файлами после фиксации конкретной
-юрисдикции. Числовые решения принимает код; LLM/RAG в verdict не участвуют.
+This is a configurable generic baseline for project self-checking, not a universal
+building code and not a building-permit decision. Jurisdictional
+profiles should be added as separate ruleset files once a specific
+jurisdiction has been fixed. Numerical decisions are made by code; LLM/RAG do not take part in the verdict.
 
 ## JSON Schema boundary
 
-Канонический контракт `LayoutIR` описан в
-[`schemas/layout_ir.schema.json`](schemas/layout_ir.schema.json). Проверка
-нормализованного удобного YAML:
+The canonical `LayoutIR` contract is described in
+[`schemas/layout_ir.schema.json`](schemas/layout_ir.schema.json). Checking
+the normalized convenience YAML:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli schema examples\basic.yaml
 ```
 
-Строгая проверка файла как есть, без нормализации и без молчаливого удаления
-неизвестных полей:
+Strict check of the file as is, without normalization and without silently dropping
+unknown fields:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli schema input.json --raw
 ```
 
-`--raw` — граница будущего LLM-парсера. Парсер может выдавать только JSON по
-схеме; координаты, DXF и нормативный verdict ему не выдаются.
+`--raw` is the boundary of the future LLM parser. The parser may only output JSON conforming to the
+schema; coordinates, DXF and the regulatory verdict are not given to it.
 
-Строгую нормализацию канонического JSON/YAML можно выполнить отдельно:
+Strict normalization of canonical JSON/YAML can be run separately:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli normalize input.json `
   --output canonical.json
 ```
 
-Для готового примера используй `examples/basic_canonical.json`; обычный
-`examples/basic.yaml` остаётся shorthand для команды `generate`.
+For a ready-made example, use `examples/basic_canonical.json`; the regular
+`examples/basic.yaml` remains shorthand for the `generate` command.
 
-Для текстового ТЗ есть локальный constrained-parser без доступа к координатам:
+For a text brief there is a local constrained parser without access to coordinates:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli parse-brief `
@@ -451,18 +451,20 @@ source_url и document_hash.
   out\brief_canonical.json --output out\brief --strict-input
 ```
 
-Будущий LLM-провайдер должен отдавать только такой canonical JSON; функция
-`parse_llm_mapping` сначала прогоняет его через JSON Schema и отклоняет
-координаты, generated data и неизвестные поля. Для RAG-слоя есть безопасный
-поиск ссылок без проверки планировки:
+A future LLM provider must return only such canonical JSON; the
+`parse_llm_mapping` function first runs it through JSON Schema and rejects
+coordinates, generated data and unknown fields. For the RAG layer there is a safe
+reference search that does not check the layout (the query below is Russian because
+it is matched against the Russian-language text of the KZ rule profile; it means
+"kitchen daylighting"):
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli cite `
   естественное освещение кухни --rules rules\kz_sn_3_02_02_2023_partial.yaml
 ```
 
-При наличии внешнего OpenAI-compatible провайдера можно включить реальный
-LLM-вызов без передачи ему результата солвера или нормативного verdict:
+If an external OpenAI-compatible provider is available, you can enable a real
+LLM call without passing it the solver result or the regulatory verdict:
 
 ```powershell
 $env:LAYOUT_LLM_ENDPOINT = "https://provider.example/v1/chat/completions"
@@ -472,27 +474,27 @@ $env:LAYOUT_LLM_API_KEY = "your-key"
   examples\brief.txt --output out\llm_canonical.json
 ```
 
-Ответ провайдера принимается только после `parse_llm_mapping` и JSON Schema.
+The provider's response is accepted only after `parse_llm_mapping` and JSON Schema.
 
-Для двух и более уровней используется общая осевая координация: повторяющиеся
-комнаты вертикального ядра фиксируются на одной прямоугольной сетке, а ширина
-лестницы и заявленные оси проверяются после решения:
+For two or more levels, shared axis coordination is used: repeated
+vertical-core rooms are fixed on a single rectangular grid, and the stair
+width and declared axes are checked after solving:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-multifloor `
   examples\multifloor.yaml --output out\multifloor
 ```
 
-Команда создаёт также общий `out\multifloor\multifloor.ifc` с несколькими
-`IfcBuildingStorey` и `IfcStair`; отдельные папки этажей сохраняются для
-локального редактирования и round-trip.
+The command also creates a shared `out\multifloor\multifloor.ifc` with several
+`IfcBuildingStorey` and `IfcStair`; separate per-storey folders are kept for
+local editing and round-trip.
 
-Команда сначала проверяет схему, затем создаёт `LayoutIR`; результат солвера
-и координаты на этом input contract boundary не принимаются.
+The command first checks the schema, then creates `LayoutIR`; the solver result
+and coordinates are not accepted at this input contract boundary.
 
-Для прямого запуска солвера с этим же строгим входом используй
-`generate --strict-input`; shorthand без обязательных canonical-полей будет
-отклонён до запуска CP-SAT.
+To run the solver directly with the same strict input, use
+`generate --strict-input`; shorthand without the required canonical fields will be
+rejected before CP-SAT is run.
 ### Facility review UI
 
 Opening a generated `BuildingIR` result automatically selects the read-only facility review:

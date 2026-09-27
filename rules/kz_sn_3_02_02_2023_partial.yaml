@@ -13,6 +13,8 @@ provenance:
 # Partial profile: directly mapped KZ requirements are layered over the generic
 # design-aid baseline. Baseline thresholds remain project checks, not KZ law.
 # This is not a complete Kazakhstan building-code compliance verdict.
+# Russian `source`/`edition` values and `keywords` quote the official norm
+# wording; the keywords also feed Russian-language citation retrieval.
 rules:
   - id: GEOMETRY_VALID
     title: Layout geometry is valid
@@ -26,7 +28,8 @@ rules:
     keywords: [естественное освещение, окна, кухня, спальня, жилые комнаты]
     params:
       require_for_needs_daylight: true
-      # Project room-type mapping for «жилые комнаты и кухни (столовые)».
+      # Project room-type mapping for «жилые комнаты и кухни (столовые)»
+      # ("living rooms and kitchens (dining rooms)").
       required_room_types: [living_room, bedroom, kitchen]
 
   - id: FORBIDDEN_TYPE_ADJACENCY
@@ -35,8 +38,9 @@ rules:
     clause: "6.2.13"
     keywords: [банно-прачечный блок, спальня, соседство]
     params:
-      # Project room-type mapping for «банно-прачечный блок» and «спальные
-      # помещения». Other aliases require an explicit profile update.
+      # Project room-type mapping for «банно-прачечный блок» ("bath-laundry
+      # block") and «спальные помещения» ("bedrooms"). Other aliases require an
+      # explicit profile update.
       source_room_types: [bath_laundry_block]
       target_room_types: [bedroom]
       minimum_shared_boundary_mm: 1
@@ -55,8 +59,9 @@ rules:
     clause: "6.2.12"
     keywords: [веранда, терраса, лоджия, основные помещения]
     params:
-      # Project room-type mapping for «веранда, терраса либо лоджия» and
-      # «основные помещения дома». This mapping is intentionally explicit.
+      # Project room-type mapping for «веранда, терраса либо лоджия» ("veranda,
+      # terrace or loggia") and «основные помещения дома» ("main rooms of the
+      # house"). This mapping is intentionally explicit.
       auxiliary_room_types: [veranda, terrace, loggia]
       main_room_types: [living_room, kitchen, bedroom]
       minimum_shared_boundary_mm: 1

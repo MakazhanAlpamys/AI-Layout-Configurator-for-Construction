@@ -34,23 +34,23 @@ function renderFields() {
   const spec = state.current.spec;
   const entryRoom = spec.entry_room;
   if (op === "move_room") {
-    $("#fields").innerHTML = `${roomSelect("Комната", rooms)}<div class="grid-2">${field("DX, мм", "dx_mm", "0")}${field("DY, мм", "dy_mm", "0")}</div>`;
+    $("#fields").innerHTML = `${roomSelect("Room", rooms)}<div class="grid-2">${field("DX, mm", "dx_mm", "0")}${field("DY, mm", "dy_mm", "0")}</div>`;
   } else if (op === "resize_room") {
-    $("#fields").innerHTML = `${roomSelect("Комната", rooms)}<div class="grid-2">${field("Ширина, мм", "width_mm")}${field("Глубина, мм", "height_mm")}</div><label>Якорь<select name="anchor"><option value="center">Центр</option><option value="bottom_left">Нижний левый угол</option></select></label>`;
+    $("#fields").innerHTML = `${roomSelect("Room", rooms)}<div class="grid-2">${field("Width, mm", "width_mm")}${field("Depth, mm", "height_mm")}</div><label>Anchor<select name="anchor"><option value="center">Center</option><option value="bottom_left">Bottom-left corner</option></select></label>`;
   } else if (op === "add_door") {
-    $("#fields").innerHTML = `<div class="grid-2"><label>Комната A<select name="room_a">${roomOptions(rooms)}</select></label><label>Комната B<select name="room_b">${roomOptions(rooms)}</select></label></div><div class="grid-2">${field("Центр, мм (необязательно)", "offset_mm", "", "number", "placeholder=\"по центру\"")}${field("Ширина, мм (необязательно)", "width_mm", "", "number", "placeholder=\"по умолчанию\"")}</div>${field("ID двери (необязательно)", "door_id", "", "text")}`;
+    $("#fields").innerHTML = `<div class="grid-2"><label>Room A<select name="room_a">${roomOptions(rooms)}</select></label><label>Room B<select name="room_b">${roomOptions(rooms)}</select></label></div><div class="grid-2">${field("Center, mm (optional)", "offset_mm", "", "number", "placeholder=\"centered\"")}${field("Width, mm (optional)", "width_mm", "", "number", "placeholder=\"default\"")}</div>${field("Door ID (optional)", "door_id", "", "text")}`;
   } else if (op === "remove_door") {
     const doors = spec.doors || [];
-    $("#fields").innerHTML = `<label>Явная дверь<select name="door_id">${doors.length ? doors.map((door) => `<option value="${escapeHtml(door.id)}">${escapeHtml(door.id)} — ${escapeHtml(door.room_a)} / ${escapeHtml(door.room_b)}</option>`).join("") : "<option value=\"\">Нет явных дверей</option>"}</select></label>`;
+    $("#fields").innerHTML = `<label>Explicit door<select name="door_id">${doors.length ? doors.map((door) => `<option value="${escapeHtml(door.id)}">${escapeHtml(door.id)} — ${escapeHtml(door.room_a)} / ${escapeHtml(door.room_b)}</option>`).join("") : "<option value=\"\">No explicit doors</option>"}</select></label>`;
   } else if (op === "add_window") {
-    $("#fields").innerHTML = `${roomSelect("Комната", rooms)}<label>Сторона<select name="side"><option>left</option><option>right</option><option>bottom</option><option>top</option></select></label><div class="grid-2">${field("Центр, мм", "offset_mm")}${field("Ширина, мм", "width_mm")}</div>${field("ID окна (необязательно)", "window_id", "", "text")}`;
+    $("#fields").innerHTML = `${roomSelect("Room", rooms)}<label>Side<select name="side"><option>left</option><option>right</option><option>bottom</option><option>top</option></select></label><div class="grid-2">${field("Center, mm", "offset_mm")}${field("Width, mm", "width_mm")}</div>${field("Window ID (optional)", "window_id", "", "text")}`;
   } else if (op === "remove_window") {
     const windows = spec.windows || [];
-    $("#fields").innerHTML = `<label>Явное окно<select name="window_id">${windows.length ? windows.map((window) => `<option value="${escapeHtml(window.id)}">${escapeHtml(window.id)} — ${escapeHtml(window.room_id)}</option>`).join("") : "<option value=\"\">Нет явных окон</option>"}</select></label>`;
+    $("#fields").innerHTML = `<label>Explicit window<select name="window_id">${windows.length ? windows.map((window) => `<option value="${escapeHtml(window.id)}">${escapeHtml(window.id)} — ${escapeHtml(window.room_id)}</option>`).join("") : "<option value=\"\">No explicit windows</option>"}</select></label>`;
   } else if (op === "set_external_entry") {
-    $("#fields").innerHTML = `${roomSelect("Комната входа (entry_room: ${escapeHtml(entryRoom)})", rooms, entryRoom)}<label>Сторона<select name="side"><option>bottom</option><option>left</option><option>right</option><option>top</option></select></label><div class="grid-2">${field("Центр, мм", "offset_mm")}${field("Ширина, мм", "width_mm")}</div>${field("ID входа (необязательно)", "entry_id", "", "text")}`;
+    $("#fields").innerHTML = `${roomSelect("Entry room (entry_room: ${escapeHtml(entryRoom)})", rooms, entryRoom)}<label>Side<select name="side"><option>bottom</option><option>left</option><option>right</option><option>top</option></select></label><div class="grid-2">${field("Center, mm", "offset_mm")}${field("Width, mm", "width_mm")}</div>${field("Entry ID (optional)", "entry_id", "", "text")}`;
   } else {
-    $("#fields").innerHTML = `<p class="history">Команда удалит внешний вход из LayoutIR.</p>`;
+    $("#fields").innerHTML = `<p class="history">The command removes the external entry from LayoutIR.</p>`;
   }
 }
 
@@ -503,8 +503,8 @@ function drawPlan(data, preview = null) {
     const r = preview.rect;
     const y = height - r.y - r.height;
     const label = preview.kind === "move"
-      ? `Δ ${Math.round(r.x - preview.initial.x)}, ${Math.round(r.y - preview.initial.y)} мм`
-      : `${Math.round(r.width)} × ${Math.round(r.height)} мм`;
+      ? `Δ ${Math.round(r.x - preview.initial.x)}, ${Math.round(r.y - preview.initial.y)} mm`
+      : `${Math.round(r.width)} × ${Math.round(r.height)} mm`;
     const labelY = y > px(14) ? y - px(6) : y + r.height + px(14);
     svg.insertAdjacentHTML("beforeend", `<text class="preview-dimension" x="${r.x + r.width / 2}" y="${labelY}">${escapeHtml(label)}</text>`);
   }
@@ -590,7 +590,7 @@ function canvasPointerMove(event) {
   }
   drawPlan(state.current, { roomId: interaction.roomId, rect: interaction.preview, initial: interaction.initial, kind: interaction.kind });
   const status = $("#status");
-  status.textContent = interaction.kind === "move" ? "PREVIEW · отпустите" : "RESIZE · отпустите";
+  status.textContent = interaction.kind === "move" ? "PREVIEW · release" : "RESIZE · release";
   status.classList.remove("bad");
   event.preventDefault();
 }
@@ -719,10 +719,10 @@ function render(data) {
   status.classList.toggle("bad", !data.validation.ok && counts.open > 0);
   // A reviewer gets a review surface, not a disabled editor (VQ-07).
   $("#mode-eyebrow").textContent = review ? "FACILITY REVIEW · READ-ONLY" : "SOLVER-FIRST EDITOR";
-  $("#mode-title").textContent = review ? "Facility review" : "Редактор планировки";
+  $("#mode-title").textContent = review ? "Facility review" : "Layout editor";
   $("#mode-subtitle").textContent = review
     ? "Deterministic checks, derived flow routes and coordination issues of a generated BuildingIR bundle. Geometry cannot be edited here."
-    : "Браузер отправляет typed-команды; геометрию пересчитывает CP-SAT.";
+    : "The browser sends typed commands; CP-SAT recalculates the geometry.";
   document.title = review ? `Facility review — ${data.spec.project_name}` : "Layout Configurator — editor";
   $("#edit-toolbar").hidden = review;
   $("#undo").disabled = review || !data.can_undo;
@@ -733,7 +733,7 @@ function render(data) {
   $("#issue-actions").hidden = !review;
   $(".canvas-help").textContent = review
     ? "Read-only facility review: flows, equipment footprints, service clearances and deterministic checks are projected from the generated BuildingIR bundle. Wheel zooms, drag pans, double-click fits."
-    : "Перетащите комнату или resize-маркер; отпускание отправляет одну typed-команду. Колесо — масштаб, перетаскивание пустого места — панорама, двойной клик — весь план.";
+    : "Drag a room or its resize handle; releasing sends one typed command. Wheel zooms, dragging empty space pans, double-click fits the whole plan.";
   drawPlan(data);
   if (review) {
     renderFacilityReview(data);
@@ -743,7 +743,7 @@ function render(data) {
   $("#issue-actions").hidden = true;
   $("#issue-actions").innerHTML = "";
   $("#issue-history").innerHTML = "";
-  $("#summary").innerHTML = `<dt>Комнат</dt><dd>${data.rooms.length}</dd><dt>Вариант</dt><dd>${data.layout.variant}</dd><dt>История</dt><dd>${data.history.length || "—"}</dd><dt>Внешний вход</dt><dd>${data.spec.external_entry ? escapeHtml(data.spec.external_entry.id) : "—"}</dd>`;
+  $("#summary").innerHTML = `<dt>Rooms</dt><dd>${data.rooms.length}</dd><dt>Variant</dt><dd>${data.layout.variant}</dd><dt>History</dt><dd>${data.history.length || "—"}</dd><dt>External entry</dt><dd>${data.spec.external_entry ? escapeHtml(data.spec.external_entry.id) : "—"}</dd>`;
   $("#issues").innerHTML = data.validation.issues.length ? `<div class="issues">${data.validation.issues.map((issue) => `<div>${escapeHtml(issue.code)}: ${escapeHtml(issue.message)}</div>`).join("")}</div>` : "";
   if (data.norms) {
     $("#norms").innerHTML = `<div class="norms"><div class="norms-head">${escapeHtml(data.norms.ruleset.name)} · ${escapeHtml(data.norms.ruleset.jurisdiction)}</div>${data.norms.results.map((rule) => { const statusClass = rule.status === "PASS" ? "norm-pass" : rule.status === "FAIL" ? "norm-fail" : "norm-na"; return `<div class="norm"><span>${escapeHtml(rule.id)}</span><strong class="${statusClass}">${escapeHtml(rule.status)}</strong></div>`; }).join("")}</div>`;
@@ -752,10 +752,10 @@ function render(data) {
   }
   const journal = data.journal || [];
   $("#journal").innerHTML = journal.length
-    ? `<div class="journal-title">Журнал операций</div><ol class="journal-list">${journal.slice().reverse().map((entry) => { const label = entry.action === "command" ? entry.type : entry.action === "undo" ? "Отмена" : "Повтор"; const detail = entry.payload ? JSON.stringify(entry.payload) : ""; return `<li class="journal-entry"><span>${escapeHtml(label)}</span><code>${escapeHtml(detail)}</code></li>`; }).join("")}</ol>`
-    : `<div class="journal-title">Журнал операций</div><p class="journal-empty">Изменений пока нет.</p>`;
+    ? `<div class="journal-title">Operation log</div><ol class="journal-list">${journal.slice().reverse().map((entry) => { const label = entry.action === "command" ? entry.type : entry.action === "undo" ? "Undo" : "Redo"; const detail = entry.payload ? JSON.stringify(entry.payload) : ""; return `<li class="journal-entry"><span>${escapeHtml(label)}</span><code>${escapeHtml(detail)}</code></li>`; }).join("")}</ol>`
+    : `<div class="journal-title">Operation log</div><p class="journal-empty">No changes yet.</p>`;
   $("#files").innerHTML = data.files.map((file) => `<a href="${file.url}" download>${escapeHtml(file.name)}</a>`).join("");
-  $("#legend").innerHTML = `<span><i class="swatch heated"></i> отапливаемая</span><span><i class="swatch unheated"></i> неотапливаемая</span><span><i class="swatch entry"></i> внешний вход</span><span><i class="swatch window"></i> окно</span>`;
+  $("#legend").innerHTML = `<span><i class="swatch heated"></i> heated</span><span><i class="swatch unheated"></i> unheated</span><span><i class="swatch entry"></i> external entry</span><span><i class="swatch window"></i> window</span>`;
   renderFields();
 }
 

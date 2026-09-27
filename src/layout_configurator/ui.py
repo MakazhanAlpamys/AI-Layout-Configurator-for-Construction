@@ -630,7 +630,7 @@ class UiSession:
     def undo(self) -> dict[str, Any]:
         with self.lock:
             if not self.past:
-                raise EditError("Нет изменений для отмены")
+                raise EditError("Nothing to undo")
             self.future.append(self.state)
             self.state = self.past.pop()
             self.journal.append({"action": "undo", "type": "Undo"})
@@ -640,7 +640,7 @@ class UiSession:
     def redo(self) -> dict[str, Any]:
         with self.lock:
             if not self.future:
-                raise EditError("Нет изменений для повтора")
+                raise EditError("Nothing to redo")
             self.past.append(self.state)
             self.state = self.future.pop()
             self.journal.append({"action": "redo", "type": "Redo"})

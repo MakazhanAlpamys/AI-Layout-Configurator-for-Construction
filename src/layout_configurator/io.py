@@ -24,7 +24,7 @@ def load_spec(path: str | Path) -> LayoutIR:
 
         raw = yaml.safe_load(raw_text)
     else:
-        raise ValueError("Файл спецификации должен иметь расширение .json, .yaml или .yml")
+        raise ValueError("Specification file must have a .json, .yaml or .yml extension")
     return LayoutIR.from_mapping(raw)
 
 

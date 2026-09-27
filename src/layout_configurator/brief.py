@@ -15,6 +15,7 @@ from .models import LayoutIR
 from .schema import DEFAULT_SCHEMA_PATH, normalize_mapping
 
 
+# Russian room names accepted in text briefs (parser vocabulary), mapped to room types.
 ROOM_TYPE_ALIASES = {
     "гостиная": "living_room",
     "жилая": "living_room",

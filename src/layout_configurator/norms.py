@@ -319,6 +319,7 @@ def retrieve_rule_citations(ruleset: RuleSet, query: str) -> tuple[RuleCitation,
 
 def _search_terms(query: str) -> tuple[str, ...]:
     normalized = str(query).lower().replace("ё", "е")
+    # Russian query stems expanded to rule vocabulary (search behaviour, not UI text).
     aliases = {
         "освещ": ("daylight", "естествен", "свет", "окн"),
         "окн": ("window", "daylight", "естествен"),
