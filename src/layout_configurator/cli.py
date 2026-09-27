@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 
 from .brief import parse_text_brief
+from .bundle import VariantExportError, write_facility_variant
 from .bcf import write_bcf_package
 from .building import BuildingSpecError
 from .compliance import validate_ids
@@ -254,6 +255,7 @@ def main(argv: list[str] | None = None) -> int:
     ui.add_argument("--profile", type=Path, help="optional facility profile for BuildingIR read-only review")
     ui.add_argument("--variant", type=int, default=1, help="variant number when input is a generated bundle directory")
     ui.add_argument("--require-provenance", action="store_true", help="require complete ruleset provenance")
+    ui.add_argument("--edit", action="store_true", help="facility bundles: allow room moves/resizes with live re-check and save revisions")
     args = parser.parse_args(argv)
 
     if args.command == "generate":
@@ -487,130 +489,33 @@ def main(argv: list[str] | None = None) -> int:
             "variants": [],
         }
         for candidate in generation.accepted:
-            result = candidate.result
-            report = candidate.layout_report
-            equipment = candidate.equipment
-            equipment_report = candidate.equipment_report
-            flow_routes = candidate.flow_routes
-            flow_report = candidate.flow_report
-            facility_report = candidate.facility_report
             try:
-                ifc_path = args.output / f"building_{result.variant:02d}.ifc"
-                ifc_summary = export_building_ifc(
-                    ifc_path,
+                entry = write_facility_variant(
+                    args.output,
                     building,
-                    result,
-                    equipment,
-                    flow_routes,
-                    flow_report,
+                    profile,
+                    candidate.result,
+                    layout_report=candidate.layout_report,
+                    equipment=candidate.equipment,
+                    equipment_report=candidate.equipment_report,
+                    flow_routes=candidate.flow_routes,
+                    flow_report=candidate.flow_report,
+                    facility_report=candidate.facility_report,
+                    generation_evidence=candidate.generation_evidence(),
+                    bcf_input=args.bcf_input,
                 )
-                ifc_readback = validate_ifc_roundtrip(
-                    ifc_path,
-                    ifc_summary,
-                    expected_flow_ids=(route.flow_id for route in flow_routes.routes),
-                )
-                if not ifc_readback.ok:
-                    raise RuntimeError("; ".join(ifc_readback.issues))
-            except (ValueError, RuntimeError) as exc:
-                print(f"ERROR: export/IFC QA failed for variant {result.variant}: {exc}", file=sys.stderr)
+            except VariantExportError as exc:
+                print(f"ERROR: {exc}", file=sys.stderr)
                 return 3
-            dxf_path, pdf_path = export_building_bundle(
-                args.output,
-                building,
-                result,
-                equipment,
-                report,
-                flow_routes,
-                flow_report,
-                profile.drawing,
-            )
-            json_path = args.output / f"building_{result.variant:02d}.json"
-            write_building_result(
-                json_path,
-                building,
-                result,
-                equipment,
-                flow_routes,
-                flow_report,
-                equipment_report=equipment_report,
-                facility_report=facility_report,
-                generation_evidence=candidate.generation_evidence(),
-            )
-            issues_path = args.output / f"building_{result.variant:02d}.coordination.json"
-            write_coordination_issues(
-                issues_path,
-                facility_report,
-                project_name=building.layout.project_name,
-                variant=result.variant,
-                model_references={
-                    "program": json_path.name,
-                    "dxf": dxf_path.name,
-                    "pdf": pdf_path.name,
-                    "ifc": ifc_path.name,
-                },
-            )
-            bcf_path = args.output / f"building_{result.variant:02d}.bcf"
-            try:
-                bcf_summary = write_bcf_package(
-                    bcf_path,
-                    facility_report,
-                    project_name=building.layout.project_name,
-                    variant=result.variant,
-                    model_references={
-                        "program": json_path.name,
-                        "dxf": dxf_path.name,
-                        "pdf": pdf_path.name,
-                        "ifc": ifc_path.name,
-                    },
-                    ifc_path=ifc_path,
-                    previous=args.bcf_input,
-                )
-            except (OSError, ValueError, RuntimeError) as exc:
-                print(f"ERROR: BCF package for variant {result.variant} could not be generated: {exc}", file=sys.stderr)
-                return 3
-            manifest["variants"].append(
-                {
-                    "variant": result.variant,
-                    "generation": candidate.generation_evidence(),
-                    "rooms": len(result.placements),
-                    "equipment": len(equipment.placements),
-                    "equipment_issues": len(equipment_report.issues),
-                    "flows": len(flow_routes.routes),
-                    "flow_issues": len(flow_report.issues),
-                    "facility_checks": len(facility_report.checks),
-                    "facility_issues": sum(check.status == "FAIL" for check in facility_report.checks),
-                    "coordination_issues": issues_path.name,
-                    "coordination_issue_count": len(facility_report.issues),
-                    "bcf": bcf_path.name,
-                    "bcf_version": bcf_summary.version,
-                    "bcf_topic_count": len(bcf_summary.topics),
-                    "bcf_open_topics": bcf_summary.open_topics,
-                    "bcf_resolved_topics": bcf_summary.resolved_topics,
-                    "facility_ok": facility_report.ok,
-                    "dxf": dxf_path.name,
-                    "pdf": pdf_path.name,
-                    "ifc": ifc_path.name,
-                    "ifc_entities": {
-                        "spaces": ifc_summary.spaces,
-                        "walls": ifc_summary.walls,
-                        "doors": ifc_summary.doors,
-                        "windows": ifc_summary.windows,
-                        "equipment": ifc_summary.equipment,
-                        "equipment_types": ifc_summary.equipment_types,
-                        "flow_routes": ifc_summary.flow_routes,
-                        "openings": ifc_summary.openings,
-                    },
-                    "ifc_readback": ifc_readback.to_dict(),
-                    "json": json_path.name,
-                }
-            )
+            manifest["variants"].append(entry)
             print(
-                f"variant {result.variant}: {dxf_path} | {pdf_path} | {ifc_path} | "
-                f"{json_path} | {issues_path} | {bcf_path}"
+                f"variant {entry['variant']}: {args.output / entry['dxf']} | {args.output / entry['pdf']} | "
+                f"{args.output / entry['ifc']} | {args.output / entry['json']} | "
+                f"{args.output / entry['coordination_issues']} | {args.output / entry['bcf']}"
             )
-            if flow_report.issues:
+            if entry["flow_issues"]:
                 print(
-                    f"  flow validation: {len(flow_report.issues)} issue(s); see {json_path.name} -> flow_validation",
+                    f"  flow validation: {entry['flow_issues']} issue(s); see {entry['json']} -> flow_validation",
                     file=sys.stderr,
                 )
         (args.output / "manifest.json").write_text(
@@ -1004,6 +909,7 @@ def main(argv: list[str] | None = None) -> int:
                 profile_path=args.profile,
                 variant=args.variant,
                 require_provenance=args.require_provenance,
+                edit=args.edit,
             )
         except (OSError, ValueError, KeyError, RuntimeError, InfeasibleLayout) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)

@@ -542,3 +542,28 @@ Opening a generated `BuildingIR` result automatically selects the read-only faci
 ```
 
 The review projects rooms, process equipment, service-clearance envelopes, derived people/material/waste routes, structural axes, deterministic facility evidence, coordination issues, and the generated JSON/DXF/PDF/IFC/BCF artifacts. It recomputes the facility report on open and rejects edit, undo, redo, and reset commands with HTTP 405.
+
+### Facility editor
+
+`ui --edit` opens the same bundle as an editor:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli ui `
+  out\pharma_cleanroom_acceptance\seed_1 --profile rules\pharma_cleanroom_pilot.yaml --edit
+```
+
+Dragging or resizing a room sends one typed `move_room`/`resize_room` command.
+The edited room stays where it was put; the other rooms stay put when the
+geometry allows it, otherwise the room solver repairs the layout starting from
+their current positions. Equipment is re-packed, flows are re-routed and every
+facility check is recomputed, usually within about a second on the pilot. An
+edit that leaves invalid room geometry is refused and nothing changes; an edit
+that only fails a facility gate is kept and shown as failing. Undo, redo and
+reset work on server-side states. Door, window and flow changes belong in the
+program, not in the editor.
+
+**Save revision** writes the current state as a complete bundle to
+`revisions/rev_NN/` beside the original (IFC with read-back, DXF, PDF, JSON,
+coordination issues and a BCF that continues the original issue history). The
+generated bundle itself is never modified, and `generation.edits` in the
+revision JSON records the commands that produced it.

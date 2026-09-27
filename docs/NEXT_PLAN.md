@@ -34,7 +34,7 @@ it). The order below follows that.
 | # | Work | Done when |
 | --- | --- | --- |
 | 3.1 | Input without YAML: text brief (parser exists) and a browser form that writes the same `BuildingIR` | the pilot can be entered in the browser and regenerates identically |
-| 3.2 | Browser editing for facility results: move/resize a room, re-run equipment, routing and gates instantly, keep the BCF history | an edit round-trip under two seconds on the pilot |
+| 3.2 | Browser editing for facility results: move/resize a room, re-run equipment, routing and gates instantly, keep the BCF history | an edit round-trip under two seconds on the pilot — **done** 2026-09-27: `ui --edit`, 0.4–1.1 s per edit on the pilot, revisions saved to `revisions/rev_NN/` |
 | 3.3 | Side-by-side comparison of variants: area deviation, route lengths, conflicts, clean/dirty separation | a comparison view and a JSON/CSV export — **done** 2026-09-27: `compare-variants` (JSON, CSV, PDF); variants are now forced to differ |
 | 3.4 | A client-facing PDF report "why this variant": metrics, gate evidence, open issues, disclaimer | generated for every accepted bundle — first version in `comparison.pdf`; next: per-check gate evidence pages |
 | 3.5 | Import an existing plan (DXF room polylines or IFC spaces) as a fixed starting point | a re-plan of an imported pilot passes the gates |

@@ -18,6 +18,7 @@
       <button id="undo" class="secondary" disabled>↶ Undo</button>
       <button id="redo" class="secondary" disabled>↷ Redo</button>
       <button id="reset" class="secondary">Reset changes</button>
+      <button id="save-revision" class="primary save-revision" hidden>Save revision</button>
     </div>
   </header>
 
@@ -38,6 +39,7 @@
           <button type="button" id="zoom-fit" title="Fit the whole plan (double-click)">Fit</button>
         </div>
       </div>
+      <p id="plan-error" class="error" hidden></p>
       <p class="canvas-help">Click a room and drag to move it. The bottom-right handle resizes it. The grid and dimensions follow the brief. Releasing sends one typed command.</p>
       <div id="legend" class="legend"></div>
     </section>

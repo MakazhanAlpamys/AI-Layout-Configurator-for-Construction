@@ -529,9 +529,19 @@ function startPan(event) {
   event.preventDefault();
 }
 
+function showError(message) {
+  // The command card is hidden in facility mode, so errors also go under the plan.
+  for (const id of ["#command-error", "#plan-error"]) {
+    const node = $(id);
+    if (!node) continue;
+    node.textContent = message || "";
+    node.hidden = !message;
+  }
+}
+
 function canvasPointerDown(event) {
   if (!state.current || state.busy) return;
-  const review = state.current.mode === "facility-review";
+  const review = state.current.mode === "facility-review" && !state.current.editable;
   const handle = event.target.closest("[data-resize-room]");
   const roomNode = event.target.closest("[data-room-id]");
   // Rooms are draggable only in the editor; everywhere else a drag pans.
@@ -623,13 +633,14 @@ async function canvasPointerUp(event) {
     ? { type: "move_room", room_id: interaction.roomId, dx_mm: preview.x - initial.x, dy_mm: preview.y - initial.y }
     : { type: "resize_room", room_id: interaction.roomId, width_mm: preview.width, height_mm: preview.height, anchor: "bottom_left" };
   state.busy = true;
-  $("#command-error").hidden = true;
+  showError("");
+  const status = $("#status");
+  status.textContent = "RECHECKING…";
   try {
     render(await request("/api/command", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }));
   } catch (err) {
     if (err.state) render(err.state);
-    $("#command-error").textContent = err.message;
-    $("#command-error").hidden = false;
+    showError(err.message);
   } finally {
     state.busy = false;
   }
@@ -684,7 +695,13 @@ function renderFacilityReview(data) {
   $("#norms").innerHTML = checks.length
     ? `<div class="norms facility-checks"><div class="norms-head">Facility evidence · ${escapeHtml(profile.name || "selected profile")}</div>${checks.map((check) => { const statusClass = check.status === "PASS" ? "norm-pass" : check.status === "FAIL" ? "norm-fail" : "norm-na"; return `<details class="facility-check"><summary><span>${escapeHtml(check.id)}</span><strong class="${statusClass}">${escapeHtml(check.status)}</strong></summary><p>${escapeHtml((check.evidence || []).join("; "))}</p></details>`; }).join("")}</div>`
     : "";
-  $("#journal").innerHTML = `<div class="journal-title">Review mode</div><p class="journal-empty">Read-only projection. Edit the BuildingIR program and regenerate the bundle to create a new revision.</p>`;
+  if (data.editable) {
+    const edits = (data.journal || []).slice().reverse();
+    const saved = (data.saved_revisions || []).map((name) => `<li class="journal-entry"><span>saved</span><code>${escapeHtml(name)}</code></li>`).join("");
+    $("#journal").innerHTML = `<div class="journal-title">Edits in this session</div>${edits.length || saved ? `<ol class="journal-list">${saved}${edits.map((entry) => `<li class="journal-entry"><span>${escapeHtml(entry.type)}</span><code>${escapeHtml(entry.payload ? JSON.stringify(entry.payload) : "")}</code></li>`).join("")}</ol>` : `<p class="journal-empty">No edits yet. The generated bundle is never modified; saving writes revisions/rev_NN/.</p>`}`;
+  } else {
+    $("#journal").innerHTML = `<div class="journal-title">Review mode</div><p class="journal-empty">Read-only projection. Edit the BuildingIR program and regenerate the bundle to create a new revision.</p>`;
+  }
   $("#files").innerHTML = data.files.map((file) => `<a href="${file.url}" download>${escapeHtml(file.name)}</a>`).join("");
   const flowLegend = flowTypesInUse(data).map((type) => `<span><i class="swatch flow-${escapeHtml(type)}"></i> ${escapeHtml(type.replaceAll("_", " "))} flow</span>`).join("");
   $("#legend").innerHTML = `${flowLegend}<span><i class="swatch equipment"></i> equipment</span><span><i class="swatch clearance"></i> service clearance</span><span><i class="swatch entry"></i> external entry</span><span><i class="swatch issue-open"></i> open issue</span><span><i class="swatch issue-resolved"></i> resolved issue</span>`;
@@ -718,20 +735,27 @@ function render(data) {
   // as failing the deterministic check without shouting about it.
   status.classList.toggle("bad", !data.validation.ok && counts.open > 0);
   // A reviewer gets a review surface, not a disabled editor (VQ-07).
-  $("#mode-eyebrow").textContent = review ? "FACILITY REVIEW · READ-ONLY" : "SOLVER-FIRST EDITOR";
-  $("#mode-title").textContent = review ? "Facility review" : "Layout editor";
-  $("#mode-subtitle").textContent = review
-    ? "Deterministic checks, derived flow routes and coordination issues of a generated BuildingIR bundle. Geometry cannot be edited here."
-    : "The browser sends typed commands; CP-SAT recalculates the geometry.";
-  document.title = review ? `Facility review — ${data.spec.project_name}` : "Layout Configurator — editor";
-  $("#edit-toolbar").hidden = review;
-  $("#undo").disabled = review || !data.can_undo;
-  $("#redo").disabled = review || !data.can_redo;
-  $("#reset").disabled = review;
+  const editable = review && Boolean(data.editable);
+  document.body.classList.toggle("facility-editable", editable);
+  $("#mode-eyebrow").textContent = editable ? "FACILITY EDITOR" : review ? "FACILITY REVIEW · READ-ONLY" : "SOLVER-FIRST EDITOR";
+  $("#mode-title").textContent = editable ? "Facility editor" : review ? "Facility review" : "Layout editor";
+  $("#mode-subtitle").textContent = editable
+    ? "Drag or resize a room: equipment, flow routes and every facility check are recomputed on the server. Save a revision to export a new bundle."
+    : review
+      ? "Deterministic checks, derived flow routes and coordination issues of a generated BuildingIR bundle. Geometry cannot be edited here."
+      : "The browser sends typed commands; CP-SAT recalculates the geometry.";
+  document.title = editable ? `Facility editor — ${data.spec.project_name}` : review ? `Facility review — ${data.spec.project_name}` : "Layout Configurator — editor";
+  $("#edit-toolbar").hidden = review && !editable;
+  $("#save-revision").hidden = !editable;
+  $("#undo").disabled = (review && !editable) || !data.can_undo;
+  $("#redo").disabled = (review && !editable) || !data.can_redo;
+  $("#reset").disabled = review && !editable;
   $(".command-card").hidden = review;
   $("#issue-controls").hidden = !review;
   $("#issue-actions").hidden = !review;
-  $(".canvas-help").textContent = review
+  $(".canvas-help").textContent = editable
+    ? "Facility editor: drag a room or its resize handle; the server re-places the other rooms if needed and recomputes equipment, routes and checks. Wheel zooms, drag empty space to pan, double-click fits."
+    : review
     ? "Read-only facility review: flows, equipment footprints, service clearances and deterministic checks are projected from the generated BuildingIR bundle. Wheel zooms, drag pans, double-click fits."
     : "Drag a room or its resize handle; releasing sends one typed command. Wheel zooms, dragging empty space pans, double-click fits the whole plan.";
   drawPlan(data);
@@ -836,15 +860,31 @@ $("#command-form").addEventListener("submit", async (event) => {
 });
 
 $("#reset").addEventListener("click", async () => {
-  try { render(await request("/api/reset", { method: "POST" })); } catch (err) { $("#command-error").textContent = err.message; $("#command-error").hidden = false; }
+  try { render(await request("/api/reset", { method: "POST" })); } catch (err) { if (err.state) render(err.state); showError(err.message); }
 });
 
 $("#undo").addEventListener("click", async () => {
-  try { render(await request("/api/undo", { method: "POST" })); } catch (err) { if (err.state) render(err.state); $("#command-error").textContent = err.message; $("#command-error").hidden = false; }
+  try { render(await request("/api/undo", { method: "POST" })); } catch (err) { if (err.state) render(err.state); showError(err.message); }
 });
 
 $("#redo").addEventListener("click", async () => {
-  try { render(await request("/api/redo", { method: "POST" })); } catch (err) { if (err.state) render(err.state); $("#command-error").textContent = err.message; $("#command-error").hidden = false; }
+  try { render(await request("/api/redo", { method: "POST" })); } catch (err) { if (err.state) render(err.state); showError(err.message); }
 });
 
-request("/api/state").then(render).catch((err) => { $("#command-error").textContent = err.message; $("#command-error").hidden = false; });
+$("#save-revision").addEventListener("click", async () => {
+  if (state.busy) return;
+  state.busy = true;
+  showError("");
+  try {
+    const snapshot = await request("/api/save", { method: "POST" });
+    render(snapshot);
+    $("#status").textContent = `SAVED · ${snapshot.saved_revisions.slice(-1)[0] || ""}`;
+  } catch (err) {
+    if (err.state) render(err.state);
+    showError(err.message);
+  } finally {
+    state.busy = false;
+  }
+});
+
+request("/api/state").then(render).catch((err) => showError(err.message));
