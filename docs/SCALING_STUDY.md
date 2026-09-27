@@ -172,6 +172,43 @@ regardless (which violates those minimums), a top-level placement was found in
 hub position and side choices, or shapes generated on demand from top-level
 conflicts), not a larger budget.
 
+## 30 and 40 rooms solved — 2026-09-27 (later the same day)
+
+The failure at 30/40 rooms turned out to be in the program data. Minimum
+dimensions were bound to the x and y axes, so a support corridor declared "at
+least 12 m" could only run vertically; three chained corridor clusters then
+need about 36 m of the 38.3 m boundary height. Three changes, no gate relaxed:
+
+1. **`rotatable` rooms** (`LayoutIR` room field, default `false`): the minimums
+   may be met in either orientation. In the scale programs only the
+   `support_corridor_*` segments are marked `rotatable: true`.
+2. **Free-size single rooms at the top level.** Only multi-room clusters keep
+   fixed shapes; with fixed single-room shapes the 40-room top level found
+   nothing.
+3. **Parallel top-level search** (up to 4 workers) with a wall-clock budget
+   only; `--deterministic-budget` remains single-worker and repeatable.
+
+Same series, same settings (`--variants 2 --max-attempts 3 --time-limit 40`,
+seeds 1 / 7 / 42, 4-core Linux machine):
+
+| Program | 2026-09-06 monolithic | 2026-09-27 morning | 2026-09-27 now |
+| --- | --- | --- | --- |
+| pilot 13 / 5 (CI matrix) | 2 of 3 | 3 of 3, 11 s | 3 of 3, **6.9 s** for the whole matrix |
+| 20 / 10 | 1 of 3 (up to 64 min) | 3 of 3, 6–29 s | **3 of 3**, 7.4–8.0 s |
+| 30 / 20 | 0 of 3 | 0 of 3 | **3 of 3**, 11.7–14.6 s |
+| 40 / 30 | 0 of 3 | 0 of 3 | **3 of 3** on an idle machine: 65.8 s, 31 s, 39 s |
+
+Every accepted candidate passed all publication gates (layout, equipment,
+flows, profile, bundle QA).
+
+Caveat, measured rather than assumed: in the first pass of the series the
+40-room seeds 7 and 42 ran while the 164-test suite was using the same four
+cores, and both fell back to the monolithic model and failed (109 s, 93 s).
+Re-run on an idle machine they passed. A wall-clock budget with a parallel
+search depends on the CPU it gets; for the 40-room program, 40 s is close to
+the edge. CI timeouts for large programs need headroom, or the
+deterministic budget.
+
 ## Reproduction
 
 ```powershell
