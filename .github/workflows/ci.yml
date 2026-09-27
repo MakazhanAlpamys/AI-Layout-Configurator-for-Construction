@@ -1,7 +1,10 @@
 name: Facility acceptance
 
 on:
+  # Branches are checked through their pull request; pushing to a PR branch
+  # used to start a second, identical run that queued behind the first.
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
