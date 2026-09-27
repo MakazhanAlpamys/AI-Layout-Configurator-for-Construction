@@ -669,7 +669,8 @@ class FacilityEditSession(FacilityReviewSession):
                 "variants": [entry],
             }
             (target / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-            self.saved_revisions.append(str(target.relative_to(self.output_dir)))
+            # Posix separators: the value is part of the JSON contract on every OS.
+            self.saved_revisions.append(target.relative_to(self.output_dir).as_posix())
             snapshot = self.snapshot()
             snapshot["saved_revision"] = str(target)
             return snapshot
