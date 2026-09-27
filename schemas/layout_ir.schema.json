@@ -104,7 +104,8 @@
         "preferred_adjacency": {"$ref": "#/$defs/idList"},
         "forbidden_adjacency": {"$ref": "#/$defs/idList"},
         "needs_daylight": {"type": "boolean"},
-        "is_heated": {"type": "boolean"}
+        "is_heated": {"type": "boolean"},
+        "rotatable": {"type": "boolean", "description": "min_width/min_depth may be met in either orientation"}
       }
     },
     "externalEntry": {

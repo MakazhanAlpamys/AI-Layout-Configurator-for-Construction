@@ -151,6 +151,7 @@ layout:
     max_area: 52.0
     min_width: 2400
     min_depth: 12000
+    rotatable: true
     required_adjacency:
     - staff_corridor
   - id: technical_01

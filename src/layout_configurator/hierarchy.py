@@ -34,6 +34,7 @@ find; :func:`solve_layouts_auto` therefore falls back to the monolithic solver.
 from __future__ import annotations
 
 import math
+import os
 from collections import defaultdict
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
@@ -51,6 +52,7 @@ from .solver import (
     _constrain_daylight_contact,
     _constrain_external_entry,
     _normalise_adjacency_groups,
+    _room_size_vars,
     solve_layouts,
 )
 
@@ -61,6 +63,8 @@ SOLVER_STRATEGIES = ("auto", "monolithic", "hierarchical")
 _ASPECTS = (1.0, 2.0, 0.5, 3.5, 0.29, 1.4, 0.7)
 _FILLS = (0.8, 0.7, 0.6, 0.5)
 _MAX_SHAPES = 4
+# Single rooms keep a free size at the top level instead of a few fixed shapes.
+_FLEXIBLE_SINGLETONS = True
 
 
 class HierarchyNotApplicable(InfeasibleLayout):
@@ -168,6 +172,10 @@ def solve_layouts_hierarchical(
 
     shapes: dict[str, list[_Placement]] = {}
     for cluster_id, members in clusters.items():
+        if len(members) == 1 and _FLEXIBLE_SINGLETONS:
+            # A single room keeps a free size at the top level, exactly as in
+            # the monolithic model; only multi-room clusters become rigid.
+            continue
         found = _cluster_shapes(
             spec,
             members,
@@ -195,6 +203,41 @@ def solve_layouts_hierarchical(
     cluster_vars: list[object] = []
     x_intervals = []
     y_intervals = []
+    area_deviations = []
+    for cluster_id, members in clusters.items():
+        if len(members) != 1 or not _FLEXIBLE_SINGLETONS:
+            continue
+        room = rooms_by_id[members[0]]
+        x = model.NewIntVar(0, boundary_width, f"{room.id}_x")
+        y = model.NewIntVar(0, boundary_height, f"{room.id}_y")
+        width, height = _room_size_vars(model, room, grid, boundary_width, boundary_height)
+        area = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area")
+        model.AddMultiplicationEquality(area, [width, height])
+        minimum_area = _area_to_grid2(room.min_area_m2, grid, ceil=True)
+        maximum_area = _area_to_grid2(room.max_area_m2, grid, ceil=False)
+        if maximum_area < minimum_area:
+            raise InfeasibleLayout(f"Room {room.id} area range is smaller than one grid step")
+        model.Add(area >= minimum_area)
+        model.Add(area <= maximum_area)
+        deviation = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area_deviation")
+        model.AddAbsEquality(deviation, area - _area_to_grid2(room.target_area_m2, grid, ceil=False))
+        area_deviations.append(deviation)
+        for equipment_id, options in fit_options.get(room.id, ()):
+            fits = []
+            for option_index, (fit_width, fit_height) in enumerate(options):
+                fit = model.NewBoolVar(f"equipment_fit_{room.id}_{equipment_id}_{option_index}")
+                model.Add(width >= _ceil_grid(fit_width, grid)).OnlyEnforceIf(fit)
+                model.Add(height >= _ceil_grid(fit_height, grid)).OnlyEnforceIf(fit)
+                fits.append(fit)
+            model.AddBoolOr(fits)
+        x_end = model.NewIntVar(0, boundary_width, f"{room.id}_x_end")
+        y_end = model.NewIntVar(0, boundary_height, f"{room.id}_y_end")
+        model.Add(x_end == x + width)
+        model.Add(y_end == y + height)
+        x_intervals.append(model.NewIntervalVar(x, width, x_end, f"{room.id}_x_interval"))
+        y_intervals.append(model.NewIntervalVar(y, height, y_end, f"{room.id}_y_interval"))
+        room_vars[room.id] = _RoomVars(x=x, y=y, width=width, height=height, area=area)
+        cluster_vars.extend((x, y, width, height))
     for cluster_id, options in shapes.items():
         cx = model.NewIntVar(0, boundary_width, f"cluster_{cluster_id}_x")
         cy = model.NewIntVar(0, boundary_height, f"cluster_{cluster_id}_y")
@@ -254,9 +297,12 @@ def solve_layouts_hierarchical(
             _constrain_daylight_contact(model, room_vars[room.id], spec, boundary_width, boundary_height, room.id)
     if spec.external_entry is not None:
         _constrain_external_entry(model, room_vars[spec.external_entry.room_id], spec, boundary_width, boundary_height)
-    # Shapes already carry the area accuracy; keep the placement compact and
-    # stable so one seed gives one answer.
-    model.Minimize(sum(v for item in room_vars.values() for v in (item.x, item.y)))
+    # Cluster shapes already carry their area accuracy; single rooms are sized
+    # here, so their area deviation leads and position only breaks ties.
+    model.Minimize(
+        sum(area_deviations) * 10_000
+        + sum(v for item in room_vars.values() for v in (item.x, item.y))
+    )
 
     results: list[LayoutResult] = []
     for variant in range(1, variants + 1):
@@ -266,6 +312,9 @@ def solve_layouts_hierarchical(
             seed=seed + variant - 1,
             time_limit_seconds=time_limit_seconds,
             deterministic_units=deterministic_units,
+            # The top level is where the search is hard; with a wall-clock
+            # budget it may use the parallel portfolio.
+            workers=_top_level_workers(),
         )
         # The top level is a feasibility search; the ranking that matters is
         # done afterwards by the independent gates.
@@ -419,7 +468,8 @@ def _cluster_shapes(
 def _orientations(shape: Mapping[str, Rect], rooms_by_id, fit_options) -> list[_Placement]:
     """Mirror and quarter-turn a cluster shape, keeping only legal results.
 
-    Minimum width and depth are per axis, and equipment fit depends on
+    Minimum width and depth are per axis unless a room is rotatable, and
+    equipment fit depends on
     orientation, so a turned shape is kept only if every room still satisfies
     both.
     """
@@ -442,7 +492,7 @@ def _orientations(shape: Mapping[str, Rect], rooms_by_id, fit_options) -> list[_
                     if mirror_y:
                         y = box_height - y - h
                     room = rooms_by_id[room_id]
-                    if w + 1e-6 < room.min_width_mm or h + 1e-6 < room.min_depth_mm:
+                    if not room.fits(w, h):
                         legal = False
                     for _, options in fit_options.get(room_id, ()):
                         if not any(w + 1e-6 >= fit_w and h + 1e-6 >= fit_h for fit_w, fit_h in options):
@@ -451,6 +501,13 @@ def _orientations(shape: Mapping[str, Rect], rooms_by_id, fit_options) -> list[_
                 if legal:
                     result.append(_Placement(box_width, box_height, tuple(rooms)))
     return result
+
+
+def _top_level_workers() -> int:
+    configured = os.environ.get("LAYOUT_SOLVER_WORKERS")
+    if configured:
+        return max(1, int(configured))
+    return max(1, min(4, os.cpu_count() or 1))
 
 
 def _units(value: float, grid: int) -> int:

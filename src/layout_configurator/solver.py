@@ -92,8 +92,7 @@ def solve_layouts(
     for room in spec.rooms:
         x = model.NewIntVar(0, boundary_width, f"{room.id}_x")
         y = model.NewIntVar(0, boundary_height, f"{room.id}_y")
-        width = model.NewIntVar(_ceil_grid(room.min_width_mm, grid), boundary_width, f"{room.id}_width")
-        height = model.NewIntVar(_ceil_grid(room.min_depth_mm, grid), boundary_height, f"{room.id}_height")
+        width, height = _room_size_vars(model, room, grid, boundary_width, boundary_height)
         area = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area")
         model.Add(x + width <= boundary_width)
         model.Add(y + height <= boundary_height)
@@ -233,6 +232,30 @@ def solve_layouts(
             ]],
         )
     return results
+
+
+def _room_size_vars(model, room, grid: int, boundary_width: int, boundary_height: int):
+    """Width/height variables that honour the room's minimum dimensions.
+
+    A rotatable room may meet min_width/min_depth in either orientation.
+    """
+
+    min_width = _ceil_grid(room.min_width_mm, grid)
+    min_depth = _ceil_grid(room.min_depth_mm, grid)
+    if not getattr(room, "rotatable", False) or min_width == min_depth:
+        return (
+            model.NewIntVar(min_width, boundary_width, f"{room.id}_width"),
+            model.NewIntVar(min_depth, boundary_height, f"{room.id}_height"),
+        )
+    low = min(min_width, min_depth)
+    width = model.NewIntVar(low, boundary_width, f"{room.id}_width")
+    height = model.NewIntVar(low, boundary_height, f"{room.id}_height")
+    turned = model.NewBoolVar(f"{room.id}_turned")
+    model.Add(width >= min_width).OnlyEnforceIf(turned.Not())
+    model.Add(height >= min_depth).OnlyEnforceIf(turned.Not())
+    model.Add(width >= min_depth).OnlyEnforceIf(turned)
+    model.Add(height >= min_width).OnlyEnforceIf(turned)
+    return width, height
 
 
 def _require_boundary_sides(model, room: _RoomVars, boundary_width: int, boundary_height: int, count: int, room_id: str) -> None:
