@@ -73,14 +73,14 @@ class RoomSpec:
     def from_mapping(cls, raw: Mapping[str, Any], tolerance: float) -> "RoomSpec":
         room_id = str(raw.get("id", "")).strip()
         if not room_id:
-            raise SpecError("Каждая комната должна иметь непустой id")
+            raise SpecError("Every room must have a non-empty id")
         target = _positive_float(raw.get("target_area", raw.get("area")), f"rooms[{room_id}].target_area")
         minimum = float(raw.get("min_area", target * (1 - tolerance)))
         maximum = float(raw.get("max_area", target * (1 + tolerance)))
         min_width = float(raw.get("min_width", 1_800))
         min_depth = float(raw.get("min_depth", 1_800))
         if minimum <= 0 or maximum < minimum or min_width <= 0 or min_depth <= 0:
-            raise SpecError(f"Некорректный диапазон площади комнаты {room_id}")
+            raise SpecError(f"Invalid area range for room {room_id}")
 
         return cls(
             id=room_id,
@@ -207,7 +207,7 @@ class BoundarySpec:
                 height=_positive_float(item.get("height"), f"boundary.cutouts[{index}].height"),
             )
             if cutout.x < 0 or cutout.y < 0 or cutout.right > width or cutout.top > height:
-                raise SpecError(f"Вырез boundary.cutouts[{index}] выходит за границы bounding box")
+                raise SpecError(f"Cutout boundary.cutouts[{index}] extends beyond the bounding box")
             cutouts.append(cutout)
         return cls(width_mm=width, height_mm=height, cutouts=tuple(cutouts))
 
@@ -236,18 +236,18 @@ class LayoutIR:
     def from_mapping(cls, raw: Mapping[str, Any]) -> "LayoutIR":
         payload = raw.get("layout", raw)
         if not isinstance(payload, Mapping):
-            raise SpecError("Корень спецификации должен быть объектом")
+            raise SpecError("Specification root must be an object")
 
         tolerance = float(payload.get("tolerance", 0.03))
         if not 0 < tolerance < 1:
-            raise SpecError("tolerance должен быть между 0 и 1")
+            raise SpecError("tolerance must be between 0 and 1")
         rooms_raw = payload.get("rooms", ())
         if not rooms_raw:
-            raise SpecError("В спецификации должна быть хотя бы одна комната")
+            raise SpecError("Specification must contain at least one room")
         rooms = tuple(RoomSpec.from_mapping(item, tolerance) for item in rooms_raw)
         ids = {room.id for room in rooms}
         if len(ids) != len(rooms):
-            raise SpecError("id комнат должны быть уникальными")
+            raise SpecError("Room ids must be unique")
 
         windows_raw = payload.get("windows", ())
         if not isinstance(windows_raw, (list, tuple)):
@@ -262,7 +262,7 @@ class LayoutIR:
 
         entry_room = str(payload.get("entry_room", rooms[0].id))
         if entry_room not in ids:
-            raise SpecError(f"entry_room {entry_room!r} не найден среди комнат")
+            raise SpecError(f"entry_room {entry_room!r} not found among rooms")
         external_entry_raw = payload.get("external_entry")
         external_entry = None
         if external_entry_raw is not None:
@@ -276,7 +276,7 @@ class LayoutIR:
         for room in rooms:
             for relation in (*room.required_adjacency, *room.preferred_adjacency, *room.forbidden_adjacency):
                 if relation not in ids:
-                    raise SpecError(f"Комната {room.id} ссылается на неизвестную комнату {relation}")
+                    raise SpecError(f"Room {room.id} references unknown room {relation}")
 
         doors_raw = payload.get("doors", ())
         if not isinstance(doors_raw, (list, tuple)):
@@ -304,14 +304,14 @@ class LayoutIR:
 
         grid = int(payload.get("grid_mm", 100))
         if grid <= 0:
-            raise SpecError("grid_mm должен быть положительным целым числом")
+            raise SpecError("grid_mm must be a positive integer")
         wall_thickness = float(payload.get("wall_thickness_mm", 200))
         door_width = float(payload.get("door_width_mm", 900))
         window_width = float(payload.get("window_width_mm", 1_200))
         window_height = float(payload.get("window_height_mm", 1_500))
         window_sill = float(payload.get("window_sill_mm", 900))
         if min(wall_thickness, door_width, window_width, window_height) <= 0 or window_sill < 0:
-            raise SpecError("Толщина стены и размеры проёмов должны быть положительными")
+            raise SpecError("Wall thickness and opening sizes must be positive")
         return cls(
             project_name=str(payload.get("project_name", payload.get("name", "Layout"))),
             boundary=BoundarySpec.from_mapping(payload.get("boundary", {})),
@@ -450,13 +450,13 @@ class LayoutResult:
 
 def _positive_float(value: Any, field_name: str) -> float:
     if value is None:
-        raise SpecError(f"Не задано обязательное поле {field_name}")
+        raise SpecError(f"Required field {field_name} is missing")
     try:
         parsed = float(value)
     except (TypeError, ValueError) as exc:
-        raise SpecError(f"Поле {field_name} должно быть числом") from exc
+        raise SpecError(f"Field {field_name} must be a number") from exc
     if parsed <= 0:
-        raise SpecError(f"Поле {field_name} должно быть положительным")
+        raise SpecError(f"Field {field_name} must be positive")
     return parsed
 
 

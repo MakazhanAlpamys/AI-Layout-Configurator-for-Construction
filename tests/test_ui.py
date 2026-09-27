@@ -204,6 +204,9 @@ class UiTests(unittest.TestCase):
                     served = json.load(response)
                 self.assertEqual(served["mode"], "facility-review")
                 self.assertEqual(served["issue_history"], [])
+                # VQ-09: the favicon request must not log a 404 on every load.
+                with urlopen(f"{base_url}/favicon.ico") as response:
+                    self.assertEqual(response.status, 204)
                 readonly_command = Request(
                     f"{base_url}/api/command",
                     data=b'{"type":"move_room","room_id":"production","dx_mm":100,"dy_mm":0}',
@@ -578,3 +581,75 @@ class PlanProjectionUnitTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ViewerReviewDefectTests(unittest.TestCase):
+    """Contract checks for the viewer defects VQ-07...VQ-13.
+
+    The behaviour itself was confirmed in a real browser (see
+    docs/VIEWER_QA_2026-09-05.md); these checks keep the fixes from silently
+    regressing in the static client.
+    """
+
+    static = Path(__file__).resolve().parents[1] / "src" / "layout_configurator" / "static"
+
+    def _read(self, name):
+        return (self.static / name).read_text(encoding="utf-8")
+
+    def test_review_mode_replaces_editor_chrome(self):
+        html = self._read("index.html")
+        app_js = self._read("app.js")
+        css = self._read("style.css")
+        for element_id in ("mode-eyebrow", "mode-title", "mode-subtitle", "edit-toolbar"):
+            self.assertIn(f'id="{element_id}"', html)
+        self.assertIn('$("#edit-toolbar").hidden = review', app_js)
+        self.assertIn("FACILITY REVIEW", app_js)
+        # Without this rule `.toolbar { display: flex }` keeps a hidden toolbar visible.
+        self.assertIn("[hidden] { display: none !important; }", css)
+
+    def test_summary_separates_declarations_from_routes(self):
+        app_js = self._read("app.js")
+        self.assertNotIn("routed</dd>", app_js)
+        self.assertIn("Flows declared", app_js)
+        self.assertIn("Derived routes", app_js)
+
+    def test_page_declares_an_inline_icon(self):
+        self.assertIn('rel="icon" href="data:image/svg+xml', self._read("index.html"))
+
+    def test_legend_colours_are_distinct_and_cover_every_flow_type(self):
+        css = self._read("style.css")
+        app_js = self._read("app.js")
+        self.assertIn("flowTypesInUse", app_js)
+        for flow_type in ("people", "material", "waste", "dirty_material", "finished_goods", "service"):
+            self.assertIn(f".swatch.flow-{flow_type} ", css)
+        colour = lambda selector: css.split(selector, 1)[1].split("}", 1)[0]
+        material = colour(".flow-route.flow-material {")
+        service = colour(".flow-route.flow-service {")
+        clearance = colour(".equipment-clearance {")
+        equipment = colour(".equipment {")
+        self.assertNotIn("#f5b971", clearance)
+        self.assertIn("#f5b971", material)
+        self.assertNotIn("#b99cff", equipment)
+        self.assertIn("#b99cff", service)
+
+    def test_plan_supports_zoom_and_pan(self):
+        html = self._read("index.html")
+        app_js = self._read("app.js")
+        for element_id in ("zoom-in", "zoom-out", "zoom-fit"):
+            self.assertIn(f'id="{element_id}"', html)
+        self.assertIn('addEventListener("wheel"', app_js)
+        self.assertIn('addEventListener("dblclick"', app_js)
+        self.assertIn("clampView", app_js)
+        # The viewBox follows the view instead of always showing the boundary.
+        self.assertIn("${view.x} ${view.y} ${view.width} ${view.height}", app_js)
+
+    def test_flow_labels_use_collision_avoidance(self):
+        app_js = self._read("app.js")
+        self.assertIn("placeFlowLabel", app_js)
+        self.assertIn("overlapArea", app_js)
+
+    def test_flow_issue_is_marked_once_on_its_own_route(self):
+        app_js = self._read("app.js")
+        self.assertIn("routeConflicts", app_js)
+        self.assertIn("drawnMarkers", app_js)
+        self.assertNotIn("openIssues.filter((issue) => issue.flow_id === flow.flow_id);\n    const conflictClass", app_js)

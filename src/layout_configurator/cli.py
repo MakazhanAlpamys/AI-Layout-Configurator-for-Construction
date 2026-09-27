@@ -94,6 +94,7 @@ def main(argv: list[str] | None = None) -> int:
         dest="deterministic_units",
         help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine",
     )
+    generate_building.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto", help="room stage: hierarchical clusters with a monolithic fallback (auto), or force one solver")
     generate_building.add_argument("--seed", type=int, default=42)
     generate_building.add_argument(
         "--max-attempts",
@@ -175,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     acceptance_matrix.add_argument("--variants", type=int, default=3)
     acceptance_matrix.add_argument("--time-limit", type=float, default=30)
     acceptance_matrix.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
+    acceptance_matrix.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto", help="room stage: hierarchical clusters with a monolithic fallback (auto), or force one solver")
     acceptance_matrix.add_argument("--seeds", type=int, nargs="+", default=[1, 7, 42])
     acceptance_matrix.add_argument("--max-attempts", type=int, default=None)
     acceptance_matrix.add_argument("--equipment-retries", type=int, default=2)
@@ -266,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
         for result in results:
             report = validate_layout(spec, result)
             if not report.ok:
-                print(f"ERROR: вариант {result.variant} не прошёл валидацию", file=sys.stderr)
+                print(f"ERROR: variant {result.variant} failed validation", file=sys.stderr)
                 for issue in report.issues:
                     print(f"  - {issue.code}: {issue.message}", file=sys.stderr)
                 return 3
@@ -340,6 +342,8 @@ def main(argv: list[str] | None = None) -> int:
                 str(seed),
                 "--equipment-retries",
                 str(args.equipment_retries),
+                "--room-solver",
+                args.room_solver,
             ]
             if args.max_attempts is not None:
                 generate_argv.extend(["--max-attempts", str(args.max_attempts)])
@@ -392,6 +396,7 @@ def main(argv: list[str] | None = None) -> int:
                 "repeatable": args.deterministic_units is not None,
                 "max_attempts": args.max_attempts if args.max_attempts is not None else max(3, args.variants * 3),
                 "equipment_retries": args.equipment_retries,
+                "room_solver": args.room_solver,
             },
             "runs": runs,
             "cross_seed_semantic_ids": {
@@ -423,6 +428,7 @@ def main(argv: list[str] | None = None) -> int:
                 max_attempts=args.max_attempts,
                 equipment_retries=args.equipment_retries,
                 deterministic_units=args.deterministic_units,
+                room_solver=args.room_solver,
             )
         except InfeasibleFacilityGeneration as exc:
             args.output.mkdir(parents=True, exist_ok=True)
@@ -483,7 +489,7 @@ def main(argv: list[str] | None = None) -> int:
                 if not ifc_readback.ok:
                     raise RuntimeError("; ".join(ifc_readback.issues))
             except (ValueError, RuntimeError) as exc:
-                print(f"ERROR: экспорт/IFC QA варианта {result.variant} не пройден: {exc}", file=sys.stderr)
+                print(f"ERROR: export/IFC QA failed for variant {result.variant}: {exc}", file=sys.stderr)
                 return 3
             dxf_path, pdf_path = export_building_bundle(
                 args.output,
@@ -537,7 +543,7 @@ def main(argv: list[str] | None = None) -> int:
                     previous=args.bcf_input,
                 )
             except (OSError, ValueError, RuntimeError) as exc:
-                print(f"ERROR: BCF-пакет варианта {result.variant} не сформирован: {exc}", file=sys.stderr)
+                print(f"ERROR: BCF package for variant {result.variant} could not be generated: {exc}", file=sys.stderr)
                 return 3
             manifest["variants"].append(
                 {
@@ -745,7 +751,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if facility_report.ok and (ifc_readback is None or ifc_readback.ok) else 4
     if args.command == "edit":
         if not any((args.move_room, args.resize_room, args.add_door, args.add_door_at, args.remove_door, args.add_window, args.remove_window, args.set_external_entry, args.remove_external_entry)):
-            print("ERROR: укажите хотя бы одну typed-команду правки", file=sys.stderr)
+            print("ERROR: specify at least one typed edit command", file=sys.stderr)
             return 2
         try:
             spec, result = load_result(args.input)

@@ -99,11 +99,11 @@ class PharmaCleanroomAcceptanceTests(unittest.TestCase):
         profile = load_facility_profile("rules/default_facility.yaml")
 
         with (
-            patch("layout_configurator.facility_generation.solve_layouts", return_value=[first, second]),
+            patch("layout_configurator.facility_generation.solve_layouts_auto", return_value=[first, second]),
             patch("layout_configurator.facility_generation.validate_layout", return_value=ValidationReport(())),
             patch(
-                "layout_configurator.facility_generation.place_equipment",
-                side_effect=[EquipmentPlacementError("does not fit"), EquipmentLayoutResult(())],
+                "layout_configurator.facility_generation.place_equipment_clear_of_doors",
+                side_effect=[EquipmentPlacementError("does not fit"), (EquipmentLayoutResult(()), ())],
             ),
             patch(
                 "layout_configurator.facility_generation.validate_equipment_layout",
@@ -210,6 +210,8 @@ class PharmaCleanroomAcceptanceTests(unittest.TestCase):
             payload = json.loads((output / "building_01.json").read_text(encoding="utf-8"))
             self.assertTrue(payload["equipment_validation"]["ok"])
             self.assertEqual(payload["generation"]["candidate_attempt"], 1)
+            # No flows, so no door approaches to keep clear and nothing given up.
+            self.assertEqual(payload["generation"]["door_approach_exceptions"], [])
 
     def test_candidate_selection_rejects_partial_variant_sets(self):
         building = BuildingIR.from_mapping(_minimal_mapping())
@@ -218,10 +220,10 @@ class PharmaCleanroomAcceptanceTests(unittest.TestCase):
         profile = load_facility_profile("rules/default_facility.yaml")
 
         with (
-            patch("layout_configurator.facility_generation.solve_layouts", return_value=[candidate, second]),
+            patch("layout_configurator.facility_generation.solve_layouts_auto", return_value=[candidate, second]),
             patch(
-                "layout_configurator.facility_generation.place_equipment",
-                side_effect=[EquipmentLayoutResult(()), EquipmentPlacementError("does not fit")],
+                "layout_configurator.facility_generation.place_equipment_clear_of_doors",
+                side_effect=[(EquipmentLayoutResult(()), ()), EquipmentPlacementError("does not fit")],
             ),
         ):
             with self.assertRaisesRegex(InfeasibleFacilityGeneration, "Only 1 of 2") as caught:

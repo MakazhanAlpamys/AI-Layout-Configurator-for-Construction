@@ -1,22 +1,23 @@
 <!doctype html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Layout Configurator — editor</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='1' width='14' height='14' rx='3' fill='%2368d5c5'/%3E%3Cpath d='M1 8h8V1M9 8v7' stroke='%23101216' stroke-width='1.6' fill='none'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
   <header class="topbar">
     <div>
-      <p class="eyebrow">SOLVER-FIRST EDITOR</p>
-      <h1>Редактор планировки</h1>
-      <p class="subtitle">Браузер отправляет typed-команды; геометрию пересчитывает CP-SAT.</p>
+      <p id="mode-eyebrow" class="eyebrow">SOLVER-FIRST EDITOR</p>
+      <h1 id="mode-title">Layout editor</h1>
+      <p id="mode-subtitle" class="subtitle">The browser sends typed commands; CP-SAT recalculates the geometry.</p>
     </div>
-    <div class="toolbar">
-      <button id="undo" class="secondary" disabled>↶ Отменить</button>
-      <button id="redo" class="secondary" disabled>↷ Повторить</button>
-      <button id="reset" class="secondary">Сбросить изменения</button>
+    <div id="edit-toolbar" class="toolbar">
+      <button id="undo" class="secondary" disabled>↶ Undo</button>
+      <button id="redo" class="secondary" disabled>↷ Redo</button>
+      <button id="reset" class="secondary">Reset changes</button>
     </div>
   </header>
 
@@ -25,14 +26,19 @@
       <div class="section-head">
         <div>
           <p class="eyebrow">LAYOUTIR</p>
-          <h2 id="project-name">Загрузка…</h2>
+          <h2 id="project-name">Loading…</h2>
         </div>
         <span id="status" class="status">…</span>
       </div>
       <div class="plan-wrap">
-        <svg id="plan" role="img" aria-label="Планировка"></svg>
+        <svg id="plan" role="img" aria-label="Layout plan"></svg>
+        <div class="zoom-controls" role="group" aria-label="Zoom">
+          <button type="button" id="zoom-in" title="Zoom in (wheel)">+</button>
+          <button type="button" id="zoom-out" title="Zoom out (wheel)">−</button>
+          <button type="button" id="zoom-fit" title="Fit the whole plan (double-click)">Fit</button>
+        </div>
       </div>
-      <p class="canvas-help">Кликните комнату и потяните для перемещения. Нижний правый маркер меняет размер. Сетка и размеры привязаны к ТЗ. Отпускание отправляет одну typed-команду.</p>
+      <p class="canvas-help">Click a room and drag to move it. The bottom-right handle resizes it. The grid and dimensions follow the brief. Releasing sends one typed command.</p>
       <div id="legend" class="legend"></div>
     </section>
 
@@ -41,24 +47,24 @@
         <div class="section-head compact">
           <div>
             <p class="eyebrow">COMMAND API</p>
-            <h2>Typed-команда</h2>
+            <h2>Typed command</h2>
           </div>
         </div>
         <form id="command-form">
-          <label>Операция
+          <label>Operation
             <select id="operation">
-              <option value="move_room">Переместить комнату</option>
-              <option value="resize_room">Изменить размер</option>
-              <option value="add_door">Добавить дверь</option>
-              <option value="remove_door">Удалить явную дверь</option>
-              <option value="add_window">Добавить окно</option>
-              <option value="remove_window">Удалить окно</option>
-              <option value="set_external_entry">Задать внешний вход</option>
-              <option value="remove_external_entry">Удалить внешний вход</option>
+              <option value="move_room">Move room</option>
+              <option value="resize_room">Resize room</option>
+              <option value="add_door">Add door</option>
+              <option value="remove_door">Remove explicit door</option>
+              <option value="add_window">Add window</option>
+              <option value="remove_window">Remove window</option>
+              <option value="set_external_entry">Set external entry</option>
+              <option value="remove_external_entry">Remove external entry</option>
             </select>
           </label>
           <div id="fields"></div>
-          <button type="submit" class="primary">Применить команду</button>
+          <button type="submit" class="primary">Apply command</button>
         </form>
         <p id="command-error" class="error" hidden></p>
       </section>
@@ -67,7 +73,7 @@
         <div class="section-head compact">
           <div>
             <p class="eyebrow">STATE</p>
-            <h2>Состояние</h2>
+            <h2>Status</h2>
           </div>
         </div>
         <dl id="summary" class="summary"></dl>

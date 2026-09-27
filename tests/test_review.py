@@ -97,8 +97,8 @@ class ReviewDossierTests(unittest.TestCase):
 
             for name in ("technologist.md", "cleanroom-hvac.md", "architect-bim.md"):
                 text = written[name].read_text(encoding="utf-8")
-                self.assertIn("не является", text, f"{name} must state what the package is not")
-                self.assertIn("Вне области проверки инструмента", text)
+                self.assertIn("It is not", text, f"{name} must state what the package is not")
+                self.assertIn("Outside the scope of the tool", text)
                 self.assertIn("BCF-topic", text)
                 self.assertIn("building_01.bcf", text)
 

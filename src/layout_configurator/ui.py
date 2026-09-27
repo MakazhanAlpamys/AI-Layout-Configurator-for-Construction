@@ -630,7 +630,7 @@ class UiSession:
     def undo(self) -> dict[str, Any]:
         with self.lock:
             if not self.past:
-                raise EditError("Нет изменений для отмены")
+                raise EditError("Nothing to undo")
             self.future.append(self.state)
             self.state = self.past.pop()
             self.journal.append({"action": "undo", "type": "Undo"})
@@ -640,7 +640,7 @@ class UiSession:
     def redo(self) -> dict[str, Any]:
         with self.lock:
             if not self.future:
-                raise EditError("Нет изменений для повтора")
+                raise EditError("Nothing to redo")
             self.past.append(self.state)
             self.state = self.future.pop()
             self.journal.append({"action": "redo", "type": "Redo"})
@@ -751,6 +751,13 @@ class _UiHandler(BaseHTTPRequestHandler):
         if route in {"/app.js", "/style.css"}:
             name = route[1:]
             self._send_text(200, _asset(name), ASSET_TYPES[name])
+            return
+        if route == "/favicon.ico":
+            # index.html carries an inline icon; this only stops legacy clients
+            # from logging a 404 on every page load.
+            self.send_response(204)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
             return
         if route == "/api/health":
             self._send_json(200, {"ok": True})

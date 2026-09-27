@@ -24,7 +24,7 @@ def load_spec(path: str | Path) -> LayoutIR:
 
         raw = yaml.safe_load(raw_text)
     else:
-        raise ValueError("Файл спецификации должен иметь расширение .json, .yaml или .yml")
+        raise ValueError("Specification file must have a .json, .yaml or .yml extension")
     return LayoutIR.from_mapping(raw)
 
 
@@ -111,7 +111,7 @@ def write_building_result(
     *,
     equipment_report: EquipmentValidationReport | None = None,
     facility_report: FacilityValidationReport | None = None,
-    generation_evidence: dict[str, int] | None = None,
+    generation_evidence: dict[str, object] | None = None,
 ) -> None:
     """Write room and equipment solver outputs without converting to drawing data."""
 

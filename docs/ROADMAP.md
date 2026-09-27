@@ -1,137 +1,137 @@
-# Архив дорожной карты исходного MVP
+# Original MVP roadmap archive
 
-> Этот документ сохраняет решения и историю исходного residential MVP. Он **не
-> определяет текущую продуктовую цель**. Актуальное направление —
-> [Facility Product Brief](FACILITY_PRODUCT_BRIEF.md) и
+> This document preserves the decisions and history of the original residential MVP. It **does not
+> define the current product goal**. The current direction is the
+> [Facility Product Brief](FACILITY_PRODUCT_BRIEF.md) and the
 > [Regulated Facility Layout Compiler plan](PRODUCT_PLAN.md).
-> Основан на синтезе 8 независимых research-отчётов в [`research/`](../research/).
+> Based on a synthesis of 8 independent research reports in [`research/`](../research/).
 
-## Актуальное решение — 2026-09-02
+## Current decision — 2026-09-02
 
-Проект переориентирован на solver-first компилятор проверяемых планировок для
-фармацевтики, чистых помещений, лабораторий, больниц и промышленных объектов.
-Первый узкий клин — pharma-like clean production; остальные типологии будут
-добавляться раздельными domain/rule packs. Принципы solver-first, canonical IR,
-independent validation и запрет LLM на координаты/DXF/normative verdict остаются
-неизменными.
+The project has been refocused on a solver-first compiler of verifiable layouts for
+pharmaceuticals, cleanrooms, laboratories, hospitals and industrial facilities.
+The first narrow wedge is pharma-like clean production; the other typologies will be
+added as separate domain/rule packs. The principles of solver-first, canonical IR,
+independent validation and the ban on LLMs producing coordinates/DXF/normative verdicts remain
+unchanged.
 
-## Что было построено в MVP
+## What was built in the MVP
 
-Конфигуратор планировок: техническое задание (габариты, состав комнат,
-целевые площади, смежности) → несколько вариантов планировки →
-editable DXF + векторный PDF.
+A layout configurator: design brief (overall dimensions, room list,
+target areas, adjacencies) → several layout variants →
+editable DXF + vector PDF.
 
-**Архитектурный принцип (консенсус всех 8 отчётов): solver-first hybrid.**
-Геометрию считает детерминированный солвер, а не нейросеть.
-LLM подключается последним и никогда не выдаёт координаты,
-не пишет DXF напрямую и не выносит вердикт по нормам.
+**Architectural principle (consensus of all 8 reports): solver-first hybrid.**
+Geometry is computed by a deterministic solver, not a neural network.
+The LLM is connected last and never outputs coordinates,
+never writes DXF directly and never issues a verdict on building codes.
 
-## Исторические решения исходного MVP
+## Historical decisions of the original MVP
 
-| Дата | Решение | Обоснование |
+| Date | Decision | Rationale |
 |---|---|---|
-| 2026-08-29 | Тип здания: одноэтажная жилая планировка (дом или квартира) | На уровне ядра это одна задача; многоквартирный дом и test-fit — надстройки над тем же ядром |
-| 2026-08-29 | Интерфейс: CLI + файлы (YAML/JSON на входе, папка с DXF/PDF на выходе) | Быстрее всего до работающего результата; ноль времени на вёрстку |
-| 2026-08-29 | Детализация: настоящий архитектурный план — стены с толщиной, проёмы, размерные цепочки, штамп | Без этого DXF бесполезен |
-| 2026-08-29 | Проект для личного использования, не на продажу | Снимает лицензионные ограничения: GPL/AGPL и research-only датасеты доступны |
-| 2026-08-29 | Контур здания: bounding box минус вычитаемые прямоугольные зоны | Покрывает L-, П- и Т-образные дома, почти не усложняя солвер |
-| 2026-08-29 | Коридор задаётся в ТЗ как обычная комната, а не выделяется солвером | Меньше магии, предсказуемее результат. Солвер проверяет достижимость всех комнат от входа |
+| 2026-08-29 | Building type: single-storey residential layout (house or apartment) | At the core level this is one problem; an apartment building and test-fit are extensions on top of the same core |
+| 2026-08-29 | Interface: CLI + files (YAML/JSON as input, a folder with DXF/PDF as output) | Fastest path to a working result; zero time spent on UI layout |
+| 2026-08-29 | Level of detail: a real architectural plan — walls with thickness, openings, dimension chains, title block | Without this the DXF is useless |
+| 2026-08-29 | Project for personal use, not for sale | Removes licensing restrictions: GPL/AGPL and research-only datasets are available |
+| 2026-08-29 | Building outline: bounding box minus subtracted rectangular zones | Covers L-, U- and T-shaped houses while barely complicating the solver |
+| 2026-08-29 | A corridor is specified in the brief as an ordinary room rather than carved out by the solver | Less magic, more predictable result. The solver checks that all rooms are reachable from the entrance |
 
-## Декомпозиция на подпроекты
+## Decomposition into subprojects
 
-Каждый подпроект — свой цикл: спека → план → реализация.
-Порядок не произвольный: каждый следующий опирается на предыдущий.
+Each subproject has its own cycle: spec → plan → implementation.
+The order is not arbitrary: each subsequent one builds on the previous.
 
-- [x] **1. Ядро: LayoutIR + солвер + чертёж** ← *MVP реализован 2026-08-30*
-  - Типизированная модель `LayoutIR` (комнаты, площади, смежности, проёмы, стены) как единственный источник истины
-  - Солвер на OR-Tools CP-SAT: раскладка прямоугольных комнат в прямоугольном контуре
-  - Модуль стен: осевые линии → толщины → зачистка углов → вырезание проёмов
-  - Экспорт DXF (ezdxf) и векторный PDF (ReportLab)
-  - Валидация геометрии (Shapely): площади, наложения, границы, смежности
+- [x] **1. Core: LayoutIR + solver + drawing** ← *MVP implemented 2026-08-30*
+  - Typed `LayoutIR` model (rooms, areas, adjacencies, openings, walls) as the single source of truth
+  - Solver on OR-Tools CP-SAT: packing of rectangular rooms in a rectangular outline
+  - Wall module: centerlines → thicknesses → corner cleanup → cutting openings
+  - DXF export (ezdxf) and vector PDF (ReportLab)
+  - Geometry validation (Shapely): areas, overlaps, boundaries, adjacencies
   - CLI: `layout-configurator generate spec.yaml --output out --variants N`
-  - Реализовано: стеновая полоса через buffer с двойными линиями, miter-углами
-    и вырезами под двери на обязательных смежностях
-  - Ограничение текущего среза: окна строятся автоматически для
-    `needs_daylight`, либо задаются явно в `LayoutIR.windows`; комнаты с
-    `needs_daylight` solver привязывает к наружной грани или вырезу; полноценная
-    интерактивная доводка UI редактора реализована в подпроекте 2
-- [x] **2. Редактор** ← *MVP команд, локальный UI, история и визуальный preview реализованы 2026-08-31*
-  - Типизированные `MoveRoom`, `ResizeRoom`, `AddDoor`, явные `DoorSpec`, `RemoveDoor`, `AddWindow`, `RemoveWindow` с атомарной валидацией
-  - CLI-правка сохранённого JSON и переэкспорт DXF/PDF
-  - опциональный нормативный post-check через `edit --rules` с кодом выхода 4 при FAIL
-  - внешний вход `external_entry`, признак `is_heated`, solver-привязка и IFC-метаданные
-  - локальный браузерный UI с SVG-планом, typed-командами и переэкспортом
-  - опциональный ruleset post-check в UI после каждой команды
-  - drag/resize на SVG с preview и отправкой одной `MoveRoom`/`ResizeRoom` на отпускание
-  - undo/redo с повторным экспортом производных файлов и ветвлением истории
-  - журнал typed-команд и видимая сетка/размеры preview по `grid_mm`
-- [x] **3. IFC / BIM** ← *IFC4, baseline IDS и KZ exchange-профиль реализованы 2026-08-31*
+  - Implemented: wall band via buffer with double lines, mitred corners
+    and door cut-outs on required adjacencies
+  - Limitation of the current slice: windows are generated automatically for
+    `needs_daylight`, or specified explicitly in `LayoutIR.windows`; rooms with
+    `needs_daylight` are anchored by the solver to an exterior face or cut-out; full
+    interactive refinement in the editor UI is implemented in subproject 2
+- [x] **2. Editor** ← *command MVP, local UI, history and visual preview implemented 2026-08-31*
+  - Typed `MoveRoom`, `ResizeRoom`, `AddDoor`, explicit `DoorSpec`, `RemoveDoor`, `AddWindow`, `RemoveWindow` with atomic validation
+  - CLI editing of saved JSON and re-export of DXF/PDF
+  - optional regulatory post-check via `edit --rules` with exit code 4 on FAIL
+  - external entrance `external_entry`, `is_heated` flag, solver anchoring and IFC metadata
+  - local browser UI with an SVG plan, typed commands and re-export
+  - optional ruleset post-check in the UI after each command
+  - drag/resize on the SVG with preview and a single `MoveRoom`/`ResizeRoom` sent on release
+  - undo/redo with re-export of derived files and history branching
+  - typed command log and a visible preview grid/dimensions based on `grid_mm`
+- [x] **3. IFC / BIM** ← *IFC4, baseline IDS and KZ exchange profile implemented 2026-08-31*
   - `IfcProject` → `IfcSite` → `IfcBuilding` → `IfcBuildingStorey`
-  - `IfcSpace`/`IfcWall`/`IfcDoor`/`IfcWindow`, геометрия, площади и CLI round-trip
-  - Реализовано: `IfcRelSpaceBoundary`, `IfcOpeningElement`, `IfcRelVoidsElement`
-    и `IfcRelFillsElement`; стены в IFC теперь непрерывные, проёмы связаны с хостом
-  - Реализовано: окна для `needs_daylight`, property sets, базовые материалы
-    и `ifctester`-проверка по `ids/layout_baseline.ids`
-  - Реализовано: семантические `IfcWallType`/`IfcDoorType`/`IfcWindowType` и
-    `IfcRelDefinesByType`; добавлен юрисдикционный exchange-профиль
-  - `ids/kz_layout_exchange.ids` фиксирует KZ-ориентированный обмен свойствами
-    комнат, дверей и окон; это контракт данных, а не проверка строительных норм
-- [x] **4. Нормы** ← *generic baseline и частичный проверенный KZ-профиль реализованы 2026-08-31* — детерминированные проверки: мин. площади, ширина коридоров, эвакуация. Одна юрисдикция за раз
-- [x] **5. LLM-парсер ТЗ + RAG по нормам** ← *constrained text-parser, Schema boundary, опциональный OpenAI-compatible adapter и citation retrieval реализованы 2026-08-31* — текст → JSON со схемой; RAG цитирует пункт, решение принимает код
-- [x] **6. Многоэтажность** ← *координация этажей, вертикальные ядра, оси, проверка лестницы и общий IFC multi-storey projection реализованы 2026-08-31* — вертикальные ядра, соосность несущих стен, лестницы
+  - `IfcSpace`/`IfcWall`/`IfcDoor`/`IfcWindow`, geometry, areas and CLI round-trip
+  - Implemented: `IfcRelSpaceBoundary`, `IfcOpeningElement`, `IfcRelVoidsElement`
+    and `IfcRelFillsElement`; walls in IFC are now continuous, openings are linked to their host
+  - Implemented: windows for `needs_daylight`, property sets, basic materials
+    and `ifctester` checking against `ids/layout_baseline.ids`
+  - Implemented: semantic `IfcWallType`/`IfcDoorType`/`IfcWindowType` and
+    `IfcRelDefinesByType`; a jurisdictional exchange profile added
+  - `ids/kz_layout_exchange.ids` pins the KZ-oriented exchange of room, door and
+    window properties; this is a data contract, not a building code check
+- [x] **4. Building codes** ← *generic baseline and a partial verified KZ profile implemented 2026-08-31* — deterministic checks: minimum areas, corridor widths, egress. One jurisdiction at a time
+- [x] **5. LLM brief parser + RAG over codes** ← *constrained text parser, Schema boundary, optional OpenAI-compatible adapter and citation retrieval implemented 2026-08-31* — text → JSON with a schema; RAG cites the clause, code makes the decision
+- [x] **6. Multi-storey** ← *floor coordination, vertical cores, grid lines, stair check and a shared IFC multi-storey projection implemented 2026-08-31* — vertical cores, alignment of load-bearing walls, stairs
 
-### Архивный статус MVP (2026-08-31)
+### Archived MVP status (2026-08-31)
 
-Реализован generic baseline ruleset: `GEOMETRY_VALID`, `MIN_ROOM_AREA`,
-`MIN_CORRIDOR_WIDTH`, `DAYLIGHT_OPENING`, `EGRESS_REACHABILITY` и
-`MAX_EGRESS_DISTANCE`. CLI-команда `check` выдаёт evidence для каждого правила
-и не выдаёт юридический verdict. Загрузчик поддерживает отдельные ruleset-файлы
-конкретных юрисдикций, `extends`, точечное переопределение правил и provenance
-источника документа поверх baseline. Добавлен первый частичный профиль KZ: п. 7.8,
-п. 6.2.13, п. 6.2.8, п. 6.2.12 и декларация п. 8.19 СН РК 3.02-02-2023,
-без заявления о полной нормативной проверке.
-Добавлен проходящий smoke-test `examples/kz_daylight.yaml`; базовый demo с кухней
-без `needs_daylight` намеренно показывает FAIL по тому же правилу.
-Добавлены `examples/kz_entry_pass.yaml` и `examples/kz_entry_fail.yaml` для
-проверки тамбура: внешний вход фиксируется solver-ом, а нормативный FAIL
-возвращает код 4 после сохранения производных файлов.
+A generic baseline ruleset is implemented: `GEOMETRY_VALID`, `MIN_ROOM_AREA`,
+`MIN_CORRIDOR_WIDTH`, `DAYLIGHT_OPENING`, `EGRESS_REACHABILITY` and
+`MAX_EGRESS_DISTANCE`. The CLI command `check` outputs evidence for each rule
+and does not issue a legal verdict. The loader supports separate ruleset files
+for specific jurisdictions, `extends`, targeted rule overrides and document source
+provenance on top of the baseline. The first partial KZ profile has been added: clauses 7.8,
+6.2.13, 6.2.8, 6.2.12 and the declaration of clause 8.19 of SN RK 3.02-02-2023,
+without claiming a full regulatory check.
+A passing smoke test `examples/kz_daylight.yaml` has been added; the basic demo with a kitchen
+without `needs_daylight` intentionally shows a FAIL under the same rule.
+`examples/kz_entry_pass.yaml` and `examples/kz_entry_fail.yaml` have been added for
+checking the entrance vestibule: the external entrance is pinned by the solver, and a regulatory FAIL
+returns exit code 4 after the derived files are saved.
 
-KZ-профиль наследует generic baseline, поэтому проектные проверки площади,
-ширины коридора и достижимости доступны и в юрисдикционном запуске. Добавлен
-отдельный IFC4 exchange-профиль `ids/kz_layout_exchange.ids` для семантических
-свойств комнат, дверей и окон. Он проверяет контракт данных, а не строительные
-нормы.
+The KZ profile inherits the generic baseline, so the project checks for area,
+corridor width and reachability are also available in a jurisdictional run. A
+separate IFC4 exchange profile `ids/kz_layout_exchange.ids` has been added for the semantic
+properties of rooms, doors and windows. It checks the data contract, not building
+codes.
 
-До LLM-слоя подготовлен строгий JSON Schema boundary для канонического
-`LayoutIR` (`schemas/layout_ir.schema.json`) и CLI `schema --raw`; текстовый
-парсер должен проходить через него и не получает доступа к координатам,
-экспортам или решению по нормам.
+Ahead of the LLM layer, a strict JSON Schema boundary was prepared for the canonical
+`LayoutIR` (`schemas/layout_ir.schema.json`) and the CLI `schema --raw`; the text
+parser must pass through it and has no access to coordinates,
+exports or code decisions.
 
-После стабилизации ядра добавлены `parse-brief` для constrained text-to-LayoutIR,
-`parse_llm_mapping` для будущего провайдера и `cite` для retrieval ссылок на
-правила. Парсер не принимает координаты, а `cite` не запускает `check` и не
-выдаёт verdict. Для многоэтажного расширения добавлены `generate-multifloor`,
-вертикальные ядра, структурные оси, проверка лестницы и общий IFC.
+After the core stabilized, `parse-brief` was added for constrained text-to-LayoutIR,
+`parse_llm_mapping` for a future provider, and `cite` for retrieving references to
+rules. The parser does not accept coordinates, and `cite` does not run `check` and does not
+issue a verdict. For the multi-storey extension, `generate-multifloor`,
+vertical cores, structural grid lines, a stair check and a shared IFC were added.
 
-## Зафиксированные границы проекта
+## Fixed project boundaries
 
-- KZ-ruleset остаётся частичным и расширяется только отдельными подтверждёнными
-  пунктами официального источника; текущая модель не изображает полный legal
-  code-check.
-- Нейросетевой слой (HouseDiffusion как seed) не входит в закрытый контур:
-  координаты всегда производит CP-SAT, а LLM используется только как opt-in
-  producer canonical JSON.
-- Визуальную проверку DXF выполняет CAD viewer (AutoCAD/LibreCAD/ODA Viewer)
-  при наличии; автоматический контур уже проверяет round-trip и экспортные
-  сущности, но не подменяет просмотр чертежа человеком.
+- The KZ ruleset remains partial and is extended only by individually confirmed
+  clauses of the official source; the current model does not pretend to be a full legal
+  code check.
+- The neural network layer (HouseDiffusion as a seed) is not part of the closed loop:
+  coordinates are always produced by CP-SAT, and the LLM is used only as an opt-in
+  producer of canonical JSON.
+- Visual checking of DXF is done in a CAD viewer (AutoCAD/LibreCAD/ODA Viewer)
+  when available; the automated loop already checks round-trip and exported
+  entities, but does not substitute for a human looking at the drawing.
 
-## Мёртвые зоны — не тратить время
+## Dead ends — do not waste time
 
-Единогласно у всех 8 отчётов:
+Unanimous across all 8 reports:
 
-1. **Нейросеть, генерящая DXF/DWG напрямую** — формат байт-чувствительный, файлы не откроются
-2. **Машиночитаемых строительных норм не существует** — IDS проверяет данные, а не геометрию; геометрические правила пишутся руками
-3. **Открытая запись DWG** — LibreDWG стабилен только до R2000; экспортировать DXF и конвертировать ODA File Converter
-4. **RAG, «проверяющий» нормы** — LLM галлюцинируют именно на числовых порогах
-5. **CP-SAT за ~15 комнат при неортогональном контуре** — NP-hard; для жилья нормально, для больницы нет
-6. **Независимый расчёт этажей** — несущие стены верхнего этажа повиснут над пустотой; считать все этажи в единой сетке осей
+1. **A neural network generating DXF/DWG directly** — the format is byte-sensitive, the files will not open
+2. **Machine-readable building codes do not exist** — IDS checks data, not geometry; geometric rules are written by hand
+3. **Open DWG writing** — LibreDWG is stable only up to R2000; export DXF and convert with ODA File Converter
+4. **RAG that "checks" codes** — LLMs hallucinate precisely on numeric thresholds
+5. **CP-SAT beyond ~15 rooms with a non-orthogonal outline** — NP-hard; fine for housing, not for a hospital
+6. **Computing floors independently** — load-bearing walls of the upper floor will hang over empty space; compute all floors on a single grid
