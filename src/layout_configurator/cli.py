@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import json
 import os
 import sys
@@ -187,6 +188,18 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="write matrix evidence JSON; defaults to OUTPUT/acceptance-matrix-report.json",
     )
+    facility_floors = subparsers.add_parser(
+        "generate-facility-floors",
+        help="solve a multi-storey facility: floors, vertical cores and cross-floor flows",
+    )
+    facility_floors.add_argument("spec", type=Path, help="facility_multi_floor YAML/JSON")
+    facility_floors.add_argument("--output", "-o", type=Path, default=Path("out/facility_floors"))
+    facility_floors.add_argument("--profile", type=Path, default=None, help="profile for floors that do not name one")
+    facility_floors.add_argument("--variants", type=int, default=1)
+    facility_floors.add_argument("--max-attempts", type=int, default=None)
+    facility_floors.add_argument("--time-limit", type=float, default=60)
+    facility_floors.add_argument("--seed", type=int, default=42)
+    facility_floors.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto")
     compare_variants = subparsers.add_parser(
         "compare-variants",
         help="rank the variants of a generated facility bundle and write JSON, CSV and a client PDF",
@@ -423,6 +436,86 @@ def main(argv: list[str] | None = None) -> int:
         report_path.write_text(json.dumps(matrix_report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"Acceptance matrix: {'PASS' if ok else 'FAIL'}; report: {report_path}")
         return 0 if ok else 4
+    if args.command == "generate-facility-floors":
+        from .facility_floors import FacilityFloorsError, load_facility_floors, solve_facility_floors
+
+        try:
+            floors_spec = load_facility_floors(args.spec)
+            solved = solve_facility_floors(
+                floors_spec,
+                variants=args.variants,
+                time_limit_seconds=args.time_limit,
+                seed=args.seed,
+                max_attempts=args.max_attempts,
+                room_solver=args.room_solver,
+                default_profile=load_facility_profile(args.profile) if args.profile else None,
+            )
+        except (FacilityFloorsError, BuildingSpecError, OSError) as exc:
+            args.output.mkdir(parents=True, exist_ok=True)
+            (args.output / "multi-floor-failure.json").write_text(
+                json.dumps({"ok": False, "message": str(exc), "evidence": getattr(exc, "evidence", {})}, ensure_ascii=False, indent=2, default=str),
+                encoding="utf-8",
+            )
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        args.output.mkdir(parents=True, exist_ok=True)
+        floor_manifests: dict[int, dict] = {}
+        report = {
+            "project": floors_spec.project_name,
+            "floor_height_mm": floors_spec.floor_height_mm,
+            "floors": [
+                {"level": entry.level, "elevation_mm": entry.elevation_mm, "program": entry.program_path,
+                 "profile": solved.profiles[entry.level].name, "bundle": f"floor_{entry.level:02d}"}
+                for entry in floors_spec.floors
+            ],
+            "vertical_cores": [{"id": core.id, "kind": core.kind, "rooms": {str(k): v for k, v in core.rooms.items()}} for core in floors_spec.cores],
+            "cross_floor_flows": [
+                {"id": flow.id, "type": flow.type, "from": {"level": flow.from_level, "id": flow.from_id},
+                 "to": {"level": flow.to_level, "id": flow.to_id}, "via": floors_spec.core_for(flow).id,
+                 "legs": [flow.leg_id(flow.from_level), flow.leg_id(flow.to_level)]}
+                for flow in floors_spec.cross_flows
+            ],
+            "stacks": [],
+            "rejected_stacks": solved.rejected,
+        }
+        for stack in solved.stacks:
+            files = {}
+            for level, candidate in sorted(stack.floors.items()):
+                floor_dir = args.output / f"floor_{level:02d}"
+                result = candidate.result if candidate.result.variant == stack.number else replace(candidate.result, variant=stack.number)
+                try:
+                    entry = write_facility_variant(
+                        floor_dir, solved.programs[level], solved.profiles[level], result,
+                        layout_report=candidate.layout_report, equipment=candidate.equipment,
+                        equipment_report=candidate.equipment_report, flow_routes=candidate.flow_routes,
+                        flow_report=candidate.flow_report, facility_report=candidate.facility_report,
+                        generation_evidence={**candidate.generation_evidence(), "stack": stack.number, "level": level},
+                    )
+                except VariantExportError as exc:
+                    print(f"ERROR: floor {level}: {exc}", file=sys.stderr)
+                    return 3
+                floor_manifests.setdefault(level, {
+                    "project": solved.programs[level].layout.project_name,
+                    "level": level,
+                    "facility_profile": solved.profiles[level].to_dict(),
+                    "drawing_profile": solved.profiles[level].drawing.to_dict(),
+                    "variants": [],
+                })["variants"].append(entry)
+                files[str(level)] = f"floor_{level:02d}/{entry['json']}"
+            report["stacks"].append({
+                "stack": stack.number,
+                "ok": stack.ok,
+                "floors": files,
+                "floor_checks_ok": {str(level): candidate.facility_report.ok for level, candidate in stack.floors.items()},
+                "vertical_checks": [check.to_dict() for check in stack.checks],
+            })
+            print(f"stack {stack.number}: {'PASS' if stack.ok else 'FAIL'} — " + ", ".join(f"floor {k}: {v}" for k, v in files.items()))
+        for level, manifest in floor_manifests.items():
+            (args.output / f"floor_{level:02d}" / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+        report["ok"] = all(stack["ok"] for stack in report["stacks"])
+        (args.output / "multi_floor_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
+        print(f"Multi-floor facility: {'PASS' if report['ok'] else 'FAIL'}; report: {args.output / 'multi_floor_report.json'}")
+        return 0 if report["ok"] else 4
     if args.command == "compare-variants":
         from .compare import compare_bundle, write_comparison
 

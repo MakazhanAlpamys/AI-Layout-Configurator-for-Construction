@@ -136,8 +136,13 @@ def solve_layouts_hierarchical(
     minimum_adjacency_mm: float | None = None,
     equipment_fit_options: Mapping[str, Iterable[tuple[str, Iterable[tuple[float, float]]]]] | None = None,
     deterministic_units: float | None = None,
+    fixed_rects: Mapping[str, Rect] | None = None,
 ) -> list[LayoutResult]:
-    """Return up to ``variants`` distinct layouts from the cluster hierarchy."""
+    """Return up to ``variants`` distinct layouts from the cluster hierarchy.
+
+    ``fixed_rects`` pins rooms (for example a vertical core repeated on every
+    floor); a pinned room is always its own cluster.
+    """
 
     if variants < 1:
         raise ValueError("variants must be at least 1")
@@ -149,6 +154,10 @@ def solve_layouts_hierarchical(
         raise RuntimeError("Install project dependencies: pip install -e .") from exc
 
     known = {room.id for room in spec.rooms}
+    fixed_rects = dict(fixed_rects or {})
+    unknown_fixed = set(fixed_rects) - known
+    if unknown_fixed:
+        raise InfeasibleLayout(f"Cannot fix unknown rooms: {', '.join(sorted(unknown_fixed))}")
     required_groups = _normalise_adjacency_groups(required_adjacency_groups, known, "required")
     forbidden_groups = _normalise_adjacency_groups(forbidden_adjacency_groups, known, "forbidden")
     fit_options = {
@@ -160,7 +169,7 @@ def solve_layouts_hierarchical(
     }
     adjacency_mm = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
     in_groups = {room_id for _, left, right in (*required_groups, *forbidden_groups) for room_id in (*left, *right)}
-    clusters = cluster_rooms(spec, pinned=in_groups)
+    clusters = cluster_rooms(spec, pinned=in_groups | set(fixed_rects))
     cluster_of = {room_id: cluster_id for cluster_id, members in clusters.items() for room_id in members}
     rooms_by_id = {room.id: room for room in spec.rooms}
 
@@ -172,7 +181,7 @@ def solve_layouts_hierarchical(
 
     shapes: dict[str, list[_Placement]] = {}
     for cluster_id, members in clusters.items():
-        if len(members) == 1 and _FLEXIBLE_SINGLETONS:
+        if len(members) == 1 and (_FLEXIBLE_SINGLETONS or members[0] in fixed_rects):
             # A single room keeps a free size at the top level, exactly as in
             # the monolithic model; only multi-room clusters become rigid.
             continue
@@ -207,12 +216,18 @@ def solve_layouts_hierarchical(
     y_intervals = []
     area_deviations = []
     for cluster_id, members in clusters.items():
-        if len(members) != 1 or not _FLEXIBLE_SINGLETONS:
+        if len(members) != 1 or not (_FLEXIBLE_SINGLETONS or members[0] in fixed_rects):
             continue
         room = rooms_by_id[members[0]]
         x = model.NewIntVar(0, boundary_width, f"{room.id}_x")
         y = model.NewIntVar(0, boundary_height, f"{room.id}_y")
         width, height = _room_size_vars(model, room, grid, boundary_width, boundary_height)
+        if room.id in fixed_rects:
+            pinned = fixed_rects[room.id]
+            model.Add(x == _units(pinned.x, grid))
+            model.Add(y == _units(pinned.y, grid))
+            model.Add(width == _units(pinned.width, grid))
+            model.Add(height == _units(pinned.height, grid))
         area = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area")
         model.AddMultiplicationEquality(area, [width, height])
         minimum_area = _area_to_grid2(room.min_area_m2, grid, ceil=True)
@@ -404,6 +419,7 @@ def solve_layouts_auto(
             "minimum_adjacency_mm",
             "equipment_fit_options",
             "deterministic_units",
+            "fixed_rects",
         }
     }
     unsupported = sorted(key for key, value in options.items() if key not in hierarchical_options and value)

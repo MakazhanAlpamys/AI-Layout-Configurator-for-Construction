@@ -1,0 +1,146 @@
+# Upper floor of examples/pharma_two_floor.yaml: quality control, offices and
+# the HVAC plant, reached through the stair core and the goods lift that are
+# locked to their ground-floor positions.
+version: "0.2"
+project_name: "Two-floor pharma facility - upper floor"
+
+layout:
+  version: "0.1"
+  tolerance: 0.05
+  grid_mm: 100
+  wall_thickness_mm: 200
+  door_width_mm: 900
+  entry_room: stair_core
+  boundary:
+    width: 54000
+    height: 30000
+    cutouts: []
+  rooms:
+    - id: stair_core
+      type: stair
+      target_area: 24
+      min_area: 20
+      max_area: 30
+      min_width: 4000
+      min_depth: 5000
+      rotatable: true
+      required_adjacency: [upper_corridor]
+    - id: goods_lift
+      type: goods_lift
+      target_area: 16
+      min_area: 12
+      max_area: 20
+      min_width: 3000
+      min_depth: 3000
+      required_adjacency: [sample_reception]
+    - id: upper_corridor
+      type: corridor
+      target_area: 60
+      min_area: 48
+      max_area: 80
+      min_width: 2400
+      min_depth: 14000
+      rotatable: true
+      required_adjacency: [stair_core, office_upper, meeting_room, qc_laboratory, qc_microbiology, hvac_plant, archive, sample_reception]
+    - id: sample_reception
+      type: qc_sample_reception
+      target_area: 24
+      min_area: 18
+      max_area: 32
+      min_width: 4000
+      min_depth: 4000
+      required_adjacency: [goods_lift, upper_corridor]
+    - id: qc_laboratory
+      type: qc_laboratory
+      target_area: 90
+      min_area: 75
+      max_area: 110
+      min_width: 7000
+      min_depth: 8000
+      required_adjacency: [upper_corridor]
+    - id: qc_microbiology
+      type: qc_laboratory
+      target_area: 60
+      min_area: 50
+      max_area: 75
+      min_width: 6000
+      min_depth: 7000
+      required_adjacency: [upper_corridor]
+    - id: office_upper
+      type: office
+      target_area: 70
+      min_area: 55
+      max_area: 90
+      min_width: 6000
+      min_depth: 6000
+      needs_daylight: true
+      required_adjacency: [upper_corridor]
+    - id: meeting_room
+      type: office
+      target_area: 30
+      min_area: 24
+      max_area: 40
+      min_width: 4500
+      min_depth: 4500
+      required_adjacency: [upper_corridor]
+    - id: hvac_plant
+      type: plant_room
+      target_area: 120
+      min_area: 100
+      max_area: 150
+      min_width: 8000
+      min_depth: 10000
+      required_adjacency: [upper_corridor]
+    - id: archive
+      type: storage
+      target_area: 30
+      min_area: 24
+      max_area: 40
+      min_width: 4000
+      min_depth: 5000
+      required_adjacency: [upper_corridor]
+
+zones:
+  - id: quality_control
+    room_ids: [sample_reception, qc_laboratory, qc_microbiology]
+  - id: administration
+    room_ids: [office_upper, meeting_room, archive]
+  - id: technical
+    room_ids: [hvac_plant]
+
+equipment:
+  - id: lab_bench_01
+    type: lab_bench
+    room_id: qc_laboratory
+    width_mm: 3600
+    depth_mm: 900
+    clearance_front_mm: 1200
+    rotation_allowed: true
+  - id: incubator_01
+    type: incubator
+    room_id: qc_microbiology
+    width_mm: 1200
+    depth_mm: 900
+    clearance_front_mm: 1000
+    clearance_left_mm: 300
+    clearance_right_mm: 300
+  - id: ahu_01
+    type: air_handling_unit
+    room_id: hvac_plant
+    width_mm: 6000
+    depth_mm: 2400
+    clearance_front_mm: 1500
+    clearance_back_mm: 600
+    rotation_allowed: true
+
+flows:
+  - id: samples_to_laboratory
+    type: material
+    from_ids: [sample_reception]
+    to_ids: [lab_bench_01]
+    minimum_clear_width_mm: 1200
+  - id: staff_to_microbiology
+    type: people
+    from_ids: [office_upper]
+    to_ids: [incubator_01]
+    minimum_clear_width_mm: 1200

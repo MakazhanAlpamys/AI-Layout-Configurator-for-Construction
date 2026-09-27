@@ -1,0 +1,351 @@
+# Ground floor of examples/pharma_two_floor.yaml: the acceptance pilot plus a
+# stair core and a goods lift that continue on the upper floor.
+version: '0.2'
+project_name: Two-floor pharma facility - ground floor
+layout:
+  version: '0.1'
+  tolerance: 0.05
+  grid_mm: 100
+  wall_thickness_mm: 200
+  door_width_mm: 900
+  window_width_mm: 1200
+  window_height_mm: 1500
+  window_sill_mm: 900
+  entry_room: receiving
+  boundary:
+    width: 54000
+    height: 30000
+    cutouts: []
+  rooms:
+  - id: receiving
+    type: receiving
+    target_area: 48
+    min_area: 40
+    max_area: 60
+    min_width: 5000
+    min_depth: 6000
+    required_adjacency:
+    - raw_storage
+  - id: raw_storage
+    type: storage_raw
+    target_area: 72
+    min_area: 60
+    max_area: 90
+    min_width: 6000
+    min_depth: 8000
+    required_adjacency:
+    - receiving
+    - material_airlock
+  - id: material_airlock
+    type: material_airlock
+    target_area: 30
+    min_area: 24
+    max_area: 40
+    min_width: 4000
+    min_depth: 5000
+    required_adjacency:
+    - raw_storage
+    - preparation
+  - id: preparation
+    type: preparation
+    target_area: 110
+    min_area: 100
+    max_area: 140
+    min_width: 9000
+    min_depth: 10000
+    required_adjacency:
+    - material_airlock
+    - production
+  - id: production
+    type: clean_production
+    target_area: 250
+    min_area: 220
+    max_area: 300
+    min_width: 13000
+    min_depth: 13000
+    required_adjacency:
+    - preparation
+    - packaging
+    - waste_hold
+    - personnel_airlock
+  - id: packaging
+    type: packaging
+    target_area: 120
+    min_area: 105
+    max_area: 150
+    min_width: 9000
+    min_depth: 10000
+    required_adjacency:
+    - production
+    - finished_storage
+  - id: finished_storage
+    type: storage_finished
+    target_area: 70
+    min_area: 55
+    max_area: 85
+    min_width: 6000
+    min_depth: 8000
+    required_adjacency:
+    - packaging
+    - dispatch
+    - goods_lift
+  - id: dispatch
+    type: dispatch
+    target_area: 42
+    min_area: 35
+    max_area: 55
+    min_width: 4000
+    min_depth: 6000
+    required_adjacency:
+    - finished_storage
+  - id: waste_hold
+    type: waste_hold
+    target_area: 30
+    min_area: 24
+    max_area: 40
+    min_width: 4000
+    min_depth: 5000
+    required_adjacency:
+    - production
+  - id: personnel_airlock
+    type: personnel_airlock
+    target_area: 30
+    min_area: 24
+    max_area: 40
+    min_width: 4000
+    min_depth: 5000
+    required_adjacency:
+    - staff_corridor
+    - production
+  - id: staff_changing
+    type: changing_room
+    target_area: 36
+    min_area: 30
+    max_area: 45
+    min_width: 4000
+    min_depth: 5000
+    required_adjacency:
+    - staff_corridor
+  - id: staff_corridor
+    type: corridor
+    target_area: 54
+    min_area: 45
+    max_area: 70
+    min_width: 2400
+    min_depth: 2400
+    required_adjacency:
+    - staff_changing
+    - personnel_airlock
+    - office
+    - stair_core
+  - id: office
+    type: office
+    target_area: 32
+    min_area: 25
+    max_area: 40
+    min_width: 4000
+    min_depth: 5000
+    needs_daylight: true
+    required_adjacency:
+    - staff_corridor
+  - id: stair_core
+    type: stair
+    target_area: 24
+    min_area: 20
+    max_area: 30
+    min_width: 4000
+    min_depth: 5000
+    rotatable: true
+    required_adjacency:
+    - staff_corridor
+  - id: goods_lift
+    type: goods_lift
+    target_area: 16
+    min_area: 12
+    max_area: 20
+    min_width: 3000
+    min_depth: 3000
+    required_adjacency:
+    - finished_storage
+zones:
+- id: logistics
+  type: logistics
+  room_ids:
+  - receiving
+  - raw_storage
+  - finished_storage
+  - dispatch
+- id: cleanroom_core
+  type: cleanroom
+  room_ids:
+  - preparation
+  - production
+  - packaging
+  cleanroom_class: ISO 7
+  pressure_pa: 30
+- id: personnel_gateway
+  type: personnel_airlock
+  room_ids:
+  - personnel_airlock
+  parent_zone_id: cleanroom_core
+  cleanroom_class: ISO 8
+  pressure_pa: 20
+  airlock: true
+- id: material_gateway
+  type: material_airlock
+  room_ids:
+  - material_airlock
+  parent_zone_id: cleanroom_core
+  cleanroom_class: ISO 8
+  pressure_pa: 20
+  airlock: true
+- id: waste_zone
+  type: waste
+  room_ids:
+  - waste_hold
+- id: staff_zone
+  type: staff
+  room_ids:
+  - staff_changing
+  - staff_corridor
+  - office
+equipment:
+- id: loading_dock_01
+  type: loading_dock
+  room_id: receiving
+  width_mm: 3000
+  depth_mm: 2500
+  clearance_front_mm: 2500
+  rotation_allowed: false
+- id: cold_store_01
+  type: cold_store
+  room_id: raw_storage
+  width_mm: 2800
+  depth_mm: 3200
+  clearance_mm: 900
+  rotation_allowed: false
+- id: mixer_01
+  type: mixer
+  room_id: preparation
+  width_mm: 1800
+  depth_mm: 1400
+  clearance_front_mm: 1200
+  clearance_left_mm: 600
+  clearance_right_mm: 600
+  rotation_allowed: false
+- id: production_line_01
+  type: production_line
+  room_id: production
+  width_mm: 9000
+  depth_mm: 2200
+  clearance_front_mm: 1800
+  clearance_back_mm: 1200
+  clearance_left_mm: 900
+  clearance_right_mm: 900
+  rotation_allowed: false
+  fixed: true
+  anchor_side: top
+  anchor_offset_mm: 1000
+- id: packaging_line_01
+  type: packaging_line
+  room_id: packaging
+  width_mm: 6000
+  depth_mm: 1800
+  clearance_front_mm: 1500
+  clearance_back_mm: 900
+  clearance_left_mm: 600
+  clearance_right_mm: 600
+flows:
+- id: raw_material_to_airlock
+  type: material
+  stage: raw_material
+  from_ids:
+  - cold_store_01
+  to_ids:
+  - material_airlock
+  minimum_clear_width_mm: 1800
+- id: material_to_production
+  type: material
+  stage: production
+  from_ids:
+  - material_airlock
+  to_ids:
+  - production_line_01
+  minimum_clear_width_mm: 1800
+- id: packaging_transfer
+  type: material
+  stage: packaging
+  from_ids:
+  - production_line_01
+  to_ids:
+  - packaging_line_01
+  minimum_clear_width_mm: 1800
+- id: finished_goods_out
+  type: finished_goods
+  stage: finished_goods
+  from_ids:
+  - packaging_line_01
+  to_ids:
+  - finished_storage
+  - dispatch
+  minimum_clear_width_mm: 1800
+- id: personnel_access
+  type: people
+  stage: personnel
+  from_ids:
+  - staff_changing
+  to_ids:
+  - production_line_01
+  minimum_clear_width_mm: 1200
+- id: dirty_material_out
+  type: dirty_material
+  from_ids:
+  - production_line_01
+  to_ids:
+  - waste_hold
+  minimum_clear_width_mm: 1800
+- id: waste_out
+  type: waste
+  stage: waste
+  from_ids:
+  - production_line_01
+  to_ids:
+  - waste_hold
+  minimum_clear_width_mm: 1800
+structural_grid:
+  axes_x_mm:
+  - 0
+  - 6000
+  - 12000
+  - 18000
+  - 24000
+  - 30000
+  - 36000
+  - 42000
+  - 48000
+  - 54000
+  axes_y_mm:
+  - 0
+  - 6000
+  - 12000
+  - 18000
+  - 24000
+  - 30000
+  labels_x:
+  - A
+  - B
+  - C
+  - D
+  - E
+  - F
+  - G
+  - H
+  - J
+  - K
+  labels_y:
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6

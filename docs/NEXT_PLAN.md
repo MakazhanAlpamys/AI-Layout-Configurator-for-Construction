@@ -17,7 +17,7 @@ it). The order below follows that.
 | 1.1 | Hierarchical room solver (clusters → shapes → top level) | pilot and 20 rooms pass all gates on seeds 1/7/42 | **done** 2026-09-27 |
 | 1.2 | 30–40 rooms: `rotatable` rooms, free-size single rooms at the top level, parallel top-level search in wall-clock mode | 30 and 40 rooms pass all gates on seeds 1/7/42 with `--time-limit 40` | **done** 2026-09-27; 40 rooms needs an idle machine at 40 s |
 | 1.3 | Flow-aware search: route length and door contention in the objective; reject flow-impossible candidates inside the search, not after it | share of candidates rejected by `FLOW_COMPLETENESS` drops to zero on the scale series | criterion met 2026-09-27 (0 rejections on pilot, 20, 30 and 40 rooms after the door-approach fix and the hierarchy); route length now ranks variants in 3.3 |
-| 1.4 | Multi-storey facility programs: floors, shared structural grid, stairs, lifts and shafts through `generate-multifloor` for `BuildingIR` | a two-floor 40-room program passes the same gates per floor plus vertical-core checks | open |
+| 1.4 | Multi-storey facility programs: floors, shared structural grid, stairs, lifts and shafts through `generate-multifloor` for `BuildingIR` | a two-floor 40-room program passes the same gates per floor plus vertical-core checks | first slice **done** 2026-09-27: `generate-facility-floors`, 25-room two-floor pilot passes every floor gate and the vertical checks in 19 s; next: one IFC with storeys, a structural grid shared across floors |
 | 1.5 | 60–100 rooms: a third level (zones → clusters → rooms) and incremental re-solve after an edit | 80 rooms in under two minutes on CI hardware | open |
 
 ## 2. Trust — output that reviewers and tools accept

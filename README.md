@@ -567,3 +567,31 @@ program, not in the editor.
 coordination issues and a BCF that continues the original issue history). The
 generated bundle itself is never modified, and `generation.edits` in the
 revision JSON records the commands that produced it.
+
+### Multi-storey facilities
+
+`generate-facility-floors` solves a facility over several floors. Each floor is
+an ordinary facility program with its own profile; a small file adds what
+connects them — vertical cores and cross-floor flows
+(`examples/pharma_two_floor.yaml`):
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate-facility-floors `
+  examples\pharma_two_floor.yaml --output out\two_floor --variants 2 --time-limit 30
+```
+
+- **Vertical cores** (`stair`, `passenger_lift`, `goods_lift`, `service_shaft`)
+  are rooms declared on every floor they serve. The lowest floor places them;
+  the other floors are solved with those rooms pinned to the same rectangle.
+- **Cross-floor flows** become an ordinary flow on each end — to the core on
+  the departure floor, from the core on the arrival floor — so the normal
+  routing and flow gates check both legs (`<flow>@L0`, `<flow>@L1`).
+- **Vertical checks** (`CORE_ALIGNMENT`, `CORE_FLOW_TYPES`, `CORE_CLEAR_WIDTH`,
+  `CROSS_FLOOR_ROUTES`) are recomputed from the results. Which flow types a core
+  kind may carry is a project policy (`CORE_FLOW_TYPES` in
+  `facility_floors.py`), not a regulatory statement.
+
+The output has a normal bundle per floor (`floor_00/`, `floor_01/`, where
+variant *n* of every floor belongs to the same stack) and
+`multi_floor_report.json`. `ui`, `qa-building` and `compare-variants` work on
+each floor directory as on any bundle.
