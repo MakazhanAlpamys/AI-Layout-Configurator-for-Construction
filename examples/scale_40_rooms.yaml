@@ -151,6 +151,7 @@ layout:
     max_area: 52.0
     min_width: 2400
     min_depth: 12000
+    rotatable: true
     required_adjacency:
     - staff_corridor
   - id: support_corridor_02
@@ -160,6 +161,7 @@ layout:
     max_area: 52.0
     min_width: 2400
     min_depth: 12000
+    rotatable: true
     required_adjacency:
     - support_corridor_01
   - id: support_corridor_03
@@ -169,6 +171,7 @@ layout:
     max_area: 52.0
     min_width: 2400
     min_depth: 12000
+    rotatable: true
     required_adjacency:
     - support_corridor_02
   - id: support_corridor_04
@@ -178,6 +181,7 @@ layout:
     max_area: 52.0
     min_width: 2400
     min_depth: 12000
+    rotatable: true
     required_adjacency:
     - support_corridor_03
   - id: technical_01

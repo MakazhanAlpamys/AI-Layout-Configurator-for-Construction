@@ -68,6 +68,17 @@ class RoomSpec:
     forbidden_adjacency: tuple[str, ...] = ()
     needs_daylight: bool = False
     is_heated: bool = False
+    # When true, min_width/min_depth may be met in either orientation: a
+    # corridor "at least 12 m long" can run along x or y. By default the
+    # minimums stay bound to the x and y axes, as they always were.
+    rotatable: bool = False
+
+    def fits(self, width: float, height: float) -> bool:
+        """Whether a width x height rectangle meets this room's minimum dimensions."""
+
+        if width + 1e-6 >= self.min_width_mm and height + 1e-6 >= self.min_depth_mm:
+            return True
+        return self.rotatable and width + 1e-6 >= self.min_depth_mm and height + 1e-6 >= self.min_width_mm
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any], tolerance: float) -> "RoomSpec":
@@ -95,6 +106,7 @@ class RoomSpec:
             forbidden_adjacency=_string_tuple(raw.get("forbidden_adjacency", ())),
             needs_daylight=bool(raw.get("needs_daylight", False)),
             is_heated=bool(raw.get("is_heated", raw.get("heated", False))),
+            rotatable=bool(raw.get("rotatable", False)),
         )
 
 
@@ -417,6 +429,7 @@ class LayoutIR:
                     "forbidden_adjacency": list(r.forbidden_adjacency),
                     "needs_daylight": r.needs_daylight,
                     "is_heated": r.is_heated,
+                    **({"rotatable": True} if r.rotatable else {}),
                 }
                 for r in self.rooms
             ],

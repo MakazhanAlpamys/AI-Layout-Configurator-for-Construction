@@ -50,7 +50,7 @@ def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
                 issues.append(ValidationIssue("outside_boundary", f"Room {room_id} extends beyond the bounding box"))
             else:
                 issues.append(ValidationIssue("cutout_overlap", f"Room {room_id} overlaps a cutout zone"))
-        if rect.width + 1e-6 < room.min_width_mm or rect.height + 1e-6 < room.min_depth_mm:
+        if not room.fits(rect.width, rect.height):
             issues.append(ValidationIssue("min_dimension", f"Room {room_id} is smaller than the minimum dimension"))
         if not room.min_area_m2 - 1e-6 <= rect.area_m2 <= room.max_area_m2 + 1e-6:
             issues.append(

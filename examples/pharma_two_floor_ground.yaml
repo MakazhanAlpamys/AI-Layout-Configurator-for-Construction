@@ -1,5 +1,7 @@
+# Ground floor of examples/pharma_two_floor.yaml: the acceptance pilot plus a
+# stair core and a goods lift that continue on the upper floor.
 version: '0.2'
-project_name: Pharma cleanroom scale study - 20 rooms
+project_name: Two-floor pharma facility - ground floor
 layout:
   version: '0.1'
   tolerance: 0.05
@@ -11,8 +13,8 @@ layout:
   window_sill_mm: 900
   entry_room: receiving
   boundary:
-    width: 60600.0
-    height: 33700.0
+    width: 54000
+    height: 30000
     cutouts: []
   rooms:
   - id: receiving
@@ -86,6 +88,7 @@ layout:
     required_adjacency:
     - packaging
     - dispatch
+    - goods_lift
   - id: dispatch
     type: dispatch
     target_area: 42
@@ -134,6 +137,7 @@ layout:
     - staff_changing
     - personnel_airlock
     - office
+    - stair_core
   - id: office
     type: office
     target_area: 32
@@ -144,70 +148,25 @@ layout:
     needs_daylight: true
     required_adjacency:
     - staff_corridor
-  - id: support_corridor_01
-    type: corridor
-    target_area: 40.0
-    min_area: 32.0
-    max_area: 52.0
-    min_width: 2400
-    min_depth: 12000
+  - id: stair_core
+    type: stair
+    target_area: 24
+    min_area: 20
+    max_area: 30
+    min_width: 4000
+    min_depth: 5000
     rotatable: true
     required_adjacency:
     - staff_corridor
-  - id: technical_01
-    type: technical
-    target_area: 36.0
-    min_area: 30.6
-    max_area: 45.0
-    min_width: 5000
-    min_depth: 6000
+  - id: goods_lift
+    type: goods_lift
+    target_area: 16
+    min_area: 12
+    max_area: 20
+    min_width: 3000
+    min_depth: 3000
     required_adjacency:
-    - support_corridor_01
-  - id: storage_consumables_01
-    type: storage_consumables
-    target_area: 28.0
-    min_area: 23.8
-    max_area: 35.0
-    min_width: 4000
-    min_depth: 5000
-    required_adjacency:
-    - support_corridor_01
-  - id: qc_laboratory_01
-    type: qc_laboratory
-    target_area: 44.0
-    min_area: 37.4
-    max_area: 55.0
-    min_width: 5500
-    min_depth: 6500
-    required_adjacency:
-    - support_corridor_01
-  - id: wash_01
-    type: wash
-    target_area: 24.0
-    min_area: 20.4
-    max_area: 30.0
-    min_width: 4000
-    min_depth: 5000
-    required_adjacency:
-    - support_corridor_01
-  - id: plant_room_01
-    type: plant_room
-    target_area: 40.0
-    min_area: 34.0
-    max_area: 50.0
-    min_width: 5000
-    min_depth: 6000
-    required_adjacency:
-    - support_corridor_01
-  - id: staff_support_01
-    type: staff_support
-    target_area: 26.0
-    min_area: 22.1
-    max_area: 32.5
-    min_width: 4000
-    min_depth: 5000
-    required_adjacency:
-    - support_corridor_01
+    - finished_storage
 zones:
 - id: logistics
   type: logistics
@@ -250,16 +209,6 @@ zones:
   - staff_changing
   - staff_corridor
   - office
-- id: support_zone
-  type: support
-  room_ids:
-  - technical_01
-  - storage_consumables_01
-  - qc_laboratory_01
-  - wash_01
-  - plant_room_01
-  - staff_support_01
-  - support_corridor_01
 equipment:
 - id: loading_dock_01
   type: loading_dock
@@ -306,41 +255,6 @@ equipment:
   clearance_back_mm: 900
   clearance_left_mm: 600
   clearance_right_mm: 600
-- id: autoclave_01
-  type: autoclave
-  room_id: technical_01
-  width_mm: 2200
-  depth_mm: 1600
-  rotation_allowed: true
-  clearance_mm: 900
-- id: bench_02
-  type: bench
-  room_id: storage_consumables_01
-  width_mm: 3000
-  depth_mm: 900
-  rotation_allowed: true
-  clearance_front_mm: 1200
-- id: chiller_03
-  type: chiller
-  room_id: qc_laboratory_01
-  width_mm: 1800
-  depth_mm: 1800
-  rotation_allowed: true
-  clearance_mm: 1000
-- id: cabinet_04
-  type: cabinet
-  room_id: wash_01
-  width_mm: 1200
-  depth_mm: 800
-  rotation_allowed: true
-  clearance_front_mm: 900
-- id: pump_skid_05
-  type: pump_skid
-  room_id: plant_room_01
-  width_mm: 2400
-  depth_mm: 1400
-  rotation_allowed: true
-  clearance_mm: 800
 flows:
 - id: raw_material_to_airlock
   type: material
@@ -410,7 +324,6 @@ structural_grid:
   - 42000
   - 48000
   - 54000
-  - 60000
   axes_y_mm:
   - 0
   - 6000
@@ -427,13 +340,12 @@ structural_grid:
   - F
   - G
   - H
-  - I
   - J
   - K
   labels_y:
-  - '1'
-  - '2'
-  - '3'
-  - '4'
-  - '5'
-  - '6'
+  - 1
+  - 2
+  - 3
+  - 4
+  - 5
+  - 6

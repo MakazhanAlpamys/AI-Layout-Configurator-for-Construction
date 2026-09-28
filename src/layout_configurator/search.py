@@ -25,12 +25,17 @@ def configure_solver(
     seed: int,
     time_limit_seconds: float,
     deterministic_units: float | None = None,
+    workers: int = 1,
 ) -> None:
     """Fix every setting that decides how much search happens and in what order.
 
     ``deterministic_units`` is CP-SAT deterministic time: an abstract work unit,
     not seconds. A budget that repeats on a fast machine also repeats on a slow
     one; the slow machine simply takes longer in wall-clock terms.
+
+    ``workers`` above one enables CP-SAT's parallel portfolio, but only for the
+    wall-clock budget: a wall-clock run does not repeat anyway, while the
+    deterministic budget always searches with one worker.
     """
 
     solver.parameters.random_seed = int(seed)
@@ -40,6 +45,7 @@ def configure_solver(
     solver.parameters.log_search_progress = False
     if deterministic_units is None:
         solver.parameters.max_time_in_seconds = float(time_limit_seconds)
+        solver.parameters.num_search_workers = max(1, int(workers))
         return
     if deterministic_units <= 0:
         raise ValueError("deterministic_units must be positive")

@@ -74,6 +74,18 @@ class HierarchicalSolverTests(unittest.TestCase):
             self.assertTrue(report.ok, [issue.message for issue in report.issues])
         self.assertEqual(len({tuple(sorted(r.placements.items())) for r in results}), 3)
 
+    def test_fixed_rooms_are_pinned_by_the_hierarchy(self):
+        spec = _corridor_program()
+        pinned = Rect(0, 0, 5000, 4000)
+        evidence = {}
+        result = solve_layouts_auto(
+            spec, 1, 10, 1, strategy="hierarchical", evidence=evidence,
+            minimum_adjacency_mm=1300, fixed_rects={"office": pinned},
+        )[0]
+        self.assertEqual(evidence["room_solver_used"], "hierarchical")
+        self.assertEqual(result.placements["office"], pinned)
+        self.assertTrue(validate_layout(spec, result).ok)
+
     def test_cutouts_are_not_modelled_and_auto_falls_back(self):
         spec = _corridor_program(boundary={"width": 30000, "height": 20000, "cutouts": [{"x": 0, "y": 0, "width": 2000, "height": 2000}]})
         with self.assertRaises(HierarchyNotApplicable):
@@ -87,7 +99,10 @@ class HierarchicalSolverTests(unittest.TestCase):
     def test_unsupported_options_are_refused_when_hierarchy_is_forced(self):
         spec = _corridor_program()
         with self.assertRaises(HierarchyNotApplicable):
-            solve_layouts_auto(spec, 1, 5, 1, strategy="hierarchical", fixed_rects={"office": Rect(0, 0, 5000, 4000)})
+            solve_layouts_auto(
+                spec, 1, 5, 1, strategy="hierarchical",
+                axis_aligned_room_ids=("office",), structural_axes_x_mm=(0, 6000),
+            )
         with self.assertRaises(ValueError):
             solve_layouts_auto(spec, 1, 5, 1, strategy="fastest")
 
@@ -126,3 +141,66 @@ class FacilityHierarchyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RotatableRoomTests(unittest.TestCase):
+    def _spec(self, rotatable):
+        return LayoutIR.from_mapping(
+            {
+                "project_name": "rotatable",
+                "boundary": {"width": 5000, "height": 15000},
+                "entry_room": "corridor",
+                "rooms": [
+                    {
+                        "id": "corridor",
+                        "type": "corridor",
+                        "target_area": 36,
+                        "min_area": 30,
+                        "max_area": 45,
+                        # "At least 12 m long": only reachable along y here.
+                        "min_width": 12000,
+                        "min_depth": 2400,
+                        "rotatable": rotatable,
+                    }
+                ],
+            }
+        )
+
+    def test_minimums_may_be_met_in_either_orientation_only_when_declared(self):
+        spec = self._spec(True)
+        room = spec.rooms[0]
+        self.assertTrue(room.fits(2400, 12000))
+        self.assertTrue(room.fits(12000, 2400))
+        self.assertFalse(room.fits(2400, 11000))
+        self.assertFalse(self._spec(False).rooms[0].fits(2400, 12000))
+
+    def test_solver_turns_a_rotatable_room_and_the_validator_accepts_it(self):
+        from layout_configurator.solver import InfeasibleLayout, solve_layouts
+
+        spec = self._spec(True)
+        result = solve_layouts(spec, 1, 10, 1)[0]
+        rect = result.placements["corridor"]
+        self.assertGreaterEqual(rect.height, 12000)
+        self.assertTrue(validate_layout(spec, result).ok)
+        with self.assertRaises(InfeasibleLayout):
+            solve_layouts(self._spec(False), 1, 10, 1)
+
+    def test_rotatable_survives_the_canonical_round_trip(self):
+        spec = self._spec(True)
+        self.assertTrue(spec.to_dict()["rooms"][0]["rotatable"])
+        self.assertTrue(LayoutIR.from_mapping(spec.to_dict()).rooms[0].rotatable)
+        self.assertNotIn("rotatable", self._spec(False).to_dict()["rooms"][0])
+
+
+class WorkerPolicyTests(unittest.TestCase):
+    def test_parallel_search_only_with_a_wall_clock_budget(self):
+        from ortools.sat.python import cp_model
+
+        from layout_configurator.search import configure_solver
+
+        wall = cp_model.CpSolver()
+        configure_solver(wall, seed=1, time_limit_seconds=5, workers=4)
+        self.assertEqual(wall.parameters.num_search_workers, 4)
+        repeatable = cp_model.CpSolver()
+        configure_solver(repeatable, seed=1, time_limit_seconds=5, deterministic_units=3, workers=4)
+        self.assertEqual(repeatable.parameters.num_search_workers, 1)

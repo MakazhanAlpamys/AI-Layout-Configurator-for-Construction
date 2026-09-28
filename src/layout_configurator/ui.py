@@ -31,7 +31,13 @@ from .commands import (
 from .bcf import BcfPackageSummary, read_bcf_package, write_bcf_package
 from .building import BuildingIR
 from .editor import EditorState
-from .equipment import EquipmentLayoutResult, EquipmentValidationReport, validate_equipment_layout
+from .equipment import (
+    EquipmentLayoutResult,
+    EquipmentPlacementError,
+    EquipmentValidationReport,
+    place_equipment_clear_of_doors,
+    validate_equipment_layout,
+)
 from .export import export_bundle
 from .facility import FacilityProfile, FacilityValidationReport, default_facility_profile, load_facility_profile, validate_building
 from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
@@ -461,6 +467,215 @@ class FacilityReviewSession:
         return tuple(name for name in candidates if (self.output_dir / name).is_file())
 
 
+@dataclass
+class FacilityEditSession(FacilityReviewSession):
+    """Facility review that also accepts room moves and resizes.
+
+    A move or resize is the same typed command the layout editor uses. The
+    edited room is kept where the user put it; the other rooms stay put when the
+    geometry allows it, otherwise the room solver re-places them around the
+    fixed room. Equipment, routes and every facility check are then recomputed,
+    so the browser shows the consequence of the edit immediately. An edit that
+    leaves invalid room geometry is refused and the state is unchanged; an edit
+    that only fails a facility gate is kept and shown as failing.
+
+    Nothing is written until the user saves a revision, which goes to
+    ``revisions/rev_NN/`` beside the original bundle with the original BCF as
+    issue history. The generated bundle itself is never modified.
+    """
+
+    read_only: bool = False
+    edit_time_limit_seconds: float = 20.0
+    undo_stack: list[tuple[Any, ...]] = field(default_factory=list)
+    redo_stack: list[tuple[Any, ...]] = field(default_factory=list)
+    initial_state: tuple[Any, ...] | None = None
+    edit_log: list[dict[str, Any]] = field(default_factory=list)
+    saved_revisions: list[str] = field(default_factory=list)
+
+    @classmethod
+    def from_input(cls, input_path, output_dir, *, profile_path=None) -> "FacilityEditSession":  # type: ignore[override]
+        review = FacilityReviewSession.from_input(input_path, output_dir, profile_path=profile_path)
+        session = cls(**{name: getattr(review, name) for name in FacilityReviewSession.__dataclass_fields__})
+        session.read_only = False
+        session.initial_state = session._state()
+        return session
+
+    def _state(self) -> tuple[Any, ...]:
+        return (
+            self.result,
+            self.equipment,
+            self.flow_routes,
+            self.equipment_report,
+            self.flow_report,
+            self.facility_report,
+        )
+
+    def _restore(self, state: tuple[Any, ...]) -> None:
+        (
+            self.result,
+            self.equipment,
+            self.flow_routes,
+            self.equipment_report,
+            self.flow_report,
+            self.facility_report,
+        ) = state
+
+    def snapshot(self) -> dict[str, Any]:
+        with self.lock:
+            payload = super().snapshot()
+            payload.update(
+                {
+                    "read_only": False,
+                    "editable": True,
+                    "can_undo": bool(self.undo_stack),
+                    "can_redo": bool(self.redo_stack),
+                    "journal": list(self.edit_log),
+                    "history": [entry["type"] for entry in self.edit_log],
+                    "saved_revisions": list(self.saved_revisions),
+                }
+            )
+            return payload
+
+    def apply_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
+        command = command_from_payload(payload)
+        if not isinstance(command, (MoveRoom, ResizeRoom)):
+            raise EditError("The facility editor accepts move_room and resize_room; change doors and flows in the program")
+        with self.lock:
+            layout = self.building.layout
+            _, moved = command.apply(layout, self.result)
+            candidate = moved
+            if not validate_layout(layout, candidate).ok:
+                candidate = self._resolve_around(command.room_id, moved)
+            report = validate_layout(layout, candidate)
+            if not report.ok:
+                raise EditError("Edit rejected: " + "; ".join(issue.message for issue in report.issues))
+            try:
+                equipment, _ = place_equipment_clear_of_doors(
+                    self.building, candidate, time_limit_seconds=self.edit_time_limit_seconds, seed=candidate.variant
+                )
+            except EquipmentPlacementError as exc:
+                raise EditError(f"Edit rejected: equipment no longer fits: {exc}") from exc
+            equipment_report = validate_equipment_layout(self.building, candidate, equipment)
+            routes = route_flows(self.building, candidate, equipment)
+            flow_report = validate_flow_routes(self.building, candidate, routes, equipment)
+            facility_report = validate_building(
+                self.building, candidate, equipment, routes, flow_report,
+                profile=self.profile, equipment_report=equipment_report,
+            )
+            self.undo_stack.append(self._state())
+            self.redo_stack.clear()
+            self.result = candidate
+            self.equipment = equipment
+            self.flow_routes = routes
+            self.equipment_report = equipment_report
+            self.flow_report = flow_report
+            self.facility_report = facility_report
+            self.edit_log.append({"action": "command", "type": type(command).__name__, "payload": dict(payload)})
+            return self.snapshot()
+
+    def _resolve_around(self, room_id: str, moved: LayoutResult) -> LayoutResult:
+        building = self.building
+        layout = building.layout
+        fit_options: dict[str, list] = {}
+        for item in building.equipment:
+            if item.room_id is not None:
+                fit_options.setdefault(item.room_id, []).append((item.id, item.room_fit_dimensions(layout.wall_thickness_mm)))
+        try:
+            solved = solve_layouts(
+                layout,
+                1,
+                self.edit_time_limit_seconds,
+                moved.variant,
+                fixed_rects={room_id: moved.placements[room_id]},
+                required_adjacency_groups=building.zone_relation_groups("required_adjacency"),
+                forbidden_adjacency_groups=building.zone_relation_groups("forbidden_adjacency"),
+                minimum_adjacency_mm=layout.door_width_mm + 2 * layout.wall_thickness_mm if building.flows else None,
+                equipment_fit_options=fit_options,
+                # Start from where the rooms are now and stop at the first
+                # repaired layout: interactive time, and the least surprise.
+                hint_rects={key: rect for key, rect in self.result.placements.items() if key != room_id},
+                first_solution_only=True,
+            )[0]
+        except (InfeasibleLayout, ValueError) as exc:
+            raise EditError(f"Edit rejected: the other rooms cannot be re-placed around {room_id}: {exc}") from exc
+        return replace(solved, variant=moved.variant)
+
+    def undo(self) -> dict[str, Any]:
+        with self.lock:
+            if not self.undo_stack:
+                raise EditError("Nothing to undo")
+            self.redo_stack.append(self._state())
+            self._restore(self.undo_stack.pop())
+            self.edit_log.append({"action": "undo", "type": "undo", "payload": None})
+            return self.snapshot()
+
+    def redo(self) -> dict[str, Any]:
+        with self.lock:
+            if not self.redo_stack:
+                raise EditError("Nothing to redo")
+            self.undo_stack.append(self._state())
+            self._restore(self.redo_stack.pop())
+            self.edit_log.append({"action": "redo", "type": "redo", "payload": None})
+            return self.snapshot()
+
+    def reset(self) -> dict[str, Any]:
+        with self.lock:
+            if self.initial_state is not None and self._state() != self.initial_state:
+                self.undo_stack.append(self._state())
+                self.redo_stack.clear()
+                self._restore(self.initial_state)
+                self.edit_log.append({"action": "reset", "type": "reset", "payload": None})
+            return self.snapshot()
+
+    def save_revision(self) -> dict[str, Any]:
+        """Write the current state as a new revision bundle beside the original."""
+
+        from .bundle import VariantExportError, write_facility_variant
+
+        with self.lock:
+            revisions = self.output_dir / "revisions"
+            number = 1 + max(
+                (int(path.name.split("_")[1]) for path in revisions.glob("rev_[0-9][0-9]") if path.is_dir()),
+                default=0,
+            )
+            target = revisions / f"rev_{number:02d}"
+            original_bcf = self.output_dir / f"building_{self.result.variant:02d}.bcf"
+            try:
+                entry = write_facility_variant(
+                    target,
+                    self.building,
+                    self.profile,
+                    self.result,
+                    layout_report=validate_layout(self.building.layout, self.result),
+                    equipment=self.equipment,
+                    equipment_report=self.equipment_report,
+                    flow_routes=self.flow_routes,
+                    flow_report=self.flow_report,
+                    facility_report=self.facility_report,
+                    generation_evidence={
+                        "revision_of": self.input_path.name,
+                        "edits": [entry for entry in self.edit_log if entry["action"] == "command"],
+                    },
+                    bcf_input=original_bcf if original_bcf.is_file() else None,
+                )
+            except VariantExportError as exc:
+                raise EditError(f"Revision could not be saved: {exc}") from exc
+            manifest = {
+                "project": self.building.layout.project_name,
+                "revision": number,
+                "revision_of": str(self.input_path),
+                "facility_profile": self.profile.to_dict(),
+                "drawing_profile": self.profile.drawing.to_dict(),
+                "variants": [entry],
+            }
+            (target / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+            # Posix separators: the value is part of the JSON contract on every OS.
+            self.saved_revisions.append(target.relative_to(self.output_dir).as_posix())
+            snapshot = self.snapshot()
+            snapshot["saved_revision"] = str(target)
+            return snapshot
+
+
 def _facility_profile_for_result(source: Path, profile_path: str | Path | None) -> FacilityProfile:
     if profile_path is not None:
         return load_facility_profile(profile_path)
@@ -698,15 +913,17 @@ def serve_ui(
     profile_path: str | Path | None = None,
     variant: int = 1,
     require_provenance: bool = False,
+    edit: bool = False,
 ) -> int:
     resolved_input = resolve_ui_input(input_path, variant=variant)
     try:
-        session: UiSession | FacilityReviewSession = FacilityReviewSession.from_input(
+        session_type = FacilityEditSession if edit else FacilityReviewSession
+        session: UiSession | FacilityReviewSession = session_type.from_input(
             resolved_input,
             output_dir,
             profile_path=profile_path,
         )
-        print("mode: facility review (read-only)")
+        print("mode: facility editor" if edit else "mode: facility review (read-only)")
     except (KeyError, TypeError, ValueError, json.JSONDecodeError):
         session = UiSession.from_input(
             resolved_input,
@@ -790,6 +1007,17 @@ class _UiHandler(BaseHTTPRequestHandler):
             try:
                 snapshot = self.current_session.apply_issue_payload(self._read_json())
             except (EditError, KeyError, TypeError, ValueError, OSError, RuntimeError) as exc:
+                self._send_json(400, {"error": str(exc), "state": self.current_session.snapshot()})
+                return
+            self._send_json(200, snapshot)
+            return
+        if route == "/api/save":
+            if not isinstance(self.current_session, FacilityEditSession):
+                self._send_json(405, {"error": "Saving a revision is available only in the facility editor", "state": self.current_session.snapshot()})
+                return
+            try:
+                snapshot = self.current_session.save_revision()
+            except (EditError, OSError) as exc:
                 self._send_json(400, {"error": str(exc), "state": self.current_session.snapshot()})
                 return
             self._send_json(200, snapshot)

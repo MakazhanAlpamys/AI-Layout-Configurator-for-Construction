@@ -9,6 +9,7 @@ records rejected candidates instead of silently publishing a lucky seed.
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 
 from .building import BuildingIR
@@ -21,7 +22,7 @@ from .equipment import (
 )
 from .facility import FacilityProfile, FacilityValidationReport, validate_building
 from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
-from .models import LayoutResult
+from .models import LayoutResult, Rect
 from .hierarchy import solve_layouts_auto
 from .solver import InfeasibleLayout
 from .validation import ValidationReport, validate_layout
@@ -129,6 +130,7 @@ def solve_feasible_facility_variants(
     equipment_retries: int = 2,
     deterministic_units: float | None = None,
     room_solver: str = "auto",
+    fixed_rects: Mapping[str, Rect] | None = None,
 ) -> FacilityGenerationResult:
     """Return only candidates that pass every deterministic facility gate.
 
@@ -139,7 +141,8 @@ def solve_feasible_facility_variants(
     variants, generation fails with a concise, reproducible explanation.
 
     ``room_solver`` picks the room stage: ``auto`` (hierarchical, falling back
-    to monolithic), ``hierarchical`` or ``monolithic``.
+    to monolithic), ``hierarchical`` or ``monolithic``. ``fixed_rects`` pins
+    rooms, for example a vertical core already placed on another floor.
     """
 
     if variants < 1:
@@ -178,6 +181,7 @@ def solve_feasible_facility_variants(
             deterministic_units=deterministic_units,
             strategy=room_solver,
             evidence=solver_evidence,
+            fixed_rects=dict(fixed_rects) if fixed_rects else None,
         )
     except InfeasibleLayout as exc:
         generation = FacilityGenerationResult(

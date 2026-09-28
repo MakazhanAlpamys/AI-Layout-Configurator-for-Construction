@@ -38,6 +38,8 @@ def solve_layouts(
     equipment_fit_options: Mapping[str, Iterable[tuple[str, Iterable[tuple[float, float]]]]] | None = None,
     deterministic_units: float | None = None,
     boundary_side_contacts: Mapping[str, int] | None = None,
+    hint_rects: Mapping[str, Rect] | None = None,
+    first_solution_only: bool = False,
 ) -> list[LayoutResult]:
     """Solve grid-snapped layouts with optional fixed rectangles and axes.
 
@@ -54,6 +56,10 @@ def solve_layouts(
     ``boundary_side_contacts`` requires a room to touch at least that many
     distinct sides of the boundary; the hierarchical solver uses it to keep a
     cluster's hub reachable from rooms placed outside the cluster.
+    ``hint_rects`` seeds the search with known placements, which CP-SAT repairs
+    where they conflict; with ``first_solution_only`` the solve stops at the
+    first feasible layout. The facility editor uses both to re-place the other
+    rooms around an edited one in interactive time.
     """
 
     if variants < 1:
@@ -92,8 +98,7 @@ def solve_layouts(
     for room in spec.rooms:
         x = model.NewIntVar(0, boundary_width, f"{room.id}_x")
         y = model.NewIntVar(0, boundary_height, f"{room.id}_y")
-        width = model.NewIntVar(_ceil_grid(room.min_width_mm, grid), boundary_width, f"{room.id}_width")
-        height = model.NewIntVar(_ceil_grid(room.min_depth_mm, grid), boundary_height, f"{room.id}_height")
+        width, height = _room_size_vars(model, room, grid, boundary_width, boundary_height)
         area = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area")
         model.Add(x + width <= boundary_width)
         model.Add(y + height <= boundary_height)
@@ -202,6 +207,15 @@ def solve_layouts(
     # Area accuracy dominates; the position tie-breaker makes one run stable.
     model.Minimize(sum(area_deviations) * 10_000 + sum(v for room in spec.rooms for v in (room_vars[room.id].x, room_vars[room.id].y)))
 
+    for room_id, rect in sorted((hint_rects or {}).items()):
+        values = room_vars.get(room_id)
+        if values is None:
+            continue
+        model.AddHint(values.x, int(round(rect.x / grid)))
+        model.AddHint(values.y, int(round(rect.y / grid)))
+        model.AddHint(values.width, int(round(rect.width / grid)))
+        model.AddHint(values.height, int(round(rect.height / grid)))
+
     results: list[LayoutResult] = []
     for variant in range(1, variants + 1):
         solver = cp_model.CpSolver()
@@ -211,6 +225,10 @@ def solve_layouts(
             time_limit_seconds=time_limit_seconds,
             deterministic_units=deterministic_units,
         )
+        if hint_rects:
+            solver.parameters.repair_hint = True
+        if first_solution_only:
+            solver.parameters.stop_after_first_solution = True
         status = solver.Solve(model)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
@@ -233,6 +251,30 @@ def solve_layouts(
             ]],
         )
     return results
+
+
+def _room_size_vars(model, room, grid: int, boundary_width: int, boundary_height: int):
+    """Width/height variables that honour the room's minimum dimensions.
+
+    A rotatable room may meet min_width/min_depth in either orientation.
+    """
+
+    min_width = _ceil_grid(room.min_width_mm, grid)
+    min_depth = _ceil_grid(room.min_depth_mm, grid)
+    if not getattr(room, "rotatable", False) or min_width == min_depth:
+        return (
+            model.NewIntVar(min_width, boundary_width, f"{room.id}_width"),
+            model.NewIntVar(min_depth, boundary_height, f"{room.id}_height"),
+        )
+    low = min(min_width, min_depth)
+    width = model.NewIntVar(low, boundary_width, f"{room.id}_width")
+    height = model.NewIntVar(low, boundary_height, f"{room.id}_height")
+    turned = model.NewBoolVar(f"{room.id}_turned")
+    model.Add(width >= min_width).OnlyEnforceIf(turned.Not())
+    model.Add(height >= min_depth).OnlyEnforceIf(turned.Not())
+    model.Add(width >= min_depth).OnlyEnforceIf(turned)
+    model.Add(height >= min_width).OnlyEnforceIf(turned)
+    return width, height
 
 
 def _require_boundary_sides(model, room: _RoomVars, boundary_width: int, boundary_height: int, count: int, room_id: str) -> None:

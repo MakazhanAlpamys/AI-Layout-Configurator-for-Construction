@@ -295,6 +295,16 @@ item 4 remains blocked by billing.
   are in [SCALING_STUDY.md](SCALING_STUDY.md).
 - 160 tests pass locally.
 
+## 30 and 40 rooms — 2026-09-27
+
+After PR #1 was merged into `main`: `rotatable` rooms, free-size single rooms
+at the hierarchy's top level and a parallel top-level search (wall-clock mode
+only) solve the 30- and 40-room scale programs on seeds 1/7/42 with every gate
+passing — 30 rooms in 12–15 s, 40 rooms in 31–66 s on an idle 4-core machine.
+Under CPU contention two 40-room seeds failed within `--time-limit 40`; see
+[SCALING_STUDY.md](SCALING_STUDY.md). 164 tests pass; the pilot CI matrix
+passes in 6.9 s. The remaining work is ordered in [NEXT_PLAN.md](NEXT_PLAN.md).
+
 ## Archive of the original MVP
 
 The old text below is historical context for the original residential MVP. It

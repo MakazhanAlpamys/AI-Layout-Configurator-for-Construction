@@ -287,6 +287,24 @@ roughly correspond to the former `--time-limit 30`. Calibration, the condition f
 model order and the full list of limitations are
 in [`docs/DETERMINISTIC_BUDGET.md`](docs/DETERMINISTIC_BUDGET.md).
 
+To choose between accepted variants, `compare-variants` ranks them and writes
+`comparison.json`, `comparison.csv` and a one-page client PDF with a plan
+thumbnail per variant:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli compare-variants out\pharma_cleanroom_acceptance\seed_1
+```
+
+The ranking key is printed with the result: failed gates, then open issues,
+then total route length, then deviation from the programmed areas. Every number
+comes from the saved `building_NN.json`; nothing is re-solved. It is a design
+aid for choosing between valid options, not a quality or compliance verdict.
+
+The hierarchical solver asks each further variant to be a different option: at
+least a quarter of the placed clusters and rooms must move by 3 m or change
+shape (relaxed only when no such layout is found in the budget), and a short
+second pass brings single rooms back to their programmed areas.
+
 For the three external gates, the accepted bundle is projected into role-specific dossiers:
 
 ```powershell
@@ -524,3 +542,56 @@ Opening a generated `BuildingIR` result automatically selects the read-only faci
 ```
 
 The review projects rooms, process equipment, service-clearance envelopes, derived people/material/waste routes, structural axes, deterministic facility evidence, coordination issues, and the generated JSON/DXF/PDF/IFC/BCF artifacts. It recomputes the facility report on open and rejects edit, undo, redo, and reset commands with HTTP 405.
+
+### Facility editor
+
+`ui --edit` opens the same bundle as an editor:
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli ui `
+  out\pharma_cleanroom_acceptance\seed_1 --profile rules\pharma_cleanroom_pilot.yaml --edit
+```
+
+Dragging or resizing a room sends one typed `move_room`/`resize_room` command.
+The edited room stays where it was put; the other rooms stay put when the
+geometry allows it, otherwise the room solver repairs the layout starting from
+their current positions. Equipment is re-packed, flows are re-routed and every
+facility check is recomputed, usually within about a second on the pilot. An
+edit that leaves invalid room geometry is refused and nothing changes; an edit
+that only fails a facility gate is kept and shown as failing. Undo, redo and
+reset work on server-side states. Door, window and flow changes belong in the
+program, not in the editor.
+
+**Save revision** writes the current state as a complete bundle to
+`revisions/rev_NN/` beside the original (IFC with read-back, DXF, PDF, JSON,
+coordination issues and a BCF that continues the original issue history). The
+generated bundle itself is never modified, and `generation.edits` in the
+revision JSON records the commands that produced it.
+
+### Multi-storey facilities
+
+`generate-facility-floors` solves a facility over several floors. Each floor is
+an ordinary facility program with its own profile; a small file adds what
+connects them — vertical cores and cross-floor flows
+(`examples/pharma_two_floor.yaml`):
+
+```powershell
+.venv\Scripts\python.exe -m layout_configurator.cli generate-facility-floors `
+  examples\pharma_two_floor.yaml --output out\two_floor --variants 2 --time-limit 30
+```
+
+- **Vertical cores** (`stair`, `passenger_lift`, `goods_lift`, `service_shaft`)
+  are rooms declared on every floor they serve. The lowest floor places them;
+  the other floors are solved with those rooms pinned to the same rectangle.
+- **Cross-floor flows** become an ordinary flow on each end — to the core on
+  the departure floor, from the core on the arrival floor — so the normal
+  routing and flow gates check both legs (`<flow>@L0`, `<flow>@L1`).
+- **Vertical checks** (`CORE_ALIGNMENT`, `CORE_FLOW_TYPES`, `CORE_CLEAR_WIDTH`,
+  `CROSS_FLOOR_ROUTES`) are recomputed from the results. Which flow types a core
+  kind may carry is a project policy (`CORE_FLOW_TYPES` in
+  `facility_floors.py`), not a regulatory statement.
+
+The output has a normal bundle per floor (`floor_00/`, `floor_01/`, where
+variant *n* of every floor belongs to the same stack) and
+`multi_floor_report.json`. `ui`, `qa-building` and `compare-variants` work on
+each floor directory as on any bundle.
