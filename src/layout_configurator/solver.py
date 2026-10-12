@@ -444,6 +444,9 @@ def _constrain_daylight_contact(
 ) -> None:
     """Require daylight rooms to touch the outer boundary or a cutout edge."""
 
+    if spec.boundary.cutouts and not any(window.room_id == room_id for window in spec.windows):
+        _constrain_automatic_window_facade(model, room, spec, room_id)
+        return
     contacts = [model.NewBoolVar(f"daylight_{room_id}_{side}") for side in ("left", "right", "bottom", "top")]
     left, right, bottom, top = contacts
     model.Add(room.x == 0).OnlyEnforceIf(left)
@@ -478,6 +481,46 @@ def _constrain_daylight_contact(
                 1,
                 f"daylight_{room_id}_{index}_{side}_overlap",
             )
+    model.AddBoolOr(contacts)
+
+
+def _constrain_automatic_window_facade(model, room, spec: LayoutIR, room_id: str) -> None:
+    """Match the exposed-edge span used by the automatic window builder.
+
+    The builder needs a 600 mm opening plus 400 mm of margins. Comparing
+    against the real millimetre extents before rounding avoids inventing a
+    usable facade from a short or off-grid cutout. For intervals [s, e] and
+    [a, b], overlap >= M means e-s >= M, b-a >= M, e >= a+M, s <= b-M.
+    """
+
+    if spec.window_width_mm < 600:
+        raise InfeasibleLayout(f"Room {room_id} automatic daylight window width is below 600 mm")
+    facades = [
+        (room.x, 0.0, room.y, room.height, 0.0, spec.boundary.height_mm),
+        (room.x + room.width, spec.boundary.width_mm, room.y, room.height, 0.0, spec.boundary.height_mm),
+        (room.y, 0.0, room.x, room.width, 0.0, spec.boundary.width_mm),
+        (room.y + room.height, spec.boundary.height_mm, room.x, room.width, 0.0, spec.boundary.width_mm),
+    ]
+    for cutout in spec.boundary.cutouts:
+        facades.extend([
+            (room.x + room.width, cutout.x, room.y, room.height, cutout.y, cutout.top),
+            (room.x, cutout.right, room.y, room.height, cutout.y, cutout.top),
+            (room.y + room.height, cutout.y, room.x, room.width, cutout.x, cutout.right),
+            (room.y, cutout.top, room.x, room.width, cutout.x, cutout.right),
+        ])
+    grid = spec.grid_mm
+    minimum_span_mm = 1000
+    contacts = []
+    for index, (edge, fixed_mm, start, size, low_mm, high_mm) in enumerate(facades):
+        fixed = round(fixed_mm / grid)
+        if abs(fixed * grid - fixed_mm) > 1e-6 or high_mm - low_mm < minimum_span_mm:
+            continue
+        contact = model.NewBoolVar(f"daylight_window_{room_id}_{index}")
+        contacts.append(contact)
+        model.Add(edge == fixed).OnlyEnforceIf(contact)
+        model.Add(size >= _ceil_grid(minimum_span_mm, grid)).OnlyEnforceIf(contact)
+        model.Add(start + size >= math.ceil((low_mm + minimum_span_mm) / grid - 1e-9)).OnlyEnforceIf(contact)
+        model.Add(start <= math.floor((high_mm - minimum_span_mm) / grid + 1e-9)).OnlyEnforceIf(contact)
     model.AddBoolOr(contacts)
 
 

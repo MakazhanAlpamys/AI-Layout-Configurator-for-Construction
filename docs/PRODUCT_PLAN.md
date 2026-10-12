@@ -16,6 +16,8 @@ versioned deterministic caching and private Docker deployment. The deployed
 container passed the pharma pilot locally; its CI acceptance job is added.
 Checkpoint G.1 imports source-backed rectangular DXF/IFC room drafts and
 requires explicit named geometry confirmation before using solver constraints.
+Checkpoint C.1.2 aligns automatic cutout daylight with actual usable window
+facades in both backends, including fractional/off-grid cutout extents.
 
 ## 1. Why we are expanding the project
 
