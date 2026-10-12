@@ -65,6 +65,8 @@ The repaired production-install scale series is running against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
 Its result is pending; later changes require their own evidence.
 
+| B.4 | Independent orthogonal minimum dimensions, doors and equipment | The explicit project coverage policy evaluates the complete footprint with one source-allowed orientation; wall-half insets and actual full-width doors determine connectivity. Supplied directional equipment service envelopes use actual room components, wall bands and pair intersections. Exhausted dimension search or ambiguous anchors remain UNKNOWN. | Fresh root kernel/result/projection/new-validation run: 57 passed, 94 subtests. Agent broader affected regression: 92 passed, 94 subtests. Real narrow-neck, spur, severed bridge, undersized usable door approach, reentrant corner, rotation and clearance-collision negatives are covered. | complete 2026-10-12 for independent predicates; selectable solver/routes/full export remain separate |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable

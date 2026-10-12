@@ -66,6 +66,8 @@ Checkpoint H.2 adds declared multi-storey functional blocks and linked service
 zones through typed shafts, with derived checked routes and native IFC groups.
 Checkpoint C.3.5 applies fixed rectangles and structural axes in both physical
 zone strategies, with independent checks and scoped bounded-shape failures.
+Checkpoint B.4 independently checks actual orthogonal room minima, wall-inset
+and door connectivity, plus supplied directional equipment clearance.
 
 ## 1. Why we are expanding the project
 

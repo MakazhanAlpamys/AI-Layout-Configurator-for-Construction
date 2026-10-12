@@ -53,6 +53,8 @@ Checkpoint H.2 adds explicit multi-storey block/service-zone coordination and
 independent native membership checks without claiming designed MEP systems.
 Checkpoint C.3.5 verifies fixed/axis constraints in both explicit zone modes;
 the bounded shape pool still limits what an infeasibility result proves.
+Checkpoint B.4 verifies exact polygon room/equipment predicates under an
+explicit project geometry policy; full facility integration remains separate.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

@@ -62,3 +62,30 @@ The artifact is always **DRAFT**, with `ok: false`: usable room dimensions,
 full circulation and equipment clearance still need their own checks. Complete
 exporters keep their existing capability guards. Rectangular plan import rejects
 these polygon outlines rather than replacing them with bounding rectangles.
+
+## Independent room and equipment predicates
+
+`validate_orthogonal_layout(spec, result)` adds actual minimum dimensions,
+wall-inset connectivity and a graph built from the generated usable doors.
+The project policy `axis_aligned_coverage_v1` requires every footprint point
+to be covered by a contained axis-aligned rectangle meeting the source room's
+minimum width and depth. A rotatable room chooses one orientation for its
+whole footprint. This explicit geometry policy is not a regulatory width rule.
+It accepts qualifying L-shaped arms and rejects thin spurs or narrow necks
+even when their bounding box is large. Scan/candidate exhaustion yields UNKNOWN.
+
+The usable footprint must remain one nonempty component after the wall-half
+mitre inset. Actual doors must reach that component across their full width;
+shared contact alone does not establish circulation. Unsupported window or
+ambiguous opening selectors retain UNKNOWN evidence.
+
+`validate_orthogonal_equipment(building, layout, equipment)` independently
+checks supplied equipment identities, hosts, orientation and directional
+service envelopes against actual inset components and wall bands, including
+pair collisions. Anchors use actual unique inset edges; an ambiguous edge
+selector is UNKNOWN. This checker does not place equipment.
+
+These reports certify their stated predicates only. They do not establish
+process-route acceptance, engineering sign-off or a complete facility bundle.
+The full rectangular consumers retain their capability guards until separate
+solver/export/route integration is independently verified.
