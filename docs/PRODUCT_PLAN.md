@@ -48,6 +48,8 @@ Checkpoint D.1 adds indexed thematic vector sheets and portable Cyrillic fonts.
 The clean `3e9d4b3` snapshot also passed the complete 354-test local gate.
 Checkpoint C.3.2 exposes root-zone placement through facility CLI/API with all
 existing gates and persistent stage evidence, while retaining default auto.
+Checkpoint H.1.2 retries bounded base-floor candidates when a core placement
+fails on an upper floor, retaining scoped negative evidence and coherent IDs.
 
 ## 1. Why we are expanding the project
 

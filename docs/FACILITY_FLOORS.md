@@ -4,6 +4,14 @@
 declared elevations, typed vertical-core room mappings and cross-floor flows.
 Each accepted stack keeps a complete checked bundle per floor.
 
+The solver tries at most `--max-attempts` independently accepted base-floor
+candidates. If a pinned core placement prevents a later floor from passing,
+the failed attempt is retained and the next base placement is tried. Accepted
+floor variants are renumbered together. Exhausting this bounded pool reports
+`proof_scope: selected_base_floor_candidates` and
+`proven_building_infeasible: false`; it does not prove the whole facility
+impossible. The time limit applies to each solve, not to the complete stack.
+
 Declare `structural_grid` at the top level of `facility_multi_floor` to produce
 one additional `facility_stack_NN.ifc` per stack automatically. For example:
 

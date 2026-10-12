@@ -35,6 +35,8 @@ Checkpoint B.1 verifies the orthogonal kernel foundation; it does not mark
 polygon generation or downstream CAD/BIM acceptance complete.
 Checkpoint H.1 verifies shared-grid facility stacks and unified IFC exchange;
 40-room acceptance and independent receiving-tool review remain open gates.
+Checkpoint H.1.2 adds bounded retries of base-floor core placements; exhaustion
+is evidence about that candidate pool rather than the entire facility.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

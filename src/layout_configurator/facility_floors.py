@@ -332,7 +332,18 @@ def solve_facility_floors(
     room_solver: str = "auto",
     default_profile: FacilityProfile | None = None,
 ) -> FacilityFloorsResult:
-    """Solve every floor, lowest first, with cores pinned where already placed."""
+    """Try a bounded base-floor candidate pool, pinning cores on later floors.
+
+    A feasible base layout need not extend to the other floors. Reject that
+    placement and try the next independently accepted base candidate rather
+    than treating its pinned upper-floor failure as building infeasibility.
+    """
+
+    if variants < 1:
+        raise ValueError("variants must be at least 1")
+    base_candidate_limit = max_attempts if max_attempts is not None else max(variants * 3, 3)
+    if base_candidate_limit < variants:
+        raise ValueError("max_attempts must be greater than or equal to variants")
 
     programs = {level: building.with_required_flow_opening_width() for level, building in spec.floor_programs().items()}
     profiles = {
@@ -355,12 +366,20 @@ def solve_facility_floors(
 
     try:
         base_generation = solve_feasible_facility_variants(
-            programs[base], profiles[base], variants=variants, time_limit_seconds=time_limit_seconds,
-            seed=seed, max_attempts=max_attempts, room_solver=room_solver,
+            programs[base], profiles[base], variants=base_candidate_limit, time_limit_seconds=time_limit_seconds,
+            seed=seed, max_attempts=base_candidate_limit, room_solver=room_solver,
             **axis_constraints(base),
         )
     except InfeasibleFacilityGeneration as exc:
-        raise FacilityFloorsError(f"Floor {base}: {exc}", {"level": base, "generation": exc.generation.to_dict()}) from exc
+        # A bounded solve can return useful candidates without filling its
+        # requested pool. Each retained candidate has passed every floor gate.
+        base_generation = exc.generation
+        if not base_generation.accepted:
+            raise FacilityFloorsError(f"Floor {base}: {exc}", {
+                "level": base, "generation": base_generation.to_dict(),
+                "base_candidate_limit": base_candidate_limit,
+                "proof_scope": "selected_base_floor_candidates", "proven_building_infeasible": False,
+            }) from exc
 
     result = FacilityFloorsResult(spec=spec, stacks=[], programs=programs, profiles=profiles)
     for number, base_candidate in enumerate(base_generation.accepted, start=1):
@@ -378,7 +397,8 @@ def solve_facility_floors(
                     **axis_constraints(level),
                 )
             except InfeasibleFacilityGeneration as exc:
-                failure = {"stack": number, "level": level, "reason": str(exc), "generation": exc.generation.to_dict()}
+                failure = {"stack": number, "base_candidate": number, "level": level,
+                           "reason": str(exc), "generation": exc.generation.to_dict()}
                 break
             candidate = generation.accepted[0]
             candidate = replace(candidate, result=replace(candidate.result, variant=number))
@@ -389,16 +409,30 @@ def solve_facility_floors(
         if failure:
             result.rejected.append(failure)
             continue
-        result.stacks.append(FloorStack(number=len(result.stacks) + 1, floors=floors, checks=vertical_checks(spec, floors)))
+        published_number = len(result.stacks) + 1
+        floors = {level: replace(candidate, result=replace(candidate.result, variant=published_number))
+                  for level, candidate in floors.items()}
+        checks = vertical_checks(spec, floors)
+        if any(check.status != "PASS" for check in checks):
+            result.rejected.append({"stack": number, "base_candidate": number,
+                                    "level": levels[-1], "reason": "Independent vertical checks failed",
+                                    "checks": [check.to_dict() for check in checks]})
+            continue
+        result.stacks.append(FloorStack(number=published_number, floors=floors, checks=checks))
+        if len(result.stacks) == variants:
+            break
+    failure_scope = {"rejected": result.rejected, "base_candidate_limit": base_candidate_limit,
+                     "base_candidates_evaluated": len(base_generation.accepted),
+                     "proof_scope": "selected_base_floor_candidates", "proven_building_infeasible": False}
     if not result.stacks:
         raise FacilityFloorsError(
             "No floor stack could be completed: " + "; ".join(f"floor {item['level']}: {item['reason']}" for item in result.rejected),
-            {"rejected": result.rejected},
+            failure_scope,
         )
     if len(result.stacks) < variants:
         raise FacilityFloorsError(
             f"Only {len(result.stacks)} of {variants} floor stack(s) could be completed",
-            {"rejected": result.rejected},
+            failure_scope,
         )
     return result
 
