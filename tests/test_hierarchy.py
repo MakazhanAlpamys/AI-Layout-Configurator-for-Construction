@@ -86,14 +86,12 @@ class HierarchicalSolverTests(unittest.TestCase):
         self.assertEqual(result.placements["office"], pinned)
         self.assertTrue(validate_layout(spec, result).ok)
 
-    def test_cutouts_are_not_modelled_and_auto_falls_back(self):
+    def test_cutouts_are_modelled_without_auto_fallback(self):
         spec = _corridor_program(boundary={"width": 30000, "height": 20000, "cutouts": [{"x": 0, "y": 0, "width": 2000, "height": 2000}]})
-        with self.assertRaises(HierarchyNotApplicable):
-            solve_layouts_hierarchical(spec, 1, time_limit_seconds=5, seed=1)
         evidence = {}
-        results = solve_layouts_auto(spec, 1, 20, 1, strategy="auto", evidence=evidence, minimum_adjacency_mm=1300)
-        self.assertEqual(evidence["room_solver_used"], "monolithic")
-        self.assertIn("cutouts", evidence["hierarchy_fallback_reason"])
+        results = solve_layouts_auto(spec, 1, 10, 1, strategy="auto", evidence=evidence, minimum_adjacency_mm=1300)
+        self.assertEqual(evidence["room_solver_used"], "hierarchical")
+        self.assertNotIn("hierarchy_fallback_reason", evidence)
         self.assertTrue(validate_layout(spec, results[0]).ok)
 
     def test_unsupported_options_are_refused_when_hierarchy_is_forced(self):
@@ -101,7 +99,7 @@ class HierarchicalSolverTests(unittest.TestCase):
         with self.assertRaises(HierarchyNotApplicable):
             solve_layouts_auto(
                 spec, 1, 5, 1, strategy="hierarchical",
-                axis_aligned_room_ids=("office",), structural_axes_x_mm=(0, 6000),
+                hint_rects={"office": Rect(0, 0, 5000, 4000)},
             )
         with self.assertRaises(ValueError):
             solve_layouts_auto(spec, 1, 5, 1, strategy="fastest")

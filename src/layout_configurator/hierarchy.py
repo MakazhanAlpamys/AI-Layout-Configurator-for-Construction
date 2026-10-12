@@ -46,8 +46,11 @@ from .solver import (
     _RoomVars,
     _add_adjacency_indicator,
     _add_forbidden_adjacency,
+    _add_overlap,
     _add_required_adjacency,
     _area_to_grid2,
+    _avoid_cutout,
+    _axis_pairs,
     _ceil_grid,
     _constrain_daylight_contact,
     _constrain_external_entry,
@@ -138,17 +141,21 @@ def solve_layouts_hierarchical(
     equipment_fit_options: Mapping[str, Iterable[tuple[str, Iterable[tuple[float, float]]]]] | None = None,
     deterministic_units: float | None = None,
     fixed_rects: Mapping[str, Rect] | None = None,
+    axis_aligned_room_ids: Iterable[str] | None = None,
+    structural_axes_x_mm: Iterable[float] | None = None,
+    structural_axes_y_mm: Iterable[float] | None = None,
 ) -> list[LayoutResult]:
     """Return up to ``variants`` distinct layouts from the cluster hierarchy.
 
     ``fixed_rects`` pins rooms (for example a vertical core repeated on every
     floor); a pinned room is always its own cluster.
+    Axis-constrained rooms also stay single, so their dimensions and both
+    endpoints can follow the supplied axes. Cutouts constrain final rooms,
+    allowing concave clusters to interlock around an excluded region.
     """
 
     if variants < 1:
         raise ValueError("variants must be at least 1")
-    if spec.boundary.cutouts:
-        raise HierarchyNotApplicable("The hierarchical solver does not model boundary cutouts")
     try:
         from ortools.sat.python import cp_model
     except ImportError as exc:  # pragma: no cover - dependency is declared in pyproject.toml
@@ -159,6 +166,12 @@ def solve_layouts_hierarchical(
     unknown_fixed = set(fixed_rects) - known
     if unknown_fixed:
         raise InfeasibleLayout(f"Cannot fix unknown rooms: {', '.join(sorted(unknown_fixed))}")
+    axis_rooms = set(axis_aligned_room_ids or ())
+    unknown_axis_rooms = axis_rooms - known
+    if unknown_axis_rooms:
+        raise InfeasibleLayout(f"Cannot bind unknown rooms to axes: {', '.join(sorted(unknown_axis_rooms))}")
+    axes_x = None if structural_axes_x_mm is None else tuple(structural_axes_x_mm)
+    axes_y = None if structural_axes_y_mm is None else tuple(structural_axes_y_mm)
     required_groups = _normalise_adjacency_groups(required_adjacency_groups, known, "required")
     forbidden_groups = _normalise_adjacency_groups(forbidden_adjacency_groups, known, "forbidden")
     fit_options = {
@@ -170,7 +183,7 @@ def solve_layouts_hierarchical(
     }
     adjacency_mm = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
     in_groups = {room_id for _, left, right in (*required_groups, *forbidden_groups) for room_id in (*left, *right)}
-    clusters = cluster_rooms(spec, pinned=in_groups | set(fixed_rects))
+    clusters = cluster_rooms(spec, pinned=in_groups | set(fixed_rects) | axis_rooms)
     cluster_of = {room_id: cluster_id for cluster_id, members in clusters.items() for room_id in members}
     rooms_by_id = {room.id: room for room in spec.rooms}
     has_preferences = bool(spec.relation_pairs("preferred_adjacency"))
@@ -225,6 +238,11 @@ def solve_layouts_hierarchical(
         x = model.NewIntVar(0, boundary_width, f"{room.id}_x")
         y = model.NewIntVar(0, boundary_height, f"{room.id}_y")
         width, height = _room_size_vars(model, room, grid, boundary_width, boundary_height)
+        if room.id in axis_rooms:
+            if axes_x is not None:
+                model.AddAllowedAssignments([x, width], _axis_pairs(axes_x, boundary_width, grid, room.id, "x"))
+            if axes_y is not None:
+                model.AddAllowedAssignments([y, height], _axis_pairs(axes_y, boundary_height, grid, room.id, "y"))
         if room.id in fixed_rects:
             pinned = fixed_rects[room.id]
             model.Add(x == _units(pinned.x, grid))
@@ -306,6 +324,10 @@ def solve_layouts_hierarchical(
             room_vars[room_id] = _RoomVars(x=x, y=y, width=width, height=height, area=None)
     # Rooms, not cluster boxes, must not overlap: concave clusters interlock.
     model.AddNoOverlap2D(x_intervals, y_intervals)
+    for room in spec.rooms:
+        values = room_vars[room.id]
+        for index, cutout in enumerate(spec.boundary.cutouts):
+            _avoid_cutout(model, values.x, values.y, values.width, values.height, cutout, grid, f"{room.id}_cutout_{index}")
 
     minimum_shared = max(1, _ceil_grid(adjacency_mm, grid))
     for room_a, room_b in spec.relation_pairs("required_adjacency"):
@@ -329,9 +351,12 @@ def solve_layouts_hierarchical(
             for b in right:
                 if a != b:
                     _add_forbidden_adjacency(model, room_vars[a], room_vars[b], f"zone_forbidden_{group_name}_{a}_{b}")
+    explicit_window_rooms = {window.room_id for window in spec.windows}
     for room in spec.rooms:
         if room.needs_daylight:
             _constrain_daylight_contact(model, room_vars[room.id], spec, boundary_width, boundary_height, room.id)
+            if spec.boundary.cutouts and room.id not in explicit_window_rooms:
+                _constrain_window_facade(model, room_vars[room.id], spec, boundary_width, boundary_height, room.id)
     if spec.external_entry is not None:
         _constrain_external_entry(model, room_vars[spec.external_entry.room_id], spec, boundary_width, boundary_height)
     objective = _layout_objective(
@@ -373,7 +398,8 @@ def solve_layouts_hierarchical(
             status = solver.Solve(model)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
-                raise InfeasibleLayout("The hierarchical solver found no placement of the room clusters")
+                context = f"; axis-constrained rooms: {', '.join(sorted(axis_rooms))}" if axis_rooms else ""
+                raise InfeasibleLayout(f"The hierarchical solver found no placement of the room clusters{context}")
             break
         if not has_preferences and area_deviations and solver.Value(sum(area_deviations)) > 0:
             # The first placement settles the hard part; a short second pass
@@ -428,6 +454,11 @@ def solve_layouts_auto(
         raise ValueError(f"Unknown solver strategy {strategy!r}; use one of {', '.join(SOLVER_STRATEGIES)}")
     if strategy == "monolithic":
         return monolithic()
+    # Keep replayable inputs if auto later falls back after the hierarchy has
+    # consumed a generator. All selected rooms must see the same axis sets.
+    for key in ("axis_aligned_room_ids", "structural_axes_x_mm", "structural_axes_y_mm"):
+        if options.get(key) is not None:
+            options[key] = tuple(options[key])
     hierarchical_options = {
         key: value
         for key, value in options.items()
@@ -439,6 +470,9 @@ def solve_layouts_auto(
             "equipment_fit_options",
             "deterministic_units",
             "fixed_rects",
+            "axis_aligned_room_ids",
+            "structural_axes_x_mm",
+            "structural_axes_y_mm",
         }
     }
     unsupported = sorted(key for key, value in options.items() if key not in hierarchical_options and value)
@@ -457,6 +491,41 @@ def solve_layouts_auto(
         return monolithic(f"The hierarchy returned {len(results)} of {variants} candidates")
     evidence["room_solver_used"] = "hierarchical"
     return results
+
+
+def _constrain_window_facade(model, room, spec, boundary_width, boundary_height, room_id):
+    """Require an exposed edge that the automatic window builder can use.
+
+    A positive cutout contact is not sufficient: ``_window_opening`` needs
+    600 mm for the opening and 400 mm for its two margins. Keep explicit
+    windows under their existing independent geometry checks instead.
+    """
+
+    if spec.window_width_mm < 600:
+        raise InfeasibleLayout(f"Room {room_id} automatic daylight window width is below 600 mm")
+    facades = [
+        (room.x == 0, room.y, room.height, 0, boundary_height),
+        (room.x + room.width == boundary_width, room.y, room.height, 0, boundary_height),
+        (room.y == 0, room.x, room.width, 0, boundary_width),
+        (room.y + room.height == boundary_height, room.x, room.width, 0, boundary_width),
+    ]
+    grid = spec.grid_mm
+    for cutout in spec.boundary.cutouts:
+        x, y, right, top = (math.ceil(value / grid - 1e-9) for value in (cutout.x, cutout.y, cutout.right, cutout.top))
+        facades.extend([
+            (room.x + room.width == x, room.y, room.height, y, top - y),
+            (room.x == right, room.y, room.height, y, top - y),
+            (room.y + room.height == y, room.x, room.width, x, right - x),
+            (room.y == top, room.x, room.width, x, right - x),
+        ])
+    contacts = []
+    for index, (edge, start, size, facade_start, facade_size) in enumerate(facades):
+        name = f"window_facade_{room_id}_{index}"
+        contact = model.NewBoolVar(name)
+        contacts.append(contact)
+        model.Add(edge).OnlyEnforceIf(contact)
+        _add_overlap(model, contact, start, size, facade_start, facade_size, _ceil_grid(1000, grid), name)
+    model.AddBoolOr(contacts)
 
 
 def _cluster_shapes(

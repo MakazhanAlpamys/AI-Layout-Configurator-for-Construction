@@ -9,6 +9,8 @@ backends, below area accuracy and hard constraints in the search priorities.
 Checkpoint E.1 adds native IFC zone hierarchy and declared process systems,
 with zero IFC4 EXPRESS violations in the single- and multi-floor regression
 fixtures. Independent receiving-tool review remains open.
+Checkpoint C.1.1 models cutouts and selected structural-axis constraints in
+the hierarchical backend, including usable automatic daylight facades.
 
 ## 1. Why we are expanding the project
 
