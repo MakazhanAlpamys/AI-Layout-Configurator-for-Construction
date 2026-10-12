@@ -41,6 +41,7 @@ def solve_layouts(
     hint_rects: Mapping[str, Rect] | None = None,
     first_solution_only: bool = False,
     preferred_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
+    statistics: list[dict] | None = None,
 ) -> list[LayoutResult]:
     """Solve grid-snapped layouts with optional fixed rectangles and axes.
 
@@ -64,6 +65,8 @@ def solve_layouts(
     where they conflict; with ``first_solution_only`` the solve stops at the
     first feasible layout. The facility editor uses both to re-place the other
     rooms around an edited one in interactive time.
+    ``statistics`` optionally receives actual CP-SAT response measurements per
+    invocation, including failed solves. It never changes budgets or decisions.
     """
 
     if variants < 1:
@@ -239,6 +242,17 @@ def solve_layouts(
         if first_solution_only:
             solver.parameters.stop_after_first_solution = True
         status = solver.Solve(model)
+        if statistics is not None:
+            response = solver.ResponseProto()
+            statistics.append({
+                "variant": variant, "seed": seed + variant - 1,
+                "workers": solver.parameters.num_search_workers,
+                "budget_deterministic_units": deterministic_units,
+                "model_status": solver.StatusName(status),
+                "deterministic_time": response.deterministic_time,
+                "wall_time_seconds": response.wall_time,
+                "branches": response.num_branches, "conflicts": response.num_conflicts,
+            })
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
                 raise InfeasibleLayout("The solver found no feasible layout. Check areas, boundaries and adjacencies.")

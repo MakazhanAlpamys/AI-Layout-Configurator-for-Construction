@@ -67,6 +67,38 @@ new measurement. A small budget returns a feasible but poor solution
 (2 units → objective a hundred times worse), so the budget must be tuned to the
 program rather than set to the minimum.
 
+## Current runner calibration
+
+`scripts/solver_budget_calibration.py` records **consumed** CP-SAT deterministic
+work from each actual response, including UNKNOWN and INFEASIBLE samples.
+Requested caps are recorded separately. Solver seconds exclude model-building
+time, which appears as orchestration time. Available geometry passes independent
+room validation before it enters the report.
+
+```powershell
+.venv\Scripts\python.exe scripts\solver_budget_calibration.py `
+  examples\basic_canonical.json examples\scale_20_rooms.yaml `
+  --output out\solver-calibration --budgets .05 .1 .25 --seeds 1 7 --repetitions 2
+```
+
+JSON and CSV retain source/canonical hashes, relevant implementation/dependency
+fingerprints, CI commit, machine description, response status and actual work.
+Repeated fixed-source/seed/budget samples must have identical status, geometry
+hash and consumed units. Changed inputs or runtime fingerprints fail measurement.
+The manually dispatched `Solver work calibration` workflow runs this exact series
+on Linux and Windows and retains both successful and failed reports.
+
+| Source | Samples | Result | Median consumed units per solver second |
+| --- | --- | --- | --- |
+| Windows development machine, 2026-10-12, Python 3.11 / OR-Tools 9.15.6755 | 24 | 12 basic OPTIMAL with valid geometry; 12 scale-20 UNKNOWN | 0.129571 |
+| Linux / Windows CI runners | pending pinned workflow measurements | pending | pending |
+
+This is a calibration of the monolithic room model only. UNKNOWN samples remain
+negative evidence; the report does not imply facility acceptance. Hierarchical
+stages, equipment, routing, full bundle QA and end-to-end deadlines need separate
+measurement. The scale acceptance matrix therefore retains its existing
+wall-clock budgets and every quality/validation gate.
+
 ## Limitations
 
 - **Units are not seconds.** The wall-clock duration of a run on another machine will
