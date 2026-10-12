@@ -54,6 +54,8 @@ Checkpoint H.1.1 independently verifies the synthetic two-floor 40-room program
 on seeds 1/7/42; source/IFC tamper checks and a separate scale CI job are added.
 Checkpoint C.3.3 solves physical descendant-zone containers bottom-up and exposes
 explicit recursive facility/CLI/API dispatch with scoped subtree evidence.
+Checkpoint D.1.1 independently reads optional thematic PDFs against canonical
+source identity, index, page geometry and vector content, including tamper cases.
 
 ## 1. Why we are expanding the project
 

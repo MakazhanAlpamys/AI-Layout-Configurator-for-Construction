@@ -4,6 +4,15 @@ Facility bundles now include `building_NN_sheets.pdf` alongside their main plan.
 The manifest's `sheet_set` records the PDF name, SHA256 and every page's sheet ID,
 theme, revision, scale, source variant and status.
 
+`qa-building` independently reads an indexed sheet set when present. Its
+`SHEET_SET_READBACK` check verifies the delivered hash, all thematic and
+continuation identities, real page count, printed project/profile/variant and
+revision fields, A3 scale captions, and readable vector content. Replacing PDF
+text or pages still fails after recalculating the recorded hash. Legacy bundles
+without a sheet index retain their original QA contract. This check verifies
+artifact identity; geometric design and engineering acceptance have separate
+scope.
+
 The A3 landscape set contains functional zones, equipment/service envelopes,
 process routes and egress source/candidates. Every plan shares canonical room
 tags and millimetre geometry; readable legends link tags to source identities.

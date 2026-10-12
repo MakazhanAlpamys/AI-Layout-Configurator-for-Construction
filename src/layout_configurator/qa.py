@@ -12,6 +12,7 @@ from zipfile import BadZipFile
 import xml.etree.ElementTree as ET
 
 from .bcf import read_bcf_package
+from .drawing_sheet_qa import validate_drawing_sheet_set
 from .facility import FacilityProfile, default_facility_profile, validate_building
 from .flows import route_flows, validate_flow_routes
 from .ifc import read_ifc_summary, validate_ifc_roundtrip
@@ -140,6 +141,9 @@ def validate_building_bundle(
     checks.append(_qa_manifest(manifest, source, (dxf, pdf, ifc, bcf, coordination)))
     checks.append(_qa_dxf(dxf, len(equipment.placements), len(routes.routes)))
     checks.append(_qa_pdf(pdf))
+    sheet_check = _qa_optional_sheets(manifest, source, building, result, equipment, routes, selected_profile)
+    if sheet_check is not None:
+        checks.append(sheet_check)
     checks.append(
         _qa_ifc(
             ifc,
@@ -151,6 +155,28 @@ def validate_building_bundle(
     checks.append(_qa_bcf(bcf, {issue.issue_id for issue in facility_report.issues}, expected_open=expected_open))
     checks.append(_qa_coordination(coordination, facility_report, schema_path, expected_open=expected_open))
     return BundleQAReport(source, tuple(checks))
+
+
+def _qa_optional_sheets(manifest, source, building, result, equipment, routes, profile):
+    """An absent optional index preserves the original legacy QA contract."""
+    try:
+        payload = json.loads(manifest.read_text(encoding="utf-8"))
+        variants = payload.get("variants", [])
+        matching = [row for row in variants if isinstance(row, dict) and row.get("json") == source.name]
+    except (OSError, TypeError, ValueError, AttributeError):
+        return None  # The mandatory MANIFEST check reports malformed manifests.
+    if not any("sheet_set" in row for row in matching):
+        return None
+    if len(matching) != 1:
+        return BundleQACheck("SHEET_SET_READBACK", False, "Sheet source variant is ambiguous in the manifest",
+                             {"issues": [{"code": "SHEET_INDEX", "message": "Duplicate matching variant entries"}]})
+    entry = matching[0]
+    readback = validate_drawing_sheet_set(manifest.parent, entry["sheet_set"], manifest_variant=entry.get("variant"),
+                                          building=building, result=result, equipment=equipment, flows=routes,
+                                          drawing=profile.drawing)
+    return BundleQACheck("SHEET_SET_READBACK", readback.ok,
+                         "Thematic PDF artifact identity and vector readback pass" if readback.ok else "Thematic PDF artifact readback failed",
+                         readback.to_dict())
 
 
 def validate_building_set(

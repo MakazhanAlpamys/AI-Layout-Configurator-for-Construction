@@ -166,7 +166,7 @@ class InstalledWheelTests(unittest.TestCase):
         self.assertTrue(report["ok"], report)
         self.assertEqual({check["id"] for check in report["checks"]},
                          {"FACILITY_VALIDATION", "MANIFEST", "DXF_READBACK", "PDF_READBACK",
-                          "IFC_READBACK", "BCF_READBACK", "COORDINATION_JSON"})
+                          "IFC_READBACK", "BCF_READBACK", "COORDINATION_JSON", "SHEET_SET_READBACK"})
 
     def test_installed_proposed_edits_validate_with_the_bundled_schema(self):
         self._run(

@@ -49,6 +49,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 
 | C.3.3 | Recursive zone/room containment with facility dispatch | Physical nonempty descendant containers are solved bottom-up, retaining canonical deepest ownership, explicit direct-room units, ancestor containment and sibling/unrelated exclusion. Explicit `zone_recursive` goes through all facility gates and preserves subtree failure evidence; default root/auto behavior stays intact. | Core and dispatch RED reproduced missing behavior. Fresh root recursive/root/dispatch/API/preferences run: 64 passed, 57 subtests. Agent additional room-preference integration: 72 passed. Actual three-level fixtures, enlarged physical child containers and a monolithic-valid/subtree-infeasible counterexample are covered. | complete 2026-10-12 for explicit recursion; fixed/axis parity, split memberships and large-scale performance pending |
 
+| D.1.1 | Independent thematic-sheet readback | Optional indexed PDFs are rechecked for hash, primary/continuation identities, canonical printed source/profile/variant/revision, real page count/A3 scale and vector content. Corrupt pages, raster overlays and changed printed fields fail even with a recalculated hash; legacy absent-index bundles keep their original checks. | Fresh root sheet-readback/legacy-QA/bundle run: 21 passed, 16 subtests. Agent wheel/API/editor/review/stack-QA integration: 80 passed, 43 subtests. Expected missing-hook and real title/path tamper RED preceded the repair. | complete 2026-10-12 for artifact readback; history/symbol catalog and engineering review remain separate |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
