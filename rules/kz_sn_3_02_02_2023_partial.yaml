@@ -4,7 +4,7 @@ jurisdiction: KZ
 extends: baseline.yaml
 provenance:
   authority: Committee for Construction and Housing and Communal Services of the Ministry of Industry and Construction of the Republic of Kazakhstan
-  edition: СН РК 3.02-02-2023, official edition PDF (2024 print)
+  edition: SN RK 3.02-02-2023, official edition PDF (2024 print)
   effective_date: "2023-06-16"
   source_url: https://new-shop.ksm.kz/media/egfntd/ntdgo/3_02_02_2023.pdf
   document_hash: 80db6203f81a2963033311b6bebc9616e2f05860b92cbaf67c698320f56b34da
@@ -13,8 +13,8 @@ provenance:
 # Partial profile: directly mapped KZ requirements are layered over the generic
 # design-aid baseline. Baseline thresholds remain project checks, not KZ law.
 # This is not a complete Kazakhstan building-code compliance verdict.
-# Russian `source`/`edition` values and `keywords` quote the official norm
-# wording; the keywords also feed Russian-language citation retrieval.
+# Source identifiers are transliterated and search keywords are translated
+# into English. The exact original document is identified by its URL and hash.
 rules:
   - id: GEOMETRY_VALID
     title: Layout geometry is valid
@@ -23,54 +23,52 @@ rules:
 
   - id: DAYLIGHT_OPENING
     title: Living rooms and kitchens have natural-light openings
-    source: СН РК 3.02-02-2023, official edition PDF
+    source: SN RK 3.02-02-2023, official edition PDF
     clause: "7.8"
-    keywords: [естественное освещение, окна, кухня, спальня, жилые комнаты]
+    keywords: [natural lighting, windows, kitchen, bedroom, living rooms]
     params:
       require_for_needs_daylight: true
-      # Project room-type mapping for «жилые комнаты и кухни (столовые)»
-      # ("living rooms and kitchens (dining rooms)").
+      # Project mapping for the source term translated as
+      # "living rooms and kitchens (dining rooms)".
       required_room_types: [living_room, bedroom, kitchen]
 
   - id: FORBIDDEN_TYPE_ADJACENCY
     title: Bath-laundry blocks are not adjacent to bedrooms
-    source: СН РК 3.02-02-2023, official edition PDF
+    source: SN RK 3.02-02-2023, official edition PDF
     clause: "6.2.13"
-    keywords: [банно-прачечный блок, спальня, соседство]
+    keywords: [bath-laundry block, bedroom, adjacency]
     params:
-      # Project room-type mapping for «банно-прачечный блок» ("bath-laundry
-      # block") and «спальные помещения» ("bedrooms"). Other aliases require an
-      # explicit profile update.
+      # Project mapping for the source terms translated as "bath-laundry
+      # block" and "bedrooms". Other aliases require an explicit profile update.
       source_room_types: [bath_laundry_block]
       target_room_types: [bedroom]
       minimum_shared_boundary_mm: 1
 
   - id: ENTRY_VESTIBULE
     title: External entry has a vestibule before a heated room
-    source: СН РК 3.02-02-2023, official edition PDF
+    source: SN RK 3.02-02-2023, official edition PDF
     clause: "6.2.8"
-    keywords: [тамбур, внешний вход, отапливаемое помещение]
+    keywords: [vestibule, external entry, heated room]
     params:
       vestibule_room_types: [vestibule, tambour, entry_lobby]
 
   - id: AUXILIARY_SPACE_ATTACHMENT
     title: Verandas, terraces and loggias are attached to main rooms
-    source: СН РК 3.02-02-2023, official edition PDF
+    source: SN RK 3.02-02-2023, official edition PDF
     clause: "6.2.12"
-    keywords: [веранда, терраса, лоджия, основные помещения]
+    keywords: [veranda, terrace, loggia, main rooms]
     params:
-      # Project room-type mapping for «веранда, терраса либо лоджия» ("veranda,
-      # terrace or loggia") and «основные помещения дома» ("main rooms of the
-      # house"). This mapping is intentionally explicit.
+      # Project mapping for the source terms translated as "veranda, terrace
+      # or loggia" and "main rooms of the house".
       auxiliary_room_types: [veranda, terrace, loggia]
       main_room_types: [living_room, kitchen, bedroom]
       minimum_shared_boundary_mm: 1
 
   - id: HEATED_ROOM_COVERAGE
     title: Required residential rooms are marked heated
-    source: СН РК 3.02-02-2023, official edition PDF
+    source: SN RK 3.02-02-2023, official edition PDF
     clause: "8.19"
-    keywords: [отопление, отапливаемое помещение, микроклимат]
+    keywords: [heating, heated room, microclimate]
     params:
       # This is a LayoutIR declaration check, not a heating-system calculation.
       required_room_types: [living_room, bedroom, kitchen]

@@ -78,6 +78,13 @@ Later changes require their own evidence.
 
 | QA.7 | English project text | The brief example, tutorial search and ordinary history fixtures use English. Research source titles are explicitly translated without changing source identities or links. Legacy multilingual aliases and dedicated font fixtures retain runtime behavior using Unicode escapes. | Fresh affected parser/LLM/norm/history/font/installed-wheel run: 45 passed, 62 subtests. Unicode-aware scans found no Cyrillic text in maintained source, tests, schemas, scripts, examples, documentation or research after excluding bundled font assets. | complete 2026-10-12 |
 
+QA.7 follow-up: the tracked-file audit also found original-language identifiers,
+keywords and mapping comments in the KZ rule profile. They now use English
+translations/transliteration while the authoritative URL, document hash, clause
+IDs and numeric checks stay unchanged. Fresh rules/parser verification: 15 tests
+passed. A full tracked UTF-8 text scan, excluding bundled font assets, found no
+Cyrillic text.
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
