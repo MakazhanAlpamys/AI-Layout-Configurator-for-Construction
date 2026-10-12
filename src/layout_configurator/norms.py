@@ -321,19 +321,19 @@ def retrieve_rule_citations(ruleset: RuleSet, query: str) -> tuple[RuleCitation,
 
 
 def _search_terms(query: str) -> tuple[str, ...]:
-    normalized = str(query).lower().replace("ё", "е")
+    normalized = str(query).lower().replace("\u0451", "\u0435")
     # Russian query stems expanded to rule vocabulary (search behaviour, not UI text).
     aliases = {
-        "освещ": ("daylight", "естествен", "свет", "окн"),
-        "окн": ("window", "daylight", "естествен"),
-        "тамбур": ("vestibule", "entry", "вход"),
-        "вход": ("entry", "vestibule", "тамбур"),
-        "отоп": ("heated", "heating", "отап"),
-        "эвакуац": ("egress", "reachability", "distance"),
-        "площад": ("area", "minimum"),
-        "коридор": ("corridor", "width"),
-        "террас": ("terrace", "attachment"),
-        "лодж": ("loggia", "attachment"),
+        "\u043e\u0441\u0432\u0435\u0449": ("daylight", "\u0435\u0441\u0442\u0435\u0441\u0442\u0432\u0435\u043d", "\u0441\u0432\u0435\u0442", "\u043e\u043a\u043d"),
+        "\u043e\u043a\u043d": ("window", "daylight", "\u0435\u0441\u0442\u0435\u0441\u0442\u0432\u0435\u043d"),
+        "\u0442\u0430\u043c\u0431\u0443\u0440": ("vestibule", "entry", "\u0432\u0445\u043e\u0434"),
+        "\u0432\u0445\u043e\u0434": ("entry", "vestibule", "\u0442\u0430\u043c\u0431\u0443\u0440"),
+        "\u043e\u0442\u043e\u043f": ("heated", "heating", "\u043e\u0442\u0430\u043f"),
+        "\u044d\u0432\u0430\u043a\u0443\u0430\u0446": ("egress", "reachability", "distance"),
+        "\u043f\u043b\u043e\u0449\u0430\u0434": ("area", "minimum"),
+        "\u043a\u043e\u0440\u0438\u0434\u043e\u0440": ("corridor", "width"),
+        "\u0442\u0435\u0440\u0440\u0430\u0441": ("terrace", "attachment"),
+        "\u043b\u043e\u0434\u0436": ("loggia", "attachment"),
     }
     tokens = set(normalized.split())
     expanded = set(tokens)

@@ -17,21 +17,21 @@ from .schema import DEFAULT_SCHEMA_PATH, normalize_mapping
 
 # Russian room names accepted in text briefs (parser vocabulary), mapped to room types.
 ROOM_TYPE_ALIASES = {
-    "гостиная": "living_room",
-    "жилая": "living_room",
-    "кухня": "kitchen",
-    "столовая": "dining_room",
-    "спальня": "bedroom",
-    "детская": "bedroom",
-    "холл": "corridor",
-    "коридор": "corridor",
-    "тамбур": "vestibule",
-    "прихожая": "entry_lobby",
-    "ванная": "bathroom",
-    "санузел": "bathroom",
-    "терраса": "terrace",
-    "веранда": "veranda",
-    "лоджия": "loggia",
+    "\u0433\u043e\u0441\u0442\u0438\u043d\u0430\u044f": "living_room",
+    "\u0436\u0438\u043b\u0430\u044f": "living_room",
+    "\u043a\u0443\u0445\u043d\u044f": "kitchen",
+    "\u0441\u0442\u043e\u043b\u043e\u0432\u0430\u044f": "dining_room",
+    "\u0441\u043f\u0430\u043b\u044c\u043d\u044f": "bedroom",
+    "\u0434\u0435\u0442\u0441\u043a\u0430\u044f": "bedroom",
+    "\u0445\u043e\u043b\u043b": "corridor",
+    "\u043a\u043e\u0440\u0438\u0434\u043e\u0440": "corridor",
+    "\u0442\u0430\u043c\u0431\u0443\u0440": "vestibule",
+    "\u043f\u0440\u0438\u0445\u043e\u0436\u0430\u044f": "entry_lobby",
+    "\u0432\u0430\u043d\u043d\u0430\u044f": "bathroom",
+    "\u0441\u0430\u043d\u0443\u0437\u0435\u043b": "bathroom",
+    "\u0442\u0435\u0440\u0440\u0430\u0441\u0430": "terrace",
+    "\u0432\u0435\u0440\u0430\u043d\u0434\u0430": "veranda",
+    "\u043b\u043e\u0434\u0436\u0438\u044f": "loggia",
 }
 
 
@@ -52,19 +52,19 @@ def parse_text_brief(text: str, schema_path: str = str(DEFAULT_SCHEMA_PATH)) -> 
         line = raw_line.strip()
         if not line or line.startswith("#"):
             continue
-        lower = line.lower().replace("ё", "е")
-        if lower.startswith(("проект", "project", "название", "name")):
+        lower = line.lower().replace("\u0451", "\u0435")
+        if lower.startswith(("\u043f\u0440\u043e\u0435\u043a\u0442", "project", "\u043d\u0430\u0437\u0432\u0430\u043d\u0438\u0435", "name")):
             project_name = _value_after_separator(line) or project_name
             continue
-        if lower.startswith(("контур", "габариты", "boundary", "размер")):
+        if lower.startswith(("\u043a\u043e\u043d\u0442\u0443\u0440", "\u0433\u0430\u0431\u0430\u0440\u0438\u0442\u044b", "boundary", "\u0440\u0430\u0437\u043c\u0435\u0440")):
             boundary = _parse_dimensions(line)
             continue
-        if lower.startswith(("вход", "entry_room", "entry")):
+        if lower.startswith(("\u0432\u0445\u043e\u0434", "entry_room", "entry")):
             entry_room = _value_after_separator(line).strip()
             continue
-        if lower in {"комнаты:", "rooms:", "помещения:"}:
+        if lower in {"\u043a\u043e\u043c\u043d\u0430\u0442\u044b:", "rooms:", "\u043f\u043e\u043c\u0435\u0449\u0435\u043d\u0438\u044f:"}:
             continue
-        if lower.startswith(("комната", "room", "-")) or "|" in line:
+        if lower.startswith(("\u043a\u043e\u043c\u043d\u0430\u0442\u0430", "room", "-")) or "|" in line:
             rooms.append(_parse_room(line))
 
     if boundary is None:
@@ -115,7 +115,7 @@ def _parse_dimensions(line: str) -> tuple[float, float]:
 
 def _parse_room(line: str) -> dict[str, Any]:
     body = line.lstrip("- ").strip()
-    if ":" in body and body.split(":", 1)[0].lower() in {"комната", "room"}:
+    if ":" in body and body.split(":", 1)[0].lower() in {"\u043a\u043e\u043c\u043d\u0430\u0442\u0430", "room"}:
         body = body.split(":", 1)[1].strip()
     if "|" in body:
         fields = [part.strip() for part in body.split("|")]
@@ -143,7 +143,7 @@ def _parse_room(line: str) -> dict[str, Any]:
     area = _parse_area(values.get("area", values.get("target_area", "")))
     required_raw = values.get("required", values.get("adjacency", values.get("adjacent", "")))
     required = [item.strip() for item in re.split(r"[,;/+]+", required_raw) if item.strip()]
-    flags = f"{values.get('flags', '')} {body}".lower().replace("ё", "е")
+    flags = f"{values.get('flags', '')} {body}".lower().replace("\u0451", "\u0435")
     return {
         "id": room_id,
         "type": room_type,
@@ -155,8 +155,8 @@ def _parse_room(line: str) -> dict[str, Any]:
         "required_adjacency": required,
         "preferred_adjacency": [],
         "forbidden_adjacency": [],
-        "needs_daylight": any(word in flags for word in ("daylight", "освещ", "свет")),
-        "is_heated": any(word in flags for word in ("heated", "отап", "тепл")),
+        "needs_daylight": any(word in flags for word in ("daylight", "\u043e\u0441\u0432\u0435\u0449", "\u0441\u0432\u0435\u0442")),
+        "is_heated": any(word in flags for word in ("heated", "\u043e\u0442\u0430\u043f", "\u0442\u0435\u043f\u043b")),
     }
 
 
@@ -174,7 +174,7 @@ def _key_values(body: str) -> dict[str, str]:
 
 
 def _normalize_room_type(value: str) -> str:
-    normalized = value.strip().lower().replace("ё", "е")
+    normalized = value.strip().lower().replace("\u0451", "\u0435")
     return ROOM_TYPE_ALIASES.get(normalized, normalized or "room")
 
 

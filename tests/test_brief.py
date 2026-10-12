@@ -10,7 +10,7 @@ class BriefTests(unittest.TestCase):
     def test_text_brief_becomes_canonical_schema_valid_layoutir_without_geometry(self):
         spec = parse_text_brief(Path("examples/brief.txt").read_text(encoding="utf-8"))
 
-        self.assertEqual(spec.project_name, "Дом из текстового ТЗ")
+        self.assertEqual(spec.project_name, "House from a text brief")
         self.assertEqual(spec.entry_room, "hall")
         self.assertEqual(spec.room_by_id["living"].target_area_m2, 24)
         self.assertTrue(spec.room_by_id["kitchen"].needs_daylight)
@@ -27,7 +27,7 @@ class BriefTests(unittest.TestCase):
     def test_rule_retrieval_returns_citations_without_running_layout_check(self):
         ruleset = load_ruleset("rules/kz_sn_3_02_02_2023_partial.yaml")
 
-        citations = retrieve_rule_citations(ruleset, "естественное освещение кухни")
+        citations = retrieve_rule_citations(ruleset, "kitchen daylight")
 
         self.assertTrue(citations)
         self.assertEqual(citations[0].id, "DAYLIGHT_OPENING")

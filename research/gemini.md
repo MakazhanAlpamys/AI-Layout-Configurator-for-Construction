@@ -532,7 +532,7 @@ CubiCasa5k floor plan dataset - GitHub, https://github.com/CubiCasa/CubiCasa5k
 GitHub - mageaustralia/FloorPlanAnalyzer: Experimental floor plan, https://github.com/mageaustralia/FloorPlanAnalyzer
 CubiCasa5k/LICENSE at master - GitHub, https://github.com/CubiCasa/CubiCasa5k/blob/master/LICENSE
 A list of awesome Computer-Aided Design (CAD) papers - GitHub, https://github.com/bertjiazheng/Awesome-CAD
-Maket AI: все о нейросети в одном обзоре (English: Maket AI: everything about the neural network in one review), https://room-design.ai/maket-ai.php
+Maket AI: everything about the neural network in one review (English translation of the source title), https://room-design.ai/maket-ai.php
 Maket Pricing & Plans: Start Free, https://www.maket.ai/pricing
 Maket.ai, https://www.maket.ai/
 How to Use Maket: Design Your Home from Idea to 3D, https://www.maket.ai/blog/how-to-use-maket

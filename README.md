@@ -8,6 +8,10 @@ and used as fixed solver constraints.
 Assistant/manual changes use [typed program proposals](docs/PROGRAM_EDITS.md),
 explicit confirmation and regeneration through the same solver and QA.
 
+Project documentation, interface text, comments and examples are maintained in
+English. Dedicated Unicode compatibility fixtures still exercise imported text
+and multilingual font rendering.
+
 ## Domain rule packs
 
 Rules for regulated facilities are defined by YAML profiles rather than hard-coded
@@ -499,13 +503,11 @@ For a text brief there is a local constrained parser without access to coordinat
 A future LLM provider must return only such canonical JSON; the
 `parse_llm_mapping` function first runs it through JSON Schema and rejects
 coordinates, generated data and unknown fields. For the RAG layer there is a safe
-reference search that does not check the layout (the query below is Russian because
-it is matched against the Russian-language text of the KZ rule profile; it means
-"kitchen daylighting"):
+reference search that does not check the layout:
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli cite `
-  естественное освещение кухни --rules rules\kz_sn_3_02_02_2023_partial.yaml
+  kitchen daylight --rules rules\kz_sn_3_02_02_2023_partial.yaml
 ```
 
 If an external OpenAI-compatible provider is available, you can enable a real

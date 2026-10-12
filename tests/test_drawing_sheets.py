@@ -202,7 +202,7 @@ class DrawingSheetTests(unittest.TestCase):
 
     def test_unsupported_glyphs_fail_before_publishing_a_broken_pdf(self):
         building, result, equipment, routes = example()
-        building = replace(building, layout=replace(building.layout, project_name="工厂布局"))
+        building = replace(building, layout=replace(building.layout, project_name="\u5de5\u5382\u5e03\u5c40"))
         with self.assertRaisesRegex(ValueError, "font|glyph|Unicode"):
             self.export(building, result, equipment, routes)
         self.assertFalse(self.path.exists())

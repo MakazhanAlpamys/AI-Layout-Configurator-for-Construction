@@ -61,6 +61,8 @@ Checkpoint C.3.6 adds direct explicit root-block unions, with a concrete valid
 split-membership counterexample; nested blocks and scale stay separate.
 Checkpoint QA.6 separates quick pushes from complete acceptance and moves the
 unchanged scale matrix to weekly/manual runs; full criteria are retained.
+Checkpoint QA.7 standardizes maintained text and examples on English, with
+explicitly translated research titles and dedicated Unicode compatibility tests.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

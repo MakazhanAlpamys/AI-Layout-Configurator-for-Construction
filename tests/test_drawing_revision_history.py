@@ -33,7 +33,7 @@ def prior_record(revision="P00", previous=None, date="2026-09-01"):
         # Whitespace is part of the supplied source, never canonicalized away.
         source = path.read_bytes().decode("utf-8") + "\n  \n"
     return {"revision": revision, "previous_revision": previous, "date": date,
-            "author": "Инженер А", "description": "Проверка размещения",
+            "author": "Engineer A", "description": "Layout review",
             "source_json": source, "source_sha256": hashlib.sha256(source.encode("utf-8")).hexdigest()}
 
 
@@ -77,7 +77,7 @@ class SuppliedDrawingHistoryTests(unittest.TestCase):
         index = history.to_index()
         self.assertNotIn("source_json", index["records"][0])
         self.assertEqual(index["records"][0]["source_sha256"], self.raw["records"][0]["source_sha256"])
-        self.assertEqual(index["records"][0]["author"], "Инженер А")
+        self.assertEqual(index["records"][0]["author"], "Engineer A")
 
     def test_empty_or_malformed_explicit_history_is_rejected(self):
         for raw in (None, [], {}, {**self.raw, "records": []}, {**self.raw, "records": "P00"}):

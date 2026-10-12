@@ -34,7 +34,7 @@ class LlmTests(unittest.TestCase):
                 api_key="secret",
             )
 
-        self.assertEqual(spec.project_name, "Дом из текстового ТЗ")
+        self.assertEqual(spec.project_name, "House from a text brief")
         request = opened.call_args.args[0]
         self.assertEqual(request.headers["Authorization"], "Bearer secret")
         self.assertIn("JSON Schema", json.loads(request.data.decode("utf-8"))["messages"][1]["content"])

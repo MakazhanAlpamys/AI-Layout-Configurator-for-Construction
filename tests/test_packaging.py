@@ -219,7 +219,7 @@ class InstalledWheelTests(unittest.TestCase):
             "manifest = json.loads(Path('cyrillic-output/manifest.json').read_text(encoding='utf-8'))\n"
             "sheets = Path('cyrillic-output') / manifest['variants'][0]['sheet_set']['pdf']\n"
             "text = '\\n'.join(page.extract_text() for page in PdfReader(sheets).pages)\n"
-            "assert 'Фармацевтический завод' in text and 'аппарат' in text and 'помещение' in text\n"
+            "assert '\u0424\u0430\u0440\u043c\u0430\u0446\u0435\u0432\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0437\u0430\u0432\u043e\u0434' in text and '\u0430\u043f\u043f\u0430\u0440\u0430\u0442' in text and '\u043f\u043e\u043c\u0435\u0449\u0435\u043d\u0438\u0435' in text\n"
         )
 
     def test_explicit_local_and_missing_absolute_paths_keep_their_meaning(self):

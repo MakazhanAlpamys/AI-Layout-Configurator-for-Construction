@@ -64,7 +64,7 @@ class DrawingRevisionBundleTests(unittest.TestCase):
         text = reader.pages[-1].extract_text()
         self.assertIn("Current P02 | Previous P01", text)
         self.assertIn("supplied attribution", text)
-        self.assertIn("Инженер А", text)
+        self.assertIn("Engineer A", text)
         for row in self.raw["records"]:
             self.assertIn(row["date"], text)
             self.assertIn(row["source_sha256"], text)
