@@ -112,6 +112,8 @@ Checkpoint D.6 / NEXT 3.4 adds an indexed source-backed client PDF to every
 shared accepted bundle, with complete paginated evidence and independent readback.
 Checkpoint H.3.4.1 adds a source-pinned, supervised complete 80-room warm-start
 bundle benchmark and manual single-runner CI; the scoped local request passed in 64.735 s.
+Checkpoint G.1.1 verifies full supplied-pilot DXF/IFC import and fixed-coordinate
+regeneration through every persisted bundle gate and strict IFC EXPRESS.
 
 ## 1. Why we are expanding the project
 

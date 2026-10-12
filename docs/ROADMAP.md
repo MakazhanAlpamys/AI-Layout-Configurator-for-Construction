@@ -24,6 +24,8 @@ Checkpoint D.6 verifies per-variant client reports through shared CLI/HTTP/edito
 and installed-wheel exports, retaining explicit pending engineering acceptance.
 Checkpoint H.3.4.1 measures the complete source-pinned 80-room warm-start
 pipeline under a parent deadline, independently of the archived MVP and full scale matrix.
+Checkpoint G.1.1 verifies supplied full-pilot DXF/IFC software import/regeneration;
+human geometry review and third-party receiving-tool acceptance remain separate.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

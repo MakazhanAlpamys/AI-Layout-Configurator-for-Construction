@@ -1,0 +1,782 @@
+{
+  "scope": "Supplied accepted pilot import and fixed-room regeneration; automated software fixture, no human or engineering sign-off",
+  "source_sha256": "03d43d64c2e2eb09d4a50ee8fbb3aaee60999796a5b19179c3804a3989f7245c",
+  "rooms": 13,
+  "cases": {
+    "dxf": {
+      "ok": true,
+      "seconds": 4.265999999988708,
+      "source_artifact_sha256": "6d9f35c85884467e23d2e586afe2fe1b7e9d8988507de4a7cb7c76f211a4b922",
+      "source_entity_ids": {
+        "dispatch": "56",
+        "finished_storage": "53",
+        "material_airlock": "47",
+        "office": "65",
+        "packaging": "50",
+        "personnel_airlock": "5C",
+        "preparation": "4A",
+        "production": "4D",
+        "raw_storage": "44",
+        "receiving": "41",
+        "staff_changing": "5F",
+        "staff_corridor": "62",
+        "waste_hold": "59"
+      },
+      "canonical_geometry_equal": true,
+      "qa": {
+        "ok": true,
+        "output": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\imported-pilot-g1\\dxf",
+        "variant_count": 1,
+        "variants": [
+          {
+            "ok": true,
+            "input": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\imported-pilot-g1\\dxf\\building_01.json",
+            "checks": [
+              {
+                "id": "FACILITY_VALIDATION",
+                "status": "PASS",
+                "message": "Facility checks pass",
+                "details": {
+                  "issues": 0
+                }
+              },
+              {
+                "id": "MANIFEST",
+                "status": "PASS",
+                "message": "Manifest links the complete coordination bundle",
+                "details": {
+                  "variant": 1
+                }
+              },
+              {
+                "id": "DXF_READBACK",
+                "status": "PASS",
+                "message": "DXF opens and contains the expected coordination geometry",
+                "details": {
+                  "layers": 15,
+                  "equipment_entities": 5,
+                  "flow_centerlines": 8
+                }
+              },
+              {
+                "id": "PDF_READBACK",
+                "status": "PASS",
+                "message": "PDF signature and trailer are present",
+                "details": {
+                  "bytes": 5258
+                }
+              },
+              {
+                "id": "SHEET_SET_READBACK",
+                "status": "PASS",
+                "message": "Thematic PDF artifact identity and vector readback pass",
+                "details": {
+                  "scope": "PDF artifact identity and vector-content readback; no engineering certification",
+                  "page_count": 5,
+                  "issues": []
+                }
+              },
+              {
+                "id": "CLIENT_REPORT_READBACK",
+                "status": "PASS",
+                "message": "Client PDF source identity and evidence readback pass",
+                "details": {
+                  "scope": "Client PDF identity, saved status/evidence and vector readback; no engineering approval",
+                  "page_count": 14,
+                  "issues": []
+                }
+              },
+              {
+                "id": "IFC_READBACK",
+                "status": "PASS",
+                "message": "IFC opens and preserves room/equipment/flow metadata",
+                "details": {
+                  "spaces": 13,
+                  "equipment": 5,
+                  "flow_routes": 8
+                }
+              },
+              {
+                "id": "BCF_READBACK",
+                "status": "PASS",
+                "message": "BCF 2.1 package opens and contains current issues",
+                "details": {
+                  "version": "2.1",
+                  "topics": 0,
+                  "open_topics": 0,
+                  "resolved_topics": 0
+                }
+              },
+              {
+                "id": "COORDINATION_JSON",
+                "status": "PASS",
+                "message": "Coordination sidecar matches schema and current issue workflow",
+                "details": {
+                  "open_count": 0,
+                  "resolved_count": 0
+                }
+              }
+            ]
+          }
+        ],
+        "consistency": {
+          "id": "CROSS_VARIANT_CONSISTENCY",
+          "status": "PASS",
+          "message": "Semantic IDs and BCF/IFC exchange identities match across variants",
+          "details": {
+            "variant_count": 1,
+            "variants": [
+              "building_01.json"
+            ],
+            "mismatches": [],
+            "baseline": {
+              "semantic_ids": {
+                "rooms": [
+                  "dispatch",
+                  "finished_storage",
+                  "material_airlock",
+                  "office",
+                  "packaging",
+                  "personnel_airlock",
+                  "preparation",
+                  "production",
+                  "raw_storage",
+                  "receiving",
+                  "staff_changing",
+                  "staff_corridor",
+                  "waste_hold"
+                ],
+                "equipment": [
+                  "cold_store_01",
+                  "loading_dock_01",
+                  "mixer_01",
+                  "packaging_line_01",
+                  "production_line_01"
+                ],
+                "flows": [
+                  "dirty_material_out",
+                  "finished_goods_out",
+                  "material_to_production",
+                  "packaging_transfer",
+                  "personnel_access",
+                  "raw_material_to_airlock",
+                  "waste_out"
+                ]
+              },
+              "route_topology": [
+                [
+                  "dirty_material_out",
+                  "production_line_01",
+                  "waste_hold",
+                  "production",
+                  "waste_hold",
+                  1800.0,
+                  [
+                    "production",
+                    "waste_hold"
+                  ]
+                ],
+                [
+                  "finished_goods_out",
+                  "packaging_line_01",
+                  "dispatch",
+                  "packaging",
+                  "dispatch",
+                  1800.0,
+                  [
+                    "packaging",
+                    "finished_storage",
+                    "dispatch"
+                  ]
+                ],
+                [
+                  "finished_goods_out",
+                  "packaging_line_01",
+                  "finished_storage",
+                  "packaging",
+                  "finished_storage",
+                  1800.0,
+                  [
+                    "packaging",
+                    "finished_storage"
+                  ]
+                ],
+                [
+                  "material_to_production",
+                  "material_airlock",
+                  "production_line_01",
+                  "material_airlock",
+                  "production",
+                  1800.0,
+                  [
+                    "material_airlock",
+                    "preparation",
+                    "production"
+                  ]
+                ],
+                [
+                  "packaging_transfer",
+                  "production_line_01",
+                  "packaging_line_01",
+                  "production",
+                  "packaging",
+                  1800.0,
+                  [
+                    "production",
+                    "packaging"
+                  ]
+                ],
+                [
+                  "personnel_access",
+                  "staff_changing",
+                  "production_line_01",
+                  "staff_changing",
+                  "production",
+                  1200.0,
+                  [
+                    "staff_changing",
+                    "staff_corridor",
+                    "personnel_airlock",
+                    "production"
+                  ]
+                ],
+                [
+                  "raw_material_to_airlock",
+                  "cold_store_01",
+                  "material_airlock",
+                  "raw_storage",
+                  "material_airlock",
+                  1800.0,
+                  [
+                    "raw_storage",
+                    "material_airlock"
+                  ]
+                ],
+                [
+                  "waste_out",
+                  "production_line_01",
+                  "waste_hold",
+                  "production",
+                  "waste_hold",
+                  1800.0,
+                  [
+                    "production",
+                    "waste_hold"
+                  ]
+                ]
+              ],
+              "ifc": {
+                "project_global_id": "2PNE5nJhHJEvQNQmdBVt5h",
+                "equipment_ids": [
+                  "cold_store_01",
+                  "loading_dock_01",
+                  "mixer_01",
+                  "packaging_line_01",
+                  "production_line_01"
+                ],
+                "flow_ids": [
+                  "dirty_material_out",
+                  "finished_goods_out",
+                  "finished_goods_out",
+                  "material_to_production",
+                  "packaging_transfer",
+                  "personnel_access",
+                  "raw_material_to_airlock",
+                  "waste_out"
+                ]
+              },
+              "bcf": {
+                "version": "2.1",
+                "topics": []
+              }
+            }
+          }
+        },
+        "artifact_hashes": [
+          {
+            "variant": 1,
+            "files": [
+              {
+                "name": "building_01.json",
+                "required": true,
+                "exists": true,
+                "bytes": 43409,
+                "sha256": "03d43d64c2e2eb09d4a50ee8fbb3aaee60999796a5b19179c3804a3989f7245c"
+              },
+              {
+                "name": "building_01.dxf",
+                "required": true,
+                "exists": true,
+                "bytes": 60652,
+                "sha256": "0f081a3d18872dc78ba48f701ff6564494d85b97ef048332d3595bb61d1708a8"
+              },
+              {
+                "name": "building_01.pdf",
+                "required": true,
+                "exists": true,
+                "bytes": 5258,
+                "sha256": "ef8fc770f019aa46d7cc2a418435da301ac21c61c0b15da9697873a2147274b1"
+              },
+              {
+                "name": "building_01.ifc",
+                "required": true,
+                "exists": true,
+                "bytes": 178102,
+                "sha256": "6feaf56e3dbb523cf4fbce7497d1a9bbc642d51c2721f047e1c99b163f358618"
+              },
+              {
+                "name": "building_01.bcf",
+                "required": true,
+                "exists": true,
+                "bytes": 541,
+                "sha256": "7d2c76c98c063b347e35a0ad87759c66077631a4b085b15acc2fab068bb2bf4f"
+              },
+              {
+                "name": "building_01.coordination.json",
+                "required": true,
+                "exists": true,
+                "bytes": 10206,
+                "sha256": "9dd6e21b2b630b0932631603c20d698f4c89cffe00c529afc405c64674e7ae5c"
+              },
+              {
+                "name": "building_01.issue-management.json",
+                "required": false,
+                "exists": false,
+                "sha256": null
+              }
+            ]
+          },
+          {
+            "shared": [
+              {
+                "name": "manifest.json",
+                "required": true,
+                "exists": true,
+                "bytes": 19449,
+                "sha256": "d6bbd2511d29fd59a198da480358a64e68a70a485086ae15eed71bfd8dc71da1"
+              }
+            ]
+          }
+        ],
+        "expected_variants": 1
+      },
+      "maximum_import_delta_mm": 0.0,
+      "strict_express": {
+        "ok": true,
+        "issues": 0
+      },
+      "import_confirmation": {
+        "format": "FLC-import-confirmation",
+        "confirmed": true,
+        "reviewer": "Automated geometry acceptance fixture",
+        "source_sha256": "6d9f35c85884467e23d2e586afe2fe1b7e9d8988507de4a7cb7c76f211a4b922",
+        "draft_sha256": "5dc5d355e9845345bfb1d9c4f04c48addac9372f04276581a3f1228b3c489af6",
+        "layout_sha256": "807748364e9cd13ef252976acb47530c3fc56177cd718a98483f8b2172e5e128",
+        "room_mapping": {
+          "dispatch": "dispatch",
+          "finished_storage": "finished_storage",
+          "material_airlock": "material_airlock",
+          "office": "office",
+          "packaging": "packaging",
+          "personnel_airlock": "personnel_airlock",
+          "preparation": "preparation",
+          "production": "production",
+          "raw_storage": "raw_storage",
+          "receiving": "receiving",
+          "staff_changing": "staff_changing",
+          "staff_corridor": "staff_corridor",
+          "waste_hold": "waste_hold"
+        },
+        "scope": "Imported geometry acceptance; not engineering sign-off"
+      }
+    },
+    "ifc": {
+      "ok": true,
+      "seconds": 5.889999999999418,
+      "source_artifact_sha256": "700c1abb44f548bfa3e3ceb8a604b3059be4698ee49d6620b4459c38110450dc",
+      "source_entity_ids": {
+        "dispatch": "0BKiCCg15STxhlX12KGofD",
+        "finished_storage": "0eZNcmefHUEQdqJKWQ3BD9",
+        "material_airlock": "3Inmk_TFfLGAvxuHTyeC01",
+        "office": "2DfGS8DdzK3f_Ds4w3HL4$",
+        "packaging": "3ZsBePlCHGFPVz2XT5i4_6",
+        "personnel_airlock": "2j$1ZITfjOoRF4Gg3IH42T",
+        "preparation": "3huQqqO11GIgY6U1ESwFnu",
+        "production": "1rJN2W_VXPiRvKY8qK$Xs8",
+        "raw_storage": "0X0sL1gpLH_PDekYAteL3z",
+        "receiving": "3SBrYaFYzUvPCPGTiBXbEh",
+        "staff_changing": "3__qXmpg9Oxen8DrmH_ig8",
+        "staff_corridor": "1BWiqbiH5L9BIeZfNQ4235",
+        "waste_hold": "1nJ7VOONLOdx3s82bOFSmu"
+      },
+      "canonical_geometry_equal": true,
+      "qa": {
+        "ok": true,
+        "output": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\imported-pilot-g1\\ifc",
+        "variant_count": 1,
+        "variants": [
+          {
+            "ok": true,
+            "input": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\imported-pilot-g1\\ifc\\building_01.json",
+            "checks": [
+              {
+                "id": "FACILITY_VALIDATION",
+                "status": "PASS",
+                "message": "Facility checks pass",
+                "details": {
+                  "issues": 0
+                }
+              },
+              {
+                "id": "MANIFEST",
+                "status": "PASS",
+                "message": "Manifest links the complete coordination bundle",
+                "details": {
+                  "variant": 1
+                }
+              },
+              {
+                "id": "DXF_READBACK",
+                "status": "PASS",
+                "message": "DXF opens and contains the expected coordination geometry",
+                "details": {
+                  "layers": 15,
+                  "equipment_entities": 5,
+                  "flow_centerlines": 8
+                }
+              },
+              {
+                "id": "PDF_READBACK",
+                "status": "PASS",
+                "message": "PDF signature and trailer are present",
+                "details": {
+                  "bytes": 5258
+                }
+              },
+              {
+                "id": "SHEET_SET_READBACK",
+                "status": "PASS",
+                "message": "Thematic PDF artifact identity and vector readback pass",
+                "details": {
+                  "scope": "PDF artifact identity and vector-content readback; no engineering certification",
+                  "page_count": 5,
+                  "issues": []
+                }
+              },
+              {
+                "id": "CLIENT_REPORT_READBACK",
+                "status": "PASS",
+                "message": "Client PDF source identity and evidence readback pass",
+                "details": {
+                  "scope": "Client PDF identity, saved status/evidence and vector readback; no engineering approval",
+                  "page_count": 14,
+                  "issues": []
+                }
+              },
+              {
+                "id": "IFC_READBACK",
+                "status": "PASS",
+                "message": "IFC opens and preserves room/equipment/flow metadata",
+                "details": {
+                  "spaces": 13,
+                  "equipment": 5,
+                  "flow_routes": 8
+                }
+              },
+              {
+                "id": "BCF_READBACK",
+                "status": "PASS",
+                "message": "BCF 2.1 package opens and contains current issues",
+                "details": {
+                  "version": "2.1",
+                  "topics": 0,
+                  "open_topics": 0,
+                  "resolved_topics": 0
+                }
+              },
+              {
+                "id": "COORDINATION_JSON",
+                "status": "PASS",
+                "message": "Coordination sidecar matches schema and current issue workflow",
+                "details": {
+                  "open_count": 0,
+                  "resolved_count": 0
+                }
+              }
+            ]
+          }
+        ],
+        "consistency": {
+          "id": "CROSS_VARIANT_CONSISTENCY",
+          "status": "PASS",
+          "message": "Semantic IDs and BCF/IFC exchange identities match across variants",
+          "details": {
+            "variant_count": 1,
+            "variants": [
+              "building_01.json"
+            ],
+            "mismatches": [],
+            "baseline": {
+              "semantic_ids": {
+                "rooms": [
+                  "dispatch",
+                  "finished_storage",
+                  "material_airlock",
+                  "office",
+                  "packaging",
+                  "personnel_airlock",
+                  "preparation",
+                  "production",
+                  "raw_storage",
+                  "receiving",
+                  "staff_changing",
+                  "staff_corridor",
+                  "waste_hold"
+                ],
+                "equipment": [
+                  "cold_store_01",
+                  "loading_dock_01",
+                  "mixer_01",
+                  "packaging_line_01",
+                  "production_line_01"
+                ],
+                "flows": [
+                  "dirty_material_out",
+                  "finished_goods_out",
+                  "material_to_production",
+                  "packaging_transfer",
+                  "personnel_access",
+                  "raw_material_to_airlock",
+                  "waste_out"
+                ]
+              },
+              "route_topology": [
+                [
+                  "dirty_material_out",
+                  "production_line_01",
+                  "waste_hold",
+                  "production",
+                  "waste_hold",
+                  1800.0,
+                  [
+                    "production",
+                    "waste_hold"
+                  ]
+                ],
+                [
+                  "finished_goods_out",
+                  "packaging_line_01",
+                  "dispatch",
+                  "packaging",
+                  "dispatch",
+                  1800.0,
+                  [
+                    "packaging",
+                    "finished_storage",
+                    "dispatch"
+                  ]
+                ],
+                [
+                  "finished_goods_out",
+                  "packaging_line_01",
+                  "finished_storage",
+                  "packaging",
+                  "finished_storage",
+                  1800.0,
+                  [
+                    "packaging",
+                    "finished_storage"
+                  ]
+                ],
+                [
+                  "material_to_production",
+                  "material_airlock",
+                  "production_line_01",
+                  "material_airlock",
+                  "production",
+                  1800.0,
+                  [
+                    "material_airlock",
+                    "preparation",
+                    "production"
+                  ]
+                ],
+                [
+                  "packaging_transfer",
+                  "production_line_01",
+                  "packaging_line_01",
+                  "production",
+                  "packaging",
+                  1800.0,
+                  [
+                    "production",
+                    "packaging"
+                  ]
+                ],
+                [
+                  "personnel_access",
+                  "staff_changing",
+                  "production_line_01",
+                  "staff_changing",
+                  "production",
+                  1200.0,
+                  [
+                    "staff_changing",
+                    "staff_corridor",
+                    "personnel_airlock",
+                    "production"
+                  ]
+                ],
+                [
+                  "raw_material_to_airlock",
+                  "cold_store_01",
+                  "material_airlock",
+                  "raw_storage",
+                  "material_airlock",
+                  1800.0,
+                  [
+                    "raw_storage",
+                    "material_airlock"
+                  ]
+                ],
+                [
+                  "waste_out",
+                  "production_line_01",
+                  "waste_hold",
+                  "production",
+                  "waste_hold",
+                  1800.0,
+                  [
+                    "production",
+                    "waste_hold"
+                  ]
+                ]
+              ],
+              "ifc": {
+                "project_global_id": "2PNE5nJhHJEvQNQmdBVt5h",
+                "equipment_ids": [
+                  "cold_store_01",
+                  "loading_dock_01",
+                  "mixer_01",
+                  "packaging_line_01",
+                  "production_line_01"
+                ],
+                "flow_ids": [
+                  "dirty_material_out",
+                  "finished_goods_out",
+                  "finished_goods_out",
+                  "material_to_production",
+                  "packaging_transfer",
+                  "personnel_access",
+                  "raw_material_to_airlock",
+                  "waste_out"
+                ]
+              },
+              "bcf": {
+                "version": "2.1",
+                "topics": []
+              }
+            }
+          }
+        },
+        "artifact_hashes": [
+          {
+            "variant": 1,
+            "files": [
+              {
+                "name": "building_01.json",
+                "required": true,
+                "exists": true,
+                "bytes": 43409,
+                "sha256": "03d43d64c2e2eb09d4a50ee8fbb3aaee60999796a5b19179c3804a3989f7245c"
+              },
+              {
+                "name": "building_01.dxf",
+                "required": true,
+                "exists": true,
+                "bytes": 60648,
+                "sha256": "fbed17542057b0b0b6980c1796759a6a1026351725f72174d889bdf242f9b057"
+              },
+              {
+                "name": "building_01.pdf",
+                "required": true,
+                "exists": true,
+                "bytes": 5258,
+                "sha256": "56bf4cb84058a52cfce833f0d35d154ae80548e74fc12bc0996e025d45037487"
+              },
+              {
+                "name": "building_01.ifc",
+                "required": true,
+                "exists": true,
+                "bytes": 178102,
+                "sha256": "54780aba961be4c9a483432ebb9312a370b1ff1d5119e7f8f9bd3e614897c0be"
+              },
+              {
+                "name": "building_01.bcf",
+                "required": true,
+                "exists": true,
+                "bytes": 541,
+                "sha256": "7d2c76c98c063b347e35a0ad87759c66077631a4b085b15acc2fab068bb2bf4f"
+              },
+              {
+                "name": "building_01.coordination.json",
+                "required": true,
+                "exists": true,
+                "bytes": 10206,
+                "sha256": "9dd6e21b2b630b0932631603c20d698f4c89cffe00c529afc405c64674e7ae5c"
+              },
+              {
+                "name": "building_01.issue-management.json",
+                "required": false,
+                "exists": false,
+                "sha256": null
+              }
+            ]
+          },
+          {
+            "shared": [
+              {
+                "name": "manifest.json",
+                "required": true,
+                "exists": true,
+                "bytes": 19449,
+                "sha256": "9a1560a9d88be9d43d5bbfea12ae26ed80b85c70cd3679b638e2fafe98639d74"
+              }
+            ]
+          }
+        ],
+        "expected_variants": 1
+      },
+      "maximum_import_delta_mm": 7.275957614183426e-12,
+      "strict_express": {
+        "ok": true,
+        "issues": 0
+      },
+      "import_confirmation": {
+        "format": "FLC-import-confirmation",
+        "confirmed": true,
+        "reviewer": "Automated geometry acceptance fixture",
+        "source_sha256": "700c1abb44f548bfa3e3ceb8a604b3059be4698ee49d6620b4459c38110450dc",
+        "draft_sha256": "dbe7a75a317c53a6b8b925d79ec91770d7f017741de647297d2d39d8f6748e21",
+        "layout_sha256": "807748364e9cd13ef252976acb47530c3fc56177cd718a98483f8b2172e5e128",
+        "room_mapping": {
+          "dispatch": "dispatch",
+          "finished_storage": "finished_storage",
+          "material_airlock": "material_airlock",
+          "office": "office",
+          "packaging": "packaging",
+          "personnel_airlock": "personnel_airlock",
+          "preparation": "preparation",
+          "production": "production",
+          "raw_storage": "raw_storage",
+          "receiving": "receiving",
+          "staff_changing": "staff_changing",
+          "staff_corridor": "staff_corridor",
+          "waste_hold": "waste_hold"
+        },
+        "scope": "Imported geometry acceptance; not engineering sign-off"
+      }
+    }
+  },
+  "ok": true
+}

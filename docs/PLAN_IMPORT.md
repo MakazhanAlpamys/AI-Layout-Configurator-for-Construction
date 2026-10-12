@@ -35,6 +35,33 @@ still apply. The draft's `.confirmation.json` sidecar and generated manifest
 retain reviewer and source/draft/program hashes. This confirms geometry and
 does not constitute engineering sign-off.
 
+## Full supplied-pilot DXF/IFC software acceptance
+
+The existing accepted 13-room pharma pilot was imported separately from its
+actual DXF and IFC, then regenerated through the CLI with all imported rooms
+fixed, the original canonical program/profile, seed 1, one variant, one candidate
+and .25 deterministic work units. Independent persisted bundle QA and strict
+IFC EXPRESS passed for both regenerated bundles. Canonical program and final
+room coordinates matched the supplied result exactly. Import conversion error
+was zero for DXF and at most 7.3e-12 mm for IFC, within the existing 1e-4 mm
+numerical readback tolerance; no non-grid source was accepted.
+
+The measured software fixture took 4.266 s for DXF and 5.890 s for IFC, including
+import, regeneration and persisted/EXPRESS QA; creating the supplied pilot was
+excluded. [Raw evidence](../research/imported_pilot/2026_10_12/windows.json)
+retains source artifact/entity IDs, hashes, the confirmation sidecar and actual
+QA checks. The supplied reviewer label is explicitly an automated acceptance
+fixture: this does not establish human review, receiving-tool acceptance or
+acceptance of an unrelated third-party drawing. Calibrated vector PDF has its
+separate small-bundle fixture; general PDF/raster reconstruction remains open.
+
+To repeat with an accepted pilot directory, run the existing `import-plan`
+command on its `building_01.dxf` or `building_01.ifc`, then `generate-building`
+with the exact saved canonical program/profile and the confirmation options
+above. Use `--variants 1 --max-attempts 1 --seed 1 --time-limit 10 --deterministic-budget .25 --room-solver hierarchical`, then `qa-building-set`
+and strict IfcOpenShell EXPRESS validation. Real source use still requires an
+actual named geometry reviewer.
+
 ## Calibrated vector PDF
 
 ```powershell
