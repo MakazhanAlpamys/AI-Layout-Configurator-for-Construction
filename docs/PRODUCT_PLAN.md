@@ -42,6 +42,8 @@ Checkpoint B.2 adds mixed, versioned result footprints and exact scoped
 geometry evidence; unsupported full consumers report UNKNOWN explicitly.
 Checkpoint QA.3 pins the comparison regression's work budget after a busy-machine
 full run exposed its wall-clock-dependent quality assertion.
+Checkpoint C.3.1 adds opt-in physical root-zone containment and scoped per-stage
+failure evidence; recursive containers and large-scale gates remain separate.
 
 ## 1. Why we are expanding the project
 

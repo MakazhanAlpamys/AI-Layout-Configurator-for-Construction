@@ -1,0 +1,534 @@
+"""Opt-in rectangular root-zone containment, returning canonical LayoutResult.
+
+Each nonempty root zone includes its canonical descendant membership. Local
+room/cluster CP-SAT solves provide a bounded set of shapes inside rectangular
+containers; a second CP-SAT model places those containers and chooses shapes.
+Unassigned rooms have explicit singleton units. Descendant zones do not yet
+have separate physical containers. This backend is not in the auto dispatcher.
+
+Budgets apply per CP-SAT solve; the local hierarchy can perform several solves
+per option. Rectangular
+containers and bounded shapes restrict the search: failure never proves that
+the original building program is infeasible. Equipment packing, flow routing
+and facility profile acceptance remain separate stages.
+"""
+
+from __future__ import annotations
+
+import math
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, replace
+from numbers import Real
+
+from .building import BuildingIR
+from .hierarchy import solve_layouts_hierarchical
+from .models import BoundarySpec, LayoutResult, Rect
+from .search import configure_solver
+from .solver import (
+    InfeasibleLayout,
+    _RoomVars,
+    _add_adjacency_indicator,
+    _add_forbidden_adjacency,
+    _add_required_adjacency,
+    _area_to_grid2,
+    _avoid_cutout,
+    _ceil_grid,
+    _constrain_automatic_window_facade,
+    _constrain_external_entry,
+    _layout_objective,
+)
+from .validation import ValidationIssue, ValidationReport, validate_layout
+
+
+class ZoneHierarchyFailure(InfeasibleLayout):
+    """Stage evidence for a failure of this restricted search, not BuildingIR."""
+
+    def __init__(self, message, *, stage, code, unit_ids=(), room_ids=(),
+                 model_status=None, proof_scope="bounded_candidates", issues=()):
+        super().__init__(message)
+        self.stage = stage
+        self.code = code
+        self.unit_ids = tuple(unit_ids)
+        self.room_ids = tuple(room_ids)
+        self.model_status = model_status
+        self.proof_scope = proof_scope
+        self.issues = tuple(issues)
+
+    def to_dict(self):
+        return {
+            "stage": self.stage, "code": self.code, "message": str(self),
+            "unit_ids": list(self.unit_ids), "room_ids": list(self.room_ids),
+            "model_status": self.model_status, "proof_scope": self.proof_scope,
+            "proven_building_infeasible": False, "issues": list(self.issues),
+        }
+
+
+class ZoneHierarchyNotApplicable(ZoneHierarchyFailure):
+    """Unsupported or ambiguous input that an explicit caller may fall back on."""
+
+
+@dataclass(frozen=True)
+class _ZoneShape:
+    width: float
+    height: float
+    placements: Mapping[str, Rect]
+
+
+def _fail(evidence, message, *, not_applicable=False, **details):
+    kind = ZoneHierarchyNotApplicable if not_applicable else ZoneHierarchyFailure
+    failure = kind(message, **details)
+    evidence["failure"] = failure.to_dict()
+    raise failure
+
+
+def _root_units(building, evidence):
+    zones = {zone.id: zone for zone in building.zones}
+    known_rooms = {room.id for room in building.layout.rooms}
+    if len(zones) != len(building.zones):
+        _fail(evidence, "Zone IDs must be unique", stage="membership", code="duplicate_zone_id", not_applicable=True)
+    ancestors = {}
+    for zone in building.zones:
+        lineage = set()
+        current = zone
+        while current.parent_zone_id is not None:
+            parent = current.parent_zone_id
+            if parent not in zones or parent == zone.id or parent in lineage:
+                _fail(evidence, f"Invalid zone ancestry for {zone.id}", stage="membership", code="invalid_ancestry",
+                      unit_ids=(zone.id,), not_applicable=True)
+            lineage.add(parent)
+            current = zones[parent]
+        ancestors[zone.id] = lineage
+        unknown = set(zone.room_ids) - known_rooms
+        if unknown:
+            _fail(evidence, f"Zone {zone.id} has unknown rooms", stage="membership", code="unknown_room",
+                  unit_ids=(zone.id,), room_ids=sorted(unknown), not_applicable=True)
+        for relation in (zone.required_adjacency, zone.forbidden_adjacency, zone.preferred_adjacency):
+            if set(relation) - set(zones) or zone.id in relation:
+                _fail(evidence, f"Invalid relation of zone {zone.id}", stage="membership", code="invalid_relation",
+                      unit_ids=(zone.id,), not_applicable=True)
+    owners = {}
+    for zone in building.zones:
+        for room_id in zone.room_ids:
+            for other in owners.get(room_id, ()):
+                if other not in ancestors[zone.id] and zone.id not in ancestors[other]:
+                    _fail(evidence, f"Room {room_id} belongs to unrelated zones {other} and {zone.id}",
+                          stage="membership", code="ambiguous_membership", unit_ids=(other, zone.id),
+                          room_ids=(room_id,), not_applicable=True)
+            owners.setdefault(room_id, []).append(zone.id)
+    units = {}
+    empty = []
+    for zone in building.zones:
+        if zone.parent_zone_id is not None:
+            continue
+        members = building.room_ids_for_zone(zone.id)
+        if members:
+            units[zone.id] = members
+        else:
+            empty.append(zone.id)
+    assigned = {room_id for members in units.values() for room_id in members}
+    descriptions = [{"id": unit_id, "kind": "root_zone", "room_ids": list(members)} for unit_id, members in units.items()]
+    for room in building.layout.rooms:
+        if room.id in assigned:
+            continue
+        unit_id = f"room:{room.id}"
+        while unit_id in zones or unit_id in units:
+            unit_id = f"room:{unit_id}"
+        units[unit_id] = (room.id,)
+        descriptions.append({"id": unit_id, "kind": "unassigned_room", "room_ids": [room.id]})
+    evidence["units"] = descriptions
+    evidence["empty_zone_ids"] = empty
+    return units
+
+
+def _size_options(building, units, supplied, maximum, evidence):
+    spec = building.layout
+    unknown = set(supplied or {}) - set(units)
+    if unknown:
+        _fail(evidence, f"Unknown zone size option units: {', '.join(sorted(unknown))}",
+              stage="input", code="unknown_size_unit", unit_ids=sorted(unknown), not_applicable=True)
+    result = {}
+    for unit_id, members in units.items():
+        if supplied is not None and unit_id in supplied:
+            try:
+                raw = tuple(supplied[unit_id])
+                if any(not isinstance(value, Real) or isinstance(value, bool)
+                       for pair in raw for value in pair):
+                    raise ValueError("dimensions must be numeric millimetres, excluding booleans")
+                options = tuple((float(w), float(h)) for w, h in raw)
+            except (TypeError, ValueError, OverflowError) as exc:
+                _fail(evidence, f"Invalid zone size options for {unit_id}: {exc}", stage="input",
+                      code="invalid_zone_size", unit_ids=(unit_id,), not_applicable=True)
+            if not options or len(options) > maximum:
+                _fail(evidence, f"Zone {unit_id} needs 1..{maximum} size options", stage="input",
+                      code="invalid_zone_size", unit_ids=(unit_id,), not_applicable=True)
+            for w, h in options:
+                if any(not math.isfinite(v) or v <= 0 or round(v / spec.grid_mm) < 1 or
+                       abs(v - round(v / spec.grid_mm) * spec.grid_mm) > 1e-6 for v in (w, h)):
+                    _fail(evidence, f"Zone {unit_id} dimensions must be finite positive grid-aligned millimetres",
+                          stage="input", code="invalid_zone_size", unit_ids=(unit_id,), not_applicable=True)
+            result[unit_id] = tuple(dict.fromkeys((round(w / spec.grid_mm) * spec.grid_mm,
+                                                  round(h / spec.grid_mm) * spec.grid_mm) for w, h in options))
+            continue
+        area = sum(spec.room_by_id[room_id].target_area_m2 for room_id in members) * 1_000_000
+        candidates = []
+        for fill, aspect in ((1, 1), (1, 2), (1, 0.5), (0.8, 1), (0.8, 2), (0.8, 0.5), (0.7, 3.5), (0.7, 0.29)):
+            w = math.ceil(math.sqrt(area / fill * aspect) / spec.grid_mm) * spec.grid_mm
+            h = math.ceil(area / fill / w / spec.grid_mm) * spec.grid_mm
+            if w <= spec.boundary.width_mm and h <= spec.boundary.height_mm:
+                candidates.append((w, h))
+        result[unit_id] = tuple(dict.fromkeys(candidates))[:maximum]
+    return result
+
+
+def _internal_groups(groups, members):
+    return tuple((name, left, right) for name, left, right in groups
+                 if left and right and set(left) | set(right) <= members)
+
+
+def _group_issues(placements, required, forbidden, minimum):
+    issues = []
+    for name, left, right in required:
+        if not any(a != b and placements[a].shared_boundary(placements[b]) + 1e-6 >= minimum for a in left for b in right):
+            issues.append(ValidationIssue("zone_required_adjacency", f"Required zone relation {name} has no usable room contact"))
+    for name, left, right in forbidden:
+        if any(a != b and placements[a].shared_boundary(placements[b]) > 1e-6 for a in left for b in right):
+            issues.append(ValidationIssue("zone_forbidden_adjacency", f"Forbidden zone relation {name} has a room contact"))
+    return issues
+
+
+def _mirrored_shapes(width, height, placements):
+    seen = set()
+    shapes = []
+    for mirror_x, mirror_y in ((False, False), (True, False), (False, True), (True, True)):
+        mirrored = {
+            room_id: Rect(width - rect.right if mirror_x else rect.x,
+                          height - rect.top if mirror_y else rect.y, rect.width, rect.height)
+            for room_id, rect in placements.items()
+        }
+        key = tuple((room_id, rect.x, rect.y, rect.width, rect.height) for room_id, rect in mirrored.items())
+        if key not in seen:
+            seen.add(key)
+            shapes.append(_ZoneShape(width, height, mirrored))
+    return shapes
+
+
+def _local_shapes(building, units, options, groups, minimum, time_limit, seed, deterministic_units, evidence):
+    spec = building.layout
+    fit_options = {}
+    for item in building.equipment:
+        if item.room_id is not None:
+            fit_options.setdefault(item.room_id, []).append((item.id, item.room_fit_dimensions(spec.wall_thickness_mm)))
+    found = {}
+    for unit_id, members in units.items():
+        member_set = set(members)
+        rooms = tuple(replace(
+            room, needs_daylight=False,
+            required_adjacency=tuple(other for other in room.required_adjacency if other in member_set),
+            forbidden_adjacency=tuple(other for other in room.forbidden_adjacency if other in member_set),
+            preferred_adjacency=tuple(other for other in room.preferred_adjacency if other in member_set),
+        ) for room in spec.rooms if room.id in member_set)
+        local_groups = {relation: _internal_groups(value, member_set) for relation, value in groups.items()}
+        unit_shapes = []
+        for index, (width, height) in enumerate(options[unit_id]):
+            attempt = {"stage": "local", "unit_id": unit_id, "size_mm": [width, height], "accepted": False}
+            evidence["stage_attempts"].append(attempt)
+            if width > spec.boundary.width_mm or height > spec.boundary.height_mm:
+                attempt["reason"] = "Container exceeds the global bounding dimensions"
+                continue
+            local = replace(spec, rooms=rooms, boundary=BoundarySpec(width, height, ()),
+                            entry_room=spec.entry_room if spec.entry_room in member_set else rooms[0].id,
+                            external_entry=None, doors=(), windows=())
+            try:
+                candidate = solve_layouts_hierarchical(
+                    local, 1, time_limit, seed + index,
+                    required_adjacency_groups=local_groups["required"],
+                    forbidden_adjacency_groups=local_groups["forbidden"],
+                    preferred_adjacency_groups=local_groups["preferred"],
+                    equipment_fit_options={key: value for key, value in fit_options.items() if key in member_set},
+                    minimum_adjacency_mm=minimum, deterministic_units=deterministic_units,
+                )[0]
+            except (InfeasibleLayout, ValueError) as exc:
+                # The reused backend does not expose its CP status: do not
+                # infer a proof or call a budget exhaustion INFEASIBLE.
+                attempt["reason"] = str(exc)
+                attempt["model_status"] = "NOT_AVAILABLE"
+                continue
+            issues = (*validate_layout(local, candidate).issues,
+                      *_group_issues(candidate.placements, local_groups["required"], local_groups["forbidden"], minimum))
+            if issues:
+                attempt["reason"] = "; ".join(issue.message for issue in issues)
+                continue
+            attempt["accepted"] = True
+            unit_shapes.extend(_mirrored_shapes(width, height, candidate.placements))
+        if not unit_shapes:
+            _fail(evidence, f"No independently valid local shape for zone unit {unit_id} in the bounded options",
+                  stage="local", code="no_valid_local_shape", unit_ids=(unit_id,), room_ids=members)
+        found[unit_id] = unit_shapes
+    return found
+
+
+def _constrain_explicit_window(model, room, spec, window):
+    """Constrain the selected side to a real facade usable by the wall builder."""
+    span = window.offset_mm + window.width_mm / 2
+    if not math.isfinite(span) or window.offset_mm < window.width_mm / 2 - 1e-6:
+        raise InfeasibleLayout(f"Window {window.id} has an unusable offset")
+    grid = spec.grid_mm
+    vertical = window.side in {"left", "right"}
+    start, size = (room.y, room.height) if vertical else (room.x, room.width)
+    edge = {
+        "left": room.x, "right": room.x + room.width,
+        "bottom": room.y, "top": room.y + room.height,
+    }[window.side]
+    facade = {
+        "left": (0, 0, spec.boundary.height_mm),
+        "right": (spec.boundary.width_mm, 0, spec.boundary.height_mm),
+        "bottom": (0, 0, spec.boundary.width_mm),
+        "top": (spec.boundary.height_mm, 0, spec.boundary.width_mm),
+    }
+    facades = [facade[window.side]]
+    for cutout in spec.boundary.cutouts:
+        facades.append({
+            "left": (cutout.right, cutout.y, cutout.top),
+            "right": (cutout.x, cutout.y, cutout.top),
+            "bottom": (cutout.top, cutout.x, cutout.right),
+            "top": (cutout.y, cutout.x, cutout.right),
+        }[window.side])
+    contacts = []
+    for index, (fixed, low, high) in enumerate(facades):
+        if abs(fixed - round(fixed / grid) * grid) > 1e-6 or high - low < span - 1e-6:
+            continue
+        contact = model.NewBoolVar(f"window_{window.id}_facade_{index}")
+        model.Add(edge == round(fixed / grid)).OnlyEnforceIf(contact)
+        # The current wall builder measures offset from the exposed span's
+        # start. Require enough contiguous exposure before it can be selected.
+        model.Add(size >= math.ceil(span / grid - 1e-9)).OnlyEnforceIf(contact)
+        model.Add(start + size >= math.ceil((low + span) / grid - 1e-9)).OnlyEnforceIf(contact)
+        model.Add(start <= math.floor((high - span) / grid + 1e-9)).OnlyEnforceIf(contact)
+        contacts.append(contact)
+    model.AddBoolOr(contacts)
+
+
+def validate_zone_layout(building: BuildingIR, result: LayoutResult, zone_rects: Mapping[str, Rect], *, minimum_adjacency_mm=None):
+    """Independently check canonical rooms, root containers and hard relations."""
+    from shapely.geometry import box
+
+    geometry = (*result.placements.values(), *zone_rects.values())
+    if any(not isinstance(rect, Rect) for rect in geometry):
+        return ValidationReport((ValidationIssue("unsupported_geometry", "Root-zone containment supports rectangular rooms and containers"),))
+    if any(not math.isfinite(value) for rect in geometry for value in (rect.x, rect.y, rect.width, rect.height)):
+        return ValidationReport((ValidationIssue("invalid_rect", "Root-zone containment requires finite coordinates"),))
+    units = _root_units(building, {})
+    spec = building.layout
+    issues = list(validate_layout(spec, result).issues)
+    allowed = box(0, 0, spec.boundary.width_mm, spec.boundary.height_mm)
+    for cutout in spec.boundary.cutouts:
+        allowed = allowed.difference(box(cutout.x, cutout.y, cutout.right, cutout.top))
+    for unknown in set(zone_rects) - set(units):
+        issues.append(ValidationIssue("unknown_zone_container", f"Unknown container {unknown}"))
+    for unit_id, members in units.items():
+        container = zone_rects.get(unit_id)
+        if container is None:
+            issues.append(ValidationIssue("missing_zone_container", f"Missing container {unit_id}"))
+            continue
+        if container.width <= 0 or container.height <= 0 or not allowed.covers(box(container.x, container.y, container.right, container.top)):
+            issues.append(ValidationIssue("zone_boundary", f"Container {unit_id} is outside the allowed building footprint"))
+        for room_id in members:
+            room = result.placements.get(room_id)
+            if room is not None and (room.x < container.x - 1e-6 or room.y < container.y - 1e-6 or
+                                     room.right > container.right + 1e-6 or room.top > container.top + 1e-6):
+                issues.append(ValidationIssue("zone_containment", f"Room {room_id} is outside container {unit_id}"))
+    containers = list(zone_rects.items())
+    for index, (unit_id, rect) in enumerate(containers):
+        for other_id, other in containers[index + 1:]:
+            if rect.intersection_area(other) > 1e-6:
+                issues.append(ValidationIssue("zone_overlap", f"Containers {unit_id} and {other_id} overlap"))
+    if set(result.placements) == set(spec.room_by_id):
+        minimum = spec.door_width_mm if minimum_adjacency_mm is None else minimum_adjacency_mm
+        issues.extend(_group_issues(result.placements, building.zone_relation_groups("required_adjacency"),
+                                    building.zone_relation_groups("forbidden_adjacency"), minimum))
+    return ValidationReport(tuple(issues))
+
+
+def solve_zone_layouts(
+    building: BuildingIR,
+    variants: int = 1,
+    time_limit_seconds: float = 30,
+    seed: int = 42,
+    *,
+    zone_size_options_mm: Mapping[str, Iterable[tuple[float, float]]] | None = None,
+    max_local_options: int = 4,
+    max_validation_attempts: int | None = None,
+    minimum_adjacency_mm: float | None = None,
+    deterministic_units: float | None = None,
+    evidence: dict | None = None,
+) -> list[LayoutResult]:
+    """Solve rooms inside disjoint root-zone containers with bounded retries.
+
+    Explicit size options specify width/height in millimetres on the room grid;
+    they are not silently rotated or rescaled. Budgets are per CP-SAT solve, rather
+    than a total orchestration deadline. Inspect ``evidence`` for local option
+    failures, global CP status and accepted container coordinates.
+    """
+    from ortools.sat.python import cp_model
+
+    evidence = evidence if evidence is not None else {}
+    evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
+                    descendant_container_geometry=False, stage_attempts=[], variants=[])
+    evidence.pop("failure", None)
+    counts = (variants, max_local_options)
+    if max_validation_attempts is not None:
+        counts += (max_validation_attempts,)
+    if any(not isinstance(value, int) or isinstance(value, bool) for value in counts):
+        _fail(evidence, "Search counts must be integers, excluding booleans", stage="input",
+              code="invalid_budget", not_applicable=True)
+    if variants < 1 or max_local_options < 1 or not math.isfinite(time_limit_seconds) or time_limit_seconds <= 0:
+        _fail(evidence, "Variant count, local option count and time limit must be positive", stage="input",
+              code="invalid_budget", not_applicable=True)
+    if deterministic_units is not None and (not math.isfinite(deterministic_units) or deterministic_units <= 0):
+        _fail(evidence, "deterministic_units must be finite and positive", stage="input", code="invalid_budget", not_applicable=True)
+    attempts_limit = max(3, variants * 3) if max_validation_attempts is None else max_validation_attempts
+    if attempts_limit < variants:
+        _fail(evidence, "max_validation_attempts must cover requested variants", stage="input", code="invalid_budget", not_applicable=True)
+    units = _root_units(building, evidence)
+    spec = building.layout
+    if any(not math.isfinite(value) or value <= 0 for value in (spec.boundary.width_mm, spec.boundary.height_mm)):
+        _fail(evidence, "Boundary dimensions must be finite and positive", stage="input", code="invalid_boundary", not_applicable=True)
+    boundary_width = _ceil_grid(spec.boundary.width_mm, spec.grid_mm)
+    boundary_height = _ceil_grid(spec.boundary.height_mm, spec.grid_mm)
+    if max(boundary_width, boundary_height) >= 1 << 60:
+        _fail(evidence, "Boundary coordinates exceed safe integer bounds", stage="input", code="integer_bounds", not_applicable=True)
+    options = _size_options(building, units, zone_size_options_mm, max_local_options, evidence)
+    minimum = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
+    if not math.isfinite(minimum) or minimum <= 0:
+        _fail(evidence, "minimum_adjacency_mm must be finite and positive", stage="input", code="invalid_adjacency_width", not_applicable=True)
+    groups = {relation: building.zone_relation_groups(f"{relation}_adjacency") for relation in ("required", "forbidden", "preferred")}
+    shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units, evidence)
+    model = cp_model.CpModel()
+    grid = spec.grid_mm
+    room_vars = {}
+    unit_vars = {}
+    x_intervals, y_intervals = [], []
+    area_deviations = []
+    area_bound = 0
+    for unit_id, unit_shapes in shapes.items():
+        x = model.NewIntVar(0, boundary_width, f"zone_{unit_id}_x")
+        y = model.NewIntVar(0, boundary_height, f"zone_{unit_id}_y")
+        width = model.NewIntVar(1, boundary_width, f"zone_{unit_id}_width")
+        height = model.NewIntVar(1, boundary_height, f"zone_{unit_id}_height")
+        choices = [model.NewBoolVar(f"zone_{unit_id}_shape_{index}") for index in range(len(unit_shapes))]
+        model.AddExactlyOne(choices)
+
+        def pick(values):
+            return sum(choice * value for choice, value in zip(choices, values))
+
+        model.Add(width == pick([round(shape.width / grid) for shape in unit_shapes]))
+        model.Add(height == pick([round(shape.height / grid) for shape in unit_shapes]))
+        x_end = model.NewIntVar(0, boundary_width, f"zone_{unit_id}_right")
+        y_end = model.NewIntVar(0, boundary_height, f"zone_{unit_id}_top")
+        model.Add(x_end == x + width)
+        model.Add(y_end == y + height)
+        x_intervals.append(model.NewIntervalVar(x, width, x_end, f"zone_{unit_id}_x_interval"))
+        y_intervals.append(model.NewIntervalVar(y, height, y_end, f"zone_{unit_id}_y_interval"))
+        unit_vars[unit_id] = _RoomVars(x, y, width, height, None)
+        deviations = []
+        for shape in unit_shapes:
+            deviations.append(sum(abs(round(rect.width / grid) * round(rect.height / grid) -
+                                      _area_to_grid2(spec.room_by_id[room_id].target_area_m2, grid, ceil=False))
+                                  for room_id, rect in shape.placements.items()))
+        area_deviations.append(pick(deviations))
+        area_bound += sum(deviations)
+        for room_id in units[unit_id]:
+            geometry = [shape.placements[room_id] for shape in unit_shapes]
+            rx = model.NewIntVar(0, boundary_width, f"{room_id}_x")
+            ry = model.NewIntVar(0, boundary_height, f"{room_id}_y")
+            rw = model.NewIntVar(1, boundary_width, f"{room_id}_width")
+            rh = model.NewIntVar(1, boundary_height, f"{room_id}_height")
+            model.Add(rx == x + pick([round(rect.x / grid) for rect in geometry]))
+            model.Add(ry == y + pick([round(rect.y / grid) for rect in geometry]))
+            model.Add(rw == pick([round(rect.width / grid) for rect in geometry]))
+            model.Add(rh == pick([round(rect.height / grid) for rect in geometry]))
+            # These are actual model constraints, rather than inferred boxes
+            # attached to an independently solved monolithic room plan.
+            model.Add(rx >= x)
+            model.Add(ry >= y)
+            model.Add(rx + rw <= x + width)
+            model.Add(ry + rh <= y + height)
+            room_vars[room_id] = _RoomVars(rx, ry, rw, rh, None)
+        for index, cutout in enumerate(spec.boundary.cutouts):
+            _avoid_cutout(model, x, y, width, height, cutout, grid, f"zone_{unit_id}_cutout_{index}")
+    model.AddNoOverlap2D(x_intervals, y_intervals)
+    minimum_shared = max(1, _ceil_grid(minimum, grid))
+    for a, b in spec.relation_pairs("required_adjacency"):
+        _add_required_adjacency(model, room_vars[a], room_vars[b], minimum_shared, f"required_{a}_{b}")
+    for a, b in spec.relation_pairs("forbidden_adjacency"):
+        _add_forbidden_adjacency(model, room_vars[a], room_vars[b], f"forbidden_{a}_{b}")
+    for name, left, right in groups["required"]:
+        indicators = [_add_adjacency_indicator(model, room_vars[a], room_vars[b], minimum_shared, f"zone_required_{name}_{a}_{b}")
+                      for a in left for b in right if a != b]
+        if not indicators:
+            _fail(evidence, f"Required zone relation {name} has no distinct room pair", stage="global", code="empty_required_group")
+        model.AddBoolOr(indicators)
+    for name, left, right in groups["forbidden"]:
+        for a in left:
+            for b in right:
+                if a != b:
+                    _add_forbidden_adjacency(model, room_vars[a], room_vars[b], f"zone_forbidden_{name}_{a}_{b}")
+    try:
+        explicit_window_rooms = {window.room_id for window in spec.windows}
+        for room in spec.rooms:
+            if room.needs_daylight and room.id not in explicit_window_rooms:
+                _constrain_automatic_window_facade(model, room_vars[room.id], spec, room.id)
+        for window in spec.windows:
+            _constrain_explicit_window(model, room_vars[window.room_id], spec, window)
+        if spec.external_entry is not None:
+            _constrain_external_entry(model, room_vars[spec.external_entry.room_id], spec, boundary_width, boundary_height)
+        if not (groups["preferred"] or spec.relation_pairs("preferred_adjacency")):
+            if area_bound * 10_000 + len(spec.rooms) * (boundary_width + boundary_height) > (1 << 62) - 1:
+                raise ValueError("Zone objective exceeds safe integer bounds")
+        objective = _layout_objective(
+            model, spec, room_vars, area_deviations, minimum_shared,
+            [value for room in spec.rooms for value in (room_vars[room.id].x, room_vars[room.id].y)],
+            area_domain_bound=area_bound, preferred_groups=groups["preferred"],
+        )
+    except (InfeasibleLayout, ValueError) as exc:
+        _fail(evidence, f"Cannot construct global zone constraints: {exc}", stage="global",
+              code="invalid_global_constraint", model_status="NOT_BUILT")
+    model.Minimize(objective)
+    results = []
+    last_issues = []
+    variables = [value for room in spec.rooms for value in
+                 (room_vars[room.id].x, room_vars[room.id].y, room_vars[room.id].width, room_vars[room.id].height)]
+    for attempt in range(attempts_limit):
+        solver = cp_model.CpSolver()
+        configure_solver(solver, seed=seed + attempt, time_limit_seconds=time_limit_seconds, deterministic_units=deterministic_units)
+        status = solver.Solve(model)
+        record = {"stage": "global", "attempt": attempt + 1, "model_status": solver.StatusName(status), "accepted": False}
+        evidence["stage_attempts"].append(record)
+        if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            if last_issues:
+                break
+            _fail(evidence, f"Global zone placement returned {solver.StatusName(status)} for the selected shapes",
+                  stage="global", code="no_global_placement", unit_ids=units,
+                  model_status=solver.StatusName(status), proof_scope="selected_zone_shapes")
+
+        def rectangle(values):
+            return Rect(*(solver.Value(value) * grid for value in (values.x, values.y, values.width, values.height)))
+
+        candidate = LayoutResult(len(results) + 1, {room.id: rectangle(room_vars[room.id]) for room in spec.rooms}, solver.Value(objective))
+        zone_rects = {unit_id: rectangle(values) for unit_id, values in unit_vars.items()}
+        report = validate_zone_layout(building, candidate, zone_rects, minimum_adjacency_mm=minimum)
+        model.AddForbiddenAssignments(variables, [[solver.Value(value) for value in variables]])
+        if not report.ok:
+            last_issues = [f"{issue.code}: {issue.message}" for issue in report.issues]
+            record["issues"] = last_issues
+            continue
+        record["accepted"] = True
+        results.append(candidate)
+        evidence["variants"].append({"variant": candidate.variant, "zone_rects": {
+            unit_id: {"x": rect.x, "y": rect.y, "width": rect.width, "height": rect.height}
+            for unit_id, rect in zone_rects.items()
+        }})
+        if len(results) == variants:
+            return results
+    _fail(evidence, f"Only {len(results)} of {variants} independently valid zone layouts within the bounded search",
+          stage="validation", code="insufficient_valid_candidates", proof_scope="bounded_candidates", issues=last_issues)
