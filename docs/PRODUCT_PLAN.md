@@ -80,6 +80,8 @@ Checkpoint H.3.1 measures actual consumed room-model work with repeated samples,
 source/runtime fingerprints and a manual Windows/Linux CI measurement workflow.
 Checkpoint B.5 adds a direct finite orthogonal room backend with source/catalog
 hashes, true-geometry CP constraints and independent candidate QA; output is DRAFT.
+Checkpoint G.3.1 adds bounded source-backed raster/OCR word drafts in pixels,
+with local-engine evidence and separate named selection; geometry inference stays open.
 
 ## 1. Why we are expanding the project
 

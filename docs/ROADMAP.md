@@ -67,6 +67,8 @@ Checkpoint H.3.1 adds scoped actual CP-SAT work measurement; complete facility
 budget calibration and unchanged scale acceptance remain separate gates.
 Checkpoint B.5 verifies bounded polygon room search against a rectangular
 counterexample; full facility polygon acceptance remains a separate requirement.
+Checkpoint G.3.1 retains hashed image and unverified OCR evidence without
+turning raster labels or resolution metadata into fixed canonical geometry.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

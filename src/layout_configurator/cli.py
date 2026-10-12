@@ -319,6 +319,15 @@ def main(argv: list[str] | None = None) -> int:
     import_source.add_argument("--storey", help="IFC storey GlobalId or name")
     import_source.add_argument("--page", type=int, help="one-based PDF page; required for PDF")
     import_source.add_argument("--origin-pt", type=float, nargs=2, metavar=("X", "Y"), help="PDF point coordinates corresponding to canonical (0,0); required for PDF")
+    import_raster = subparsers.add_parser("import-raster", help="read PNG/JPEG source identity and optional unverified OCR words in pixels")
+    import_raster.add_argument("source", type=Path)
+    import_raster.add_argument("--output", "-o", type=Path, required=True)
+    raster_ocr = import_raster.add_mutually_exclusive_group()
+    raster_ocr.add_argument("--ocr-tsv", type=Path, help="exact UTF-8 Tesseract TSV with boxes in upright-after-EXIF pixels")
+    raster_ocr.add_argument("--ocr-tesseract", action="store_true", help="explicitly run a local Tesseract executable")
+    import_raster.add_argument("--tesseract-path", type=Path, help="optional local executable path; requires --ocr-tesseract")
+    import_raster.add_argument("--ocr-language", default="eng", help="local Tesseract language identifiers, for example eng+rus")
+    import_raster.add_argument("--ocr-timeout", type=float, default=30, help="local OCR deadline in seconds, at most 60")
     propose = subparsers.add_parser("propose-edits", help="validate typed program edits into a reviewable draft")
     propose.add_argument("spec", type=Path)
     propose.add_argument("edits", type=Path, help="JSON object containing the typed edits array")
@@ -338,6 +347,19 @@ def main(argv: list[str] | None = None) -> int:
     propose_llm.add_argument("--output", "-o", type=Path, required=True)
     propose_llm.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args(argv)
+
+    if args.command == "import-raster":
+        try:
+            from .raster_plan_import import import_raster_plan, write_raster_plan_draft
+
+            draft = import_raster_plan(args.source, ocr_tsv=args.ocr_tsv, ocr_tesseract=args.ocr_tesseract,
+                tesseract_path=args.tesseract_path, language=args.ocr_language, timeout_seconds=args.ocr_timeout)
+            write_raster_plan_draft(args.output, draft)
+            print(f"DRAFT: {args.output}; {len(draft.ocr['words'])} unverified OCR words in pixels; OCR {draft.ocr['status']}")
+            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
 
     if args.command == "propose-llm-edits":
         try:

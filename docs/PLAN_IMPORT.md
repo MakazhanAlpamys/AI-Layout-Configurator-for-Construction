@@ -64,3 +64,39 @@ Limits are 20 MiB source, 8 MiB decoded page content, 20,000 operators and
 1,000 candidates. Rectangular DXF/IFC supports at most 1,000 rooms and
 100,000 IFC triangles per space. Raster/OCR, general PDF drawings and
 arbitrary orthogonal footprints remain separate requirements.
+
+## Raster source and unverified OCR
+
+```powershell
+layout-configurator import-raster survey.png --output out/raster-draft.json
+layout-configurator import-raster survey.png --output out/raster-ocr.json `
+  --ocr-tsv reviewed-engine-output.tsv
+layout-configurator import-raster survey.jpg --output out/local-ocr.json `
+  --ocr-tesseract --ocr-language eng --ocr-timeout 30
+```
+
+The independent raster draft identifies one PNG/JPEG by its exact source bytes
+and normalized decoded RGB pixels. EXIF orientation is applied explicitly;
+coordinates remain upright-image pixels with a top-left origin, x right and
+y down. Resolution metadata and detected numbers never become millimetres,
+scale, room boundaries or semantic room IDs.
+
+OCR is optional. Without it, status is UNKNOWN. External exact UTF-8 Tesseract
+TSV is hashed and rechecked on every write/read/review. `--ocr-tesseract`
+explicitly runs an available local executable without a shell; an unavailable,
+failed, oversized, timed-out or malformed response retains UNKNOWN diagnostics
+and no partial words. `--tesseract-path` selects a local engine only with that
+opt-in. Tesseract is not installed by the Python package.
+
+Every word box is checked against actual upright image bounds. Text, hierarchy,
+pixel boxes and numeric confidence remain **UNVERIFIED**, including confidence
+100. `record_raster_review(...)` can record separate source/draft hashes,
+explicit selected word IDs and a supplied reviewer name. It does not approve or
+map canonical geometry. The fixed-room generation loader rejects raster drafts.
+
+Limits are 20 MiB image source, 16 million pixels, 8,192 pixels per side,
+2 MiB TSV, 10,000 TSV rows and 5,000 words; the local OCR deadline is at most
+60 seconds. Actual local Tesseract 5.5.0 recognized the ROOM/9000 fixture on Linux
+with retained source, decoded-pixel and TSV hashes. General raster boundary
+reconstruction, explicit scale calibration and reviewed canonical room mapping
+remain separate requirements.

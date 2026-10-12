@@ -89,6 +89,8 @@ Cyrillic text.
 
 | B.5 | Opt-in finite orthogonal room solver | Source-generated grid rectangles/single-notch L footprints or explicit catalogs feed true-geometry pair constraints. Fixed footprints retain separate source hashes. Independent room/door QA rejects combinations before bounded retries. Counts, truncation and negative evidence remain scoped; all output stays DRAFT/UNKNOWN. | Fresh root solver/independent-validation/projection/result regression: 63 passed, 83 subtests. Agent broader affected regression: 118 passed, 106 subtests. Actual 6×6 m exact 20+16 m² counterexample is rectangular-infeasible and polygon-valid; semantic DXF readback retains true areas. | complete 2026-10-12 for direct catalog backend; equipment/routes/full dispatch/export remain separate |
 
+| G.3.1 | Raster source identity and unverified OCR drafts | Bounded PNG/JPEG decoding preserves exact byte/pixel hashes and explicit EXIF/pixel coordinates. Hashed external TSV or opt-in local Tesseract produces strict UNVERIFIED word candidates. Separate named word selection never becomes canonical/fixed room geometry. Failed/oversized/timed-out local output remains UNKNOWN without partial words. | Fresh root raster/CLI/process/import/installed-wheel regression: 62 passed, 157 subtests, 5 Windows/platform/opt-in skips. Agent actual Linux Tesseract 5.5.0 run: 26 passed, 60 subtests, zero skips. Root CLI independently read the actual ROOM/9000 engine TSV into an UNVERIFIED draft. | complete 2026-10-12 for source/OCR boundary; raster vision/scale/room reconstruction remain open |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable

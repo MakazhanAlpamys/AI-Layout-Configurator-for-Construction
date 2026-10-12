@@ -123,6 +123,31 @@ class InstalledWheelTests(unittest.TestCase):
             for source in sorted((PROJECT / "src/layout_configurator/fonts").glob("*")):
                 self.assertEqual(archive.read(f"layout_configurator/fonts/{source.name}"), source.read_bytes())
 
+    def test_installed_raster_cli_and_strict_reader_work_outside_checkout(self):
+        self._run(
+            "from PIL import Image\n"
+            "Image.new('RGB', (80, 40), 'white').save('raster.png')\n"
+            "Path('ocr.tsv').write_bytes(b'level\\tpage_num\\tblock_num\\tpar_num\\tline_num\\tword_num\\tleft\\ttop\\twidth\\theight\\tconf\\ttext\\n5\\t1\\t1\\t1\\t1\\t1\\t4\\t6\\t20\\t8\\t100\\tROOM\\n')\n")
+        output = self._cli("import-raster", self.work / "raster.png", "--output", self.work / "raster-draft.json",
+                           "--ocr-tsv", self.work / "ocr.tsv")
+        self.assertIn("UNVERIFIED", output)
+        self._run(
+            "import hashlib\n"
+            "from layout_configurator.raster_plan_import import read_raster_plan_draft\n"
+            "draft = read_raster_plan_draft('raster-draft.json')\n"
+            "assert draft.source['sha256'] == hashlib.sha256(Path('raster.png').read_bytes()).hexdigest()\n"
+            "assert draft.ocr['words'][0]['text'] == 'ROOM'\n"
+            "assert draft.ocr['words'][0]['confidence'] == 100 and draft.ocr['status'] == 'UNVERIFIED'\n"
+            "assert draft.ocr['words'][0]['pixel_box'] == {'left': 4, 'top': 6, 'width': 20, 'height': 8}\n"
+            "assert 'rooms' not in draft.to_dict()\n"
+            "Path('ocr.tsv').write_bytes(Path('ocr.tsv').read_bytes() + b'\\n')\n"
+            "try:\n"
+            "    read_raster_plan_draft('raster-draft.json')\n"
+            "except ValueError:\n"
+            "    pass\n"
+            "else:\n"
+            "    raise AssertionError('Installed raster reader trusted changed external TSV')\n")
+
     def test_installed_loaders_find_defaults_from_a_foreign_working_directory(self):
         # Hard-coded parents[2] paths, missing package resources and unbundled
         # inheritance bases all fail at the installed consumer boundary.

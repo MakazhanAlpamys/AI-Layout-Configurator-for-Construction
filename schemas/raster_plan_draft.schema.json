@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schemas/raster_plan_draft.schema.json",
+  "title": "Unverified source-backed raster and OCR words; no canonical geometry",
+  "type": "object", "additionalProperties": false,
+  "required": ["format", "version", "state", "source", "image", "coordinates", "ocr", "issues", "assumptions"],
+  "properties": {
+    "format": {"const": "FLC-raster-plan-draft"}, "version": {"const": "0.1"}, "state": {"const": "DRAFT"},
+    "source": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "format", "byte_size"],
+      "properties": {"path": {"$ref": "#/$defs/nonempty"}, "sha256": {"$ref": "#/$defs/hash"}, "format": {"enum": ["PNG", "JPEG"]}, "byte_size": {"type": "integer", "minimum": 1, "maximum": 20971520}}
+    },
+    "image": {
+      "type": "object", "additionalProperties": false,
+      "required": ["raw_width_px", "raw_height_px", "width_px", "height_px", "exif_orientation", "decoded_mode", "decoded_sha256"],
+      "properties": {
+        "raw_width_px": {"$ref": "#/$defs/side"}, "raw_height_px": {"$ref": "#/$defs/side"},
+        "width_px": {"$ref": "#/$defs/side"}, "height_px": {"$ref": "#/$defs/side"},
+        "exif_orientation": {"type": "integer", "minimum": 1, "maximum": 8},
+        "decoded_mode": {"const": "RGB"}, "decoded_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "coordinates": {
+      "const": {"units": "px", "origin": "top-left", "x": "right", "y": "down", "orientation": "upright-after-exif"}
+    },
+    "ocr": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "status", "source_path", "tsv_utf8", "tsv_sha256", "engine", "language", "words"],
+      "properties": {
+        "method": {"enum": ["none", "external_tsv", "tesseract"]}, "status": {"enum": ["UNKNOWN", "UNVERIFIED"]},
+        "source_path": {"anyOf": [{"$ref": "#/$defs/nonempty"}, {"type": "null"}]},
+        "tsv_utf8": {"type": ["string", "null"], "maxLength": 2097152},
+        "tsv_sha256": {"anyOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]},
+        "engine": {"anyOf": [{"$ref": "#/$defs/nonempty"}, {"type": "null"}]},
+        "language": {"anyOf": [{"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*(\\+[A-Za-z][A-Za-z0-9_]*)*$", "maxLength": 100}, {"type": "null"}]},
+        "words": {
+          "type": "array", "maxItems": 5000,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["id", "source_row", "page_num", "block_num", "par_num", "line_num", "word_num", "text", "pixel_box", "confidence"],
+            "properties": {
+              "id": {"type": "string", "pattern": "^raster:word:[1-9][0-9]*$"},
+              "source_row": {"type": "integer", "minimum": 2, "maximum": 10001},
+              "page_num": {"const": 1},
+              "block_num": {"$ref": "#/$defs/hierarchy"}, "par_num": {"$ref": "#/$defs/hierarchy"},
+              "line_num": {"$ref": "#/$defs/hierarchy"}, "word_num": {"$ref": "#/$defs/hierarchy"},
+              "text": {"type": "string", "pattern": "\\S", "maxLength": 1024},
+              "pixel_box": {
+                "type": "object", "additionalProperties": false, "required": ["left", "top", "width", "height"],
+                "properties": {"left": {"$ref": "#/$defs/coordinate"}, "top": {"$ref": "#/$defs/coordinate"}, "width": {"$ref": "#/$defs/side"}, "height": {"$ref": "#/$defs/side"}}
+              },
+              "confidence": {"type": "number", "minimum": 0, "maximum": 100}
+            }
+          }
+        }
+      }
+    },
+    "issues": {"$ref": "#/$defs/messages"}, "assumptions": {"$ref": "#/$defs/messages"}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "nonempty": {"type": "string", "pattern": "\\S", "maxLength": 4096},
+    "side": {"type": "integer", "minimum": 1, "maximum": 8192},
+    "coordinate": {"type": "integer", "minimum": 0, "maximum": 8192},
+    "hierarchy": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "messages": {"type": "array", "maxItems": 100, "items": {"type": "string", "maxLength": 1024}}
+  }
+}
