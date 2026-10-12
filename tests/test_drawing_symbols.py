@@ -89,6 +89,28 @@ class DrawingSymbolTests(unittest.TestCase):
                 self.assertAlmostEqual(actual[0], target[0])
                 self.assertAlmostEqual(actual[1], target[1])
 
+    def test_dxf_block_labels_resolve_to_actual_equipment_coordinates(self):
+        from layout_configurator.equipment import EquipmentLayoutResult, EquipmentPlacement
+        from layout_configurator.models import Rect
+        building, layout, equipment, flows = example()
+        rotated = EquipmentPlacement('mixer_01', 'process', Rect(4500, 700, 600, 500), True)
+        with tempfile.TemporaryDirectory() as directory:
+            for placement in (equipment.placements[0], rotated):
+                for assignments in ({}, {'mixer_01': 'process_vessel'}):
+                    with self.subTest(rotated=placement.rotated, symbols=assignments):
+                        path = Path(directory) / 'labels.dxf'
+                        drawing = FacilityDrawingProfile.from_mapping({'equipment_symbols': assignments})
+                        export_building_dxf(path, building, layout, EquipmentLayoutResult((placement,)), flows, drawing)
+                        document = ezdxf.readfile(path)
+                        insert = next(iter(document.modelspace().query('INSERT[layer=="A-EQUIP"]')))
+                        labels = {entity.dxf.text: entity for entity in insert.virtual_entities() if entity.dxftype() == 'TEXT'}
+                        label = labels['mixer_01']
+                        self.assertAlmostEqual(label.dxf.insert.x, placement.rect.center[0])
+                        self.assertAlmostEqual(label.dxf.insert.y, placement.rect.center[1])
+                        type_label = labels[building.equipment[0].type]
+                        self.assertAlmostEqual(type_label.dxf.insert.x, placement.rect.center[0])
+                        self.assertAlmostEqual(type_label.dxf.insert.y, placement.rect.center[1] - label.dxf.height)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,6 +4,8 @@ Checkpoint B.6 adds independently checked equipment placement in actual
 orthogonal room components, without reopening the completed residential MVP.
 Checkpoint D.4 adds explicit source-backed project schematic symbols in DXF/PDF;
 manufacturer libraries and editable dimension chains remain separate.
+Checkpoint D.4.1 verifies actual DXF label coordinates after repairing a doubled
+equipment-position offset in block definitions.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

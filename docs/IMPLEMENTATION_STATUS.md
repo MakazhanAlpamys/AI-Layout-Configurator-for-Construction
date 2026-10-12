@@ -66,6 +66,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | B.6 | Finite equipment packing in actual orthogonal rooms | Source-grid/explicit candidates, allowed rotations and exact unique anchors retain actual component containment and directional service envelopes. All actual doors receive full-width approach reservations. Independent room/equipment/door checks precede scoped DRAFT output; defaults and full consumer guards remain. | Fresh root packing/solver/validation/projection/legacy-equipment run: 85 passed, 76 subtests. Agent broader affected regression: 137 passed, 126 subtests. All four L orientations and anchored/unanchored door collisions are covered; root inspected the exact 20+16 m² packing image. | complete 2026-10-12 for direct scoped packing; polygon routes/full integration remain separate |
 | QA.8 | Pinned full acceptance after calibration and raster work | The manually pinned `fc259ff` source passed both complete platform suites, deployed installed API/container and the unchanged three-variant/three-seed pharma matrix. Later presentation/cache/packing changes retain their own affected checks. | [Full acceptance run 38285398083](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38285398083): all four full jobs successful; the push-only quick job was correctly skipped. | complete 2026-10-12 for pinned source |
 | D.4 | Explicit project equipment and sanitary symbol catalog | Six explicitly assigned vector symbols retain source physical frames, quarter-turns and unchanged placement/clearance. Strict assignments serialize canonically; DXF XDATA and thematic legends retain identity and project scope. Default drawings remain unchanged. | Fresh root symbols/profiles/sheets/readback/facility/exports/API run: 83 passed, 38 subtests. Actual DXF frame/detail/XDATA and PDF vector/legend checks pass. All four final six-symbol PDF pages were rendered with Poppler and visually inspected. | complete 2026-10-12 for initial project schematic catalog; manufacturer libraries/dimension chains remain separate |
+| D.4.1 | Equipment DXF block label coordinates | Block text uses local equipment-frame coordinates, so insertion applies the source placement exactly once. Default and selected symbols retain centered ID/type labels for both orientations. | Actual DXF virtual-entity RED: four cases displaced by the full 3,400/4,500 mm source x offset. Fresh symbols/exports/facility regression after the repair: 38 passed, 10 subtests, including all four source-coordinate checks. | repair complete 2026-10-12 |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -87,13 +88,16 @@ Cyrillic text.
 
 
 
+
 ## Remaining implementation
 
-- B: canonical orthogonal room geometry, component geometry and a selectable
-  backend alongside rectangles.
+- B: integrated selectable orthogonal generation, process routes, full
+  downstream consumers and independent complete facility acceptance; canonical
+  footprints, finite room/equipment solvers and scoped predicates exist.
 - C: zone-driven placement and containment; structured, per-stage constraint
   explanations. Preferred-zone singleton participants can increase search cost.
-- D: drawing-profile and symbol catalogs, editable dimension chains;
+- D: editable dimension chains and extended discipline/manufacturer symbol
+  libraries; named presentation presets, initial project schematic symbols,
   thematic vector sheets, indexed legends and supplied revision history exist.
 - E: independent receiving-tool review of semantic IFC zones, declared systems
   and spatial exchange; grouping does not establish engineered MEP design.

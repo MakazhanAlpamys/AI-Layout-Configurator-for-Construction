@@ -92,6 +92,8 @@ Checkpoint B.6 places equipment in actual orthogonal usable components with
 directional service envelopes and protected full-width door approaches; output stays DRAFT.
 Checkpoint D.4 adds explicit project equipment/sanitary vector symbols with
 source-frame dimensions, actual rotation, DXF metadata and printed PDF scope.
+Checkpoint D.4.1 repairs equipment block labels to use local coordinates;
+actual inserted labels remain centered for both equipment orientations.
 
 ## 1. Why we are expanding the project
 

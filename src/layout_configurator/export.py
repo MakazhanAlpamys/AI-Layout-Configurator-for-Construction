@@ -436,14 +436,15 @@ def _draw_equipment_dxf(
             else:
                 block.add_line((0, 0), (placement.rect.width, placement.rect.height), dxfattribs={"layer": "A-EQUIP"})
                 block.add_line((0, placement.rect.height), (placement.rect.width, 0), dxfattribs={"layer": "A-EQUIP"})
+            local_center = (placement.rect.width / 2, placement.rect.height / 2)
             block.add_text(
                 spec.id,
                 dxfattribs={"height": _equipment_label_height(placement.rect), "layer": "A-EQUIP"},
-            ).set_placement(placement.rect.center)
+            ).set_placement(local_center)
             block.add_text(
                 spec.type,
                 dxfattribs={"height": max(45.0, _equipment_label_height(placement.rect) * 0.7), "layer": "A-EQUIP"},
-            ).set_placement((placement.rect.center[0], placement.rect.center[1] - _equipment_label_height(placement.rect)))
+            ).set_placement((local_center[0], local_center[1] - _equipment_label_height(placement.rect)))
         insert = modelspace.add_blockref(block_name, (placement.rect.x, placement.rect.y), dxfattribs={"layer": "A-EQUIP"})
         if symbols and spec.id in symbols:
             if "FLC_SYMBOL" not in document.appids:
