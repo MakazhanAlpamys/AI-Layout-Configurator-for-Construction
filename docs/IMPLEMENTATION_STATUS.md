@@ -87,6 +87,8 @@ Cyrillic text.
 
 | H.3.1 / NEXT 2.4 foundation | Actual solver work calibration | Optional response statistics preserve default decisions and include failed solves. A bounded source/runtime-pinned runner compares repeated samples, independently checks available room geometry and writes consumed-work rates as JSON/CSV. A manual two-platform workflow retains measurements. | Fresh root statistics/calibration tests: 6 passed, 3 subtests. Broader affected preferences/hierarchy/search regression: 33 passed, 17 subtests. Actual local 24-sample series: CALIBRATED, 12 basic OPTIMAL and 12 scale-20 UNKNOWN; median 0.129571 consumed units per solver second. Actionlint passed. | implementation complete 2026-10-12 for room-model measurement; pinned CI table and end-to-end calibration pending |
 
+| B.5 | Opt-in finite orthogonal room solver | Source-generated grid rectangles/single-notch L footprints or explicit catalogs feed true-geometry pair constraints. Fixed footprints retain separate source hashes. Independent room/door QA rejects combinations before bounded retries. Counts, truncation and negative evidence remain scoped; all output stays DRAFT/UNKNOWN. | Fresh root solver/independent-validation/projection/result regression: 63 passed, 83 subtests. Agent broader affected regression: 118 passed, 106 subtests. Actual 6×6 m exact 20+16 m² counterexample is rectangular-infeasible and polygon-valid; semantic DXF readback retains true areas. | complete 2026-10-12 for direct catalog backend; equipment/routes/full dispatch/export remain separate |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable

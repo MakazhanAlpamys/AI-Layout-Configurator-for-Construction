@@ -65,6 +65,8 @@ Checkpoint QA.7 standardizes maintained text and examples on English, with
 explicitly translated research titles and dedicated Unicode compatibility tests.
 Checkpoint H.3.1 adds scoped actual CP-SAT work measurement; complete facility
 budget calibration and unchanged scale acceptance remain separate gates.
+Checkpoint B.5 verifies bounded polygon room search against a rectangular
+counterexample; full facility polygon acceptance remains a separate requirement.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

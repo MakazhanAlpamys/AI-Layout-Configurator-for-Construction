@@ -89,3 +89,38 @@ These reports certify their stated predicates only. They do not establish
 process-route acceptance, engineering sign-off or a complete facility bundle.
 The full rectangular consumers retain their capability guards until separate
 solver/export/route integration is independently verified.
+
+## Opt-in finite room catalog solver
+
+`solve_orthogonal_candidates(spec, ...)` in `orthogonal_solver` generates
+grid-aligned rectangles and single-notch L footprints in the floor window,
+preserving representable source cutouts. An explicit complete room catalog and
+separately hashed fixed footprints can be supplied instead. This direct API does
+not change facility/CLI dispatch.
+
+CP-SAT selects one actual footprint per room. Pair constraints use true polygon
+overlap, forbidden contact and one continuous required door segment. Independent
+room, dimension, inset and door QA checks each selected combination; rejected
+combinations are excluded before another bounded attempt. Area accuracy ranks
+ahead of preferred contacts and position.
+
+```python
+from layout_configurator.orthogonal_solver import solve_orthogonal_candidates
+
+draft = solve_orthogonal_candidates(spec, seed=1, deterministic_units=.05)
+for candidate in draft.candidates:
+    assert candidate.room_report.ok
+    print(candidate.result.to_dict())
+```
+
+The 6 m × 6 m counterexample tiles a genuine 20 m² L and 16 m² rectangle even
+though the corresponding exact-area rectangular model has no solution. Actual
+footprints do not overlap despite overlapping bounding boxes.
+
+`OrthogonalSolverBudget` defaults to 128 retained candidates and 8,192 enumeration
+steps per room, 100,000 pair checks and 32 model attempts. Reports retain source,
+fixed-constraint and catalog hashes, truncation/counts and bounded negative
+samples, including the latest independent QA failure. Exhaustion is UNKNOWN about
+this finite pattern family. A complete requested pool is DRAFT with `ok: false`;
+partial pools stay UNKNOWN. Equipment packing, routes, rule packs and complete
+exports remain separate integration gates.
