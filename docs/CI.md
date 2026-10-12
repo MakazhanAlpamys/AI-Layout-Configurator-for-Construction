@@ -22,6 +22,7 @@ relevant scale/calibration workflow against the checkpoint to be reviewed:
 ```powershell
 gh workflow run ci.yml --ref main
 gh workflow run scale.yml --ref main
+gh workflow run solver-calibration.yml --ref main
 ```
 
 Evidence always records its tested commit. A green quick job does not replace

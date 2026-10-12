@@ -6,9 +6,10 @@ exploring options and it is what the CLI has always meant, but it is not
 repeatable — two runs of the same seed can return different layouts because they
 stopped at different points in the search.
 
-The deterministic budget spends a machine-independent amount of work instead, so
-the same input, the same seed and the same budget produce the same result. It is
-opt-in because it changes what a budget number means.
+The deterministic budget limits counted solver work instead. Repeatability
+requires the same model, seed, budget, solver build and platform; identical
+results across operating systems are not guaranteed. It is opt-in because it
+changes what a budget number means.
 """
 
 from __future__ import annotations
@@ -30,8 +31,8 @@ def configure_solver(
     """Fix every setting that decides how much search happens and in what order.
 
     ``deterministic_units`` is CP-SAT deterministic time: an abstract work unit,
-    not seconds. A budget that repeats on a fast machine also repeats on a slow
-    one; the slow machine simply takes longer in wall-clock terms.
+    not seconds. Wall-clock duration depends on the machine. Repeatability also
+    depends on the solver build and platform, beyond its version number.
 
     ``workers`` above one enables CP-SAT's parallel portfolio, but only for the
     wall-clock budget: a wall-clock run does not repeat anyway, while the

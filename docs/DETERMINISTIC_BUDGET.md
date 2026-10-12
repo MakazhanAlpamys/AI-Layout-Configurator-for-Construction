@@ -13,9 +13,10 @@ mode was added: `--deterministic-budget UNITS`.
 
 ## What the mode does
 
-`--deterministic-budget` spends a **machine-independent amount of work** of CP-SAT
-(`max_deterministic_time`) instead of seconds. The same input, seed and budget give
-the same result on any machine; a slow machine simply takes longer.
+`--deterministic-budget` limits CP-SAT's counted search work
+(`max_deterministic_time`) instead of seconds. Repeatability requires the same
+model, solver build, platform and relevant runtime settings. A slower machine
+can take longer; identical results across operating systems are not guaranteed.
 
 Together with the budget, the search settings are pinned
 ([`search.py`](../src/layout_configurator/search.py)):
@@ -91,7 +92,27 @@ on Linux and Windows and retains both successful and failed reports.
 | Source | Samples | Result | Median consumed units per solver second |
 | --- | --- | --- | --- |
 | Windows development machine, 2026-10-12, Python 3.11 / OR-Tools 9.15.6755 | 24 | 12 basic OPTIMAL with valid geometry; 12 scale-20 UNKNOWN | 0.129571 |
-| Linux / Windows CI runners | pending pinned workflow measurements | pending | pending |
+| Ubuntu CI, 4 logical CPUs, Python 3.11.17 / OR-Tools 9.15.6755, `496457d` | 24 | 12 basic OPTIMAL; 12 scale-20 UNKNOWN | 0.206209 |
+| Windows CI, 4 logical CPUs, Python 3.11.9 / OR-Tools 9.15.6755, `496457d` | 24 | 12 basic OPTIMAL; 12 scale-20 UNKNOWN | 0.148939 |
+
+The [pinned calibration workflow](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38284852160)
+passed both jobs. Exact downloaded [Linux](../research/solver_calibration/2026_10_12/linux.json)
+and [Windows](../research/solver_calibration/2026_10_12/windows.json) reports are
+retained in the repository. Model-specific medians show why one global ratio
+should not be used as an end-to-end deadline:
+
+| CI runner | Four-room model units / solver second | Twenty-room model units / solver second |
+| --- | --- | --- |
+| Ubuntu | 0.186421 | 0.237529 |
+| Windows | 0.121271 | 0.180773 |
+
+Each runner repeated its status, geometry and consumed units exactly. Across
+operating systems, the geometry and consumed work differed despite equal
+canonical source hashes and the same OR-Tools version. A separate actual local
+Windows/Linux-container probe reproduced this with identical model text hash
+`2cf43617b2cc20a0f4d7b05533cc830d1c753e7c21543e513f5344259a3de033`
+and identical CP-SAT parameters. This establishes a platform/build limitation;
+it does not establish which internal solver operation causes the difference.
 
 This is a calibration of the monolithic room model only. UNKNOWN samples remain
 negative evidence; the report does not imply facility acceptance. Hierarchical
@@ -103,8 +124,9 @@ wall-clock budgets and every quality/validation gate.
 
 - **Units are not seconds.** The wall-clock duration of a run on another machine will
   differ. CI timeouts must not be planned from it without a margin.
-- **Repeatability is tied to the OR-Tools version.** Changing the solver version may
-  change the result at the same budget; this is expected and is not a defect.
+- **Repeatability is tied to the solver build and platform.** The pinned runner
+  measurements show different Windows/Linux results with the same OR-Tools
+  version. Changing the version, build, platform or model may change the result.
 - **Repeatability does not mean optimality.** The budget cuts the search off at the
   same point every time; it does not carry it to a proven optimum.
 - **The mode does not bypass candidate selection.** `generate-building` still

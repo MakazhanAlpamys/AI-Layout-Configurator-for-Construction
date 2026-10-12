@@ -82,6 +82,8 @@ Checkpoint B.5 adds a direct finite orthogonal room backend with source/catalog
 hashes, true-geometry CP constraints and independent candidate QA; output is DRAFT.
 Checkpoint G.3.1 adds bounded source-backed raster/OCR word drafts in pixels,
 with local-engine evidence and separate named selection; geometry inference stays open.
+Checkpoint H.3.2 records the pinned Linux/Windows calibration table and measured
+platform limitation; the scale matrix retains its full wall-clock acceptance.
 
 ## 1. Why we are expanding the project
 

@@ -27,7 +27,7 @@ it). The order below follows that.
 | 2.1 | The three external pilot reviews (process/QA, cleanroom/HVAC, architecture/BIM) on the generated dossiers | three signed decision blocks, findings turned into issues | people (not code) |
 | 2.2 | Open DXF and IFC in Revit, AutoCAD/BricsCAD and ArchiCAD; fix every import defect | a screenshot and a defect list per tool, no open blocker | people + development |
 | 2.3 | Rule packs sourced clause by clause: EU GMP Annex 1, ISO 14644-1/-4, the relevant SN/SP; each rule carries source, edition and quoted clause | `check --require-provenance` passes for the pharma profile | development, reviewed by an engineer |
-| 2.4 | Deterministic budget recalibrated on CI hardware; decide whether the CI matrix runs in repeatable mode | a measured units-per-second table for the CI runner | room-model measurement runner and manual Linux/Windows workflow implemented 2026-10-12; pinned runner table pending. Scale matrix retains wall-clock budgets until hierarchical/end-to-end measurement; [scope and local data](DETERMINISTIC_BUDGET.md). |
+| 2.4 | Deterministic budget recalibrated on CI hardware; decide whether the CI matrix runs in repeatable mode | a measured units-per-second table for the CI runner | **measured decision complete** 2026-10-12: pinned Linux/Windows room-model reports and units-per-second table; retain wall-clock scale matrix because full stages are uncalibrated and cross-platform results differ. Hierarchical/end-to-end calibration remains separate; [scope and evidence](DETERMINISTIC_BUDGET.md). |
 
 ## 3. Usability — a planner can drive it
 

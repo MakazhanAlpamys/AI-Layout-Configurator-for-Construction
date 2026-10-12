@@ -284,9 +284,11 @@ drops from about 13.5 minutes to about 11 seconds; measurements are in
 [`docs/SCALING_STUDY.md`](docs/SCALING_STUDY.md).
 
 For a reproducible run there is a separate mode: `--deterministic-budget UNITS`
-spends a machine-independent amount of CP-SAT work instead of seconds, forces
+limits counted CP-SAT work instead of seconds, forces
 single-threaded search and removes the wall-clock limit. The meaning of
 `--time-limit` does not change — it remains a wall-clock budget.
+Repeatability requires a matching model, solver build and platform; Windows and
+Linux are not guaranteed to produce identical geometry at the same budget.
 
 ```powershell
 .venv\Scripts\python.exe -m layout_configurator.cli generate-building `
@@ -294,8 +296,8 @@ single-threaded search and removes the wall-clock limit. The meaning of
   --output out\repeatable --variants 2 --max-attempts 9 --deterministic-budget 10 --seed 1
 ```
 
-A budget unit is not a second: on the development machine it is ≈ 3.4 s, so 10 units
-roughly correspond to the former `--time-limit 30`. Calibration, the condition for stable
+A budget unit is not a second: measured rates depend on the model and runner.
+Current CI calibration, the condition for stable
 model order and the full list of limitations are
 in [`docs/DETERMINISTIC_BUDGET.md`](docs/DETERMINISTIC_BUDGET.md).
 
