@@ -88,6 +88,8 @@ Checkpoint D.3 adds strict named drawing presentation presets resolved through
 the existing DXF/PDF/profile contract; source geometry and acceptance gates remain.
 Checkpoint H.3.3 adds opt-in invocation-local cluster reuse with complete keys,
 independent hit QA and scoped global-status evidence; accepted 80-room scale stays open.
+Checkpoint B.6 places equipment in actual orthogonal usable components with
+directional service envelopes and protected full-width door approaches; output stays DRAFT.
 
 ## 1. Why we are expanding the project
 

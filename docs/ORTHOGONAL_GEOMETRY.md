@@ -124,3 +124,26 @@ samples, including the latest independent QA failure. Exhaustion is UNKNOWN abou
 this finite pattern family. A complete requested pool is DRAFT with `ok: false`;
 partial pools stay UNKNOWN. Equipment packing, routes, rule packs and complete
 exports remain separate integration gates.
+
+## Opt-in finite equipment packing
+
+`place_orthogonal_equipment(building, layout, ...)` in `orthogonal_equipment`
+places declared equipment in actual wall-inset room components. It accepts a
+complete explicit catalog or generates source-grid positions and permitted
+quarter-turns. Directional service envelopes must fit one real usable component;
+a bounding rectangle never substitutes for the source footprint. Unique actual
+side anchors retain their exact source offsets; ambiguous selectors yield UNKNOWN.
+
+Every actual door receives a full-width local approach reservation, even when
+the source has no flow declarations. The conservative project policy uses the
+larger of actual opening width and the widest declared required flow, plus two
+10 mm margins, and preserves the full interior approach depth. Equipment and
+service envelopes cannot occupy these reservations.
+
+Accepted combinations pass the independent B.4 room/equipment checks and a
+separately recomputed door-approach report. Default bounds are 128 candidates and
+16,384 catalog steps per item, 100,000 pair checks and 16 model attempts. Source,
+layout and catalog hashes, truncation, solver statuses and rejected combinations
+remain in the evidence. Exhaustion is UNKNOWN about the bounded search. A checked
+placement is still DRAFT with `ok: false`; process routing, full dispatch and
+complete facility export remain separate gates.

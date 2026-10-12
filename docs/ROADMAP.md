@@ -1,5 +1,8 @@
 # Original MVP roadmap archive
 
+Checkpoint B.6 adds independently checked equipment placement in actual
+orthogonal room components, without reopening the completed residential MVP.
+
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
 routes) was verified on 2026-10-12; it extends the current product plan without
