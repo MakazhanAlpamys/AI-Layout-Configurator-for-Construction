@@ -1,0 +1,33 @@
+{
+  "implementation_commit": "ac0408b42a5ccbf6b6a895cf568832ab529d93c3",
+  "run_id": 38291669480,
+  "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38291669480",
+  "conclusion": "success",
+  "unit_tests": {
+    "windows": {
+      "count": 737,
+      "seconds": 299.792
+    },
+    "linux": {
+      "count": 737,
+      "seconds": 254.053
+    }
+  },
+  "pharma": {
+    "seeds": [
+      1,
+      7,
+      42
+    ],
+    "variants_per_seed": 3,
+    "cross_seed_semantic_ids": "PASS",
+    "complete_saved_QA": "PASS"
+  },
+  "installed_container_HTTP": {
+    "status": "SUCCEEDED",
+    "qa_ok": true,
+    "elapsed_seconds": 5.613139568999998,
+    "expert_acceptance": "PENDING"
+  },
+  "scope": "This clean pinned commit only; subsequent program-edit/domain changes require their own complete gate."
+}

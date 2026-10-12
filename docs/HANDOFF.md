@@ -22,6 +22,9 @@ weekly/manual; solver calibration and synthetic80 warm-start measurements are
 manual. Independent concurrency groups prevent checkpoint pushes from cancelling
 pinned full runs. Historical GitHub billing failures have been superseded by
 successful pinned runs recorded in the ledger.
+Latest complete acceptance at `ac0408b` passed 737 tests on each platform,
+the installed container and all nine pharma variants; later commits retain
+their own checks and are not silently covered by that result.
 
 Canonical browser entry, named drawing presets, explicit project symbols,
 editable dimension chains and per-variant client reports are implemented.

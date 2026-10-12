@@ -122,6 +122,8 @@ Checkpoint H.3.5 adds source-pinned canonical program re-solving with validated
 soft old geometry, local cache reuse and complete fresh facility gates.
 Checkpoint F.1 / NEXT 4.1 verifies separate canonical laboratory, hospital and
 industrial pilots against unchanged sourced project policies and full bundle QA.
+Checkpoint QA.10 records complete pinned `ac0408b` Windows/Linux, installed
+container and nine-variant pharma acceptance; subsequent changes retain separate gates.
 
 ## 1. Why we are expanding the project
 
