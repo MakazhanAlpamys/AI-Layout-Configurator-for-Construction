@@ -132,6 +132,8 @@ Checkpoint H.3.5.3 adds accepted-source HTTP program edits with atomically
 resolved references, source-specific cache identity and complete current gates.
 Checkpoint H.3.5.4 exposes explicit editor launch controls for hierarchical
 repair and local shape reuse, with an actual HTTP move/save and revision QA.
+Checkpoint B.8 adds exact orthogonal IFC4 DRAFT geometry, stable semantic GUIDs
+and independent actual-profile readback; full polygon bundle acceptance remains open.
 
 ## 1. Why we are expanding the project
 

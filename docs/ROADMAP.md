@@ -44,6 +44,8 @@ Checkpoint H.3.5.3 verifies source-pinned incremental HTTP jobs and cache behavi
 with current full gates and negative evidence when the parent changes.
 Checkpoint H.3.5.4 verifies explicit facility editor launch controls and actual
 HTTP move/save provenance, preserving default launch behavior.
+Checkpoint B.8 verifies exact orthogonal IFC4 DRAFT geometry and stable source
+identity without changing the archived MVP or claiming full polygon acceptance.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

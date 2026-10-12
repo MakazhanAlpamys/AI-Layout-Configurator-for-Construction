@@ -182,3 +182,34 @@ A successfully checked route is still DRAFT with `ok: false`. Flow segregation,
 profile compliance and the complete polygon export/acceptance pipeline remain
 separate gates. The B.5 room and B.6 equipment outputs feed this API directly,
 but packing acceptance alone does not establish full-width front access.
+
+## Exact IFC4 coordination export
+
+`export_orthogonal_draft_ifc` consumes the canonical building and mixed result
+footprints directly. Concave spaces, actual polygon wall material with enclosed
+voids, and matching door/opening solids retain their geometry. Native
+`IfcRelVoidsElement` and `IfcRelFillsElement` connect each actual opening to its
+wall and door. Optional equipment, rotated directional service envelopes and
+full route corridors/Axis polylines require fresh independent local predicates.
+
+Geometry and source hashes record the current inputs. Stable semantic GUIDs
+depend on project name, source version, projection schema and semantic ID;
+geometry and variant changes do not change occurrence identity. Coordination
+proxy heights are explicitly recorded: rooms/walls 2,800 mm, doors/openings
+2,100 mm, equipment 1,000 mm and service/corridors 20 mm.
+
+`validate_orthogonal_ifc` independently reads the exact hashed bytes and rebuilds
+expected material from canonical inputs. It checks actual outer/inner profile
+rings through world, product and solid transforms, source identities, optional
+states, real opening links, units and DRAFT metadata. Rehashed bounding-box
+substitutions, missing holes, moved geometry, changed GUIDs and forged acceptance
+fail. Supported input is bounded to 16 MiB, 100,000 entities, 32-level acyclic
+placements, 64 source rooms/equipment and 256 routes. Arbitrary imported IFC
+representations remain outside this polyline-profile checker.
+
+Fresh root verification: 31 tests and 24 subtests passed in 20.58 s across the
+new projection, existing IFC groups and exports. An actual fixture passed
+strict IFC4 EXPRESS with zero statements and native reconstruction of all eight
+represented products. This establishes the stated local exchange predicates.
+Export remains DRAFT, full facility validation UNKNOWN and engineering
+acceptance PENDING; the existing rectangular dispatch guards remain unchanged.
