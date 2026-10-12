@@ -204,6 +204,13 @@ class OrthogonalFacilityTests(unittest.TestCase):
             with self.subTest(policy=str(policy)[:70]), self.assertRaises(ValueError):
                 self.api()(source, layout, equipment, routes, profile=policy)
 
+    def test_nested_layout_is_strict_before_building_normalization(self):
+        source, layout, equipment, routes = self.source()
+        for field, value in (("grid_mm", True), ("wall_thickness_mm", "200")):
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                malformed = replace(source, layout=replace(source.layout, **{field: value}))
+                self.api()(malformed, layout, equipment, routes, profile=default_facility_profile())
+
     def test_malformed_numeric_rule_parameters_remain_unknown_in_both_policy_paths(self):
         from layout_configurator.facility import _profile_rule_checks
         source, layout, equipment, routes = self.source()

@@ -52,6 +52,7 @@ Checkpoint B.6.1 verifies actual alternate finite equipment combinations,
 preserving default packing and scoped search-exhaustion evidence.
 Checkpoint B.10 verifies declared facility/profile rules over actual footprints,
 retaining source provenance and separate full-artifact/engineering acceptance.
+Checkpoint B.10.1 preserves original nested layout types at that validation boundary.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

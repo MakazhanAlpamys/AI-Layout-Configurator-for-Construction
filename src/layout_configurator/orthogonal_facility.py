@@ -25,7 +25,7 @@ from .orthogonal_equipment import validate_orthogonal_door_approaches
 from .orthogonal_flows import validate_orthogonal_flow_routes
 from .orthogonal_validation import validate_orthogonal_equipment, validate_orthogonal_layout
 from .result_geometry import parse_layout_result
-from .schema import normalize_building_mapping, validate_mapping
+from .schema import normalize_building_mapping, normalize_mapping, validate_mapping
 
 
 @dataclass(frozen=True)
@@ -82,6 +82,7 @@ def validate_orthogonal_building(building: BuildingIR, layout: LayoutResult,
     if errors:
         raise ValueError("Facility profile does not match schema: " + "; ".join(f"{error.path}: {error.message}" for error in errors))
     # Validate before normalization can convert malformed values to strings.
+    normalize_mapping(building.layout.to_dict())
     building = normalize_building_mapping(building.to_dict())
     layout = parse_layout_result(layout.to_dict())
     normalized_profile = FacilityProfile.from_mapping(raw_profile)

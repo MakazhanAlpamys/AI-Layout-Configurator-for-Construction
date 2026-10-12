@@ -285,3 +285,9 @@ prove an intermediate-room separation failure and a second independently sourced
 rule. The report's PASS covers these declared software predicates; complete
 facility artifact validation remains UNKNOWN and engineering acceptance PENDING.
 Windows/daylight and shared polygon bundle dispatch still require separate gates.
+
+Nested LayoutIR is also strictly schema-checked before BuildingIR normalization.
+Direct malformed dataclasses, such as a boolean grid or string wall thickness,
+cannot become plausible numeric source values through normalization. Both cases
+reproduced RED before the guard; fresh root profile/schema regression passed
+44 tests and 18 subtests in 2.83 s.

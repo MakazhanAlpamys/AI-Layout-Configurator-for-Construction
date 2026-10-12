@@ -140,6 +140,7 @@ Checkpoint B.6.1 adds independently validated complete-combination packing
 exclusions for bounded real alternatives, preserving ordinary default output.
 Checkpoint B.10 adds actual polygon facility/profile predicates, source-bound
 negative evidence and strict shared numeric policy parameters; full bundle integration remains open.
+Checkpoint B.10.1 strictly checks original nested layout types before normalization.
 
 ## 1. Why we are expanding the project
 
