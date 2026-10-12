@@ -37,6 +37,8 @@ Checkpoint H.1 verifies shared-grid facility stacks and unified IFC exchange;
 40-room acceptance and independent receiving-tool review remain open gates.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
+Checkpoint QA.3 retains the quality/diversity target with a fixed search-work
+budget; full and remote acceptance are recorded against their actual commits.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

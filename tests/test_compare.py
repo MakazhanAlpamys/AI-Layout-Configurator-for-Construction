@@ -20,7 +20,7 @@ class CompareVariantsTests(unittest.TestCase):
                 "generate-building", "examples/pharma_cleanroom_pilot.yaml",
                 "--profile", "rules/pharma_cleanroom_pilot.yaml",
                 "--output", str(cls.bundle), "--variants", "3", "--max-attempts", "3",
-                "--time-limit", "20", "--seed", "1",
+                "--time-limit", "20", "--deterministic-budget", "4", "--seed", "1",
             ])
         assert code == 0
 
@@ -60,7 +60,8 @@ class CompareVariantsTests(unittest.TestCase):
             self.assertTrue((Path(directory) / "comparison.pdf").read_bytes().startswith(b"%PDF"))
 
     def test_polished_variants_stay_close_to_the_program(self):
-        # The hierarchy polishes single-room areas after the first placement.
+        # Pin the work budget: a wall-clock cutoff under competing solver jobs
+        # can stop polishing before this fixture's quality target is reached.
         for metrics in compare_bundle(self.bundle):
             self.assertLess(metrics.area_deviation_pct, 5.0)
 
