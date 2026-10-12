@@ -118,6 +118,8 @@ Checkpoint QA.9 records the current English handoff and accurate CLI wording for
 runtime-specific repeatability and incomplete bounded candidate searches.
 Checkpoint H.3.4.2 verifies the complete installed-wheel synthetic 80-room
 warm-start in pinned Ubuntu CI in 33.008 s; general scratch80 remains separate.
+Checkpoint H.3.5 adds source-pinned canonical program re-solving with validated
+soft old geometry, local cache reuse and complete fresh facility gates.
 
 ## 1. Why we are expanding the project
 

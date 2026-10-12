@@ -337,5 +337,30 @@ python scripts/scale80_warmstart_acceptance.py --output out/scale80-warmstart --
 ```
 
 This measures the supplied synthetic warm-start scenario only.
-General scratch80 solving, a third physical zone level and incremental re-solve
-remain open parts of NEXT 1.5.
+General scratch80 solving, a third physical zone level and measured large edit
+acceptance remain open parts of NEXT 1.5.
+
+## Canonical program edits with soft prior geometry — 2026-10-12
+
+`facility_incremental.re_solve_facility_after_edit` accepts the prior canonical
+BuildingIR, prior room result, edited BuildingIR and current profile. This first
+slice requires unchanged room, zone, equipment and flow IDs. It hashes all
+inputs and records changed/unchanged IDs without mutating the supplied objects.
+Prior room geometry, grid and hard zone relations are independently checked;
+that geometry-only input does not establish prior equipment/profile acceptance.
+Hints incompatible with an edited grid are skipped with room/reason evidence.
+
+Old coordinates remain soft guidance. No fixed rectangles are synthesized.
+The ordinary room backend retains unrestricted final search and invocation-local
+shape reuse; stale room sizes and equipment requirements invalidate local shapes.
+Every returned current candidate passes fresh room, equipment, route and profile
+gates. Rejected inputs and bounded generation failures retain source provenance
+and cannot establish whole-program infeasibility. Physical zone strategies
+explicitly reject the unimplemented hint/cache bridge before building a model.
+
+Actual room-area and equipment-width edits on a six-room, two-cluster source
+repair stale geometry and pass every current gate. Root verification covered
+54 tests and 49 subtests across incremental requests, stage evidence, hints,
+cache and both zone dispatch strategies. Empty/disabled options preserve default
+generation output. CLI/API/editor exposure, recursive zone guidance and measured
+80-room edits remain separate follow-up work.

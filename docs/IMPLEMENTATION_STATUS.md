@@ -79,6 +79,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | G.1.1 / NEXT 3.5 | Full supplied-pilot DXF/IFC import | Actual 13-room pharma DXF and IFC import/regeneration retain the exact canonical program and final room coordinates, all equipment/routes/profile gates and shared report exports. Original imported entity IDs, source/draft/program hashes and explicit automated-fixture confirmation remain in evidence. No human or third-party tool review is claimed. | Both complete persisted bundle sets and strict IFC EXPRESS PASS; DXF request 4.266 s, IFC 5.890 s, supplied-pilot generation excluded. Raw report `research/imported_pilot/2026_10_12/windows.json`; fresh importer family: 55 tests / 131 subtests passed. IFC conversion discrepancy <=7.3e-12 mm uses existing numerical tolerance; final grid coordinates match exactly. | scoped full-pilot software acceptance complete 2026-10-12; calibrated vector-PDF small fixture retained, general drawings and human acceptance remain open |
 | QA.9 | English project status and accurate CLI budget guidance | Current handoff distinguishes verified checkpoints from historical decisions. All maintained text remains English. CLI help describes same-runtime work-budget repeatability and bounded candidate exhaustion without claiming whole-program infeasibility. | Actual help output checked for all three generation/acceptance commands; 222 maintained text files scanned, zero Cyrillic files. | complete 2026-10-12 |
 | H.3.4.2 | Installed-wheel complete 80-room warm-start CI | Clean pinned Ubuntu request passed in 33.008 s including startup/imports, source preparation, unrestricted rooms, fresh equipment/routes/profile gates, all exports, persisted QA and strict IFC EXPRESS. All 22 authoritative resources resolve from installed data. | [Pinned `ac0408b` run](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38291669488), [raw report](../research/scale80/2026_10_12/linux_warmstart.json): nine QA checks PASS, zero EXPRESS statements, four source and nine artifact byte hashes verified after download. | complete 2026-10-12 for supplied synthetic warm-start; general scratch80/third-zone/edit scale remain open |
+| H.3.5 | Source-pinned canonical facility re-solve after program edits | Validated old room geometry supplies soft hints, with stale-grid evidence and invocation-local shape reuse; no fixed positions are synthesized. Current room/equipment/flow/profile gates remain mandatory and source IDs/hashes survive bounded failure. | Fresh root incremental/stage/hint/cache/zone-dispatch run: 54 passed, 49 subtests in 10.06 s. Actual room-area and equipment-width edits accepted; invalid prior geometry/zones, changed IDs and unresolved profiles retain negative provenance. Agent verified byte-exact default output for all ordinary strategies. | core complete 2026-10-12; editor/CLI/API and large edit acceptance remain separate |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -129,6 +130,7 @@ Cyrillic text.
 - G: general PDF and draft raster/OCR extraction; calibrated rectangular
   vector paths, strict typed model proposals and DXF/IFC confirmation exist.
 - H: larger-scale incremental solving and runner budget calibration;
+  source-pinned program-edit core exists; editor/CLI/API exposure remains separate.
   pinned two-floor 40-room CI, shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed
@@ -136,6 +138,7 @@ Cyrillic text.
   drawings/schedules; medical-plastics benchmark and change scenario.
 
 ## External acceptance
+
 
 
 

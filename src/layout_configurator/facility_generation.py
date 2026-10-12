@@ -23,7 +23,8 @@ from .equipment import (
 from .facility import FacilityProfile, FacilityValidationReport, validate_building
 from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
 from .models import LayoutResult, Rect
-from .hierarchy import SOLVER_STRATEGIES, solve_layouts_auto
+from .hierarchy import SOLVER_STRATEGIES, HierarchyNotApplicable, solve_layouts_auto
+from .hierarchy_hints import HierarchyHints
 from .solver import InfeasibleLayout
 from .validation import ValidationReport, validate_layout
 from .zone_hierarchy import solve_zone_layouts
@@ -99,6 +100,7 @@ class FacilityGenerationResult:
     hierarchy_fallback_reason: str | None = None
     room_solver_evidence: dict[str, object] | None = None
     failure_evidence: tuple[dict[str, object], ...] = ()
+    incremental_evidence: dict[str, object] | None = None
 
     def to_dict(self) -> dict[str, object]:
         result = {
@@ -123,6 +125,8 @@ class FacilityGenerationResult:
             result["room_solver_evidence"] = self.room_solver_evidence
         if self.failure_evidence:
             result["failure_evidence"] = list(self.failure_evidence)
+        if self.incremental_evidence is not None:
+            result["incremental_evidence"] = self.incremental_evidence
         return result
 
 
@@ -160,6 +164,8 @@ def solve_feasible_facility_variants(
     axis_aligned_room_ids: Iterable[str] | None = None,
     structural_axes_x_mm: Iterable[float] | None = None,
     structural_axes_y_mm: Iterable[float] | None = None,
+    hint_rects: Mapping[str, Rect] | None = None,
+    cache_cluster_shapes: bool = False,
 ) -> FacilityGenerationResult:
     """Return only candidates that pass every deterministic facility gate.
 
@@ -175,8 +181,16 @@ def solve_feasible_facility_variants(
     also solves physical descendant containers. Both support checked fixed-room
     and structural-axis constraints. ``fixed_rects`` pins
     rooms, for example a vertical core already placed on another floor.
+    ``hint_rects`` provides soft guidance to the ordinary room backends;
+    ``cache_cluster_shapes`` enables invocation-local hierarchical shape reuse.
+    Neither option creates fixed-room constraints. Zone-container backends
+    explicitly reject these options until their local/global bridge exists.
     """
 
+    if not isinstance(cache_cluster_shapes, bool):
+        raise ValueError("cache_cluster_shapes must be a boolean")
+    if hint_rects is not None and not isinstance(hint_rects, Mapping):
+        raise ValueError("hint_rects must be a room-to-rectangle mapping")
     if variants < 1:
         raise ValueError("variants must be at least 1")
     if time_limit_seconds <= 0:
@@ -189,6 +203,14 @@ def solve_feasible_facility_variants(
         raise ValueError("max_attempts must be greater than or equal to variants")
 
     prepared = building.with_required_flow_opening_width()
+    warm_options = {}
+    if hint_rects:
+        # Validate identities, finite dimensions and the grid even when an
+        # explicitly selected monolithic backend would ignore an unknown hint.
+        warm_options["hint_rects"] = HierarchyHints(prepared.layout, hint_rects).rects
+    if cache_cluster_shapes:
+        warm_options["cache_cluster_shapes"] = True
+    keep_solver_evidence = bool(warm_options) or room_solver in {"zone_hierarchical", "zone_recursive"}
     equipment_fit_options = {}
     for item in prepared.equipment:
         if item.room_id is not None:
@@ -199,6 +221,15 @@ def solve_feasible_facility_variants(
     try:
         minimum = prepared.layout.door_width_mm + 2 * prepared.layout.wall_thickness_mm if prepared.flows else None
         if room_solver in {"zone_hierarchical", "zone_recursive"}:
+            if warm_options:
+                message = f"{room_solver} does not support soft room hints or cluster shape caching"
+                solver_evidence.update(room_solver_used=room_solver, failure={
+                    "stage": "input", "code": "unsupported_warm_start", "model_status": "NOT_BUILT",
+                    "status": "NOT_APPLICABLE", "message": message,
+                    "proof_scope": "configured_backend_capability", "proven_building_infeasible": False,
+                    "unsupported_options": sorted(warm_options),
+                })
+                raise HierarchyNotApplicable(message)
             room_candidates = solve_zone_layouts(
                 prepared, max_attempts, time_limit_seconds, seed,
                 minimum_adjacency_mm=minimum, deterministic_units=deterministic_units,
@@ -228,6 +259,7 @@ def solve_feasible_facility_variants(
                 axis_aligned_room_ids=axis_aligned_room_ids,
                 structural_axes_x_mm=structural_axes_x_mm,
                 structural_axes_y_mm=structural_axes_y_mm,
+                **warm_options,
             )
     except InfeasibleLayout as exc:
         failure = _stage_evidence(
@@ -246,7 +278,7 @@ def solve_feasible_facility_variants(
             room_solver=room_solver,
             room_solver_used=solver_evidence.get("room_solver_used"),
             hierarchy_fallback_reason=solver_evidence.get("hierarchy_fallback_reason"),
-            room_solver_evidence=solver_evidence if room_solver in {"zone_hierarchical", "zone_recursive"} else None,
+            room_solver_evidence=solver_evidence if keep_solver_evidence else None,
             failure_evidence=(failure,),
         )
         raise InfeasibleFacilityGeneration(
@@ -388,7 +420,7 @@ def solve_feasible_facility_variants(
         room_solver=room_solver,
         room_solver_used=solver_evidence.get("room_solver_used"),
         hierarchy_fallback_reason=solver_evidence.get("hierarchy_fallback_reason"),
-        room_solver_evidence=solver_evidence if room_solver in {"zone_hierarchical", "zone_recursive"} else None,
+        room_solver_evidence=solver_evidence if keep_solver_evidence else None,
     )
     if len(accepted) != variants:
         detail = "; ".join(
