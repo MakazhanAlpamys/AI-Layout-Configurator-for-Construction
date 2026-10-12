@@ -147,3 +147,38 @@ layout and catalog hashes, truncation, solver statuses and rejected combinations
 remain in the evidence. Exhaustion is UNKNOWN about the bounded search. A checked
 placement is still DRAFT with `ok: false`; process routing, full dispatch and
 complete facility export remain separate gates.
+
+## Actual-width orthogonal process routes
+
+`route_orthogonal_flows(building, layout, equipment)` searches bounded
+Manhattan visibility graphs in actual wall-inset room components joined only
+through generated internal door throats. Source wall bands and every directional
+equipment service envelope remain obstacles. The search uses square corridor
+erosion, critical coordinates and deterministic shortest paths; it can use a
+longer real-door room chain when the direct chain is blocked.
+
+Equipment terminals use a declared-front service standoff of half the source
+flow width plus 10 mm. A separate full-width access strip must reach the physical
+front without crossing walls, another service envelope or the actual usable
+room boundary. Room and zone terminals use real free components, never the
+centre of a footprint's bounding rectangle. This is a project routing policy,
+not an inferred regulatory or manufacturer requirement.
+
+`validate_orthogonal_flow_routes` independently rebuilds rooms, equipment,
+walls and doors. It checks canonical endpoint pairs and required completeness,
+source widths, ordered actual room crossings, complete opening spans and the
+entire square swept corridor, including turns and terminal caps. Forged widths,
+room paths, notch shortcuts, concave inset corners and unrelated equipment
+exemptions fail these predicates.
+
+Default limits are 256 endpoint pairs, 16 representatives per endpoint, 4,096
+nodes, 65,536 grid steps and 100,000 edge/search steps per pair. Evidence records
+source/layout/equipment/search hashes, actual counts, truncation and bounded
+negative samples. Exhausted search remains UNKNOWN; it is not a proof of whole
+program infeasibility. Erosion may omit zero-area exact-width connections even
+when a supplied route passes the independent checker.
+
+A successfully checked route is still DRAFT with `ok: false`. Flow segregation,
+profile compliance and the complete polygon export/acceptance pipeline remain
+separate gates. The B.5 room and B.6 equipment outputs feed this API directly,
+but packing acceptance alone does not establish full-width front access.

@@ -16,6 +16,8 @@ Checkpoint H.3.4 verifies unrestricted hierarchy warm-start repair and scoped
 local 80-room geometry/equipment/flow gates; complete CI acceptance stays separate.
 Checkpoint D.6.1 verifies comparison evidence and prevents unresolved variants
 from receiving an accepted recommendation.
+Checkpoint B.7 verifies actual orthogonal process corridors, ordered door
+crossings and full-width endpoint access, retaining scoped DRAFT/UNKNOWN results.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

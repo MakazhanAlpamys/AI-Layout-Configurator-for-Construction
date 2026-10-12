@@ -104,6 +104,8 @@ Checkpoint H.3.4 adds independently checked soft hierarchy warm-starts and
 bounded auxiliary completion; the actual local synthetic 80-room gates pass.
 Checkpoint D.6.1 preserves UNKNOWN, missing and contradictory gate evidence in
 variant ranking and JSON/CSV/PDF comparisons; only established gates permit a recommendation.
+Checkpoint B.7 adds bounded actual-width orthogonal routing and independent
+door, corridor and equipment-front access checks; complete polygon acceptance remains open.
 
 ## 1. Why we are expanding the project
 
