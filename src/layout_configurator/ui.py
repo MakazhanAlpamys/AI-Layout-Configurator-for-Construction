@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import threading
+from copy import deepcopy
 from dataclasses import dataclass, field, replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
@@ -41,6 +42,7 @@ from .equipment import (
 from .export import export_bundle
 from .facility import FacilityProfile, FacilityValidationReport, default_facility_profile, load_facility_profile, validate_building
 from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
+from .hierarchy import SOLVER_STRATEGIES, solve_layouts_auto
 from .ifc import export_ifc
 from .io import load_building_result, load_result, load_spec, write_coordination_issues, write_result
 from .issue_management import (
@@ -499,6 +501,11 @@ class FacilityEditSession(FacilityReviewSession):
     Nothing is written until the user saves a revision, which goes to
     ``revisions/rev_NN/`` beside the original bundle with the original BCF as
     issue history. The generated bundle itself is never modified.
+
+    ``edit_room_solver`` and ``edit_cache_cluster_shapes`` explicitly opt into
+    ordinary hierarchical repair. Only the user's edited room is fixed; old
+    neighbor positions remain soft hints. Solver provenance is retained with
+    the corresponding state and revision without replacing current validators.
     """
 
     read_only: bool = False
@@ -508,12 +515,29 @@ class FacilityEditSession(FacilityReviewSession):
     initial_state: tuple[Any, ...] | None = None
     edit_log: list[dict[str, Any]] = field(default_factory=list)
     saved_revisions: list[str] = field(default_factory=list)
+    edit_room_solver: str = "monolithic"
+    edit_cache_cluster_shapes: bool = False
+    room_solver_evidence: dict[str, Any] | None = None
+
+    def __post_init__(self) -> None:
+        if self.edit_room_solver not in SOLVER_STRATEGIES:
+            raise ValueError(f"Unknown editor room solver; use one of {', '.join(SOLVER_STRATEGIES)}")
+        if not isinstance(self.edit_cache_cluster_shapes, bool):
+            raise ValueError("edit_cache_cluster_shapes must be a boolean")
 
     @classmethod
-    def from_input(cls, input_path, output_dir, *, profile_path=None) -> "FacilityEditSession":  # type: ignore[override]
+    def from_input(cls, input_path, output_dir, *, profile_path=None,
+                   edit_room_solver="monolithic", edit_cache_cluster_shapes=False) -> "FacilityEditSession":  # type: ignore[override]
         review = FacilityReviewSession.from_input(input_path, output_dir, profile_path=profile_path)
-        session = cls(**{name: getattr(review, name) for name in FacilityReviewSession.__dataclass_fields__})
+        session = cls(**{name: getattr(review, name) for name in FacilityReviewSession.__dataclass_fields__},
+                      edit_room_solver=edit_room_solver, edit_cache_cluster_shapes=edit_cache_cluster_shapes)
         session.read_only = False
+        if edit_room_solver != "monolithic" or edit_cache_cluster_shapes:
+            payload = json.loads(Path(input_path).read_text(encoding="utf-8"))
+            generation = payload.get("generation")
+            recorded = generation.get("room_solver_evidence") if isinstance(generation, dict) else None
+            if isinstance(recorded, dict):
+                session.room_solver_evidence = recorded
         session.initial_state = session._state()
         return session
 
@@ -525,6 +549,7 @@ class FacilityEditSession(FacilityReviewSession):
             self.equipment_report,
             self.flow_report,
             self.facility_report,
+            self.room_solver_evidence,
         )
 
     def _restore(self, state: tuple[Any, ...]) -> None:
@@ -535,6 +560,7 @@ class FacilityEditSession(FacilityReviewSession):
             self.equipment_report,
             self.flow_report,
             self.facility_report,
+            self.room_solver_evidence,
         ) = state
 
     def snapshot(self) -> dict[str, Any]:
@@ -551,6 +577,11 @@ class FacilityEditSession(FacilityReviewSession):
                     "saved_revisions": list(self.saved_revisions),
                 }
             )
+            if self.edit_room_solver != "monolithic" or self.edit_cache_cluster_shapes:
+                payload["edit_solver"] = {"room_solver": self.edit_room_solver,
+                                          "cache_cluster_shapes": self.edit_cache_cluster_shapes}
+            if self.room_solver_evidence is not None:
+                payload["room_solver_evidence"] = deepcopy(self.room_solver_evidence)
             return payload
 
     def apply_payload(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -561,8 +592,11 @@ class FacilityEditSession(FacilityReviewSession):
             layout = self.building.layout
             _, moved = command.apply(layout, self.result)
             candidate = moved
+            solver_evidence = None
             if not validate_layout(layout, candidate).ok:
-                candidate = self._resolve_around(command.room_id, moved)
+                if self.edit_room_solver != "monolithic" or self.edit_cache_cluster_shapes:
+                    solver_evidence = {}
+                candidate = self._resolve_around(command.room_id, moved, evidence=solver_evidence)
             report = validate_layout(layout, candidate)
             if not report.ok:
                 raise EditError("Edit rejected: " + "; ".join(issue.message for issue in report.issues))
@@ -587,10 +621,11 @@ class FacilityEditSession(FacilityReviewSession):
             self.equipment_report = equipment_report
             self.flow_report = flow_report
             self.facility_report = facility_report
+            self.room_solver_evidence = solver_evidence
             self.edit_log.append({"action": "command", "type": type(command).__name__, "payload": dict(payload)})
             return self.snapshot()
 
-    def _resolve_around(self, room_id: str, moved: LayoutResult) -> LayoutResult:
+    def _resolve_around(self, room_id: str, moved: LayoutResult, *, evidence=None) -> LayoutResult:
         building = self.building
         layout = building.layout
         preferred_groups = building.zone_relation_groups("preferred_adjacency")
@@ -598,23 +633,29 @@ class FacilityEditSession(FacilityReviewSession):
         for item in building.equipment:
             if item.room_id is not None:
                 fit_options.setdefault(item.room_id, []).append((item.id, item.room_fit_dimensions(layout.wall_thickness_mm)))
+        options = {
+            "fixed_rects": {room_id: moved.placements[room_id]},
+            "required_adjacency_groups": building.zone_relation_groups("required_adjacency"),
+            "forbidden_adjacency_groups": building.zone_relation_groups("forbidden_adjacency"),
+            "preferred_adjacency_groups": preferred_groups,
+            "minimum_adjacency_mm": layout.door_width_mm + 2 * layout.wall_thickness_mm if building.flows else None,
+            "equipment_fit_options": fit_options,
+            "hint_rects": {key: rect for key, rect in self.result.placements.items() if key != room_id},
+        }
         try:
-            solved = solve_layouts(
-                layout,
-                1,
-                self.edit_time_limit_seconds,
-                moved.variant,
-                fixed_rects={room_id: moved.placements[room_id]},
-                required_adjacency_groups=building.zone_relation_groups("required_adjacency"),
-                forbidden_adjacency_groups=building.zone_relation_groups("forbidden_adjacency"),
-                preferred_adjacency_groups=preferred_groups,
-                minimum_adjacency_mm=layout.door_width_mm + 2 * layout.wall_thickness_mm if building.flows else None,
-                equipment_fit_options=fit_options,
-                # Start from the current rooms. Preferences use the bounded
-                # optimisation budget; without them stop after one repair.
-                hint_rects={key: rect for key, rect in self.result.placements.items() if key != room_id},
-                first_solution_only=not (preferred_groups or layout.relation_pairs("preferred_adjacency")),
-            )[0]
+            if self.edit_room_solver == "monolithic" and not self.edit_cache_cluster_shapes:
+                # Preserve the existing default: optimise preferences when
+                # present, otherwise stop after one monolithic repair.
+                solved = solve_layouts(
+                    layout, 1, self.edit_time_limit_seconds, moved.variant, **options,
+                    first_solution_only=not (preferred_groups or layout.relation_pairs("preferred_adjacency")))[0]
+            else:
+                solver_evidence = evidence if evidence is not None else {}
+                solved = solve_layouts_auto(
+                    layout, 1, self.edit_time_limit_seconds, moved.variant, **options,
+                    strategy=self.edit_room_solver, cache_cluster_shapes=self.edit_cache_cluster_shapes,
+                    evidence=solver_evidence)[0]
+                solver_evidence["user_fixed_room_ids"] = [room_id]
         except (InfeasibleLayout, ValueError) as exc:
             raise EditError(f"Edit rejected: the other rooms cannot be re-placed around {room_id}: {exc}") from exc
         return replace(solved, variant=moved.variant)
@@ -659,6 +700,12 @@ class FacilityEditSession(FacilityReviewSession):
             )
             target = revisions / f"rev_{number:02d}"
             original_bcf = self.output_dir / f"building_{self.result.variant:02d}.bcf"
+            generation_evidence = {
+                "revision_of": self.input_path.name,
+                "edits": [entry for entry in self.edit_log if entry["action"] == "command"],
+            }
+            if self.room_solver_evidence is not None:
+                generation_evidence["room_solver_evidence"] = self.room_solver_evidence
             try:
                 entry = write_facility_variant(
                     target,
@@ -671,10 +718,7 @@ class FacilityEditSession(FacilityReviewSession):
                     flow_routes=self.flow_routes,
                     flow_report=self.flow_report,
                     facility_report=self.facility_report,
-                    generation_evidence={
-                        "revision_of": self.input_path.name,
-                        "edits": [entry for entry in self.edit_log if entry["action"] == "command"],
-                    },
+                    generation_evidence=generation_evidence,
                     bcf_input=original_bcf if original_bcf.is_file() else None,
                 )
             except VariantExportError as exc:

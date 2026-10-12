@@ -380,3 +380,20 @@ conditions preserve incremental provenance and stage evidence. Imported fixed-ro
 constraints cannot be combined with this soft mode. Source and edited-input files
 must be outside the output directory to avoid overwriting supplied evidence.
 Ordinary no-option CLI behavior retains its existing path.
+
+`FacilityEditSession` also offers explicit `edit_room_solver` and
+`edit_cache_cluster_shapes` settings. Its ordinary default remains monolithic.
+An opted repair fixes only the room position/dimensions the user requested;
+neighbor coordinates are soft hints. Current equipment, routes and profile
+checks remain in the editor flow. Solver evidence belongs to the corresponding
+state: failed repair leaves it unchanged, undo/redo/reset restore it, a direct
+geometry-valid edit clears stale evidence, and saved/reopened revisions retain
+it. Snapshot consumers receive a deep copy. This session hook is separate from
+CLI launch controls and large-scale edit acceptance.
+
+Root verification covered 54 editor/core/UI/preference tests and 27 subtests.
+The actual seven-room repair fixes only the selected link and moves both
+neighbor clusters, with one checked cache hit and one miss. Saved and reopened
+revisions pass independent complete bundle QA. Default initial/repaired snapshots
+were byte-exact against `9f1a365`; default saved generation/geometry and manifest
+keys also match.

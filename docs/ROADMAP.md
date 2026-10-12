@@ -38,6 +38,8 @@ Checkpoint QA.10 records complete `ac0408b` platform/container/pharma CI without
 reopening the archived MVP or claiming acceptance of later commits.
 Checkpoint H.3.5.1 adds explicit soft canonical edit regeneration to the CLI
 with exact source-file provenance and fresh complete facility checks.
+Checkpoint H.3.5.2 verifies the opted editor session hook, preserving ordinary
+default editing and current checks while retaining repair evidence with its state.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

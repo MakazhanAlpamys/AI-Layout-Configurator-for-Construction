@@ -126,6 +126,8 @@ Checkpoint QA.10 records complete pinned `ac0408b` Windows/Linux, installed
 container and nine-variant pharma acceptance; subsequent changes retain separate gates.
 Checkpoint H.3.5.1 exposes canonical program-edit re-solving through the CLI,
 preserving source-file identity, complete shared bundles and structured negatives.
+Checkpoint H.3.5.2 adds opted editor hierarchy/cache repair and state-specific
+solver provenance through revisions, undo/redo/reset and reopening.
 
 ## 1. Why we are expanding the project
 
