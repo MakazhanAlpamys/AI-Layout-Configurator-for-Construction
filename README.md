@@ -578,6 +578,11 @@ revision JSON records the commands that produced it.
 
 ### Multi-storey facilities
 
+Shared-grid programs also export one semantic IFC per stack with native axes,
+storeys, qualified IDs, core groups and cross-floor flow systems. See
+[the shared-grid contract](docs/FACILITY_FLOORS.md); `--unified-ifc` requires a
+declared shared grid before generation.
+
 `generate-facility-floors` solves a facility over several floors. Each floor is
 an ordinary facility program with its own profile; a small file adds what
 connects them — vertical cores and cross-floor flows

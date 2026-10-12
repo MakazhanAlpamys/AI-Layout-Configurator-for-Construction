@@ -30,7 +30,7 @@ from typing import Any
 
 import yaml
 
-from .building import BuildingIR, FlowSpec
+from .building import BuildingIR, BuildingSpecError, FlowSpec, StructuralGridSpec
 from .facility import FacilityProfile, default_facility_profile, load_facility_profile
 from .facility_generation import (
     FeasibleFacilityCandidate,
@@ -95,6 +95,7 @@ class FacilityFloorsSpec:
     floors: tuple[FloorEntry, ...]
     cores: tuple[VerticalCore, ...]
     cross_flows: tuple[CrossFloorFlow, ...]
+    structural_grid: StructuralGridSpec | None = None
 
     def floor(self, level: int) -> FloorEntry:
         for entry in self.floors:
@@ -159,6 +160,9 @@ def facility_floors_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> F
     if not isinstance(raw, Mapping):
         raise FacilityFloorsError("Multi-floor facility root must be an object")
     payload = raw.get("facility_multi_floor", raw)
+    if not isinstance(payload, Mapping):
+        raise FacilityFloorsError("facility_multi_floor must be an object")
+    floor_height = _finite_number(payload.get("floor_height_mm", 4000), "floor_height_mm", positive=True)
     floors_raw = payload.get("floors") or ()
     if len(floors_raw) < 2:
         raise FacilityFloorsError("A multi-floor facility needs at least two floors")
@@ -175,13 +179,33 @@ def facility_floors_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> F
         floors.append(
             FloorEntry(
                 level=level,
-                elevation_mm=float(item.get("elevation_mm", level * float(payload.get("floor_height_mm", 4000)))),
+                elevation_mm=_finite_number(item.get("elevation_mm", level * floor_height), f"Floor {level} elevation_mm"),
                 building=load_building(program_path),
                 program_path=str(program_path),
                 profile_path=str((base_dir / str(profile)).resolve()) if profile else None,
             )
         )
     floors.sort(key=lambda entry: entry.level)
+    if any(lower.elevation_mm >= upper.elevation_mm for lower, upper in zip(floors, floors[1:])):
+        raise FacilityFloorsError("Floor elevations must increase with level")
+    shared_grid = None
+    if payload.get("structural_grid") is not None:
+        try:
+            shared_grid = StructuralGridSpec.from_mapping(payload["structural_grid"])
+            if not all(math.isfinite(axis) for axis in (*shared_grid.axes_x_mm, *shared_grid.axes_y_mm)):
+                raise BuildingSpecError("shared structural grid axes must be finite")
+            for entry in floors:
+                shared_grid.validate_against(entry.building.layout)
+                if entry.building.structural_grid is not None and entry.building.structural_grid != shared_grid:
+                    raise BuildingSpecError(f"Floor {entry.level} grid differs from the shared structural grid")
+                if entry.building.layout.grid_mm != floors[0].building.layout.grid_mm:
+                    raise BuildingSpecError("Floors with a shared structural grid must use the same solver grid_mm")
+                if any(abs(axis / entry.building.layout.grid_mm - round(axis / entry.building.layout.grid_mm)) > 1e-6
+                       for axis in (*shared_grid.axes_x_mm, *shared_grid.axes_y_mm)):
+                    raise BuildingSpecError("Shared structural grid axes must lie on the solver grid_mm")
+        except (BuildingSpecError, AttributeError, TypeError, ValueError) as exc:
+            raise FacilityFloorsError(f"Invalid shared structural grid: {exc}") from exc
+        floors = [replace(entry, building=replace(entry.building, structural_grid=shared_grid)) for entry in floors]
     by_level = {entry.level: entry for entry in floors}
 
     cores: list[VerticalCore] = []
@@ -190,6 +214,8 @@ def facility_floors_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> F
         kind = str(item.get("kind", "")).strip()
         if not core_id:
             raise FacilityFloorsError("Every vertical core needs an id")
+        if any(core.id == core_id for core in cores):
+            raise FacilityFloorsError(f"Duplicate vertical core id {core_id}")
         if kind not in CORE_FLOW_TYPES:
             raise FacilityFloorsError(f"Core {core_id} has unknown kind {kind!r}; use one of {', '.join(sorted(CORE_FLOW_TYPES))}")
         rooms = {int(level): str(room_id) for level, room_id in (item.get("rooms") or {}).items()}
@@ -223,6 +249,8 @@ def facility_floors_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> F
             raise FacilityFloorsError(f"Cross-floor flow {flow_id or '<unnamed>'} needs from/to with level and id") from exc
         if not flow_id:
             raise FacilityFloorsError("Every cross-floor flow needs an id")
+        if any(existing.id == flow_id for existing in flows):
+            raise FacilityFloorsError(f"Duplicate cross-floor flow id {flow_id}")
         if flow.from_level == flow.to_level:
             raise FacilityFloorsError(f"Cross-floor flow {flow_id} starts and ends on floor {flow.from_level}")
         for level, endpoint in ((flow.from_level, flow.from_id), (flow.to_level, flow.to_id)):
@@ -239,14 +267,25 @@ def facility_floors_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> F
 
     spec = FacilityFloorsSpec(
         project_name=str(payload.get("project_name", "Multi-floor facility")),
-        floor_height_mm=float(payload.get("floor_height_mm", 4000)),
+        floor_height_mm=floor_height,
         floors=tuple(floors),
         cores=tuple(cores),
         cross_flows=tuple(flows),
+        structural_grid=shared_grid,
     )
     for flow in spec.cross_flows:
         spec.core_for(flow)  # fail early when no core can carry a flow
     return spec
+
+
+def _finite_number(value: Any, field_name: str, *, positive: bool = False) -> float:
+    try:
+        number = float(value)
+    except (TypeError, ValueError) as exc:
+        raise FacilityFloorsError(f"{field_name} must be a finite number") from exc
+    if not math.isfinite(number) or (positive and number <= 0):
+        raise FacilityFloorsError(f"{field_name} must be {'positive and ' if positive else ''}finite")
+    return number
 
 
 @dataclass(frozen=True)
@@ -304,10 +343,21 @@ def solve_facility_floors(
     }
     levels = [entry.level for entry in spec.floors]
     base = levels[0]
+
+    def axis_constraints(level: int) -> dict[str, Any]:
+        if spec.structural_grid is None:
+            return {}
+        return {
+            "axis_aligned_room_ids": tuple(sorted({core.rooms[level] for core in spec.cores if level in core.rooms})),
+            "structural_axes_x_mm": spec.structural_grid.axes_x_mm,
+            "structural_axes_y_mm": spec.structural_grid.axes_y_mm,
+        }
+
     try:
         base_generation = solve_feasible_facility_variants(
             programs[base], profiles[base], variants=variants, time_limit_seconds=time_limit_seconds,
             seed=seed, max_attempts=max_attempts, room_solver=room_solver,
+            **axis_constraints(base),
         )
     except InfeasibleFacilityGeneration as exc:
         raise FacilityFloorsError(f"Floor {base}: {exc}", {"level": base, "generation": exc.generation.to_dict()}) from exc
@@ -325,6 +375,7 @@ def solve_facility_floors(
                 generation = solve_feasible_facility_variants(
                     programs[level], profiles[level], variants=1, time_limit_seconds=time_limit_seconds,
                     seed=seed + number - 1, max_attempts=max_attempts or 3, room_solver=room_solver, fixed_rects=fixed,
+                    **axis_constraints(level),
                 )
             except InfeasibleFacilityGeneration as exc:
                 failure = {"stack": number, "level": level, "reason": str(exc), "generation": exc.generation.to_dict()}
@@ -369,6 +420,31 @@ def vertical_checks(spec: FacilityFloorsSpec, floors: Mapping[int, FeasibleFacil
             (x, y, w, h), = distinct
             alignment.append(f"{core.id} ({core.kind}): {w:.0f} x {h:.0f} mm at ({x:.0f}, {y:.0f}) on floors {sorted(rects)}")
     checks.append(VerticalCheck("CORE_ALIGNMENT", "PASS" if aligned else "FAIL", tuple(alignment)))
+
+    if spec.structural_grid is not None:
+        grid = spec.structural_grid
+        evidence: list[str] = []
+        on_grid = True
+        for entry in spec.floors:
+            if entry.building.structural_grid != grid:
+                on_grid = False
+                evidence.append(f"Floor {entry.level}: structural grid differs from the declared shared grid")
+        for core in spec.cores:
+            for level, room_id in sorted(core.rooms.items()):
+                rect = floors[level].result.placements.get(room_id) if level in floors else None
+                if rect is None:
+                    on_grid = False
+                    evidence.append(f"{core.id} floor {level}: core room is not placed")
+                    continue
+                for axis_name, axes, endpoints in (
+                    ("x", grid.axes_x_mm, (rect.x, rect.right)),
+                    ("y", grid.axes_y_mm, (rect.y, rect.top)),
+                ):
+                    fits = all(any(abs(value - axis) <= 1e-6 for axis in axes) for value in endpoints)
+                    on_grid &= fits
+                    evidence.append(f"{core.id} floor {level}: {axis_name} endpoints {endpoints} "
+                                    f"{'match' if fits else 'are off'} shared axes {axes}")
+        checks.append(VerticalCheck("SHARED_STRUCTURAL_GRID", "PASS" if on_grid else "FAIL", tuple(evidence)))
 
     capacity: list[str] = []
     carriage: list[str] = []

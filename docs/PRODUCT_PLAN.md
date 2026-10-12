@@ -36,6 +36,8 @@ The pinned `dff5603` acceptance run passed Windows, Linux, pharma and the
 deployed API/container; later checkpoint CI evidence is tracked in the ledger.
 Checkpoint B.1 supplies a validated orthogonal geometry kernel with exact
 footprint operations; result contracts and downstream integration remain open.
+Checkpoint H.1 verifies shared-grid core constraints and one semantic facility
+IFC across storeys; the CLI retains per-floor QA and unified read-back evidence.
 
 ## 1. Why we are expanding the project
 

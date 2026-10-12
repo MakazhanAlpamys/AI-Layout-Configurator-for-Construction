@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import replace
+from dataclasses import asdict, replace
+import hashlib
 import json
 import os
 import sys
@@ -237,6 +238,7 @@ def main(argv: list[str] | None = None) -> int:
     facility_floors.add_argument("--time-limit", type=float, default=60)
     facility_floors.add_argument("--seed", type=int, default=42)
     facility_floors.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto")
+    facility_floors.add_argument("--unified-ifc", action="store_true", help="require a unified IFC and an explicitly declared shared grid; shared-grid programs export it automatically")
     compare_variants = subparsers.add_parser(
         "compare-variants",
         help="rank the variants of a generated facility bundle and write JSON, CSV and a client PDF",
@@ -590,6 +592,8 @@ def main(argv: list[str] | None = None) -> int:
 
         try:
             floors_spec = load_facility_floors(args.spec)
+            if args.unified_ifc and floors_spec.structural_grid is None:
+                raise FacilityFloorsError("Unified facility IFC requires an explicit shared structural grid")
             solved = solve_facility_floors(
                 floors_spec,
                 variants=args.variants,
@@ -612,6 +616,7 @@ def main(argv: list[str] | None = None) -> int:
         report = {
             "project": floors_spec.project_name,
             "floor_height_mm": floors_spec.floor_height_mm,
+            "structural_grid": None if floors_spec.structural_grid is None else floors_spec.structural_grid.to_dict(),
             "floors": [
                 {"level": entry.level, "elevation_mm": entry.elevation_mm, "program": entry.program_path,
                  "profile": solved.profiles[entry.level].name, "bundle": f"floor_{entry.level:02d}"}
@@ -651,12 +656,32 @@ def main(argv: list[str] | None = None) -> int:
                     "variants": [],
                 })["variants"].append(entry)
                 files[str(level)] = f"floor_{level:02d}/{entry['json']}"
+            unified_ifc = None
+            if floors_spec.structural_grid is not None:
+                from .ifc import export_facility_floors_ifc
+
+                ifc_path = args.output / f"facility_stack_{stack.number:02d}.ifc"
+                try:
+                    summary = export_facility_floors_ifc(ifc_path, floors_spec, stack, solved.programs)
+                    readback = validate_ifc_roundtrip(ifc_path, summary)
+                    if not readback.ok:
+                        raise ValueError("Unified IFC read-back rejected: " + "; ".join(readback.issues))
+                    summary_fields = asdict(summary)
+                    summary_fields.pop("path")
+                    unified_ifc = {"path": ifc_path.name,
+                                   "sha256": hashlib.sha256(ifc_path.read_bytes()).hexdigest(),
+                                   "summary": summary_fields, "readback": readback.to_dict(),
+                                   "identity_contract": "L{level}/{kind}/{local_id}"}
+                except (ImportError, OSError, ValueError, RuntimeError) as exc:
+                    print(f"ERROR: unified IFC: {exc}", file=sys.stderr)
+                    return 3
             report["stacks"].append({
                 "stack": stack.number,
                 "ok": stack.ok,
                 "floors": files,
                 "floor_checks_ok": {str(level): candidate.facility_report.ok for level, candidate in stack.floors.items()},
                 "vertical_checks": [check.to_dict() for check in stack.checks],
+                "unified_ifc": unified_ifc,
             })
             print(f"stack {stack.number}: {'PASS' if stack.ok else 'FAIL'} — " + ", ".join(f"floor {k}: {v}" for k, v in files.items()))
         for level, manifest in floor_manifests.items():

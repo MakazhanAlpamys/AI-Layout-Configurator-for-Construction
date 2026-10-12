@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import TYPE_CHECKING
 from uuid import NAMESPACE_URL, uuid5
 
 from .building import BuildingIR, EquipmentSpec
@@ -18,6 +19,9 @@ from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
 from .multifloor import MultiFloorResult, MultiFloorSpec
 from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
+
+if TYPE_CHECKING:
+    from .facility_floors import FacilityFloorsSpec, FloorStack
 
 
 IFC_HEIGHT_MM = 2_800
@@ -61,6 +65,7 @@ class IfcReadbackSummary:
     flow_routes: int
     equipment_ids: tuple[str, ...] = ()
     flow_ids: tuple[str, ...] = ()
+    semantic_ids: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -74,6 +79,7 @@ class IfcReadbackSummary:
             "flow_routes": self.flow_routes,
             "equipment_ids": list(self.equipment_ids),
             "flow_ids": list(self.flow_ids),
+            "semantic_ids": list(self.semantic_ids),
         }
 
 
@@ -345,6 +351,11 @@ def read_ifc_summary(path: str | Path) -> IfcReadbackSummary:
     flow_ids = tuple(
         sorted(str(values["FlowId"]) for values in flow_values if "FlowId" in values)
     )
+    semantic_ids = tuple(sorted(
+        str(values["SemanticId"])
+        for entity in document.by_type("IfcObject")
+        if "SemanticId" in (values := _ifc_property_values(entity, "Pset_FacilityIdentity"))
+    ))
     return IfcReadbackSummary(
         path=source,
         project_global_id=None if project is None else getattr(project, "GlobalId", None),
@@ -356,6 +367,7 @@ def read_ifc_summary(path: str | Path) -> IfcReadbackSummary:
         flow_routes=len(flow_values),
         equipment_ids=equipment_ids,
         flow_ids=flow_ids,
+        semantic_ids=semantic_ids,
     )
 
 
@@ -375,6 +387,8 @@ def validate_ifc_roundtrip(
     issues: list[str] = []
     if summary.project_global_id is None:
         issues.append("IFC read-back found no IfcProject GlobalId")
+    if len(summary.semantic_ids) != len(set(summary.semantic_ids)):
+        issues.append("IFC read-back contains duplicate facility semantic IDs")
     if expected is not None:
         for field in ("spaces", "walls", "doors", "windows", "equipment", "flow_routes"):
             actual = getattr(summary, field)
@@ -400,6 +414,271 @@ def _ifc_property_values(element, property_set_name: str) -> dict[str, object]:
             nominal = getattr(prop, "NominalValue", None)
             values[str(prop.Name)] = None if nominal is None else nominal.wrappedValue
     return values
+
+
+def export_facility_floors_ifc(
+    path: str | Path,
+    multi_spec: FacilityFloorsSpec,
+    stack: FloorStack,
+    programs: Mapping[int, BuildingIR] | None = None,
+) -> IfcExportSummary:
+    """Project an accepted facility stack into one IFC with an explicit grid.
+
+    Each floor keeps its BuildingIR declarations and local IDs. Qualified
+    semantic IDs and GUID namespaces distinguish repeated IDs across floors.
+    The shared axes and core groups are declared coordination information,
+    not structural analysis, designed lift equipment or certified systems.
+    """
+    import ifcopenshell
+    from .facility_floors import vertical_checks
+
+    if multi_spec.structural_grid is None:
+        raise ValueError("Unified facility IFC requires an explicit shared structural grid")
+    levels = {entry.level for entry in multi_spec.floors}
+    if set(stack.floors) != levels or len(levels) != len(multi_spec.floors):
+        raise ValueError("Facility IFC stack floors do not match the specification")
+    if not stack.ok:
+        raise ValueError("Facility IFC requires an accepted stack")
+    failures = [check.id for check in vertical_checks(multi_spec, stack.floors) if check.status != "PASS"]
+    if failures:
+        raise ValueError("Facility IFC vertical checks failed: " + ", ".join(failures))
+    programs = dict(programs) if programs is not None else {
+        level: building.with_required_flow_opening_width()
+        for level, building in multi_spec.floor_programs().items()
+    }
+    if set(programs) != levels:
+        raise ValueError("Facility IFC programs do not match the specified floors")
+    for entry in multi_spec.floors:
+        program = programs[entry.level]
+        if program.structural_grid != multi_spec.structural_grid:
+            raise ValueError(f"Floor {entry.level} program differs from the shared structural grid")
+        if set(stack.floors[entry.level].result.placements) != {room.id for room in program.layout.rooms}:
+            raise ValueError(f"Floor {entry.level} room placements do not match its program")
+
+    document = ifcopenshell.file(schema="IFC4")
+    owner = _owner_history(document)
+    context = _model_context(document)
+    namespace = f"{multi_spec.project_name}:facility-floor-stack"
+    project = document.create_entity(
+        "IfcProject", GlobalId=_guid_value(f"{namespace}:project"), OwnerHistory=owner,
+        Name=multi_spec.project_name, RepresentationContexts=[context], UnitsInContext=_units(document),
+    )
+    site = document.create_entity(
+        "IfcSite", GlobalId=_guid_value(f"{namespace}:site"), OwnerHistory=owner,
+        Name=f"{multi_spec.project_name} site", CompositionType="ELEMENT",
+        ObjectPlacement=document.create_entity("IfcLocalPlacement", RelativePlacement=_axis_placement(document, (0, 0, 0))),
+    )
+    building = document.create_entity(
+        "IfcBuilding", GlobalId=_guid_value(f"{namespace}:building"), OwnerHistory=owner,
+        Name=multi_spec.project_name, CompositionType="ELEMENT",
+        ObjectPlacement=document.create_entity("IfcLocalPlacement", PlacementRelTo=site.ObjectPlacement,
+                                                RelativePlacement=_axis_placement(document, (0, 0, 0))),
+    )
+    for suffix, parent, children in (("project", project, [site]), ("site", site, [building])):
+        document.create_entity("IfcRelAggregates", GlobalId=_guid_value(f"{namespace}:aggregate-{suffix}"),
+                               OwnerHistory=owner, RelatingObject=parent, RelatedObjects=children)
+    _add_properties(document, owner, [building], "Pset_FacilityBuilding", {
+        "FloorCount": len(levels), "FloorHeightMm": multi_spec.floor_height_mm,
+        "SourceContract": "FacilityFloorsSpec", "RepresentationKind": "Declared coordination stack",
+    })
+
+    storeys = []
+    floor_spaces = {}
+    floor_systems = {}
+    all_walls, all_doors, all_windows = [], [], []
+    equipment_count = flow_count = openings_count = external_entries = 0
+    for entry in sorted(multi_spec.floors, key=lambda item: item.level):
+        candidate = stack.floors[entry.level]
+        program = replace(programs[entry.level], layout=replace(
+            programs[entry.level].layout, project_name=f"{multi_spec.project_name} / facility level {entry.level}"))
+        placement = document.create_entity(
+            "IfcLocalPlacement", PlacementRelTo=building.ObjectPlacement,
+            RelativePlacement=_axis_placement(document, (0, 0, entry.elevation_mm)),
+        )
+        storey = document.create_entity(
+            "IfcBuildingStorey", GlobalId=_guid(program.layout, "storey"), OwnerHistory=owner,
+            Name=f"Level {entry.level}", CompositionType="ELEMENT", ObjectPlacement=placement,
+            Elevation=entry.elevation_mm,
+        )
+        _add_properties(document, owner, [storey], "Pset_FacilityFloor", {
+            "Level": entry.level, "ElevationMm": entry.elevation_mm,
+            "SourceContract": f"BuildingIR {program.version}", "ProgramSource": Path(entry.program_path).name,
+            "ProfileSource": Path(entry.profile_path).name if entry.profile_path else "default_facility.yaml",
+        })
+        _add_floor_identity(document, owner, storey, entry.level, "storey", str(entry.level))
+        projection = _project_facility_floor(document, owner, context, storey, program, candidate, entry.level)
+        spaces, systems, walls, doors, windows, equipment, flows, wall_plan = projection
+        storeys.append(storey)
+        floor_spaces[entry.level] = spaces
+        floor_systems[entry.level] = systems
+        all_walls.extend(walls)
+        all_doors.extend(doors)
+        all_windows.extend(windows)
+        equipment_count += len(equipment)
+        flow_count += len(flows)
+        openings_count += len(wall_plan.openings) + len(wall_plan.windows)
+        external_entries += sum(opening.external for opening in wall_plan.openings)
+
+    document.create_entity("IfcRelAggregates", GlobalId=_guid_value(f"{namespace}:aggregate-building"),
+                           OwnerHistory=owner, RelatingObject=building, RelatedObjects=storeys)
+    _make_facility_shared_grid(document, owner, context, building, storeys, multi_spec, namespace)
+    scope = replace(programs[min(levels)].layout, project_name=namespace)
+    cores = {}
+    for core in sorted(multi_spec.cores, key=lambda item: item.id):
+        group = document.create_entity(
+            "IfcGroup", GlobalId=_guid(scope, f"vertical-core-{core.id}"), OwnerHistory=owner,
+            Name=core.id, ObjectType=core.kind, Description="Declared aligned vertical-core room volumes",
+        )
+        _add_properties(document, owner, [group], "Pset_FacilityCore", {
+            "CoreId": core.id, "CoreKind": core.kind, "Levels": ",".join(map(str, sorted(core.rooms))),
+            "SourceContract": "FacilityFloorsSpec", "SourceEntityType": "VerticalCore",
+        })
+        _add_properties(document, owner, [group], "Pset_FacilityIdentity", {
+            "SemanticId": f"vertical-core/{core.id}", "LocalId": core.id, "SourceEntityType": "VerticalCore",
+        })
+        members = [floor_spaces[level][room_id] for level, room_id in sorted(core.rooms.items())]
+        for member in members:
+            _add_properties(document, owner, [member], f"Pset_FacilityCore_{core.id}", {"VerticalCoreId": core.id})
+        _assign_group(document, owner, scope, group, members, f"vertical-core-membership-{core.id}")
+        cores[core.id] = group
+    for flow in sorted(multi_spec.cross_flows, key=lambda item: item.id):
+        system = document.create_entity(
+            "IfcSystem", GlobalId=_guid(scope, f"cross-floor-flow-{flow.id}"), OwnerHistory=owner,
+            Name=flow.id, ObjectType=flow.type, Description="Declared cross-floor process movement; not a designed MEP system",
+        )
+        selected_core = multi_spec.core_for(flow)
+        _add_properties(document, owner, [system], "Pset_FacilityCrossFloorFlow", {
+            "FlowId": flow.id, "FlowType": flow.type, "FromLevel": flow.from_level, "FromId": flow.from_id,
+            "ToLevel": flow.to_level, "ToId": flow.to_id, "ViaCoreId": selected_core.id,
+            "MinimumClearWidthMm": flow.minimum_clear_width_mm, "Required": flow.required,
+            "SourceContract": "FacilityFloorsSpec", "SourceEntityType": "CrossFloorFlow",
+        })
+        _add_properties(document, owner, [system], "Pset_FacilityIdentity", {
+            "SemanticId": f"cross-floor-flow/{flow.id}", "LocalId": flow.id, "SourceEntityType": "CrossFloorFlow",
+        })
+        members = [floor_systems[level][flow.leg_id(level)] for level in (flow.from_level, flow.to_level)]
+        members.append(cores[selected_core.id])
+        _assign_group(document, owner, scope, system, members, f"cross-floor-flow-membership-{flow.id}")
+
+    _associate_material(document, owner, all_walls, "Generic partition wall")
+    _associate_material(document, owner, all_doors, "Generic internal door")
+    _associate_material(document, owner, all_windows, "Generic window")
+    roots = document.by_type("IfcRoot")
+    if len({entity.GlobalId for entity in roots}) != len(roots):
+        raise ValueError("Unified facility IFC contains duplicate GUIDs")
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    document.write(str(output))
+    return IfcExportSummary(
+        path=output, spaces=sum(map(len, floor_spaces.values())), walls=len(all_walls),
+        doors=len(all_doors), windows=len(all_windows), openings=openings_count,
+        space_boundaries=len(document.by_type("IfcRelSpaceBoundary")),
+        voids=len(document.by_type("IfcRelVoidsElement")), fills=len(document.by_type("IfcRelFillsElement")),
+        wall_types=len(document.by_type("IfcWallType")), door_types=len(document.by_type("IfcDoorType")),
+        window_types=len(document.by_type("IfcWindowType")), equipment=equipment_count,
+        equipment_types=len(document.by_type("IfcBuildingElementProxyType")), flow_routes=flow_count,
+        external_entries=external_entries, storeys=len(storeys),
+    )
+
+
+def _add_floor_identity(document, owner, entity, level: int, kind: str, local_id: str) -> None:
+    _add_properties(document, owner, [entity], "Pset_FacilityIdentity", {
+        "SemanticId": f"L{level}/{kind}/{local_id}", "LocalId": local_id, "Level": level,
+        "SourceContract": "FacilityFloorsSpec", "SourceEntityType": kind,
+    })
+
+
+def _project_facility_floor(document, owner, context, storey, program, candidate, level):
+    spec, result = program.layout, candidate.result
+    placement = storey.ObjectPlacement
+    spaces = {}
+    for room in sorted(spec.rooms, key=lambda item: item.id):
+        rect = result.placements[room.id]
+        space = document.create_entity(
+            "IfcSpace", GlobalId=_guid(spec, f"space-{room.id}"), OwnerHistory=owner,
+            Name=room.id, LongName=room.type,
+            ObjectPlacement=_product_placement(document, placement, rect.x, rect.y),
+            Representation=_box_representation(document, context, rect.width, rect.height, IFC_HEIGHT_MM),
+        )
+        _add_space_quantities(document, owner, space, rect)
+        _add_properties(document, owner, [space], "Pset_LayoutRoom", {
+            "RoomId": room.id, "RoomType": room.type, "TargetAreaM2": room.target_area_m2,
+            "NeedsDaylight": room.needs_daylight, "IsHeated": room.is_heated,
+        })
+        _add_floor_identity(document, owner, space, level, "room", room.id)
+        spaces[room.id] = space
+    document.create_entity("IfcRelAggregates", GlobalId=_guid(spec, "aggregate-storey-spaces"),
+                           OwnerHistory=owner, RelatingObject=storey, RelatedObjects=list(spaces.values()))
+    wall_plan = build_wall_plan(spec, result)
+    walls, wall_records = _make_walls(document, owner, context, placement, spec, result, wall_plan)
+    doors = _make_doors(document, owner, context, placement, wall_plan, guid_spec=spec)
+    windows = _make_windows(document, owner, context, placement, spec, wall_plan, guid_spec=spec)
+    openings = _make_openings(document, owner, context, placement, spec, wall_plan, doors, windows)
+    _make_element_types(document, owner, spec, walls, doors, windows)
+    equipment, _ = _make_equipment(document, owner, context, placement, spec, candidate.equipment, program.equipment)
+    ordered_routes = replace(candidate.flow_routes, routes=tuple(sorted(
+        candidate.flow_routes.routes, key=lambda route: (route.flow_id, route.from_id, route.to_id))))
+    flows = _make_flow_elements(document, owner, context, placement, spec, ordered_routes,
+                                candidate.flow_report, {flow.id: flow.type for flow in program.flows})
+    zones, systems = _make_facility_groups(document, owner, program, spaces, equipment, flows)
+    for element in equipment:
+        _add_floor_identity(document, owner, element, level, "equipment",
+                            str(_ifc_property_values(element, "Pset_LayoutEquipment")["EquipmentId"]))
+    for index, element in enumerate(flows):
+        values = _ifc_property_values(element, "Pset_LayoutFlow")
+        _add_floor_identity(document, owner, element, level, "flow-route",
+                            f"{values['FlowId']}:{values['FromId']}:{values['ToId']}:{index}")
+    for kind, groups in (("zone", zones), ("flow-system", systems)):
+        for local_id, group in groups.items():
+            _add_floor_identity(document, owner, group, level, kind, local_id)
+    for kind, elements in (("wall", walls), ("door", doors), ("window", windows),
+                           ("opening", [record.element for record in openings])):
+        for index, element in enumerate(elements):
+            _add_floor_identity(document, owner, element, level, kind, str(index))
+    _add_bim_relationships(document, owner, spec, result, spaces, wall_records, openings)
+    elements = [*walls, *doors, *windows, *equipment, *flows]
+    document.create_entity("IfcRelContainedInSpatialStructure", GlobalId=_guid(spec, "containment-storey"),
+                           OwnerHistory=owner, RelatedElements=elements, RelatingStructure=storey)
+    return spaces, systems, walls, doors, windows, equipment, flows, wall_plan
+
+
+def _make_facility_shared_grid(document, owner, context, building, storeys, multi_spec, namespace):
+    declared = multi_spec.structural_grid
+    width = max(entry.building.layout.boundary.width_mm for entry in multi_spec.floors)
+    depth = max(entry.building.layout.boundary.height_mm for entry in multi_spec.floors)
+
+    def axis(tag, points):
+        return document.create_entity("IfcGridAxis", AxisTag=tag, SameSense=True,
+                                      AxisCurve=document.create_entity("IfcPolyline", Points=[_point(document, point) for point in points]))
+
+    labels_x = declared.labels_x or tuple(f"X{index + 1}" for index in range(len(declared.axes_x_mm)))
+    labels_y = declared.labels_y or tuple(f"Y{index + 1}" for index in range(len(declared.axes_y_mm)))
+    grid = document.create_entity(
+        "IfcGrid", GlobalId=_guid_value(f"{namespace}:shared-grid"), OwnerHistory=owner,
+        Name="Shared structural grid", PredefinedType="RECTANGULAR",
+        ObjectPlacement=document.create_entity("IfcLocalPlacement", PlacementRelTo=building.ObjectPlacement,
+                                                RelativePlacement=_axis_placement(document, (0, 0, 0))),
+        UAxes=[axis(tag, [(0, y), (width, y)]) for tag, y in zip(labels_y, declared.axes_y_mm)],
+        VAxes=[axis(tag, [(x, 0), (x, depth)]) for tag, x in zip(labels_x, declared.axes_x_mm)],
+    )
+    grid.Representation = document.create_entity("IfcProductDefinitionShape", Representations=[
+        document.create_entity(
+            "IfcShapeRepresentation", ContextOfItems=context, RepresentationIdentifier="FootPrint",
+            RepresentationType="GeometricCurveSet", Items=[document.create_entity(
+                "IfcGeometricCurveSet", Elements=[item.AxisCurve for item in (*grid.UAxes, *grid.VAxes)],
+            )],
+        )
+    ])
+    _add_properties(document, owner, [grid], "Pset_FacilityStructuralGrid", {
+        "AxesXMm": ",".join(map(str, declared.axes_x_mm)), "AxesYMm": ",".join(map(str, declared.axes_y_mm)),
+        "SourceContract": "FacilityFloorsSpec", "SourceEntityType": "StructuralGridSpec",
+        "ValidationScope": "Declared shared coordination axes; not structural analysis or certification",
+    })
+    document.create_entity("IfcRelContainedInSpatialStructure", GlobalId=_guid_value(f"{namespace}:containment-grid"),
+                           OwnerHistory=owner, RelatedElements=[grid], RelatingStructure=building)
+    for storey, entry in zip(storeys, sorted(multi_spec.floors, key=lambda item: item.level)):
+        document.create_entity("IfcRelReferencedInSpatialStructure", GlobalId=_guid_value(f"{namespace}:grid-reference:{entry.level}"),
+                               OwnerHistory=owner, RelatedElements=[grid], RelatingStructure=storey)
 
 
 def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: MultiFloorResult) -> IfcExportSummary:
@@ -622,7 +901,7 @@ def _make_facility_groups(
     spaces_by_id,
     equipment_elements,
     flow_elements,
-) -> None:
+) -> tuple[dict[str, object], dict[str, object]]:
     """Preserve declared zone hierarchy and process membership in native groups.
 
     Grouping adds no physical geometry or engineering calculations. Direct
@@ -679,6 +958,7 @@ def _make_facility_groups(
     for element in flow_elements:
         flow_id = str(_ifc_property_values(element, "Pset_LayoutFlow")["FlowId"])
         routes_by_flow.setdefault(flow_id, []).append(element)
+    systems_by_id = {}
     for flow in sorted(building.flows, key=lambda item: item.id):
         system = document.create_entity(
             "IfcSystem",
@@ -712,6 +992,8 @@ def _make_facility_groups(
             document, owner_history, spec, system, members,
             f"flow-system-membership-{flow.id}",
         )
+        systems_by_id[flow.id] = system
+    return zones_by_id, systems_by_id
 
 
 def _assign_group(document, owner_history, spec, group, members, suffix) -> None:
@@ -922,7 +1204,7 @@ def _make_walls(document, owner_history, context, storey_placement, spec, result
     return walls, records
 
 
-def _make_doors(document, owner_history, context, storey_placement, wall_plan: WallPlan):
+def _make_doors(document, owner_history, context, storey_placement, wall_plan: WallPlan, *, guid_spec: LayoutIR | None = None):
     doors = []
     for index, opening in enumerate(wall_plan.openings):
         x, y = opening.center
@@ -934,7 +1216,8 @@ def _make_doors(document, owner_history, context, storey_placement, wall_plan: W
             x, y = opening.fixed - width / 2, opening.start
         door = document.create_entity(
             "IfcDoor",
-            GlobalId=_guid_value(f"door-{index}-{opening.room_a}-{opening.room_b}"),
+            GlobalId=(_guid(guid_spec, f"door-{index}-{opening.room_a}-{opening.room_b}") if guid_spec is not None
+                      else _guid_value(f"door-{index}-{opening.room_a}-{opening.room_b}")),
             OwnerHistory=owner_history,
             Name=(f"External entry {opening.room_a}" if opening.external else f"Door {opening.room_a}–{opening.room_b}"),
             ObjectPlacement=_product_placement(document, storey_placement, x, y),
@@ -960,7 +1243,7 @@ def _make_doors(document, owner_history, context, storey_placement, wall_plan: W
     return doors
 
 
-def _make_windows(document, owner_history, context, storey_placement, spec, wall_plan: WallPlan):
+def _make_windows(document, owner_history, context, storey_placement, spec, wall_plan: WallPlan, *, guid_spec: LayoutIR | None = None):
     windows = []
     for index, opening in enumerate(wall_plan.windows):
         if opening.orientation == "horizontal":
@@ -971,7 +1254,8 @@ def _make_windows(document, owner_history, context, storey_placement, spec, wall
             x, y = opening.fixed - width / 2, opening.start
         window = document.create_entity(
             "IfcWindow",
-            GlobalId=_guid_value(f"window-{index}-{opening.room_id}"),
+            GlobalId=(_guid(guid_spec, f"window-{index}-{opening.room_id}") if guid_spec is not None
+                      else _guid_value(f"window-{index}-{opening.room_id}")),
             OwnerHistory=owner_history,
             Name=f"Window {opening.room_id}",
             ObjectPlacement=_product_placement(document, storey_placement, x, y, spec.window_sill_mm),

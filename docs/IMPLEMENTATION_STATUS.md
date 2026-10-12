@@ -35,6 +35,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | G.2 | Calibrated rectangular vector-PDF draft | Explicit page, scale and origin produce provisional candidates. Named confirmation requires explicit selection, unchanged source/page content and exact calibration, then reuses all fixed-room and bundle checks. Unsupported page graphics and ambiguous selections retain evidence. | Fresh PDF/import/CLI run: 39 passed, 81 subtests. A calibrated PDF generated a fixed-coordinate facility bundle with full QA and hashed selection evidence. Rendered source fixture was visually inspected. | complete 2026-10-12 for bounded rectangular page paths; OCR/general PDF pending |
 | QA.2 | Remote acceptance after packaging/API repair | The pinned `dff5603` checkpoint passed Windows and Linux suites, deployed API/container acceptance and pharma acceptance. This closes the original H.4/QA.1 remote gate for that commit; subsequent commits require their own CI. | [Acceptance run 38272192580](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38272192580): all four jobs successful. | complete 2026-10-12 for pinned checkpoint |
 | B.1 | Canonical orthogonal geometry kernel | Connected simple rings retain their real footprint, area, exact disjoint decomposition, shared edges, transforms and all surviving inset components. Invalid/freeform/holed geometry is rejected; bounds are only an index. | Fresh root combined geometry/IFC run: 24 passed, 31 subtests, including all 10 kernel tests. Agent kernel/equipment/flow regression: 35 passed. See [ORTHOGONAL_GEOMETRY.md](ORTHOGONAL_GEOMETRY.md). | foundation complete 2026-10-12; consumer/backend integration pending |
+| H.1 | Shared facility grid and unified semantic IFC | Shared axes constrain vertical-core room edges on every floor. One IFC retains declared elevations, qualified room/equipment/zone/system IDs, native grid, core memberships and cross-floor process links. CLI exports it automatically for shared-grid programs and checks read-back/hash. | Fresh root IFC/grid/CLI/multifloor run: 21 passed, 8 subtests; strict IFC EXPRESS validation and geometry read-back passed. Real six-room shared-grid CLI bundles and the existing 25-room two-floor regression passed per-floor QA. Agent broader run: 102 passed, 31 subtests. | complete 2026-10-12 for shared-grid exchange; 40-room/external gates pending |
 
 ## Remaining implementation
 
@@ -50,8 +51,9 @@ their own evidence. The old GitHub billing blocker is no longer current.
   acceptance examples without claiming unperformed expert sign-off.
 - G: general PDF and draft raster/OCR extraction; calibrated rectangular
   vector paths, strict typed model proposals and DXF/IFC confirmation exist.
-- H: unified multi-storey IFC and shared grid, typed vertical connectors,
-  service links and remote container acceptance.
+- H: two-floor 40-room acceptance, linked service zones, larger-scale
+  incremental solving and runner budget calibration; shared-grid IFC and typed
+  core declarations exist, with detailed engineering still out of scope.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed
   engineering library; scenario and pressure-network checks; synchronized
   drawings/schedules; medical-plastics benchmark and change scenario.
