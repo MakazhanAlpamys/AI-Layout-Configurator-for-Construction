@@ -26,6 +26,8 @@ Checkpoint H.3.4.1 measures the complete source-pinned 80-room warm-start
 pipeline under a parent deadline, independently of the archived MVP and full scale matrix.
 Checkpoint G.1.1 verifies supplied full-pilot DXF/IFC software import/regeneration;
 human geometry review and third-party receiving-tool acceptance remain separate.
+Checkpoint QA.9 updates English current-status guidance while preserving this
+roadmap's historical decisions and measured runtime limitations.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

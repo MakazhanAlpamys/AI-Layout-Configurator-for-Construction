@@ -114,6 +114,8 @@ Checkpoint H.3.4.1 adds a source-pinned, supervised complete 80-room warm-start
 bundle benchmark and manual single-runner CI; the scoped local request passed in 64.735 s.
 Checkpoint G.1.1 verifies full supplied-pilot DXF/IFC import and fixed-coordinate
 regeneration through every persisted bundle gate and strict IFC EXPRESS.
+Checkpoint QA.9 records the current English handoff and accurate CLI wording for
+runtime-specific repeatability and incomplete bounded candidate searches.
 
 ## 1. Why we are expanding the project
 

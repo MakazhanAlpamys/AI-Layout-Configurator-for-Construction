@@ -109,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--output", "-o", type=Path, default=Path("out"))
     generate.add_argument("--variants", type=int, default=1)
     generate.add_argument("--time-limit", type=float, default=30)
-    generate.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
+    generate.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a CP-SAT work budget instead of the wall clock for repeatability within the same runtime; wall time varies by machine and cross-platform output may differ")
     generate.add_argument("--seed", type=int, default=42)
     generate.add_argument("--strict-input", action="store_true", help="require canonical LayoutIR input before solving")
     generate.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
@@ -132,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
         type=float,
         default=None,
         dest="deterministic_units",
-        help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine",
+        help="spend a CP-SAT work budget instead of the wall clock for repeatability within the same runtime; wall time varies by machine and cross-platform output may differ",
     )
     generate_building.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, root zone containers (zone_hierarchical), or recursive zone containers (zone_recursive)")
     generate_building.add_argument("--seed", type=int, default=42)
@@ -140,7 +140,7 @@ def main(argv: list[str] | None = None) -> int:
         "--max-attempts",
         type=int,
         default=None,
-        help="maximum room-layout candidates evaluated before generation is declared infeasible; default is max(3, variants * 3)",
+        help="maximum room-layout candidates evaluated before reporting an incomplete accepted set; default is max(3, variants * 3)",
     )
     generate_building.add_argument(
         "--equipment-retries",
@@ -215,7 +215,7 @@ def main(argv: list[str] | None = None) -> int:
     acceptance_matrix.add_argument("--output", "-o", type=Path, default=Path("out/facility_acceptance_matrix"))
     acceptance_matrix.add_argument("--variants", type=int, default=3)
     acceptance_matrix.add_argument("--time-limit", type=float, default=30)
-    acceptance_matrix.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
+    acceptance_matrix.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a CP-SAT work budget instead of the wall clock for repeatability within the same runtime; wall time varies by machine and cross-platform output may differ")
     acceptance_matrix.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, root zone containers (zone_hierarchical), or recursive zone containers (zone_recursive)")
     acceptance_matrix.add_argument("--seeds", type=int, nargs="+", default=[1, 7, 42])
     acceptance_matrix.add_argument("--max-attempts", type=int, default=None)

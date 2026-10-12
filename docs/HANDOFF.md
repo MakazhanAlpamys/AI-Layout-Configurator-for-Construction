@@ -1,5 +1,41 @@
 # Context Handoff
 
+## Current execution state — 2026-10-12
+
+Use [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verified current
+checkpoints and remaining scope, [PRODUCT_PLAN.md](PRODUCT_PLAN.md) for cycles
+A–I and [NEXT_PLAN.md](NEXT_PLAN.md) for their acceptance criteria. The original
+[ROADMAP.md](ROADMAP.md) is the completed residential MVP archive. The dated
+sections below preserve earlier decisions and measurements; their old billing,
+test counts and CI schedule are historical.
+
+Development was synchronized with `origin/main` at `f598723`; the supplied
+Claude branch is included in main's ancestry. Maintained project documentation,
+UI, examples and comments are in English; separate Unicode fixture coverage
+does not change that policy. Checkpoint commits are verified and pushed after
+each completed step.
+
+Current pushes run one lightweight Ubuntu contract/collection job. Complete
+Windows/Linux tests, unchanged pharma seed/variant acceptance and the installed
+API/container run on PR/manual/weekly requests. The unchanged scale matrix is
+weekly/manual; solver calibration and synthetic80 warm-start measurements are
+manual. Independent concurrency groups prevent checkpoint pushes from cancelling
+pinned full runs. Historical GitHub billing failures have been superseded by
+successful pinned runs recorded in the ledger.
+
+Canonical browser entry, named drawing presets, explicit project symbols,
+editable dimension chains and per-variant client reports are implemented.
+Orthogonal room/equipment/routes have independent scoped checks; complete
+polygon facility/export integration remains in progress. The supplied synthetic
+80-room warm-start passed all local persisted/EXPRESS gates in 64.735 s; its own
+pinned CI measurement, general scratch80 solving, third-zone hierarchy and
+incremental edits remain distinct. Deterministic work budgets support measured
+same-runtime repeatability; they do not guarantee identical cross-platform output.
+
+Process/QA, cleanroom/HVAC and architecture/BIM signed decisions, receiving
+CAD/BIM reviews and real-project publication/source rights require actual
+external evidence. Software test results do not close these decisions.
+
 ## Current product goal — 2026-09-05
 
 The project is a **Facility Layout Compiler**, not a general-purpose floor plan
