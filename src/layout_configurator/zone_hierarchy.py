@@ -696,7 +696,8 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                          seed, attempts_limit, deterministic_units, evidence, *,
                          container_members, ancestors, recursive_zones=False,
                          stage="global", stage_unit=None, allow_partial=False,
-                         fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None):
+                         fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None,
+                         global_validator=None):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -869,11 +870,12 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
         candidate = LayoutResult(len(results) + 1, {room.id: rectangle(room_vars[room.id]) for room in spec.rooms}, solver.Value(objective))
         zone_rects = {unit_id: rectangle(values) for unit_id, values in unit_vars.items()}
         if stage == "global":
-            report = validate_zone_layout(building, candidate, zone_rects, minimum_adjacency_mm=minimum,
-                                          recursive_zones=recursive_zones, fixed_rects=fixed_rects,
-                                          axis_aligned_room_ids=axis_aligned_room_ids,
-                                          structural_axes_x_mm=(structural_axes or {}).get("x"),
-                                          structural_axes_y_mm=(structural_axes or {}).get("y"))
+            validator = validate_zone_layout if global_validator is None else global_validator
+            report = validator(building, candidate, zone_rects, minimum_adjacency_mm=minimum,
+                               recursive_zones=recursive_zones, fixed_rects=fixed_rects,
+                               axis_aligned_room_ids=axis_aligned_room_ids,
+                               structural_axes_x_mm=(structural_axes or {}).get("x"),
+                               structural_axes_y_mm=(structural_axes or {}).get("y"))
         else:
             report = _validate_container_layout(spec, candidate, zone_rects, container_members, ancestors,
                                                 check_unrelated_rooms=True)

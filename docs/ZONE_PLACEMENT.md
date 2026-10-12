@@ -75,3 +75,27 @@ valid pool, those candidates reach the existing facility gates. The final
 facility request must still obtain all requested accepted variants. Evidence
 records returned/requested pool size and the scoped stop reason; an empty or
 independently invalid pool never becomes successful output.
+
+## Explicit root-zone block unions
+
+`solve_block_zone_layouts` in `zone_blocks.py` accepts an explicit partition,
+for example `zone_blocks={'logistics': {'inbound': ['receiving', 'raw'],
+'outbound': ['finished', 'dispatch']}}`. Block IDs are globally unique. Each
+partition must cover its root's canonical descendant room membership exactly
+once. Unsupplied roots retain one container; unassigned rooms remain singletons.
+
+Local room/cluster solves produce physical rectangular blocks; global CP-SAT
+positions them under the original hard relations, cutouts, entry/window,
+fixed-room and axis constraints. The root zone's geometry is the exact union
+of its solved blocks, including any gap between them. It is never replaced
+with a bounding rectangle. Independent `validate_block_zone_layout` checks
+block connectivity, geometry, containment and exclusions, exact unions and
+global constraints. Evidence retains actual `block_rects` and `zone_geometry`,
+including accepted stage candidates before an exact-count failure.
+
+This separate direct API does not change facility/CLI/API dispatch or auto.
+Separate descendant containers and nested block partitions require further
+work; supplied nested partitions are rejected before a model. Failure remains
+about the bounded selected shapes. The six-room logistics/production regression
+proves a valid split union that the single-container model excludes; it is not
+a large-scale performance claim.

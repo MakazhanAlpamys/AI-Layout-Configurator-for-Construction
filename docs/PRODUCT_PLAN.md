@@ -70,6 +70,8 @@ Checkpoint B.4 independently checks actual orthogonal room minima, wall-inset
 and door connectivity, plus supplied directional equipment clearance.
 Checkpoint D.2 validates supplied prior-source revision chains, preserves exact
 source bytes and checks indexed PDF history through bundle and HTTP paths.
+Checkpoint C.3.6 solves explicit root-zone block partitions and independently
+checks their actual physical unions, preserving gaps and scoped failure evidence.
 
 ## 1. Why we are expanding the project
 
