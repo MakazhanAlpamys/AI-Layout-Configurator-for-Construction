@@ -1,0 +1,181 @@
+# Source: this repository-owned software acceptance fixture, project brief P01.
+# Room areas, widths, door sizes, route widths and equipment envelopes are explicit
+# project requirements chosen for this fixture; they are not manufacturer or legal norms.
+# Equipment represents coordination footprints, not a supplied product or certified system.
+# Compatible categories may share a channel; every incompatible pair uses separate
+# transfer rooms according to rules/laboratory_pilot.yaml.
+# Room coordinates are solver output. Engineering acceptance remains PENDING.
+version: '0.2'
+project_name: Laboratory flow coordination acceptance pilot
+layout:
+  version: '0.1'
+  project_name: Laboratory flow coordination acceptance pilot
+  tolerance: 0.05
+  grid_mm: 100
+  wall_thickness_mm: 200.0
+  door_width_mm: 900.0
+  window_width_mm: 1200.0
+  window_height_mm: 1500.0
+  window_sill_mm: 900.0
+  doors: []
+  windows: []
+  entry_room: coordination_hub
+  boundary:
+    width: 20000.0
+    height: 16000.0
+    cutouts: []
+  rooms:
+  - id: coordination_hub
+    type: laboratory_coordination
+    target_area: 32.0
+    min_area: 32.0
+    max_area: 32.0
+    min_width: 8000.0
+    min_depth: 4000.0
+    required_adjacency:
+    - channel_1_transfer
+    - channel_2_transfer
+    preferred_adjacency: []
+    forbidden_adjacency:
+    - channel_1_source
+    - channel_2_source
+    needs_daylight: false
+    is_heated: false
+  - id: channel_1_source
+    type: specimen_people_clean_supply_source
+    target_area: 16.0
+    min_area: 16.0
+    max_area: 16.0
+    min_width: 4000.0
+    min_depth: 4000.0
+    required_adjacency:
+    - channel_1_transfer
+    preferred_adjacency: []
+    forbidden_adjacency:
+    - coordination_hub
+    needs_daylight: false
+    is_heated: false
+  - id: channel_1_transfer
+    type: specimen_people_clean_supply_transfer
+    target_area: 16.0
+    min_area: 16.0
+    max_area: 16.0
+    min_width: 4000.0
+    min_depth: 4000.0
+    required_adjacency:
+    - channel_1_source
+    - coordination_hub
+    preferred_adjacency: []
+    forbidden_adjacency: []
+    needs_daylight: false
+    is_heated: false
+  - id: channel_2_source
+    type: waste_source
+    target_area: 16.0
+    min_area: 16.0
+    max_area: 16.0
+    min_width: 4000.0
+    min_depth: 4000.0
+    required_adjacency:
+    - channel_2_transfer
+    preferred_adjacency: []
+    forbidden_adjacency:
+    - coordination_hub
+    needs_daylight: false
+    is_heated: false
+  - id: channel_2_transfer
+    type: waste_transfer
+    target_area: 16.0
+    min_area: 16.0
+    max_area: 16.0
+    min_width: 4000.0
+    min_depth: 4000.0
+    required_adjacency:
+    - channel_2_source
+    - coordination_hub
+    preferred_adjacency: []
+    forbidden_adjacency: []
+    needs_daylight: false
+    is_heated: false
+zones:
+- id: coordination_zone
+  type: laboratory_coordination
+  room_ids:
+  - coordination_hub
+  required_adjacency: []
+  preferred_adjacency: []
+  forbidden_adjacency: []
+- id: channel_1_zone
+  type: specimen_people_clean_supply_coordination
+  room_ids:
+  - channel_1_source
+  - channel_1_transfer
+  required_adjacency: []
+  preferred_adjacency: []
+  forbidden_adjacency: []
+- id: channel_2_zone
+  type: waste_coordination
+  room_ids:
+  - channel_2_source
+  - channel_2_transfer
+  required_adjacency: []
+  preferred_adjacency: []
+  forbidden_adjacency: []
+equipment:
+- id: fixture_equipment_1
+  type: laboratory_coordination_fixture
+  width_mm: 600.0
+  depth_mm: 400.0
+  clearance_front_mm: 300.0
+  clearance_back_mm: 300.0
+  clearance_left_mm: 300.0
+  clearance_right_mm: 300.0
+  rotation_allowed: false
+  fixed: false
+  anchor_offset_mm: 0.0
+  room_id: channel_1_source
+- id: fixture_equipment_2
+  type: laboratory_coordination_fixture
+  width_mm: 600.0
+  depth_mm: 400.0
+  clearance_front_mm: 300.0
+  clearance_back_mm: 300.0
+  clearance_left_mm: 300.0
+  clearance_right_mm: 300.0
+  rotation_allowed: false
+  fixed: false
+  anchor_offset_mm: 0.0
+  room_id: channel_2_source
+flows:
+- id: specimen_route
+  type: specimen
+  from_ids:
+  - channel_1_source
+  to_ids:
+  - coordination_hub
+  minimum_clear_width_mm: 800.0
+  required: true
+- id: people_route
+  type: people
+  from_ids:
+  - channel_1_source
+  to_ids:
+  - coordination_hub
+  minimum_clear_width_mm: 800.0
+  required: true
+- id: clean_supply_route
+  type: clean_supply
+  from_ids:
+  - channel_1_source
+  to_ids:
+  - coordination_hub
+  minimum_clear_width_mm: 800.0
+  required: true
+- id: waste_route
+  type: waste
+  from_ids:
+  - channel_2_source
+  to_ids:
+  - coordination_hub
+  minimum_clear_width_mm: 800.0
+  required: true

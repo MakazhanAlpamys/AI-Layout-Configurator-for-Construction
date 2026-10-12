@@ -32,6 +32,8 @@ Checkpoint H.3.4.2 adds a clean installed-wheel 80-room warm-start CI measuremen
 with complete persisted acceptance, preserving its supplied-source scope.
 Checkpoint H.3.5 verifies actual canonical room/equipment edits with soft prior
 geometry and unchanged source IDs, separate from large-scale edit acceptance.
+Checkpoint F.1 adds full software acceptance pilots for three further typologies;
+broader sourced domain predicates and actual external approval remain separate.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

@@ -80,6 +80,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.9 | English project status and accurate CLI budget guidance | Current handoff distinguishes verified checkpoints from historical decisions. All maintained text remains English. CLI help describes same-runtime work-budget repeatability and bounded candidate exhaustion without claiming whole-program infeasibility. | Actual help output checked for all three generation/acceptance commands; 222 maintained text files scanned, zero Cyrillic files. | complete 2026-10-12 |
 | H.3.4.2 | Installed-wheel complete 80-room warm-start CI | Clean pinned Ubuntu request passed in 33.008 s including startup/imports, source preparation, unrestricted rooms, fresh equipment/routes/profile gates, all exports, persisted QA and strict IFC EXPRESS. All 22 authoritative resources resolve from installed data. | [Pinned `ac0408b` run](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38291669488), [raw report](../research/scale80/2026_10_12/linux_warmstart.json): nine QA checks PASS, zero EXPRESS statements, four source and nine artifact byte hashes verified after download. | complete 2026-10-12 for supplied synthetic warm-start; general scratch80/third-zone/edit scale remain open |
 | H.3.5 | Source-pinned canonical facility re-solve after program edits | Validated old room geometry supplies soft hints, with stale-grid evidence and invocation-local shape reuse; no fixed positions are synthesized. Current room/equipment/flow/profile gates remain mandatory and source IDs/hashes survive bounded failure. | Fresh root incremental/stage/hint/cache/zone-dispatch run: 54 passed, 49 subtests in 10.06 s. Actual room-area and equipment-width edits accepted; invalid prior geometry/zones, changed IDs and unresolved profiles retain negative provenance. Agent verified byte-exact default output for all ordinary strategies. | core complete 2026-10-12; editor/CLI/API and large edit acceptance remain separate |
+| F.1 / NEXT 4.1 | Canonical laboratory, hospital and industrial acceptance pilots | Coordinate-free 5/7/7-room project briefs exercise unchanged sourced flow-category/separation policies with actual intermediate rooms. Actual CLI/shared full bundles pass every persisted QA gate and strict IFC EXPRESS; explicit numeric project requirements and engineering PENDING are retained. | Agent fresh related run: 40 passed, 75 subtests in 33.01 s. Durable all-domain request PASS in 17.359 s; root source-input checks: two passed, eight subtests; all source/profile and thirty artifact hashes independently verified. Nine rendered PDF previews inspected. [Contract/report](DOMAIN_PILOTS.md). | scoped software criterion met 2026-10-12; broader policies and external acceptance open |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -125,8 +126,9 @@ Cyrillic text.
   thematic vector sheets, indexed legends and supplied revision history exist.
 - E: independent receiving-tool review of semantic IFC zones, declared systems
   and spatial exchange; grouping does not establish engineered MEP design.
-- F: retain scoped, sourced rule packs and UNKNOWN/IDS separation; add domain
-  acceptance examples without claiming unperformed expert sign-off.
+- F: retain scoped, sourced rule packs and UNKNOWN/IDS separation; laboratory,
+  hospital and industrial software pilots exist. Broader domain policies and
+  actual expert/source-rights decisions remain separate.
 - G: general PDF and draft raster/OCR extraction; calibrated rectangular
   vector paths, strict typed model proposals and DXF/IFC confirmation exist.
 - H: larger-scale incremental solving and runner budget calibration;
@@ -138,6 +140,7 @@ Cyrillic text.
   drawings/schedules; medical-plastics benchmark and change scenario.
 
 ## External acceptance
+
 
 
 

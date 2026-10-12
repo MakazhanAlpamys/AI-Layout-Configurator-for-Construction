@@ -43,7 +43,7 @@ it). The order below follows that.
 
 | # | Work | Done when |
 | --- | --- | --- |
-| 4.1 | Laboratory, hospital and industrial profiles, each with a sourced rule pack and its own acceptance pilot | one accepted pilot per typology |
+| 4.1 | Laboratory, hospital and industrial profiles, each with a sourced rule pack and its own acceptance pilot | **scoped software criterion met** 2026-10-12: three canonical coordinate-free pilots pass unchanged sourced flow-category/separation policies, every persisted bundle gate and strict IFC EXPRESS. Numeric project requirements are explicit; broader domain policies and actual professional/legal acceptance remain open. [Contract and measured report](DOMAIN_PILOTS.md). |
 | 4.2 | HTTP API, persistent batch/cache jobs and private container implemented on 2026-10-12; see [API.md](API.md) and checkpoint H.4 | local Docker pharma-pilot HTTP acceptance and all four CI jobs passed at `dff5603` ([evidence](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38272192580)); later commits retain separate CI gates |
 | 4.3 | Two or three before/after case studies on real projects | published with the owners' permission |
 
