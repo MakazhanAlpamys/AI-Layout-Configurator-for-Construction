@@ -1,18 +1,18 @@
 """Compare the variants of a generated facility bundle.
 
-A bundle holds several accepted variants of one program. They all pass the same
-gates, so the question a planner or a client asks is not "is it valid" but "which
-one, and why". This module answers it from the saved results only; nothing is
-re-solved. Every number traces back to a field of ``building_NN.json``:
+A bundle can hold several variants of one program. This module compares their
+saved gate evidence and measured geometry; nothing is re-solved. Unresolved or
+absent gate evidence cannot establish acceptance. Every number traces back to
+a field of ``building_NN.json``:
 
 * gates — the stored facility checks and the open coordination issues;
 * area — how far each room landed from its programmed target area;
 * flows — derived route lengths per flow type, and how many doors they cross;
 * compactness — how much of the boundary the plan's footprint uses.
 
-The ranking key is deliberately simple and printed with the result: failed
-gates, then open issues, then total route length, then area deviation. It is a
-design aid for choosing between valid options, not a quality verdict.
+The ranking key is printed with the result: established facility acceptance,
+failed and unknown gates, open issues, total route length and area deviation.
+It is a design aid for choosing between options, not a quality verdict.
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ from .result_geometry import parse_layout_result, require_rectangular_layout
 from typing import Any
 
 DISCLAIMER = (
-    "Design aid for comparing variants that passed the same deterministic gates. "
+    "Design aid based on saved gate evidence; unresolved gates are not accepted. "
     "It is not a permit, a GMP or code-compliance verdict, or a substitute for the "
     "process, cleanroom/HVAC and architectural reviews."
 )
@@ -51,8 +51,13 @@ class VariantMetrics:
     door_crossings: int
     footprint_ratio: float
     door_approach_exceptions: tuple[str, ...]
+    unknown_checks: tuple[str, ...] = ()
     rank: int = 0
     reasons: tuple[str, ...] = field(default_factory=tuple)
+
+    @property
+    def gate_status(self) -> str:
+        return "FAIL" if self.failed_checks else "PASS" if self.facility_ok else "UNKNOWN"
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -61,6 +66,8 @@ class VariantMetrics:
             "rank": self.rank,
             "facility_ok": self.facility_ok,
             "failed_checks": list(self.failed_checks),
+            "unknown_checks": list(self.unknown_checks),
+            "gate_status": self.gate_status,
             "open_issues": self.open_issues,
             "rooms": self.rooms,
             "area_deviation_pct": round(self.area_deviation_pct, 2),
@@ -126,15 +133,20 @@ def variant_metrics(path: str | Path) -> VariantMetrics:
         footprint = width * height / (float(boundary["width"]) * float(boundary["height"]))
 
     facility = data.get("facility_validation", {})
-    failed = tuple(check["id"] for check in facility.get("checks", ()) if check.get("status") == "FAIL")
+    checks = facility.get("checks", ())
+    failed = tuple(check["id"] for check in checks if check.get("status") == "FAIL")
+    unknown = tuple(check["id"] for check in checks if check.get("status") == "UNKNOWN")
+    accepted = facility.get("ok") is True and bool(checks) and all(
+        check.get("status") in {"PASS", "NOT_APPLICABLE"} for check in checks)
     open_issues = sum(
         1 for issue in facility.get("issues", ()) if str(issue.get("status", "OPEN")).upper() not in {"RESOLVED", "CLOSED"}
     )
     return VariantMetrics(
         variant=int(data["layout"].get("variant", 0)),
         source=path.name,
-        facility_ok=bool(facility.get("ok", not failed)),
+        facility_ok=accepted,
         failed_checks=failed,
+        unknown_checks=unknown,
         open_issues=open_issues,
         rooms=len(placed),
         area_deviation_pct=deviation_total / target_total * 100 if target_total else 0.0,
@@ -150,7 +162,7 @@ def variant_metrics(path: str | Path) -> VariantMetrics:
     )
 
 
-RANKING_KEY = "failed gates, then open issues, then total route length, then area deviation"
+RANKING_KEY = "facility acceptance, failed and unknown gates, open issues, total route length, area deviation"
 
 
 def compare_bundle(directory: str | Path) -> list[VariantMetrics]:
@@ -162,7 +174,8 @@ def compare_bundle(directory: str | Path) -> list[VariantMetrics]:
     measured = [variant_metrics(path) for path in paths]
     ordered = sorted(
         measured,
-        key=lambda m: (len(m.failed_checks), m.open_issues, round(m.route_length_m, 1), round(m.area_deviation_pct, 2), m.variant),
+        key=lambda m: (not m.facility_ok, len(m.failed_checks), len(m.unknown_checks), m.open_issues,
+                       round(m.route_length_m, 1), round(m.area_deviation_pct, 2), m.variant),
     )
     ranked: list[VariantMetrics] = []
     for rank, metrics in enumerate(ordered, start=1):
@@ -175,8 +188,12 @@ def _with_reasons(m: VariantMetrics, rank: int, everyone: list[VariantMetrics]) 
     reasons: list[str] = []
     if m.failed_checks:
         reasons.append(f"fails {', '.join(m.failed_checks)}")
-    else:
+    if m.unknown_checks:
+        reasons.append(f"UNKNOWN facility gates: {', '.join(m.unknown_checks)}")
+    if m.facility_ok:
         reasons.append("passes every facility gate")
+    elif not m.failed_checks and not m.unknown_checks:
+        reasons.append("facility gate evidence is missing or does not establish acceptance")
     if m.open_issues:
         reasons.append(f"{m.open_issues} open coordination issue(s)")
     if others:
@@ -217,14 +234,14 @@ def write_comparison(directory: str | Path, output: str | Path | None = None, *,
     with csv_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.writer(handle)
         writer.writerow(
-            ["rank", "variant", "facility_ok", "failed_checks", "open_issues", "area_deviation_pct",
+            ["rank", "variant", "facility_ok", "failed_checks", "unknown_checks", "open_issues", "area_deviation_pct",
              "max_room_deviation_pct", "route_length_m", *[f"route_{kind}_m" for kind in flow_types],
              "door_crossings", "footprint_ratio"]
         )
         for m in ranked:
             row = m.to_dict()
             writer.writerow(
-                [m.rank, m.variant, m.facility_ok, " ".join(m.failed_checks), m.open_issues, row["area_deviation_pct"],
+                [m.rank, m.variant, m.facility_ok, " ".join(m.failed_checks), " ".join(m.unknown_checks), m.open_issues, row["area_deviation_pct"],
                  row["max_room_deviation_pct"], row["route_length_m"],
                  *[row["route_length_by_type_m"].get(kind, 0.0) for kind in flow_types],
                  m.door_crossings, row["footprint_ratio"]]
@@ -256,7 +273,9 @@ def _write_pdf(path: Path, directory: Path, ranked: list[VariantMetrics]) -> Non
 
     best = ranked[0]
     sheet.setFont("Helvetica-Bold", 11)
-    sheet.drawString(margin, page_height - margin - 44, f"Recommended: variant {best.variant}")
+    headline = (f"Recommended: variant {best.variant}" if best.facility_ok
+                else f"No accepted variant; first comparison entry: variant {best.variant}")
+    sheet.drawString(margin, page_height - margin - 44, headline)
     sheet.setFont("Helvetica", 9)
     y = page_height - margin - 58
     for reason in best.reasons:
@@ -277,7 +296,7 @@ def _write_pdf(path: Path, directory: Path, ranked: list[VariantMetrics]) -> Non
     for m in ranked:
         y -= 13
         values = [
-            str(m.rank), str(m.variant), "PASS" if m.facility_ok else "FAIL", str(m.open_issues),
+            str(m.rank), str(m.variant), m.gate_status, str(m.open_issues),
             f"{m.area_deviation_pct:.1f}", f"{m.max_room_deviation_pct:.1f} ({m.max_room_deviation_room})",
             f"{m.route_length_m:.1f}", f"{m.longest_route} {m.longest_route_m:.1f} m", str(m.door_crossings),
         ]
