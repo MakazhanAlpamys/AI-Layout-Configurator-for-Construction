@@ -23,6 +23,7 @@ from .facility import default_facility_profile, load_facility_profile, validate_
 from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
 from .facility_incremental import IncrementalSourceError, re_solve_facility_after_edit
 from .flows import route_flows, validate_flow_routes
+from .hierarchy import SOLVER_STRATEGIES
 from .ifc import export_building_ifc, export_ifc, export_multifloor_ifc, validate_ifc_roundtrip
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
 from .io import (
@@ -352,6 +353,8 @@ def main(argv: list[str] | None = None) -> int:
     ui.add_argument("--variant", type=int, default=1, help="variant number when input is a generated bundle directory")
     ui.add_argument("--require-provenance", action="store_true", help="require complete ruleset provenance")
     ui.add_argument("--edit", action="store_true", help="facility bundles: allow room moves/resizes with live re-check and save revisions")
+    ui.add_argument("--edit-room-solver", choices=SOLVER_STRATEGIES, default=None, help="facility --edit only: choose the room repair solver (default: monolithic)")
+    ui.add_argument("--edit-cache-cluster-shapes", action="store_true", default=None, help="facility --edit only: reuse validated local shapes during hierarchical/auto repair")
     api = subparsers.add_parser("api", help="serve persistent facility generation, batch, check and review jobs over HTTP")
     api.add_argument("--output", "-o", type=Path, default=Path("out/api-jobs"))
     api.add_argument("--host", default="127.0.0.1")
@@ -1259,6 +1262,11 @@ def main(argv: list[str] | None = None) -> int:
         try:
             from .ui import serve_ui
 
+            edit_options = {}
+            if args.edit_room_solver is not None:
+                edit_options["edit_room_solver"] = args.edit_room_solver
+            if args.edit_cache_cluster_shapes is not None:
+                edit_options["edit_cache_cluster_shapes"] = args.edit_cache_cluster_shapes
             return serve_ui(
                 args.input,
                 args.output,
@@ -1269,6 +1277,7 @@ def main(argv: list[str] | None = None) -> int:
                 variant=args.variant,
                 require_provenance=args.require_provenance,
                 edit=args.edit,
+                **edit_options,
             )
         except (OSError, ValueError, KeyError, RuntimeError, InfeasibleLayout) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)

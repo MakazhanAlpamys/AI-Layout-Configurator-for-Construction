@@ -389,7 +389,7 @@ checks remain in the editor flow. Solver evidence belongs to the corresponding
 state: failed repair leaves it unchanged, undo/redo/reset restore it, a direct
 geometry-valid edit clears stale evidence, and saved/reopened revisions retain
 it. Snapshot consumers receive a deep copy. This session hook is separate from
-CLI launch controls and large-scale edit acceptance.
+large-scale edit acceptance.
 
 Root verification covered 54 editor/core/UI/preference tests and 27 subtests.
 The actual seven-room repair fixes only the selected link and moves both
@@ -397,3 +397,16 @@ neighbor clusters, with one checked cache hit and one miss. Saved and reopened
 revisions pass independent complete bundle QA. Default initial/repaired snapshots
 were byte-exact against `9f1a365`; default saved generation/geometry and manifest
 keys also match.
+
+The actual editor launch now exposes both options explicitly:
+
+```powershell
+python -m layout_configurator.cli ui out/source --edit --edit-room-solver hierarchical --edit-cache-cluster-shapes
+```
+
+These options require a canonical facility editing session. Read-only launches
+and plain LayoutIR editors reject them before opening a server. Omitted options
+retain the ordinary launch arguments and session defaults. A real local HTTP
+move/save exercise preserves repair evidence and passes independent revision
+bundle QA. Fresh root launch verification: six tests and four subtests passed
+in 8.88 s; the actual installed CLI help lists the supported controls.

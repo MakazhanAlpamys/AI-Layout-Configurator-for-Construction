@@ -130,6 +130,8 @@ Checkpoint H.3.5.2 adds opted editor hierarchy/cache repair and state-specific
 solver provenance through revisions, undo/redo/reset and reopening.
 Checkpoint H.3.5.3 adds accepted-source HTTP program edits with atomically
 resolved references, source-specific cache identity and complete current gates.
+Checkpoint H.3.5.4 exposes explicit editor launch controls for hierarchical
+repair and local shape reuse, with an actual HTTP move/save and revision QA.
 
 ## 1. Why we are expanding the project
 

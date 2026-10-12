@@ -955,11 +955,40 @@ class UiSession:
         return tuple(f"{stem}{suffix}" for suffix in (".dxf", ".pdf", ".ifc", ".json"))
 
 
+def _editor_launch_options(
+    edit_room_solver: str | None,
+    edit_cache_cluster_shapes: bool | None,
+) -> dict[str, Any]:
+    """Validate only explicitly supplied facility editor controls."""
+
+    options: dict[str, Any] = {}
+    if edit_room_solver is not None:
+        if edit_room_solver not in SOLVER_STRATEGIES:
+            raise ValueError(f"Unknown editor room solver; use one of {', '.join(SOLVER_STRATEGIES)}")
+        options["edit_room_solver"] = edit_room_solver
+    if edit_cache_cluster_shapes is not None:
+        if not isinstance(edit_cache_cluster_shapes, bool):
+            raise ValueError("edit_cache_cluster_shapes must be a boolean")
+        options["edit_cache_cluster_shapes"] = edit_cache_cluster_shapes
+    return options
+
+
 def create_ui_server(
     session: UiSession | FacilityReviewSession,
     address: tuple[str, int] = ("127.0.0.1", 0),
+    *,
+    edit_room_solver: str | None = None,
+    edit_cache_cluster_shapes: bool | None = None,
 ) -> ThreadingHTTPServer:
     """Create a testable HTTP server for one editing session."""
+
+    edit_options = _editor_launch_options(edit_room_solver, edit_cache_cluster_shapes)
+    if edit_options:
+        if not isinstance(session, FacilityEditSession):
+            raise ValueError("Editor solver controls require a facility editor session")
+        with session.lock:
+            for name, value in edit_options.items():
+                setattr(session, name, value)
 
     class Handler(_UiHandler):
         current_session = session
@@ -978,24 +1007,40 @@ def serve_ui(
     variant: int = 1,
     require_provenance: bool = False,
     edit: bool = False,
+    edit_room_solver: str | None = None,
+    edit_cache_cluster_shapes: bool | None = None,
 ) -> int:
+    edit_options = _editor_launch_options(edit_room_solver, edit_cache_cluster_shapes)
+    if edit_options and not edit:
+        raise ValueError("Editor solver controls require --edit with a facility input")
     resolved_input = resolve_ui_input(input_path, variant=variant)
     try:
+        if edit_options:
+            payload = json.loads(resolved_input.read_text(encoding="utf-8"))
+            spec = payload.get("spec") if isinstance(payload, dict) else None
+            building_spec = spec.get("building", spec) if isinstance(spec, dict) else None
+            if not isinstance(building_spec, dict) or not any(
+                key in building_spec for key in ("layout", "zones", "equipment", "flows", "structural_grid")
+            ):
+                raise ValueError("Explicit editor controls require a BuildingIR facility result")
         session_type = FacilityEditSession if edit else FacilityReviewSession
         session: UiSession | FacilityReviewSession = session_type.from_input(
             resolved_input,
             output_dir,
             profile_path=profile_path,
+            **edit_options,
         )
         print("mode: facility editor" if edit else "mode: facility review (read-only)")
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        if edit_options:
+            raise ValueError(f"Editor solver controls require a valid facility editor input: {exc}") from exc
         session = UiSession.from_input(
             resolved_input,
             output_dir,
             rules_path=rules_path,
             require_provenance=require_provenance,
         )
-    server = create_ui_server(session, (host, port))
+    server = create_ui_server(session, (host, port), **edit_options)
     print(f"UI editor: http://{host}:{server.server_port}/")
     print(f"exports: {session.output_dir}")
     try:
