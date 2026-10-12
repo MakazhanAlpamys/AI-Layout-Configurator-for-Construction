@@ -12,6 +12,17 @@ from layout_configurator.facility import load_facility_profile
 from layout_configurator.io import load_building
 
 
+def _wait_for_health(request, *, timeout=30):
+    deadline = time.monotonic() + timeout
+    while True:
+        try:
+            return request("/health")
+        except (URLError, ConnectionError, TimeoutError):
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(0.25)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--url", default="http://127.0.0.1:8766")
@@ -30,15 +41,7 @@ def main():
             body = response.read()
         return body if binary else json.loads(body)
 
-    readiness = time.monotonic() + 30
-    while True:
-        try:
-            health = request("/health")
-            break
-        except URLError:
-            if time.monotonic() >= readiness:
-                raise
-            time.sleep(0.25)
+    health = _wait_for_health(request)
     started = time.monotonic()
     job = request("/jobs", {
         "program": load_building(args.program).to_dict(),

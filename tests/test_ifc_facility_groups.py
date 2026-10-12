@@ -188,8 +188,8 @@ class IfcFacilityGroupTests(unittest.TestCase):
                    self.building.equipment, self.routes, FlowValidationReport(()),
                    {flow.id: flow.type for flow in self.building.flows})
         legacy = ifcopenshell.open(legacy_path)
-        self.assertEqual(legacy.by_type("IfcZone"), [])
-        self.assertEqual(legacy.by_type("IfcSystem"), [])
+        self.assertFalse(legacy.by_type("IfcZone"))
+        self.assertFalse(legacy.by_type("IfcSystem"))
         self.assertEqual({(product.is_a(), product.Name, product.GlobalId) for product in grouped.by_type("IfcProduct")},
                          {(product.is_a(), product.Name, product.GlobalId) for product in legacy.by_type("IfcProduct")})
         readback = validate_ifc_roundtrip(summary.path, summary,

@@ -16,6 +16,8 @@ Checkpoint G.1 adds reviewed rectangular DXF/IFC drafts as fixed starting
 geometry while preserving the canonical program/result boundary.
 Checkpoint C.1.2 verifies usable daylight facades against real cutout extents
 in both room backends.
+Checkpoint QA.1 records the platform/startup repair and its fresh deployed
+pilot verification; CI acceptance remains distinct from local verification.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

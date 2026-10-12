@@ -18,6 +18,8 @@ Checkpoint G.1 imports source-backed rectangular DXF/IFC room drafts and
 requires explicit named geometry confirmation before using solver constraints.
 Checkpoint C.1.2 aligns automatic cutout daylight with actual usable window
 facades in both backends, including fractional/off-grid cutout extents.
+Checkpoint QA.1 repairs Linux collection assertions and container startup
+readiness after the first new remote CI run exposed these two differences.
 
 ## 1. Why we are expanding the project
 
