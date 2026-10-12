@@ -62,3 +62,11 @@ containers: split/interleaved functional memberships, fixed rooms/axes and
 currently reject fixed/axis inputs before a model, without fallback. Default
 root-only calls and `auto` generation retain their existing behavior. External
 engineering acceptance remains necessary after automatic checks.
+
+Direct calls still demand exactly the requested number of independently valid
+variants. Facility candidate enumeration explicitly uses `allow_partial=True`:
+if enumeration exhausts its bounded shapes after finding a smaller nonempty
+valid pool, those candidates reach the existing facility gates. The final
+facility request must still obtain all requested accepted variants. Evidence
+records returned/requested pool size and the scoped stop reason; an empty or
+independently invalid pool never becomes successful output.

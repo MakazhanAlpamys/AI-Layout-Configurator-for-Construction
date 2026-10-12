@@ -521,6 +521,7 @@ def solve_zone_layouts(
     deterministic_units: float | None = None,
     evidence: dict | None = None,
     recursive_zones: bool = False,
+    allow_partial: bool = False,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -531,11 +532,18 @@ def solve_zone_layouts(
     ``recursive_zones=False`` preserves the root-only contract. When enabled,
     each nonempty descendant zone has a physically solved container; parent
     containers pack child alternatives and direct-room units with CP-SAT.
+    ``allow_partial=True`` is for candidate pools: a nonempty independently
+    validated pool may be returned when enumeration stops before its requested
+    size. The default still requires the exact number of requested variants.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
                     descendant_container_geometry=False, stage_attempts=[], variants=[])
     evidence.pop("failure", None)
+    evidence.pop("candidate_pool", None)
+    if not isinstance(allow_partial, bool):
+        _fail(evidence, "allow_partial must be a boolean", stage="input",
+              code="invalid_pool_mode", not_applicable=True)
     if not isinstance(recursive_zones, bool):
         _fail(evidence, "recursive_zones must be a boolean", stage="input",
               code="invalid_recursive_mode", not_applicable=True)
@@ -581,14 +589,14 @@ def solve_zone_layouts(
         attempts_limit, deterministic_units, evidence,
         container_members={unit_id: members for unit_id, members in shape_units.items()
                            if unit_id in units or unit_id in {zone.id for zone in building.zones}},
-        ancestors=ancestors, recursive_zones=recursive_zones,
+        ancestors=ancestors, recursive_zones=recursive_zones, allow_partial=allow_partial,
     )
 
 
 def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, time_limit_seconds,
                          seed, attempts_limit, deterministic_units, evidence, *,
                          container_members, ancestors, recursive_zones=False,
-                         stage="global", stage_unit=None):
+                         stage="global", stage_unit=None, allow_partial=False):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -717,6 +725,15 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
     model.Minimize(objective)
     results = []
     last_issues = []
+
+    def partial_pool(reason):
+        evidence["candidate_pool"] = {
+            "requested": variants, "returned": len(results), "partial": True,
+            "stop_reason": reason, "proof_scope": "selected_zone_shapes",
+            "proven_building_infeasible": False,
+        }
+        return results
+
     variables = [value for room in spec.rooms for value in
                  (room_vars[room.id].x, room_vars[room.id].y, room_vars[room.id].width, room_vars[room.id].height)]
     for attempt in range(attempts_limit):
@@ -728,6 +745,8 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
             record["unit_id"] = stage_unit
         evidence["stage_attempts"].append(record)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            if allow_partial and results:
+                return partial_pool(solver.StatusName(status))
             if last_issues:
                 break
             _fail(evidence, f"{stage.title()} zone placement returned {solver.StatusName(status)} for the selected shapes",
@@ -761,6 +780,8 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
         }})
         if len(results) == variants:
             return results
+    if allow_partial and results:
+        return partial_pool("VALIDATION_ATTEMPT_LIMIT")
     _fail(evidence, f"Only {len(results)} of {variants} independently valid zone layouts within the bounded search",
           stage="validation" if stage == "global" else stage, code="insufficient_valid_candidates",
           proof_scope="bounded_candidates" if stage == "global" else "bounded_subtree_candidates", issues=last_issues)

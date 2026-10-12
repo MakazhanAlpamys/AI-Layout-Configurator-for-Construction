@@ -202,6 +202,7 @@ def solve_feasible_facility_variants(
                 minimum_adjacency_mm=minimum, deterministic_units=deterministic_units,
                 evidence=solver_evidence,
                 recursive_zones=room_solver == "zone_recursive",
+                allow_partial=True,
             )
         else:
             room_candidates = solve_layouts_auto(
