@@ -86,6 +86,8 @@ Checkpoint H.3.2 records the pinned Linux/Windows calibration table and measured
 platform limitation; the scale matrix retains its full wall-clock acceptance.
 Checkpoint D.3 adds strict named drawing presentation presets resolved through
 the existing DXF/PDF/profile contract; source geometry and acceptance gates remain.
+Checkpoint H.3.3 adds opt-in invocation-local cluster reuse with complete keys,
+independent hit QA and scoped global-status evidence; accepted 80-room scale stays open.
 
 ## 1. Why we are expanding the project
 

@@ -220,3 +220,33 @@ deterministic budget.
 Machine-readable results of the series are saved to
 `out/scale-study/scale-report.json`: settings, timings, accepted candidates and
 grouped rejection reasons for each run.
+
+## Invocation-local cluster reuse — 2026-10-12
+
+Direct `solve_layouts_hierarchical(..., cache_cluster_shapes=True, evidence={})`
+and `solve_layouts_auto(..., cache_cluster_shapes=True)` can reuse ordered
+equivalent local cluster shapes within one invocation. The cache is opt-in and
+never persists across jobs. Default and explicit False preserve legacy results
+and evidence. Facility/CLI dispatch does not enable it automatically.
+
+Keys include actual room attributes/internal relations, equipment-fit groups,
+external side requirements, inherited local settings, boundary bounds, motif
+search policy, seed and budgets. Source IDs are remapped by ordered room roles.
+Immutable coordinates are independently checked for grid, area/dimensions,
+contacts, local connectivity and equipment fit before every hit. Empty bounded
+searches are never cached as infeasibility proofs. Evidence records misses,
+validated hits, rejected entries and actual global CP-SAT status with a scope of
+`selected_cluster_shapes`.
+
+The synthetic 80-room probe duplicates the unchanged 40-room program into
+qualified A/B identities and adds one hard receiving-room bridge. On the busy
+Windows development machine, seed 1 and a 2 s per-model budget measured 52.669 s
+without reuse and 27.125 s with six misses/six independently validated hits.
+Both global searches returned UNKNOWN and no room candidate. A 10 s per-model
+cached probe also returned UNKNOWN in 36.078 s. These are optimization diagnostics,
+not accepted facility timings; equipment/routes/full bundle QA did not run.
+
+Different equipment requirements correctly prevent reuse even for similarly
+named support clusters. NEXT 1.5 still requires an actual accepted 80-room program
+under 120 s on pinned CI hardware, a third hierarchy level and incremental
+re-solving. That criterion remains open.

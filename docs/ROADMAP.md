@@ -73,6 +73,8 @@ Checkpoint H.3.2 records actual runner measurements and narrows repeatability
 claims to the validated runtime instead of promising cross-platform equality.
 Checkpoint D.3 adds selectable presentation settings with actual DXF readback;
 full symbol catalogs and editable dimension chains stay in the current plan.
+Checkpoint H.3.3 verifies optional cluster caching without changing default
+search; measured UNKNOWN probes do not close the 80-room acceptance requirement.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

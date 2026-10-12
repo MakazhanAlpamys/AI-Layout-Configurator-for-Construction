@@ -41,6 +41,7 @@ from dataclasses import dataclass, replace
 
 from .models import BoundarySpec, LayoutIR, LayoutResult, Rect
 from .search import configure_solver
+from .shape_cache import ClusterShapeCache, cluster_shape_request
 from .solver import (
     InfeasibleLayout,
     _RoomVars,
@@ -145,6 +146,8 @@ def solve_layouts_hierarchical(
     axis_aligned_room_ids: Iterable[str] | None = None,
     structural_axes_x_mm: Iterable[float] | None = None,
     structural_axes_y_mm: Iterable[float] | None = None,
+    cache_cluster_shapes: bool = False,
+    evidence: dict | None = None,
 ) -> list[LayoutResult]:
     """Return up to ``variants`` distinct layouts from the cluster hierarchy.
 
@@ -153,10 +156,18 @@ def solve_layouts_hierarchical(
     Axis-constrained rooms also stay single, so their dimensions and both
     endpoints can follow the supplied axes. Cutouts constrain final rooms,
     allowing concave clusters to interlock around an excluded region.
+    ``cache_cluster_shapes`` reuses independently validated shapes of ordered
+    equivalent clusters within this invocation only. Its hit/miss report is
+    written to ``evidence`` when enabled; the default search is unchanged.
     """
 
     if variants < 1:
         raise ValueError("variants must be at least 1")
+    if not isinstance(cache_cluster_shapes, bool):
+        raise ValueError("cache_cluster_shapes must be a boolean")
+    cache = ClusterShapeCache() if cache_cluster_shapes else None
+    if cache is not None and evidence is not None:
+        evidence["cluster_shape_cache"] = cache.evidence
     try:
         from ortools.sat.python import cp_model
     except ImportError as exc:  # pragma: no cover - dependency is declared in pyproject.toml
@@ -204,16 +215,30 @@ def solve_layouts_hierarchical(
             # A single room keeps a free size at the top level, exactly as in
             # the monolithic model; only multi-room clusters become rigid.
             continue
-        found = _cluster_shapes(
-            spec,
-            members,
-            {room_id: external[room_id] for room_id in members if len(members) > 1 and external[room_id]},
-            fit_options,
-            adjacency_mm,
-            time_limit_seconds,
-            seed,
-            deterministic_units,
-        )
+        side_contacts = {room_id: external[room_id] for room_id in members if len(members) > 1 and external[room_id]}
+        request = None
+        found = None
+        if cache is not None:
+            request = cluster_shape_request(
+                spec, members, side_contacts=side_contacts, fit_options=fit_options,
+                adjacency_mm=adjacency_mm, time_limit_seconds=time_limit_seconds,
+                seed=seed, deterministic_units=deterministic_units,
+                aspects=_ASPECTS, fills=_FILLS, max_shapes=_MAX_SHAPES,
+            )
+            found = cache.get(request)
+        if found is None:
+            found = _cluster_shapes(
+                spec,
+                members,
+                side_contacts,
+                fit_options,
+                adjacency_mm,
+                time_limit_seconds,
+                seed,
+                deterministic_units,
+            )
+            if cache is not None:
+                cache.store(request, found)
         placements = [
             placement
             for shape in found
@@ -387,6 +412,8 @@ def solve_layouts_hierarchical(
         # done afterwards by the independent gates.
         solver.parameters.stop_after_first_solution = not has_preferences
         status = solver.Solve(model)
+        if cache is not None:
+            cache.record_global_search(variant, solver.StatusName(status))
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE) and model.Proto().assumptions:
             # No clearly different layout within the budget: accept one that
             # differs only in detail rather than returning fewer variants.
@@ -401,6 +428,8 @@ def solve_layouts_hierarchical(
             )
             solver.parameters.stop_after_first_solution = not has_preferences
             status = solver.Solve(model)
+            if cache is not None:
+                cache.record_global_search(variant, solver.StatusName(status), assumptions_dropped=True)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
                 context = f"; axis-constrained rooms: {', '.join(sorted(axis_rooms))}" if axis_rooms else ""
@@ -453,7 +482,8 @@ def solve_layouts_auto(
         evidence["room_solver_used"] = "monolithic"
         if reason:
             evidence["hierarchy_fallback_reason"] = reason
-        return solve_layouts(spec, variants, time_limit_seconds, seed, **options)
+        return solve_layouts(spec, variants, time_limit_seconds, seed,
+                             **{key: value for key, value in options.items() if key != "cache_cluster_shapes"})
 
     if strategy not in SOLVER_STRATEGIES:
         raise ValueError(f"Unknown solver strategy {strategy!r}; use one of {', '.join(SOLVER_STRATEGIES)}")
@@ -483,6 +513,7 @@ def solve_layouts_auto(
             "axis_aligned_room_ids",
             "structural_axes_x_mm",
             "structural_axes_y_mm",
+            "cache_cluster_shapes",
         }
     }
     unsupported = sorted(key for key, value in options.items() if key not in hierarchical_options and value)
@@ -492,6 +523,8 @@ def solve_layouts_auto(
             raise HierarchyNotApplicable(message)
         return monolithic(message)
     try:
+        if hierarchical_options.get("cache_cluster_shapes"):
+            hierarchical_options["evidence"] = evidence
         results = solve_layouts_hierarchical(spec, variants, time_limit_seconds, seed, **hierarchical_options)
     except InfeasibleLayout as exc:
         if strategy == "hierarchical":
