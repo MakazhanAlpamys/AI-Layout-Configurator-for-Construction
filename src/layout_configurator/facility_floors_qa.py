@@ -116,6 +116,9 @@ def validate_facility_floors_bundle(
         if (report.get("project") != spec.project_name or report.get("floor_height_mm") != spec.floor_height_mm
                 or report.get("structural_grid") != declared_grid):
             failures.append("Report project, floor height or shared grid differs from source")
+        for name, declarations in (("facility_blocks", spec.blocks), ("service_zone_links", spec.service_links)):
+            if report.get(name, []) != [item.to_dict() for item in declarations]:
+                failures.append(f"Report {name} differs from source declarations")
         add("REPORT_CONTRACT", failures)
         _hash_record(report_path, hashes)
     except (OSError, ValueError, TypeError, KeyError) as exc:
@@ -316,6 +319,17 @@ def _ifc_checks(spec, path, programs, candidates, number, add):
             for relation in getattr(group, "IsGroupedBy", ()) for member in relation.RelatedObjects}
         if actual != members:
             duplicate.append(f"{semantic}: native group membership differs from source")
+    for prefix, declarations, expected_class, entity_type in (
+        ("facility-block", spec.blocks, "IfcGroup", "FacilityBlock"),
+        ("service-zone-link", spec.service_links, "IfcSystem", "ServiceZoneLink"),
+    ):
+        for declaration in declarations:
+            semantic = f"{prefix}/{declaration.id}"
+            entity = identities.get(semantic)
+            values = {} if entity is None else psets(entity).get("Pset_FacilityIdentity", {})
+            if (entity is None or not entity.is_a(expected_class) or values.get("LocalId") != declaration.id
+                    or values.get("SourceContract") != "FacilityFloorsSpec" or values.get("SourceEntityType") != entity_type):
+                duplicate.append(f"{semantic}: typed declaration identity differs from source")
     add("IFC_SEMANTICS", duplicate, (f"Checked {len(identities)} unique source-backed semantic identities",), stack=number)
 
     spatial, geometry = [], []
@@ -465,6 +479,15 @@ def _expected_semantics(spec, programs, candidates):
         identities.add(semantic)
         memberships[semantic] = {f"L{level}/flow-system/{flow.leg_id(level)}" for level in (flow.from_level, flow.to_level)} | {
             f"vertical-core/{spec.core_for(flow).id}"}
+    for block in spec.blocks:
+        semantic = f"facility-block/{block.id}"
+        identities.add(semantic)
+        memberships[semantic] = {f"L{level}/zone/{zone}" for level, zones in block.zones.items() for zone in zones}
+    for link in spec.service_links:
+        semantic = f"service-zone-link/{link.id}"
+        identities.add(semantic)
+        memberships[semantic] = {f"L{link.from_level}/zone/{link.from_zone}", f"L{link.to_level}/zone/{link.to_zone}",
+                                 f"vertical-core/{link.via}", f"cross-floor-flow/{link.flow_id}"}
     return identities, memberships
 
 

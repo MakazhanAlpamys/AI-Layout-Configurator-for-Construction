@@ -490,6 +490,7 @@ def export_facility_floors_ifc(
     storeys = []
     floor_spaces = {}
     floor_systems = {}
+    floor_zones = {}
     all_walls, all_doors, all_windows = [], [], []
     equipment_count = flow_count = openings_count = external_entries = 0
     for entry in sorted(multi_spec.floors, key=lambda item: item.level):
@@ -512,10 +513,11 @@ def export_facility_floors_ifc(
         })
         _add_floor_identity(document, owner, storey, entry.level, "storey", str(entry.level))
         projection = _project_facility_floor(document, owner, context, storey, program, candidate, entry.level)
-        spaces, systems, walls, doors, windows, equipment, flows, wall_plan = projection
+        spaces, systems, walls, doors, windows, equipment, flows, wall_plan, zones = projection
         storeys.append(storey)
         floor_spaces[entry.level] = spaces
         floor_systems[entry.level] = systems
+        floor_zones[entry.level] = zones
         all_walls.extend(walls)
         all_doors.extend(doors)
         all_windows.extend(windows)
@@ -546,6 +548,7 @@ def export_facility_floors_ifc(
             _add_properties(document, owner, [member], f"Pset_FacilityCore_{core.id}", {"VerticalCoreId": core.id})
         _assign_group(document, owner, scope, group, members, f"vertical-core-membership-{core.id}")
         cores[core.id] = group
+    cross_systems = {}
     for flow in sorted(multi_spec.cross_flows, key=lambda item: item.id):
         system = document.create_entity(
             "IfcSystem", GlobalId=_guid(scope, f"cross-floor-flow-{flow.id}"), OwnerHistory=owner,
@@ -564,6 +567,35 @@ def export_facility_floors_ifc(
         members = [floor_systems[level][flow.leg_id(level)] for level in (flow.from_level, flow.to_level)]
         members.append(cores[selected_core.id])
         _assign_group(document, owner, scope, system, members, f"cross-floor-flow-membership-{flow.id}")
+        cross_systems[flow.id] = system
+
+    for block in sorted(multi_spec.blocks, key=lambda item: item.id):
+        group = document.create_entity("IfcGroup", GlobalId=_guid(scope, f"facility-block-{block.id}"),
+            OwnerHistory=owner, Name=block.id, ObjectType="Declared facility block",
+            Description="Multi-storey functional zone grouping; not separate building or structural design")
+        _add_properties(document, owner, [group], "Pset_FacilityIdentity", {
+            "SemanticId": f"facility-block/{block.id}", "LocalId": block.id,
+            "SourceContract": "FacilityFloorsSpec", "SourceEntityType": "FacilityBlock"})
+        _add_properties(document, owner, [group], "Pset_FacilityBlock", {
+            "BlockId": block.id, "Levels": ",".join(map(str, sorted(block.zones))),
+            "RepresentationKind": "Declared functional grouping"})
+        members = [floor_zones[level][zone_id] for level, zones in sorted(block.zones.items()) for zone_id in zones]
+        _assign_group(document, owner, scope, group, members, f"facility-block-membership-{block.id}")
+    for link in sorted(multi_spec.service_links, key=lambda item: item.id):
+        system = document.create_entity("IfcSystem", GlobalId=_guid(scope, f"service-zone-link-{link.id}"),
+            OwnerHistory=owner, Name=link.id, ObjectType="Declared service-zone coordination",
+            Description="Geometrically routed zone/core coordination; not designed MEP or personnel shaft access")
+        _add_properties(document, owner, [system], "Pset_FacilityIdentity", {
+            "SemanticId": f"service-zone-link/{link.id}", "LocalId": link.id,
+            "SourceContract": "FacilityFloorsSpec", "SourceEntityType": "ServiceZoneLink"})
+        _add_properties(document, owner, [system], "Pset_FacilityServiceLink", {
+            "LinkId": link.id, "FromLevel": link.from_level, "FromZoneId": link.from_zone,
+            "ToLevel": link.to_level, "ToZoneId": link.to_zone, "ViaCoreId": link.via,
+            "DerivedFlowId": link.flow_id, "Required": link.required,
+            "MinimumClearWidthMm": link.minimum_clear_width_mm})
+        _assign_group(document, owner, scope, system,
+            [floor_zones[link.from_level][link.from_zone], floor_zones[link.to_level][link.to_zone],
+             cores[link.via], cross_systems[link.flow_id]], f"service-zone-link-membership-{link.id}")
 
     _associate_material(document, owner, all_walls, "Generic partition wall")
     _associate_material(document, owner, all_doors, "Generic internal door")
@@ -644,7 +676,7 @@ def _project_facility_floor(document, owner, context, storey, program, candidate
     elements = [*walls, *doors, *windows, *equipment, *flows]
     document.create_entity("IfcRelContainedInSpatialStructure", GlobalId=_guid(spec, "containment-storey"),
                            OwnerHistory=owner, RelatedElements=elements, RelatingStructure=storey)
-    return spaces, systems, walls, doors, windows, equipment, flows, wall_plan
+    return spaces, systems, walls, doors, windows, equipment, flows, wall_plan, zones
 
 
 def _make_facility_shared_grid(document, owner, context, building, storeys, multi_spec, namespace):

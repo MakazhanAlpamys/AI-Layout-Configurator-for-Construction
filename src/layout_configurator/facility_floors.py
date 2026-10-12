@@ -38,6 +38,7 @@ from .facility_generation import (
     solve_feasible_facility_variants,
 )
 from .models import Rect
+from .facility_connections import FacilityBlock, ServiceZoneLink, parse_facility_connections
 
 # Project policy: what each kind of vertical core may carry.
 CORE_FLOW_TYPES: dict[str, frozenset[str]] = {
@@ -96,6 +97,8 @@ class FacilityFloorsSpec:
     cores: tuple[VerticalCore, ...]
     cross_flows: tuple[CrossFloorFlow, ...]
     structural_grid: StructuralGridSpec | None = None
+    blocks: tuple[FacilityBlock, ...] = ()
+    service_links: tuple[ServiceZoneLink, ...] = ()
 
     def floor(self, level: int) -> FloorEntry:
         for entry in self.floors:
@@ -265,6 +268,8 @@ def facility_floors_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> F
             raise FacilityFloorsError(f"Cross-floor flow {flow_id} references unknown cores: {', '.join(sorted(unknown_via))}")
         flows.append(flow)
 
+    blocks, service_links, service_flows = parse_facility_connections(payload, by_level, cores, flows)
+    flows.extend(service_flows)
     spec = FacilityFloorsSpec(
         project_name=str(payload.get("project_name", "Multi-floor facility")),
         floor_height_mm=floor_height,
@@ -272,6 +277,8 @@ def facility_floors_from_mapping(raw: Mapping[str, Any], *, base_dir: Path) -> F
         cores=tuple(cores),
         cross_flows=tuple(flows),
         structural_grid=shared_grid,
+        blocks=blocks,
+        service_links=service_links,
     )
     for flow in spec.cross_flows:
         spec.core_for(flow)  # fail early when no core can carry a flow

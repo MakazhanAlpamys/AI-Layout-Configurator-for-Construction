@@ -1,0 +1,19 @@
+version: '0.2'
+project_name: Synthetic service-zone floor
+layout:
+  boundary: {width: 9000, height: 3000}
+  grid_mm: 1000
+  entry_room: production
+  rooms:
+    - {id: production, target_area: 9, min_area: 9, max_area: 9, min_width: 3000, min_depth: 3000}
+    - id: utility
+      target_area: 9
+      min_area: 9
+      max_area: 9
+      min_width: 3000
+      min_depth: 3000
+      required_adjacency: [production, shaft]
+    - {id: shaft, target_area: 9, min_area: 9, max_area: 9, min_width: 3000, min_depth: 3000}
+zones:
+  - {id: process, room_ids: [production]}
+  - {id: technical, type: service, room_ids: [utility]}

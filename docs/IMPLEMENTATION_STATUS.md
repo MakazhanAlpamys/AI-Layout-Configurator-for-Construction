@@ -57,6 +57,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 
 | QA.4 | Production-install EXPRESS runtime dependency | `pytest` is a runtime requirement because IfcOpenShell's EXPRESS executor imports `_pytest.assertion`. Full strict validation is retained in ordinary installations rather than relying on test extras. | [Pinned scale run f95bc12](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38279923174): all three original single-floor scale jobs passed; all new stack jobs failed, with the downloaded seed-1 report recording `No module named '_pytest'`. Fresh venv without test extras, then regular installed wheel from the working source: actual 40-room bundle/17 stack checks PASS in 8.328 s (IfcOpenShell 0.9.0, pytest 9.1.1). Remote repaired scale gate remains pending. | repair complete 2026-10-12; pinned remote gate pending |
 
+| H.2 | Multi-storey functional blocks and linked service zones | Strict declarations reference nonempty canonical zones and a service shaft. Links compile into stable ordinary floor legs checked by all routing/core gates; native IFC block/link groups retain source identities and independently checked memberships. Legacy absent declarations keep their report shape. | Initial source/contract/native-group RED, then fresh root service/unified-IFC/CLI run: 19 passed, 18 subtests; service/runner/stack-QA regression: 24 passed, 10 subtests. A local-leg collision RED then fresh service/CLI run: 6 passed, 10 subtests. Actual synthetic example passed all 17 independent stack checks, including strict EXPRESS and native memberships; rehashed membership tamper fails. | complete 2026-10-12 for declared service coordination; detailed building services/engineering remain separate |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
@@ -71,7 +73,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
   acceptance examples without claiming unperformed expert sign-off.
 - G: general PDF and draft raster/OCR extraction; calibrated rectangular
   vector paths, strict typed model proposals and DXF/IFC confirmation exist.
-- H: pinned remote two-floor 40-room acceptance, linked service zones, larger-scale
+- H: pinned remote two-floor 40-room acceptance, larger-scale
   incremental solving and runner budget calibration; shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed

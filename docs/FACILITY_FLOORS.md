@@ -92,3 +92,26 @@ preserve an earlier timing report before rechecking the same output directory.
 The nightly/on-demand scale workflow runs a separate job for each seed and
 uploads failures as well as accepted bundles. The new CI series remains pending
 until a pinned remote run completes.
+
+## Multi-storey blocks and service-zone links
+
+`facility_blocks` declares functional groups of nonempty canonical zones on
+at least two floors. Each block has an ID and a `zones` mapping from floor
+level to zone IDs. It is a grouping within this facility's shared coordinate
+system, not a separate building, structural volume or inferred clean boundary.
+
+`service_zone_links` explicitly connects a zone on one floor to a zone on
+another through one declared `service_shaft`. The compiler emits stable
+`service-link:<id>` cross-floor flow IDs and ordinary floor-local legs; existing
+equipment, routing, clear-width and vertical gates check the selected geometry.
+Missing/empty zones, wrong core kind, duplicate IDs, local-leg collisions,
+nonfinite widths and mistyped booleans fail before solving. The shaft room
+must be separate from each linked zone. See
+`schemas/facility_connections.schema.json` for the strict optional contract.
+
+The synthetic `examples/service_zone_two_floor.yaml` generates a complete
+checked bundle. Native IFC `facility-block/<id>` groups link the floor zones;
+`service-zone-link/<id>` systems link both zones, the core and the compiled
+cross-floor system. Independent stack QA compares the declarations and actual
+memberships to their sources. This describes geometrically routed service
+coordination; it does not design pipes/ducts or permit personnel shaft access.

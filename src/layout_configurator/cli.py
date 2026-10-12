@@ -632,6 +632,10 @@ def main(argv: list[str] | None = None) -> int:
             "stacks": [],
             "rejected_stacks": solved.rejected,
         }
+        if floors_spec.blocks:
+            report["facility_blocks"] = [block.to_dict() for block in floors_spec.blocks]
+        if floors_spec.service_links:
+            report["service_zone_links"] = [link.to_dict() for link in floors_spec.service_links]
         for stack in solved.stacks:
             files = {}
             for level, candidate in sorted(stack.floors.items()):

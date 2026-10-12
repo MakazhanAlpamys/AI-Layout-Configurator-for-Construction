@@ -62,6 +62,8 @@ Checkpoint C.3.4 preserves valid partial zone candidate pools under the default
 facility attempt budget while retaining exact direct and final request counts.
 Checkpoint QA.4 declares the runtime assertion dependency used by IfcOpenShell
 EXPRESS checks after the new production-install scale job exposed its absence.
+Checkpoint H.2 adds declared multi-storey functional blocks and linked service
+zones through typed shafts, with derived checked routes and native IFC groups.
 
 ## 1. Why we are expanding the project
 

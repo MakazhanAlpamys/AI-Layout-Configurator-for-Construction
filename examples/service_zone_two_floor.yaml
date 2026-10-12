@@ -1,0 +1,24 @@
+# Synthetic coordination example; not a designed utility installation.
+facility_multi_floor:
+  project_name: Linked service-zone coordination example
+  floor_height_mm: 4500
+  structural_grid:
+    axes_x_mm: [0, 3000, 6000, 9000]
+    axes_y_mm: [0, 3000]
+  floors:
+    - {level: 0, program: service_zone_two_floor_program.yaml}
+    - {level: 1, program: service_zone_two_floor_program.yaml}
+  vertical_cores:
+    - id: services
+      kind: service_shaft
+      rooms: {0: shaft, 1: shaft}
+  facility_blocks:
+    - id: production_block
+      zones: {0: [process, technical], 1: [process, technical]}
+  service_zone_links:
+    - id: utilities
+      from: {level: 0, zone_id: technical}
+      to: {level: 1, zone_id: technical}
+      via: services
+      minimum_clear_width_mm: 1000
+      required: true
