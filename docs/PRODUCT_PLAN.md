@@ -128,6 +128,8 @@ Checkpoint H.3.5.1 exposes canonical program-edit re-solving through the CLI,
 preserving source-file identity, complete shared bundles and structured negatives.
 Checkpoint H.3.5.2 adds opted editor hierarchy/cache repair and state-specific
 solver provenance through revisions, undo/redo/reset and reopening.
+Checkpoint H.3.5.3 adds accepted-source HTTP program edits with atomically
+resolved references, source-specific cache identity and complete current gates.
 
 ## 1. Why we are expanding the project
 

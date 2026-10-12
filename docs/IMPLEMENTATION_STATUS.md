@@ -84,6 +84,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.10 | Complete pinned acceptance after geometry, drawing, browser and report checkpoints | Clean `ac0408b` passes complete Windows/Linux suites, installed API/container HTTP acceptance and unchanged three-variant pharma matrix on seeds 1/7/42. This covers B.7/C.5/D.6/H.3.4.1 and earlier committed behavior, not subsequent program-edit/domain changes. | [Run 38291669480](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38291669480): Windows 737 tests in 299.792 s; Linux 737 in 254.053 s; all nine pharma variants saved QA PASS; container HTTP 5.613 s with QA PASS and external PENDING. Downloaded reports independently inspected; [summary](../research/acceptance_ci/2026_10_12/ac0408b.json). | complete 2026-10-12 for pinned commit |
 | H.3.5.1 | Explicit canonical program-edit CLI and shared bundle | `generate-building --incremental-from` retains exact prior-file and canonical source/edit/profile hashes, uses soft geometry/local shape reuse and exports every freshly accepted artifact. Structured input/search negatives preserve provenance; supplied evidence cannot be overwritten by output. | Fresh root incremental/core/stage/import-CLI/building/pharma/API-CLI run: 55 passed, nine subtests in 20.72 s. Actual area edit passes complete persisted bundle QA; changed IDs, malformed/missing/duplicate JSON, unknown profile, imported-pin conflict and output collision checked. | complete 2026-10-12; API/editor and large edit acceptance separate |
 | H.3.5.2 | Opt-in editor hierarchy/cache repair and revision provenance | Only the user-selected moved/resized room is fixed; prior neighbors are soft. Evidence follows accepted state through failure, undo/redo/reset, direct edits and save/reopen/save. Snapshot evidence cannot mutate session history. Ordinary default behavior is preserved. | Fresh root incremental-editor/legacy-editor/UI/preferences/core run: 54 passed, 27 subtests in 25.07 s. Actual seven-room repair uses one checked cache hit/one miss and moves both neighbor clusters; saved/reopened revisions pass independent bundle QA. Agent old/new default snapshot and generation comparisons exact. | session hook complete 2026-10-12; launch controls/API and large edits remain separate |
+| H.3.5.3 | Accepted-source HTTP incremental jobs and cache provenance | Canonical edits reference only a verified accepted service job/variant. Source hashes and QA resolve before queue/cache use, all batch references resolve atomically, current full gates rerun and source changes during work prevent publication. Saved bundles retain source/edit and solver evidence; cache identity includes the prior checkpoint. | Fresh root incremental HTTP/base API/assets/API-CLI/revision/core run: 33 passed, 22 subtests in 29.89 s. Actual authenticated edit/download/check, changed-parent rejection before and after queue, invalid path/reference, atomic batch, unknown current profile and source-specific cache hits checked. | complete 2026-10-12; general large edits and physical-zone guidance separate |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -136,7 +137,7 @@ Cyrillic text.
   vector paths, strict typed model proposals and DXF/IFC confirmation exist.
 - H: larger-scale incremental solving and runner budget calibration;
   source-pinned program-edit core, CLI and opted editor session hook exist;
-  editor launch controls/API exposure and measured large edits remain separate.
+  source-pinned API exists; editor launch controls and measured large edits remain separate.
   pinned two-floor 40-room CI, shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed
@@ -144,6 +145,7 @@ Cyrillic text.
   drawings/schedules; medical-plastics benchmark and change scenario.
 
 ## External acceptance
+
 
 
 

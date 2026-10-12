@@ -33,7 +33,8 @@ comes from the environment and is never printed. Send
 
 `POST /jobs` accepts `program`, optional `profile`, and `variants`,
 `max_attempts`, `time_limit_seconds`, `seed`, `equipment_retries`,
-`deterministic_units`, `room_solver`, `reuse` and optional `revision_history`.
+`deterministic_units`, `room_solver`, `reuse`, optional `revision_history` and
+optional `incremental_from`.
 The history contains exact self-contained prior source JSON and hashes,
 never server filesystem paths; see [DRAWING_SHEETS.md](DRAWING_SHEETS.md).
 Invalid history is rejected before enqueueing, including in batch requests.
@@ -43,6 +44,30 @@ shorthand YAML must be normalized before submission. Unknown fields, paths,
 coordinates, invalid settings and non-finite numbers are rejected before work
 is queued. Defaults match the facility generator: one variant, 60 seconds per
 solver invocation, seed 42, two equipment retries and automatic room backend.
+
+## Re-solve an edited accepted program
+
+Submit the edited canonical `program` with
+`"incremental_from": {"job_id": "<accepted 32-character job ID>", "variant": 1}`.
+The reference accepts an existing accepted job in this service, never a filesystem
+path. Its complete source artifact hashes and independent bundle QA are checked
+before queueing. All references in a batch resolve before any job is created.
+The queued request retains exact canonical prior geometry and its file digest.
+
+Room, zone, equipment and flow IDs must remain unchanged in this first slice.
+Validated old geometry supplies soft guidance and invocation-local shape reuse;
+no old positions become fixed constraints. Every current room/equipment/route/
+profile gate, shared export, independent saved QA and review dossier runs again.
+The manifest and saved variant retain prior job/variant/file identity, canonical
+source/edit/profile hashes, changed IDs and actual solver evidence. Expert
+acceptance remains PENDING.
+
+Source hashes are rechecked during the worker and before publication. Changed
+parents, invalid prior geometry or rejected current conditions preserve negative
+input/stage evidence; failed jobs publish no accepted artifacts. Deterministic
+cache identity includes the exact prior job, variant and digest, and a cache hit
+also rechecks the parent. General 80-room edits and physical zone hint/cache
+dispatch remain separate; budgets keep their ordinary per-model semantics.
 
 ## Browser program entry
 

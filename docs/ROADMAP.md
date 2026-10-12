@@ -40,6 +40,8 @@ Checkpoint H.3.5.1 adds explicit soft canonical edit regeneration to the CLI
 with exact source-file provenance and fresh complete facility checks.
 Checkpoint H.3.5.2 verifies the opted editor session hook, preserving ordinary
 default editing and current checks while retaining repair evidence with its state.
+Checkpoint H.3.5.3 verifies source-pinned incremental HTTP jobs and cache behavior
+with current full gates and negative evidence when the parent changes.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

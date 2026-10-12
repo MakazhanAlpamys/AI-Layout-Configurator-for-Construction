@@ -19,6 +19,7 @@ import queue
 import re
 import threading
 import uuid
+from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version
 from importlib.resources import files
@@ -29,6 +30,9 @@ from .bundle import write_facility_variant
 from .drawing_revision_history import parse_revision_history
 from .facility import FacilityProfile, default_facility_profile, DEFAULT_FACILITY_PROFILE_SCHEMA_PATH
 from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
+from .facility_incremental import IncrementalSourceError, re_solve_facility_after_edit
+from .io import load_building_result
+from .result_geometry import parse_layout_result
 from .qa import validate_building_set
 from .program_form import ProgramFormError, program_form_config, validate_program_form
 from .review import write_review_dossier
@@ -38,7 +42,7 @@ from .schema import normalize_building_mapping, validate_mapping
 _JOB_ID = re.compile(r"[0-9a-f]{32}\Z")
 _TERMINAL = {"SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"}
 _FIELDS = {"program", "profile", "variants", "max_attempts", "time_limit_seconds",
-           "seed", "equipment_retries", "deterministic_units", "room_solver", "reuse", "revision_history"}
+           "seed", "equipment_retries", "deterministic_units", "room_solver", "reuse", "revision_history", "incremental_from"}
 
 
 class JobUnavailable(RuntimeError):
@@ -139,8 +143,15 @@ def _validated_request(payload):
     if not isinstance(reuse, bool) or reuse and settings["deterministic_units"] is None:
         raise ValueError("reuse requires a deterministic_units budget")
     history = parse_revision_history(payload["revision_history"], building=building, drawing=profile.drawing) if "revision_history" in payload else None
+    incremental = payload.get("incremental_from")
+    if "incremental_from" in payload:
+        if (not isinstance(incremental, dict) or set(incremental) != {"job_id", "variant"}
+                or not isinstance(incremental.get("job_id"), str) or not _JOB_ID.fullmatch(incremental["job_id"])
+                or type(incremental.get("variant")) is not int or not 1 <= incremental["variant"] <= 20):
+            raise ValueError("incremental_from requires an accepted job_id and an integer variant between 1 and 20")
     return {"program": building.to_dict(), "profile": profile.to_dict(), "settings": settings, "reuse": reuse,
-            **({"revision_history": history.to_input()} if history is not None else {})}
+            **({"revision_history": history.to_input()} if history is not None else {}),
+            **({"incremental_from": dict(incremental)} if incremental is not None else {})}
 
 
 class FacilityService:
@@ -198,13 +209,61 @@ class FacilityService:
             return [self.get(job_id) for job_id in sorted(self.jobs)]
 
     def submit(self, payload):
-        return self._submit_validated(_validated_request(payload))
+        return self._submit_validated(self._resolve_incremental_source(_validated_request(payload)))
 
     def submit_batch(self, payload):
         if not isinstance(payload, dict) or set(payload) != {"jobs"} or not isinstance(payload["jobs"], list) or not 1 <= len(payload["jobs"]) <= 32:
             raise ValueError("Supply a jobs array with 1 to 32 requests")
-        requests = [_validated_request(item) for item in payload["jobs"]]
+        requests = [self._resolve_incremental_source(_validated_request(item)) for item in payload["jobs"]]
         return [self._submit_validated(item) for item in requests]
+
+    def _resolve_incremental_source(self, request):
+        """Snapshot verified accepted source semantics before queue/cache creation."""
+        if "incremental_from" not in request:
+            return request
+        reference = request["incremental_from"]
+        job = self._accepted(reference["job_id"])
+        if not self._hashes_match(job) or not self.check(job["id"])["ok"]:
+            raise JobUnavailable("Incremental source job changed or no longer passes independent QA")
+        path = self.artifact(job["id"], f"building_{reference['variant']:02d}.json")
+        source_hash = _digest(path)
+        prior_building, prior_result, _ = load_building_result(path)
+        if _digest(path) != source_hash:
+            raise JobUnavailable("Incremental source changed while it was loaded")
+        return {**request, "incremental_source": {"job_id": job["id"], "variant": reference["variant"],
+                "file_sha256": source_hash, "program": prior_building.to_dict(), "layout": prior_result.to_dict()}}
+
+    def _ensure_incremental_source(self, source):
+        try:
+            job = self._accepted(source["job_id"])
+            path = self.artifact(job["id"], f"building_{source['variant']:02d}.json")
+            if not self._hashes_match(job) or _digest(path) != source["file_sha256"]:
+                raise JobUnavailable("Incremental source artifact hashes changed")
+        except (JobUnavailable, KeyError, OSError, ValueError) as exc:
+            raise IncrementalSourceError(str(exc), {
+                "stage": "input", "status": "FAIL", "code": "source_job_changed",
+                "source_job_id": source["job_id"], "source_variant": source["variant"],
+                "source_file_sha256": source["file_sha256"], "proof_scope": "supplied_incremental_source",
+                "proven_building_infeasible": False,
+            }) from exc
+
+    def _solve_incremental(self, request, building, profile):
+        source = request["incremental_source"]
+        self._ensure_incremental_source(source)
+        identity = {"source_job_id": source["job_id"], "source_variant": source["variant"],
+                    "source_file_sha256": source["file_sha256"]}
+        try:
+            generation = re_solve_facility_after_edit(
+                normalize_building_mapping(source["program"]), parse_layout_result(source["layout"]),
+                building, profile, cache_cluster_shapes=True, **request["settings"])
+        except IncrementalSourceError as exc:
+            exc.evidence.update(identity)
+            raise
+        except InfeasibleFacilityGeneration as exc:
+            evidence = {**exc.generation.incremental_evidence, **identity}
+            raise InfeasibleFacilityGeneration(str(exc), replace(exc.generation, incremental_evidence=evidence)) from exc
+        self._ensure_incremental_source(source)
+        return replace(generation, incremental_evidence={**generation.incremental_evidence, **identity})
 
     def _submit_validated(self, request):
         if self.closing.is_set():
@@ -261,17 +320,22 @@ class FacilityService:
             request = json.loads((root / "request.json").read_text(encoding="utf-8"))
             building = normalize_building_mapping(request["program"])
             profile = FacilityProfile.from_mapping(request["profile"])
-            generation = solve_feasible_facility_variants(building, profile, **request["settings"])
+            generation = (self._solve_incremental(request, building, profile) if "incremental_source" in request
+                          else solve_feasible_facility_variants(building, profile, **request["settings"]))
             prepared = building.with_required_flow_opening_width()
             manifest = {"project": prepared.layout.project_name, "profile": profile.to_dict(),
                         "generation": generation.to_dict(), "variants": []}
             for candidate in generation.accepted:
+                variant_evidence = candidate.generation_evidence()
+                if generation.incremental_evidence is not None:
+                    variant_evidence.update(incremental_evidence=generation.incremental_evidence,
+                                            room_solver_evidence=generation.room_solver_evidence)
                 manifest["variants"].append(write_facility_variant(
                     root, prepared, profile, candidate.result,
                     layout_report=candidate.layout_report, equipment=candidate.equipment,
                     equipment_report=candidate.equipment_report, flow_routes=candidate.flow_routes,
                     flow_report=candidate.flow_report, facility_report=candidate.facility_report,
-                    generation_evidence=candidate.generation_evidence(),
+                    generation_evidence=variant_evidence,
                     **({"revision_history": request["revision_history"]} if "revision_history" in request else {})))
                 write_review_dossier(root / "review", prepared, candidate.result, candidate.equipment,
                                      candidate.flow_routes, candidate.facility_report, profile,
@@ -281,6 +345,8 @@ class FacilityService:
             _save(root / "qa-report.json", qa)
             if not qa["ok"]:
                 raise RuntimeError("Generated bundle failed independent QA; see qa-report.json")
+            if "incremental_source" in request:
+                self._ensure_incremental_source(request["incremental_source"])
             hashes = {path.relative_to(root).as_posix(): _digest(path)
                       for path in root.rglob("*") if path.is_file() and path.name not in ("job.json", "request.json")}
             with self.lock:
@@ -292,6 +358,8 @@ class FacilityService:
             error = {"message": str(exc), "type": type(exc).__name__}
             if isinstance(exc, InfeasibleFacilityGeneration):
                 error["generation"] = exc.generation.to_dict()
+            if isinstance(exc, IncrementalSourceError):
+                error["input_evidence"] = exc.evidence
             _save(root / "generation-failure.json", error)
             with self.lock:
                 status = "CANCELLED" if self.jobs[job_id]["status"] == "CANCEL_REQUESTED" else "FAILED"
