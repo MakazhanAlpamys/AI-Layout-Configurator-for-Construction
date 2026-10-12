@@ -26,7 +26,7 @@ from urllib.parse import unquote, urlsplit
 
 from .bundle import write_facility_variant
 from .facility import FacilityProfile, default_facility_profile, DEFAULT_FACILITY_PROFILE_SCHEMA_PATH
-from .facility_generation import InfeasibleFacilityGeneration, solve_feasible_facility_variants
+from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
 from .qa import validate_building_set
 from .review import write_review_dossier
 from .schema import normalize_building_mapping, validate_mapping
@@ -130,7 +130,7 @@ def _validated_request(payload):
             raise ValueError(f"{key} must be finite and between 0 and 3600")
     if isinstance(settings["seed"], bool) or not isinstance(settings["seed"], int) or not 0 <= settings["seed"] <= 2147483647:
         raise ValueError("seed must be an integer between 0 and 2147483647")
-    if settings["room_solver"] not in ("auto", "hierarchical", "monolithic"):
+    if settings["room_solver"] not in FACILITY_SOLVER_STRATEGIES:
         raise ValueError("Unknown room_solver")
     reuse = payload.get("reuse", False)
     if not isinstance(reuse, bool) or reuse and settings["deterministic_units"] is None:

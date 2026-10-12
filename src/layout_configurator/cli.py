@@ -20,7 +20,7 @@ from .editor import EditorState
 from .export import export_building_bundle, export_bundle
 from .equipment import validate_equipment_layout
 from .facility import default_facility_profile, load_facility_profile, validate_building
-from .facility_generation import InfeasibleFacilityGeneration, solve_feasible_facility_variants
+from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
 from .flows import route_flows, validate_flow_routes
 from .ifc import export_building_ifc, export_ifc, export_multifloor_ifc, validate_ifc_roundtrip
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
@@ -134,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         dest="deterministic_units",
         help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine",
     )
-    generate_building.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto", help="room stage: hierarchical clusters with a monolithic fallback (auto), or force one solver")
+    generate_building.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, or opt-in root zone containers (zone_hierarchical)")
     generate_building.add_argument("--seed", type=int, default=42)
     generate_building.add_argument(
         "--max-attempts",
@@ -216,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     acceptance_matrix.add_argument("--variants", type=int, default=3)
     acceptance_matrix.add_argument("--time-limit", type=float, default=30)
     acceptance_matrix.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
-    acceptance_matrix.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto", help="room stage: hierarchical clusters with a monolithic fallback (auto), or force one solver")
+    acceptance_matrix.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, or opt-in root zone containers (zone_hierarchical)")
     acceptance_matrix.add_argument("--seeds", type=int, nargs="+", default=[1, 7, 42])
     acceptance_matrix.add_argument("--max-attempts", type=int, default=None)
     acceptance_matrix.add_argument("--equipment-retries", type=int, default=2)
@@ -237,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     facility_floors.add_argument("--max-attempts", type=int, default=None)
     facility_floors.add_argument("--time-limit", type=float, default=60)
     facility_floors.add_argument("--seed", type=int, default=42)
-    facility_floors.add_argument("--room-solver", choices=("auto", "hierarchical", "monolithic"), default="auto")
+    facility_floors.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="zone_hierarchical rejects pinned cores and structural axes")
     facility_floors.add_argument("--unified-ifc", action="store_true", help="require a unified IFC and an explicitly declared shared grid; shared-grid programs export it automatically")
     compare_variants = subparsers.add_parser(
         "compare-variants",

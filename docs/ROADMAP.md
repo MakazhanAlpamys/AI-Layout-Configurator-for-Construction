@@ -43,6 +43,8 @@ Checkpoint C.3.1 verifies a bounded root-zone model and independent containment
 checks, without promoting restricted-model failure to program infeasibility.
 Checkpoint D.1 supplies source-derived sheet sets; the clean `3e9d4b3` complete
 suite passed 354 tests. Newer checkpoint acceptance remains separately recorded.
+Checkpoint C.3.2 verifies explicit facility zone dispatch and CLI/HTTP evidence;
+the recursive and larger-scale criteria remain open in the current product plan.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

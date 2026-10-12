@@ -25,8 +25,21 @@ containers or shortlisted shapes does not prove the unrestricted BuildingIR
 impossible. A regression fixture demonstrates a monolithic-valid interleaved
 membership that cannot fit this container model.
 
+Select this backend explicitly in facility commands:
+
+```powershell
+layout-configurator generate-building program.yaml --output out/zones `
+  --room-solver zone_hierarchical --variants 1
+```
+
+The facility API accepts the same `room_solver` value. Accepted results still
+pass room, equipment, route and profile gates; generation metadata retains
+`room_solver_evidence`. CLI failure JSON and failed HTTP jobs preserve scoped
+stage explanations. Fixed rectangles and explicit axis constraints are currently
+rejected as `unsupported_constraints` before constructing a model, including
+multi-floor pinned cores. There is no fallback for this explicit strategy.
+
 This foundation has root containers only. Physical descendant containers,
-fixed-room/axis parity, facility dispatch and larger-scale acceptance are
-subsequent steps. Existing `auto` generation remains unchanged. Equipment
-packing, route checks, profile checks and external engineering acceptance remain
-necessary after room placement.
+fixed-room/axis parity and larger-scale acceptance are subsequent steps.
+Existing `auto` generation remains unchanged. External engineering acceptance
+remains necessary after automatic checks.
