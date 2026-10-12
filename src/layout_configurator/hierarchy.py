@@ -150,6 +150,7 @@ def solve_layouts_hierarchical(
     cache_cluster_shapes: bool = False,
     evidence: dict | None = None,
     hint_rects: Mapping[str, Rect] | None = None,
+    _cluster_shape_cache: ClusterShapeCache | None = None,
 ) -> list[LayoutResult]:
     """Return up to ``variants`` distinct layouts from the cluster hierarchy.
 
@@ -170,7 +171,9 @@ def solve_layouts_hierarchical(
         raise ValueError("variants must be at least 1")
     if not isinstance(cache_cluster_shapes, bool):
         raise ValueError("cache_cluster_shapes must be a boolean")
-    cache = ClusterShapeCache() if cache_cluster_shapes else None
+    if _cluster_shape_cache is not None and (not cache_cluster_shapes or not isinstance(_cluster_shape_cache, ClusterShapeCache)):
+        raise ValueError("An internal cluster cache requires cache_cluster_shapes=True and a ClusterShapeCache")
+    cache = _cluster_shape_cache if _cluster_shape_cache is not None else (ClusterShapeCache() if cache_cluster_shapes else None)
     if cache is not None and evidence is not None:
         evidence["cluster_shape_cache"] = cache.evidence
     if hint_rects is not None and not isinstance(hint_rects, Mapping):

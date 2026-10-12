@@ -178,18 +178,20 @@ class FacilityIncrementalTests(unittest.TestCase):
         self.assertTrue(all("grid" in item["reason"] for item in hints["skipped"]))
         self.assertEqual(result.incremental_evidence["edited_building_sha256"], sha256(edited.to_dict()))
 
-    def test_zone_modes_explicitly_reject_unimplemented_hint_or_cache_bridge(self):
+    def test_zone_modes_use_the_implemented_hint_or_cache_bridge_and_keep_current_gates(self):
         for strategy in ("zone_hierarchical", "zone_recursive"):
             for options in ({"hint_rects": source_rects()}, {"cache_cluster_shapes": True}):
                 with self.subTest(strategy=strategy, options=options):
-                    with self.assertRaises(InfeasibleFacilityGeneration) as caught:
-                        solve_feasible_facility_variants(
-                            building(), default_facility_profile(), variants=1, max_attempts=1,
-                            time_limit_seconds=.5, seed=1, room_solver=strategy, **options)
-                    failure = caught.exception.generation.room_solver_evidence["failure"]
-                    self.assertEqual((failure["stage"], failure["code"], failure["model_status"]),
-                                     ("input", "unsupported_warm_start", "NOT_BUILT"))
-                    self.assertFalse(failure["proven_building_infeasible"])
+                    generation = solve_feasible_facility_variants(
+                        building(), default_facility_profile(), variants=1, max_attempts=1,
+                        time_limit_seconds=.5, seed=1, room_solver=strategy, **options)
+                    self.assert_all_gates(generation)
+                    self.assertEqual(generation.room_solver_used, strategy)
+                    if "hint_rects" in options:
+                        self.assertFalse(generation.room_solver_evidence["zone_hierarchy_hints"]["positions_are_constraints"])
+                    else:
+                        self.assertEqual(generation.room_solver_evidence["cluster_shape_cache"]["scope"],
+                                         "single_zone_hierarchy_invocation")
 
     def test_empty_options_preserve_default_generation_and_invalid_cache_type_is_rejected(self):
         current = building()

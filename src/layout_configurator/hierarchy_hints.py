@@ -123,7 +123,7 @@ class HierarchyHints:
         self.evidence["repair_hint"] = True
 
     def complete(self, model, room_vars, *, seed: int, time_limit_seconds: float,
-                 deterministic_units: float | None) -> None:
+                 deterministic_units: float | None, independent_validator=None) -> None:
         """Complete auxiliary hints in a separate, explicitly restricted model.
 
         Only the clone fixes hinted values. On successful independent room
@@ -158,7 +158,12 @@ class HierarchyHints:
             placements = {room_id: Rect(*(values[getattr(variables, field).Index()] * grid
                                          for field in ("x", "y", "width", "height")))
                           for room_id, variables in room_vars.items()}
-            report = validate_layout(self.spec, LayoutResult(1, placements))
+            result = LayoutResult(1, placements)
+            report = validate_layout(self.spec, result)
+            if independent_validator is not None:
+                from .validation import ValidationReport
+
+                report = ValidationReport((*report.issues, *independent_validator(result, values).issues))
             stage["independent_layout_ok"] = report.ok
             if report.ok:
                 model.ClearHints()

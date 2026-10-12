@@ -355,15 +355,16 @@ The ordinary room backend retains unrestricted final search and invocation-local
 shape reuse; stale room sizes and equipment requirements invalidate local shapes.
 Every returned current candidate passes fresh room, equipment, route and profile
 gates. Rejected inputs and bounded generation failures retain source provenance
-and cannot establish whole-program infeasibility. Physical zone strategies
-explicitly reject the unimplemented hint/cache bridge before building a model.
+and cannot establish whole-program infeasibility. At the initial H.3.5 checkpoint,
+physical zone strategies rejected the then-unimplemented hint/cache bridge
+before building a model.
 
 Actual room-area and equipment-width edits on a six-room, two-cluster source
 repair stale geometry and pass every current gate. Root verification covered
 54 tests and 49 subtests across incremental requests, stage evidence, hints,
 cache and both zone dispatch strategies. Empty/disabled options preserve default
-generation output. API/editor exposure, recursive zone guidance and measured
-80-room edits remain separate follow-up work.
+generation output. The CLI/editor/API bridges and recursive guidance are
+recorded below; measured 80-room edits remain separate follow-up work.
 
 The CLI exposes this path explicitly:
 
@@ -410,3 +411,38 @@ retain the ordinary launch arguments and session defaults. A real local HTTP
 move/save exercise preserves repair evidence and passes independent revision
 bundle QA. Fresh root launch verification: six tests and four subtests passed
 in 8.88 s; the actual installed CLI help lists the supported controls.
+
+## Physical zone warm-start and incremental bridge
+
+Both explicit physical zone strategies now accept soft room hints and
+invocation-local reuse of independently checked room-cluster shapes. Recursive
+leaves share one cache across their ordinary motif solves. Subtree and global
+models retain actual canonical containers, ancestor containment, sibling
+exclusion, hard room/zone relations, fixed rooms, axes, cutouts and opening rules.
+Old room bounding boxes never establish accepted physical zone geometry.
+
+Opted guidance retains every ordinary size/pattern and may propose one additional
+automatic grid size per unit. Explicit source size options are preserved. Up to
+eight independently checked source/solved leaf orientations and four corner
+translations preserve legal external contacts in padded containers. These are
+finite candidates, not coordinate pins. Clone completion is bounded to at most
+one second and 0.05 deterministic units; its physical geometry is independently
+checked before values become soft hints in the untouched parent/global model.
+
+The actual eight-room fixture has two four-room corridor clusters inside
+canonical child zones and a parent zone, with equipment and a cross-zone route.
+Cache reuse, a room-area edit and an equipment-width edit pass all current room,
+equipment, route, profile and physical-zone gates. Conflicting prior hints cannot
+override fixed coordinates, axes or cutout/entry/window/daylight constraints.
+Bounded failure preserves actual CP status and cannot prove whole-program
+infeasibility. Disabled/empty options retain default geometry and evidence;
+separate old/new diagnostics against `4e2048d` match both ordinary zone modes.
+
+Fresh root verification: 68 tests and 108 subtests passed in 17.80 s across zone
+guidance, incremental repair, independent constraints, hints, cache and dispatch.
+Malformed and excessive hint coordinates retain structured input failure before
+projection or model construction.
+
+This proves the small physical zones-to-clusters-to-rooms bridge. The unchanged
+supplied 80-room benchmark, scratch generation and large edit acceptance still
+require their own supervised measurements.

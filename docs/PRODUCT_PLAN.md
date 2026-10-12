@@ -141,6 +141,8 @@ exclusions for bounded real alternatives, preserving ordinary default output.
 Checkpoint B.10 adds actual polygon facility/profile predicates, source-bound
 negative evidence and strict shared numeric policy parameters; full bundle integration remains open.
 Checkpoint B.10.1 strictly checks original nested layout types before normalization.
+Checkpoint H.3.6 adds soft physical-zone guidance, shared leaf-cluster reuse and
+source-pinned room/equipment repairs through actual recursive container checks.
 
 ## 1. Why we are expanding the project
 

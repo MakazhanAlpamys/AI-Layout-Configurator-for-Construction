@@ -23,7 +23,7 @@ from .equipment import (
 from .facility import FacilityProfile, FacilityValidationReport, validate_building
 from .flows import FlowRoutingResult, FlowValidationReport, route_flows, validate_flow_routes
 from .models import LayoutResult, Rect
-from .hierarchy import SOLVER_STRATEGIES, HierarchyNotApplicable, solve_layouts_auto
+from .hierarchy import SOLVER_STRATEGIES, solve_layouts_auto
 from .hierarchy_hints import HierarchyHints
 from .solver import InfeasibleLayout
 from .validation import ValidationReport, validate_layout
@@ -181,10 +181,10 @@ def solve_feasible_facility_variants(
     also solves physical descendant containers. Both support checked fixed-room
     and structural-axis constraints. ``fixed_rects`` pins
     rooms, for example a vertical core already placed on another floor.
-    ``hint_rects`` provides soft guidance to the ordinary room backends;
-    ``cache_cluster_shapes`` enables invocation-local hierarchical shape reuse.
-    Neither option creates fixed-room constraints. Zone-container backends
-    explicitly reject these options until their local/global bridge exists.
+    ``hint_rects`` provides soft guidance to ordinary or zone-container room
+    backends; ``cache_cluster_shapes`` enables invocation-local reuse of checked
+    room cluster shapes. Neither option creates fixed-room constraints. Zone
+    modes still solve and independently check physical canonical containers.
     """
 
     if not isinstance(cache_cluster_shapes, bool):
@@ -221,15 +221,6 @@ def solve_feasible_facility_variants(
     try:
         minimum = prepared.layout.door_width_mm + 2 * prepared.layout.wall_thickness_mm if prepared.flows else None
         if room_solver in {"zone_hierarchical", "zone_recursive"}:
-            if warm_options:
-                message = f"{room_solver} does not support soft room hints or cluster shape caching"
-                solver_evidence.update(room_solver_used=room_solver, failure={
-                    "stage": "input", "code": "unsupported_warm_start", "model_status": "NOT_BUILT",
-                    "status": "NOT_APPLICABLE", "message": message,
-                    "proof_scope": "configured_backend_capability", "proven_building_infeasible": False,
-                    "unsupported_options": sorted(warm_options),
-                })
-                raise HierarchyNotApplicable(message)
             room_candidates = solve_zone_layouts(
                 prepared, max_attempts, time_limit_seconds, seed,
                 minimum_adjacency_mm=minimum, deterministic_units=deterministic_units,
@@ -240,6 +231,7 @@ def solve_feasible_facility_variants(
                 axis_aligned_room_ids=axis_aligned_room_ids,
                 structural_axes_x_mm=structural_axes_x_mm,
                 structural_axes_y_mm=structural_axes_y_mm,
+                **warm_options,
             )
         else:
             room_candidates = solve_layouts_auto(
