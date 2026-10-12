@@ -48,7 +48,7 @@ numerical readback tolerance; no non-grid source was accepted.
 
 The measured software fixture took 4.266 s for DXF and 5.890 s for IFC, including
 import, regeneration and persisted/EXPRESS QA; creating the supplied pilot was
-excluded. [Raw evidence](../research/imported_pilot/2026_10_12/windows.json)
+excluded. [Raw evidence](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/blob/77a6b88628c6f3c4fcdff494ab398bf2b0d0ac1d/research/imported_pilot/2026_10_12/windows.json)
 retains source artifact/entity IDs, hashes, the confirmation sidecar and actual
 QA checks. The supplied reviewer label is explicitly an automated acceptance
 fixture: this does not establish human review, receiving-tool acceptance or

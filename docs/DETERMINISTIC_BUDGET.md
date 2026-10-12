@@ -96,8 +96,8 @@ on Linux and Windows and retains both successful and failed reports.
 | Windows CI, 4 logical CPUs, Python 3.11.9 / OR-Tools 9.15.6755, `496457d` | 24 | 12 basic OPTIMAL; 12 scale-20 UNKNOWN | 0.148939 |
 
 The [pinned calibration workflow](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38284852160)
-passed both jobs. Exact downloaded [Linux](../research/solver_calibration/2026_10_12/linux.json)
-and [Windows](../research/solver_calibration/2026_10_12/windows.json) reports are
+passed both jobs. Exact downloaded [Linux](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/blob/77a6b88628c6f3c4fcdff494ab398bf2b0d0ac1d/research/solver_calibration/2026_10_12/linux.json)
+and [Windows](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/blob/77a6b88628c6f3c4fcdff494ab398bf2b0d0ac1d/research/solver_calibration/2026_10_12/windows.json) reports are
 retained in the repository. Model-specific medians show why one global ratio
 should not be used as an end-to-end deadline:
 

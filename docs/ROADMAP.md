@@ -56,6 +56,8 @@ Checkpoint B.10.1 preserves original nested layout types at that validation boun
 Checkpoint H.3.6 verifies the small physical zones-to-clusters-to-rooms repair
 bridge while retaining independent containers and separate large-scale evidence.
 Checkpoint B.5.1 repairs native floating objective residues in real polygon candidate pools.
+Checkpoint QA.12 stores raw research locally; this archive retains immutable
+historical references while canonical runtime/CI inputs stay tracked.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
@@ -147,7 +149,7 @@ the recursive and larger-scale criteria remain open in the current product plan.
 > define the current product goal**. The current direction is the
 > [Facility Product Brief](FACILITY_PRODUCT_BRIEF.md) and the
 > [Regulated Facility Layout Compiler plan](PRODUCT_PLAN.md).
-> Based on a synthesis of 8 independent research reports in [`research/`](../research/).
+> Based on a synthesis of 8 independent research reports in [historical research archive](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/tree/77a6b88628c6f3c4fcdff494ab398bf2b0d0ac1d/research/).
 
 ## Current decision — 2026-09-02
 

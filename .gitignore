@@ -10,3 +10,6 @@ dist/
 build/
 *.egg-info/
 out/
+
+# Local research notes and raw benchmark output; canonical CI fixtures stay tracked.
+/research/

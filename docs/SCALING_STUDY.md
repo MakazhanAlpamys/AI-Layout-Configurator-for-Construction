@@ -307,7 +307,7 @@ cancels duplicate requests without cancelling independent full acceptance.
 The one measured Windows request passed in **64.735 s**: preparation including
 imports 1.235 s, rooms 20.766 s, equipment/routes/pharma 27.281 s, complete export
 3.062 s, persisted QA 2.609 s and strict EXPRESS 8.875 s. The remaining time is
-supervision, fingerprints and reporting. Its [raw report](../research/scale80/2026_10_12/windows_warmstart.json)
+supervision, fingerprints and reporting. Its [raw report](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/blob/77a6b88628c6f3c4fcdff494ab398bf2b0d0ac1d/research/scale80/2026_10_12/windows_warmstart.json)
 identifies actual `a899ac1` plus the then-working client-report implementation
 and its earlier runner fingerprint. Later launch/provenance/resource refinements
 and the final report continuation changes are covered by focused tests and the
@@ -327,7 +327,7 @@ verified after download. The report confirms regular installed package imports
 and all 22 authoritative resources resolved from its installed `_data` tree.
 Its unchanged runtime fingerprint is
 `1f7867569f92b284733fd4f5b86f013e8869657522da01cc9d116e30275b999c`.
-The [raw Linux report](../research/scale80/2026_10_12/linux_warmstart.json)
+The [raw Linux report](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/blob/77a6b88628c6f3c4fcdff494ab398bf2b0d0ac1d/research/scale80/2026_10_12/linux_warmstart.json)
 retains the exact scope, source derivation, dependency versions and timings.
 
 Run explicitly, or dispatch the manual workflow at a pinned commit:

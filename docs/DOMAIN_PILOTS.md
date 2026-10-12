@@ -44,7 +44,7 @@ strict EXPRESS statements. The unchanged runtime fingerprint was
 `80f6c08668ddd60a3634cfee724bebb2cc500280947916e8f0aefc747ac06e0e`.
 This identifies that tested runtime; it does not promise identical geometry on
 another operating system or dependency set.
-The [raw report](../research/domain_pilots/2026_10_12/windows.json) pins the measured
+The [raw report](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/blob/77a6b88628c6f3c4fcdff494ab398bf2b0d0ac1d/research/domain_pilots/2026_10_12/windows.json) pins the measured
 then-working runtime; root independently verified all source/profile and thirty
 artifact hashes after the run. Final source-input checks also passed separately
 at root (two tests, eight subtests). It is local evidence, not a relabelled clean

@@ -615,3 +615,11 @@ The output has a normal bundle per floor (`floor_00/`, `floor_01/`, where
 variant *n* of every floor belongs to the same stack) and
 `multi_floor_report.json`. `ui`, `qa-building` and `compare-variants` work on
 each floor directory as on any bundle.
+
+### Local research output
+
+`research/` contains local notes and raw measurement reports and is ignored by
+Git. Canonical reproducible inputs remain tracked in `tests/fixtures/`; concise
+acceptance summaries remain in `docs/acceptance/`. Documentation links to older
+raw reports use immutable historical commits, so their recorded evidence stays
+accessible after the research directory is removed from the current tree.

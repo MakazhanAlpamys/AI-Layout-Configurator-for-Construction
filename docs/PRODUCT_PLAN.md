@@ -144,6 +144,8 @@ Checkpoint B.10.1 strictly checks original nested layout types before normalizat
 Checkpoint H.3.6 adds soft physical-zone guidance, shared leaf-cluster reuse and
 source-pinned room/equipment repairs through actual recursive container checks.
 Checkpoint B.5.1 preserves exact integral objectives in canonical polygon candidate pools.
+Checkpoint QA.12 keeps raw research local while retaining canonical CI fixtures,
+compact acceptance summaries and immutable historical evidence links.
 
 ## 1. Why we are expanding the project
 
