@@ -26,6 +26,8 @@ Checkpoint C.2.2 verifies preferred zone relations in generation and editing,
 with one soft credit per zone relation and all hard gates retained.
 Checkpoint H.5.1 verifies the installed-wheel production container and its
 pharma-pilot HTTP bundle.
+Checkpoint G.4.1 verifies the compatible-provider typed-edit adapter using
+real local HTTP fixtures and a confirmed changed-program solve.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

@@ -318,7 +318,27 @@ def main(argv: list[str] | None = None) -> int:
     apply_edits.add_argument("--output", "-o", type=Path, required=True)
     apply_edits.add_argument("--confirm", action="store_true")
     apply_edits.add_argument("--reviewer")
+    propose_llm = subparsers.add_parser("propose-llm-edits", help="request a strict typed DRAFT from an explicitly configured compatible provider")
+    propose_llm.add_argument("spec", type=Path)
+    propose_llm.add_argument("request", type=Path, help="UTF-8 request text")
+    propose_llm.add_argument("--output", "-o", type=Path, required=True)
+    propose_llm.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args(argv)
+
+    if args.command == "propose-llm-edits":
+        try:
+            from .llm_edits import propose_with_compatible_provider
+            from .proposed_edits import write_proposed_edits
+
+            draft = propose_with_compatible_provider(load_building(args.spec),
+                       args.request.read_text(encoding="utf-8"),
+                       **llm_settings_from_environment(), timeout_seconds=args.timeout)
+            write_proposed_edits(args.output, draft)
+            print(f"DRAFT: {args.output}; {len(draft.edits)} typed proposals; confirmation and regeneration required")
+            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
 
     if args.command == "propose-edits":
         try:

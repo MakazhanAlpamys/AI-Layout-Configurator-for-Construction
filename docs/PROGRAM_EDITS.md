@@ -33,8 +33,21 @@ canonical program and `.application.json` evidence. The evidence explicitly
 marks old geometry/artifacts invalid and solver/checks pending. Regenerate
 from the updated program and check the new bundle before using its artifacts.
 
-The contract can consume structured AI proposals, but these commands do not
-call an external model or infer edits from the request text. Source text is
+For an opt-in chat-compatible provider, set `LAYOUT_LLM_ENDPOINT`,
+`LAYOUT_LLM_MODEL` and `LAYOUT_LLM_API_KEY`, then run:
+
+```powershell
+layout-configurator propose-llm-edits program.yaml request.txt --output out/proposal.json
+```
+
+This command sends the canonical input, request and strict operation catalog
+to the configured provider. It accepts only a schema-checked DRAFT; use the
+same confirmed `apply-edits` and regeneration steps above. It does not send
+solved geometry or automatically apply the proposal. Credentials are read
+from the environment. Provider/model selection remains explicit, and the
+adapter speaks the existing chat-completions JSON protocol.
+
+`propose-edits` consumes already structured edits and treats request text as
 provenance. Stale drafts, unknown fields, wrong units, non-finite quantities,
 duplicate field edits and missing confirmation are rejected. Confirmation
 does not constitute an engineering or regulatory verdict.

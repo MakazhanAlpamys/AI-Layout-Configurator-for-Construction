@@ -31,6 +31,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | H.5 | Installable wheel and source distribution | Build-time copies bundle the authoritative schemas/rules/IDS without maintaining a second source tree. Loaders work from foreign working directories while respecting local and absolute overrides. | Fresh packaging/schema/norms/QA run: 29 passed, 17 subtests. Built wheel and rebuilt sdist were installed outside checkout; isolated CLI generated, checked IDS and passed full facility QA. Agent broader run: 83 passed. | complete 2026-10-12 |
 | C.2.2 | Preferred zone relations through generation and editing | Both backends reward one usable room contact per declared zone relation, below hard constraints and area accuracy. Descendant membership, fallback replay and editor repair preserve the preference; bounded search does not guarantee optimality. Facility generation also accepts explicit axis constraints. | Fresh zone/room preferences/editor run: 25 passed, 33 subtests; axis/core integration: 10 passed. Agent core/daylight/facility/hierarchy regressions passed. | complete 2026-10-12 |
 | H.5.1 | Installed production container | Docker builds and installs a regular wheel using the canonical resource build hook. Runtime imports and schemas come from site-packages rather than the editable source tree. | Clean committed-source image build passed; runtime path assertions found site-packages and bundled `_data`. Real pharma-pilot HTTP generation, download and full QA passed in 4.06 s. | complete 2026-10-12 |
+| G.4.1 | Opt-in model adapter for typed proposals | An explicitly configured chat-compatible provider receives canonical input and the edit catalog. Its output must pass the strict proposal boundary; CLI emits an unconfirmed DRAFT and leaves application/regeneration to the reviewed workflow. | Fresh provider/CLI/original-LLM/proposal tests: 21 passed, 25 subtests. Real local HTTP fixtures verify request, malformed/hostile replies, missing opt-in, confirmation and a changed-area solve; no external model was called. | complete 2026-10-12 for compatible-provider protocol |
 
 ## Remaining implementation
 
@@ -44,8 +45,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
   and spatial exchange; grouping does not establish engineered MEP design.
 - F: retain scoped, sourced rule packs and UNKNOWN/IDS separation; add domain
   acceptance examples without claiming unperformed expert sign-off.
-- G: vector-PDF imports, draft raster extraction and an opt-in model adapter
-  for the strict edit contract; DXF/IFC and explicit confirmation exist.
+- G: vector-PDF imports and draft raster/OCR extraction; strict typed model
+  proposals, DXF/IFC and explicit confirmation exist.
 - H: unified multi-storey IFC and shared grid, typed vertical connectors,
   service links and remote container acceptance.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed
