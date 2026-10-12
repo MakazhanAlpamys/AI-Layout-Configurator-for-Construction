@@ -65,6 +65,31 @@ def _dossier_sources(input_path: Path, variant: int | None) -> list[Path]:
     return [input_path]
 
 
+def _add_import_options(parser):
+    parser.add_argument("--imported-plan", type=Path, help="source-backed DXF/IFC DRAFT JSON to validate and pin")
+    parser.add_argument("--confirm-import", action="store_true", help="explicitly confirm reviewed import geometry")
+    parser.add_argument("--import-reviewer", help="name of the person confirming imported geometry")
+    parser.add_argument("--room-map", nargs=2, action="append", default=[], metavar=("SOURCE", "ROOM"), help="map an imported ID to a canonical room ID; repeat as needed")
+
+
+def _confirmed_import(args, spec):
+    if args.imported_plan is None:
+        if args.confirm_import or args.import_reviewer or args.room_map:
+            raise ValueError("Import confirmation/mapping requires --imported-plan")
+        return None, None
+    from .plan_import import load_imported_constraints
+
+    mapping = {}
+    for source_id, room_id in args.room_map:
+        if source_id in mapping:
+            raise ValueError(f"Duplicate room mapping for {source_id}")
+        mapping[source_id] = room_id
+    fixed = load_imported_constraints(args.imported_plan, spec, confirmed=args.confirm_import,
+                                      reviewer=args.import_reviewer, room_mapping=mapping)
+    evidence = json.loads(args.imported_plan.with_suffix(".confirmation.json").read_text(encoding="utf-8"))
+    return fixed, evidence
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="layout-configurator", description="Solver-first facility layout compiler")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -77,10 +102,12 @@ def main(argv: list[str] | None = None) -> int:
     generate.add_argument("--seed", type=int, default=42)
     generate.add_argument("--strict-input", action="store_true", help="require canonical LayoutIR input before solving")
     generate.add_argument("--schema", type=Path, default=Path("schemas/layout_ir.schema.json"))
+    _add_import_options(generate)
     generate_building = subparsers.add_parser(
         "generate-building", help="solve a dense-building program and place equipment"
     )
     generate_building.add_argument("spec", type=Path)
+    _add_import_options(generate_building)
     generate_building.add_argument("--output", "-o", type=Path, default=Path("out/building"))
     generate_building.add_argument("--variants", type=int, default=1)
     generate_building.add_argument(
@@ -273,7 +300,24 @@ def main(argv: list[str] | None = None) -> int:
     api.add_argument("--output", "-o", type=Path, default=Path("out/api-jobs"))
     api.add_argument("--host", default="127.0.0.1")
     api.add_argument("--port", type=int, default=8766)
+    import_source = subparsers.add_parser("import-plan", help="extract DXF/IFC room geometry into an unconfirmed source-backed draft")
+    import_source.add_argument("source", type=Path)
+    import_source.add_argument("--output", "-o", type=Path, required=True)
+    import_source.add_argument("--unit-scale-mm", type=float, help="explicit millimetres per drawing unit for unitless DXF")
+    import_source.add_argument("--storey", help="IFC storey GlobalId or name")
     args = parser.parse_args(argv)
+
+    if args.command == "import-plan":
+        try:
+            from .plan_import import import_plan, write_import_draft
+
+            draft = import_plan(args.source, unit_scale_mm=args.unit_scale_mm, storey=args.storey)
+            write_import_draft(args.output, draft)
+            print(f"DRAFT: {args.output}; {len(draft.rooms)} rooms; {len(draft.issues)} unresolved issues")
+            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
 
     if args.command == "api":
         try:
@@ -287,12 +331,14 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "generate":
         try:
             spec = load_canonical_spec(args.spec, args.schema) if args.strict_input else load_spec(args.spec)
+            fixed_rects, import_confirmation = _confirmed_import(args, spec)
             results = solve_layouts(
                 spec,
                 args.variants,
                 args.time_limit,
                 args.seed,
                 deterministic_units=args.deterministic_units,
+                fixed_rects=fixed_rects,
             )
         except (OSError, ValueError, InfeasibleLayout, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
@@ -300,6 +346,8 @@ def main(argv: list[str] | None = None) -> int:
 
         args.output.mkdir(parents=True, exist_ok=True)
         manifest = {"project": spec.project_name, "variants": []}
+        if import_confirmation is not None:
+            manifest["import_confirmation"] = import_confirmation
         for result in results:
             report = validate_layout(spec, result)
             if not report.ok:
@@ -549,6 +597,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             (args.output / "generation-failure.json").unlink(missing_ok=True)
             building = load_building(args.spec).with_required_flow_opening_width()
+            fixed_rects, import_confirmation = _confirmed_import(args, building.layout)
             profile = load_facility_profile(args.profile) if args.profile else default_facility_profile()
             generation = solve_feasible_facility_variants(
                 building,
@@ -560,6 +609,7 @@ def main(argv: list[str] | None = None) -> int:
                 equipment_retries=args.equipment_retries,
                 deterministic_units=args.deterministic_units,
                 room_solver=args.room_solver,
+                fixed_rects=fixed_rects,
             )
         except InfeasibleFacilityGeneration as exc:
             args.output.mkdir(parents=True, exist_ok=True)
@@ -594,6 +644,8 @@ def main(argv: list[str] | None = None) -> int:
             "generation": generation.to_dict(),
             "variants": [],
         }
+        if import_confirmation is not None:
+            manifest["import_confirmation"] = import_confirmation
         for candidate in generation.accepted:
             try:
                 entry = write_facility_variant(

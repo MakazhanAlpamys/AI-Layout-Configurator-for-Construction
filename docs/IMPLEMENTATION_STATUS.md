@@ -24,6 +24,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | E.1 | Native IFC facility groups and valid spatial exchange | Functional zones retain direct space membership and nested groups; declared process systems group their routes and explicit equipment endpoints with stable IDs. Swept profiles, space aggregation, proxy types and owner history satisfy IFC4 EXPRESS rules. | Fresh root run: `pytest tests/test_ifc_facility_groups.py tests/test_exports.py -q`: 19 passed. Agent integration run: 76 passed and 4 subtests, including multifloor/API; single- and multi-floor strict validation: zero violations. | complete 2026-10-12 |
 | C.1.1 | Hierarchical floor constraints | Final room footprints avoid cutouts, selected rooms honor structural axes, replayable axes survive fallback, and automatic cutout daylight needs a window-sized facade. Forced hierarchy solves the fixtures without fallback. | Fresh `pytest tests/test_hierarchy_constraints.py tests/test_hierarchy.py tests/test_preferences.py -q`: 33 passed, 14 subtests; agent multifloor regression: 3 passed. | complete 2026-10-12 |
 | H.4 / NEXT 4.2 implementation | Persistent API, deterministic cache, batch and private container | HTTP jobs share canonical generation/export/QA and produce unsigned review dossiers. Persistence, cancellation, writer locking, immutable downloads and opt-in cache are supported. A private unprivileged Docker image and loopback Compose service are supplied. | Fresh HTTP/CLI tests: 12 passed, 4 subtests. Docker build and Compose validation passed; deployed container generated the 13-room pharma pilot in 6.52 s, full QA and PDF download passed. `scripts/api_smoke.py` and the CI container job retain repeatable evidence. Remote CI acceptance is pending. | implementation complete 2026-10-12; CI gate pending |
+| G.1 | Source-backed rectangular plan import | DXF semantic/provisional outlines and selected-storey IFC footprints become a hashed DRAFT. Explicit named confirmation rechecks source geometry, units and metadata, rejects unresolved issues, and passes verified fixed rectangles into both generation commands. Manifests retain confirmation evidence. | Fresh import/CLI run: 23 passed, 40 subtests. Export/QA/API regression: 25 passed; agent pharma acceptance: 14 passed. Confirmed import generated a complete bundle with unchanged source coordinates and independent QA. | complete 2026-10-12 for rectangular DXF/IFC |
 
 ## Remaining implementation
 
@@ -38,8 +39,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
   and spatial exchange; grouping does not establish engineered MEP design.
 - F: retain scoped, sourced rule packs and UNKNOWN/IDS separation; add domain
   acceptance examples without claiming unperformed expert sign-off.
-- G: source-backed DXF/IFC and vector-PDF imports, draft raster extraction,
-  object confirmation, and LLM-to-typed-edit validation.
+- G: vector-PDF imports, draft raster extraction and LLM-to-typed-edit
+  integration; rectangular DXF/IFC and explicit geometry confirmation exist.
 - H: unified multi-storey IFC and shared grid, typed vertical connectors,
   service links, non-editable package resources and remote container acceptance.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed

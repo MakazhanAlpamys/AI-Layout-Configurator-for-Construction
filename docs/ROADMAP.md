@@ -12,6 +12,8 @@ Checkpoint C.1.1 verifies cutouts and structural axes in hierarchical room
 placement on the same date.
 Checkpoint H.4 adds the local API/container and a real pharma-pilot HTTP
 acceptance script; remote CI status is recorded in the execution ledger.
+Checkpoint G.1 adds reviewed rectangular DXF/IFC drafts as fixed starting
+geometry while preserving the canonical program/result boundary.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

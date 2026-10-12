@@ -52,6 +52,8 @@ def export_dxf(
     for name in LAYERS:
         if name not in document.layers:
             document.layers.add(name)
+    document.layers.get("A-ROOM").dxf.plot = 0
+    document.appids.add("LAYOUT_IR")
     for name, color in (
         ("A-WALL", 7),
         ("A-ROOM", 8),
@@ -83,6 +85,12 @@ def export_dxf(
 
     for room in spec.rooms:
         rect = result.placements[room.id]
+        outline = modelspace.add_lwpolyline(
+            [(rect.x, rect.y), (rect.right, rect.y), (rect.right, rect.top), (rect.x, rect.top)],
+            close=True,
+            dxfattribs={"layer": "A-ROOM"},
+        )
+        outline.set_xdata("LAYOUT_IR", [(1000, f"room_id={room.id}"), (1000, f"room_type={room.type}")])
         label = f"{room.id} ({rect.area_m2:.2f} m2)"
         text = modelspace.add_text(
             label,
