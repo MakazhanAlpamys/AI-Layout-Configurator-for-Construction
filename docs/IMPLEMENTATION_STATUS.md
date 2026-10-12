@@ -71,6 +71,10 @@ Its result is pending; later changes require their own evidence.
 
 | C.3.6 | Explicit root-zone block unions | Source-selected named blocks partition canonical root membership exactly; local room/cluster shapes feed global CP-SAT. Physical zone unions preserve actual gaps. Independent QA checks blocks, exact unions, exclusions and hard constraints. Existing dispatch remains unchanged and nested block partitions are unsupported explicitly. | Fresh root blocks/constraints/root+recursive dispatch run: 33 passed, 81 subtests. Agent broader zone/preferences/partial regression: 83 passed. Six old/new result+evidence comparisons preserved default, pinned and axis behavior. A real six-room logistics/production chain passes equipment/routes after splitting; a falsified union bounding box fails independently. | complete 2026-10-12 for direct root blocks; descendant block hierarchy/dispatch/scale remain separate |
 
+| QA.5 | Pinned repaired scale and complete local regression | All six scale jobs passed at `35eff27`, including production-install stack QA on all seeds. A separate clean archived `935fa6c` source passed the complete local suite; later history/block/calibration changes have their own affected checks. | [Scale run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413): all jobs successful. Downloaded 17-check stack reports passed in 136.637/127.101/86.274 s for seeds 1/7/42 (OR-Tools 9.15, IfcOpenShell 0.9). Clean `935fa6c`: 509 passed, 398 subtests, 472.84 s; three upstream destructor warnings on intentionally corrupt IFC negatives. | complete 2026-10-12 for pinned source/CI; external review remains open |
+
+| QA.6 | Reduced checkpoint CI load | Pushes run a single quick compilation/complete-collection/contract job; full platform/container/pharma gates run on PR/manual/weekly events. Quick pushes do not cancel pinned full runs. Scale retains every seed/gate on weekly/manual execution. Documentation-only pushes are skipped. | Actionlint 1.7.12 validated all workflow files with exit 0. Fresh quick contract command: 39 passed, 50 subtests, 1.97 s; complete working-tree collection: 587 tests without import errors. Actual remote quick-run timing remains to measure after push. | configuration complete 2026-10-12; remote timing pending |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
@@ -85,8 +89,8 @@ Its result is pending; later changes require their own evidence.
   acceptance examples without claiming unperformed expert sign-off.
 - G: general PDF and draft raster/OCR extraction; calibrated rectangular
   vector paths, strict typed model proposals and DXF/IFC confirmation exist.
-- H: pinned remote two-floor 40-room acceptance, larger-scale
-  incremental solving and runner budget calibration; shared-grid IFC and typed
+- H: larger-scale incremental solving and runner budget calibration;
+  pinned two-floor 40-room CI, shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed
   engineering library; scenario and pressure-network checks; synchronized

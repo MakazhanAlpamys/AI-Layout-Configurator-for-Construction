@@ -59,6 +59,8 @@ Checkpoint D.2 adds source-backed supplied revision history and independent
 printed/source checks; authenticated attribution and sign-off remain external.
 Checkpoint C.3.6 adds direct explicit root-block unions, with a concrete valid
 split-membership counterexample; nested blocks and scale stay separate.
+Checkpoint QA.6 separates quick pushes from complete acceptance and moves the
+unchanged scale matrix to weekly/manual runs; full criteria are retained.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

@@ -72,6 +72,8 @@ Checkpoint D.2 validates supplied prior-source revision chains, preserves exact
 source bytes and checks indexed PDF history through bundle and HTTP paths.
 Checkpoint C.3.6 solves explicit root-zone block partitions and independently
 checks their actual physical unions, preserving gaps and scoped failure evidence.
+Checkpoint QA.6 reduces repeated CI load: quick contracts on checkpoint pushes,
+full gates on PR/manual/weekly runs, and independent pinned-run concurrency.
 
 ## 1. Why we are expanding the project
 
