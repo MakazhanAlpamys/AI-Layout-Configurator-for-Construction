@@ -108,6 +108,8 @@ Checkpoint B.7 adds bounded actual-width orthogonal routing and independent
 door, corridor and equipment-front access checks; complete polygon acceptance remains open.
 Checkpoint C.5 preserves structured room-search and rejected-candidate stage
 evidence, including equipment retries, actual route issues and unresolved profile sources.
+Checkpoint D.6 / NEXT 3.4 adds an indexed source-backed client PDF to every
+shared accepted bundle, with complete paginated evidence and independent readback.
 
 ## 1. Why we are expanding the project
 

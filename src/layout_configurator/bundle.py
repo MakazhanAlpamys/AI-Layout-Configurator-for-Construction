@@ -16,6 +16,7 @@ from typing import Any
 
 from .bcf import write_bcf_package
 from .building import BuildingIR
+from .client_report import write_client_report
 from .drawing_sheets import export_drawing_sheet_set
 from .drawing_revision_history import parse_revision_history, write_revision_sources
 from .equipment import EquipmentLayoutResult, EquipmentValidationReport
@@ -126,6 +127,10 @@ def write_facility_variant(
         )
     except (OSError, ValueError, RuntimeError) as exc:
         raise VariantExportError(f"BCF package for variant {result.variant} could not be generated: {exc}") from exc
+    try:
+        client_report = write_client_report(json_path, font_path=sheet_font_path)
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise VariantExportError(f"Client report for variant {result.variant} could not be generated: {exc}") from exc
     return {
         "variant": result.variant,
         "generation": generation_evidence,
@@ -144,6 +149,7 @@ def write_facility_variant(
         "bcf_open_topics": bcf_summary.open_topics,
         "bcf_resolved_topics": bcf_summary.resolved_topics,
         "facility_ok": facility_report.ok,
+        "client_report": client_report,
         "dxf": dxf_path.name,
         "pdf": pdf_path.name,
         "sheet_set": {

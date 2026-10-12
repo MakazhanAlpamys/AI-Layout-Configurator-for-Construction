@@ -89,6 +89,7 @@ class DrawingSheetReadbackTests(unittest.TestCase):
 
     def test_legacy_bundle_without_optional_sheet_set_keeps_its_original_seven_checks(self):
         del self.entry["sheet_set"]
+        self.entry.pop("client_report", None)
         self.manifest_path.write_text(json.dumps(self.manifest), encoding="utf-8")
         report = validate_building_bundle(self.root / "building_07.json", profile=self.profile)
         self.assertTrue(report.ok, report.to_dict())

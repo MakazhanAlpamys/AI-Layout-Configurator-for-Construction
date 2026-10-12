@@ -20,6 +20,8 @@ Checkpoint B.7 verifies actual orthogonal process corridors, ordered door
 crossings and full-width endpoint access, retaining scoped DRAFT/UNKNOWN results.
 Checkpoint C.5 verifies persistent structured candidate/search explanations
 without converting bounded-search failure into whole-program infeasibility.
+Checkpoint D.6 verifies per-variant client reports through shared CLI/HTTP/editor
+and installed-wheel exports, retaining explicit pending engineering acceptance.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

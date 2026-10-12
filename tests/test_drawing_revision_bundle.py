@@ -130,7 +130,9 @@ class DrawingRevisionBundleTests(unittest.TestCase):
         self.assertNotIn("revision_history", self.entry["sheet_set"])
         canonical = json.loads((self.root / "building_07.json").read_text(encoding="utf-8"))
         self.assertNotIn("drawing_revision_history", canonical)
-        self.assertEqual(len(self.check().checks), 8)
+        report = self.check()
+        self.assertEqual(len(report.checks), 9)
+        self.assertNotIn("DRAWING_REVISION_HISTORY", {check.id for check in report.checks})
 
     def test_manifest_cannot_invent_history_for_an_unchanged_canonical_result(self):
         self.export()

@@ -466,6 +466,21 @@ class FacilityReviewSession:
             f"{stem}.issue-management.json",
             "manifest.json",
         )
+        try:
+            manifest = json.loads((self.output_dir / "manifest.json").read_text(encoding="utf-8"))
+            matching = [row for row in manifest.get("variants", []) if isinstance(row, dict)
+                        and row.get("json") == self.input_path.name
+                        and type(row.get("variant")) is int and row["variant"] == self.result.variant]
+            if len(matching) == 1:
+                for kind in ("sheet_set", "client_report"):
+                    index = matching[0].get(kind)
+                    name = index.get("pdf") if isinstance(index, dict) else None
+                    if isinstance(name, str) and name and Path(name).name == name and not Path(name).is_absolute():
+                        path = (self.output_dir / name).resolve()
+                        if path.parent == self.output_dir.resolve() and path.is_file():
+                            candidates += (name,)
+        except (OSError, TypeError, ValueError, AttributeError):
+            pass  # Legacy or malformed manifests add no optional files.
         return tuple(name for name in candidates if (self.output_dir / name).is_file())
 
 

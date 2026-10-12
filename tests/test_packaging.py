@@ -218,7 +218,7 @@ class InstalledWheelTests(unittest.TestCase):
         self.assertTrue(report["ok"], report)
         self.assertEqual({check["id"] for check in report["checks"]},
                          {"FACILITY_VALIDATION", "MANIFEST", "DXF_READBACK", "PDF_READBACK",
-                          "IFC_READBACK", "BCF_READBACK", "COORDINATION_JSON", "SHEET_SET_READBACK"})
+                          "IFC_READBACK", "BCF_READBACK", "COORDINATION_JSON", "SHEET_SET_READBACK", "CLIENT_REPORT_READBACK"})
 
     def test_installed_revision_history_validates_and_copies_sources_outside_checkout(self):
         from test_drawing_revision_history import supplied_history

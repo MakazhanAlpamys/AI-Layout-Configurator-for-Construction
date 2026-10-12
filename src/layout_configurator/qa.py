@@ -12,6 +12,7 @@ from zipfile import BadZipFile
 import xml.etree.ElementTree as ET
 
 from .bcf import read_bcf_package
+from .client_report_qa import validate_client_report
 from .drawing_sheet_qa import validate_drawing_sheet_set
 from .drawing_revision_history import read_revision_sources
 from .facility import FacilityProfile, default_facility_profile, validate_building
@@ -155,6 +156,9 @@ def validate_building_bundle(
     sheet_check = _qa_optional_sheets(manifest, source, building, result, equipment, routes, selected_profile, history=history)
     if sheet_check is not None:
         checks.append(sheet_check)
+    client_check = _qa_optional_client_report(manifest, source, result)
+    if client_check is not None:
+        checks.append(client_check)
     checks.append(
         _qa_ifc(
             ifc,
@@ -211,6 +215,25 @@ def _qa_optional_sheets(manifest, source, building, result, equipment, routes, p
                                           drawing=profile.drawing, revision_history=history)
     return BundleQACheck("SHEET_SET_READBACK", readback.ok,
                          "Thematic PDF artifact identity and vector readback pass" if readback.ok else "Thematic PDF artifact readback failed",
+                         readback.to_dict())
+
+
+def _qa_optional_client_report(manifest, source, result):
+    """Legacy bundles without a report index retain their existing checks."""
+    try:
+        payload = json.loads(manifest.read_text(encoding="utf-8"))
+        matching = [row for row in payload.get("variants", [])
+                    if isinstance(row, dict) and row.get("json") == source.name]
+    except (OSError, TypeError, ValueError, AttributeError):
+        return None  # Malformed mandatory manifests fail MANIFEST separately.
+    if not any("client_report" in row for row in matching):
+        return None
+    if len(matching) != 1 or type(matching[0].get("variant")) is not int or matching[0]["variant"] != result.variant:
+        return BundleQACheck("CLIENT_REPORT_READBACK", False, "Client report source variant is ambiguous or inconsistent",
+                             {"issues": [{"code": "REPORT_SOURCE", "message": "Manifest variant differs from the canonical result"}]})
+    readback = validate_client_report(manifest.parent, matching[0]["client_report"], source=source)
+    return BundleQACheck("CLIENT_REPORT_READBACK", readback.ok,
+                         "Client PDF source identity and evidence readback pass" if readback.ok else "Client PDF readback failed",
                          readback.to_dict())
 
 
