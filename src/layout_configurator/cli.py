@@ -305,7 +305,50 @@ def main(argv: list[str] | None = None) -> int:
     import_source.add_argument("--output", "-o", type=Path, required=True)
     import_source.add_argument("--unit-scale-mm", type=float, help="explicit millimetres per drawing unit for unitless DXF")
     import_source.add_argument("--storey", help="IFC storey GlobalId or name")
+    propose = subparsers.add_parser("propose-edits", help="validate typed program edits into a reviewable draft")
+    propose.add_argument("spec", type=Path)
+    propose.add_argument("edits", type=Path, help="JSON object containing the typed edits array")
+    propose.add_argument("--source-text", type=Path, required=True, help="UTF-8 source request text")
+    propose.add_argument("--producer", default="manual")
+    propose.add_argument("--source-kind", choices=("human_text", "ai_proposal"), default="human_text")
+    propose.add_argument("--output", "-o", type=Path, required=True)
+    apply_edits = subparsers.add_parser("apply-edits", help="apply a confirmed typed draft to its exact canonical base")
+    apply_edits.add_argument("spec", type=Path)
+    apply_edits.add_argument("draft", type=Path)
+    apply_edits.add_argument("--output", "-o", type=Path, required=True)
+    apply_edits.add_argument("--confirm", action="store_true")
+    apply_edits.add_argument("--reviewer")
     args = parser.parse_args(argv)
+
+    if args.command == "propose-edits":
+        try:
+            from .proposed_edits import propose_edits, write_proposed_edits
+
+            draft = propose_edits(load_building(args.spec), json.loads(args.edits.read_text(encoding="utf-8")),
+                                  source_text=args.source_text.read_text(encoding="utf-8"),
+                                  producer=args.producer, source_kind=args.source_kind)
+            write_proposed_edits(args.output, draft)
+            print(f"DRAFT: {args.output}; {len(draft.edits)} typed edits; confirmation required")
+            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+
+    if args.command == "apply-edits":
+        try:
+            from .proposed_edits import apply_proposed_edits, read_proposed_edits
+
+            applied = apply_proposed_edits(load_building(args.spec), read_proposed_edits(args.draft),
+                                            confirmed=args.confirm, reviewer=args.reviewer)
+            args.output.parent.mkdir(parents=True, exist_ok=True)
+            args.output.write_text(json.dumps(applied.building.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+            args.output.with_suffix(".application.json").write_text(
+                json.dumps(dict(applied.evidence), indent=2, ensure_ascii=False), encoding="utf-8")
+            print(f"Canonical input: {args.output}; PENDING_SOLVER_AND_CHECKS; run generate-building on this input")
+            return 0
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
 
     if args.command == "import-plan":
         try:

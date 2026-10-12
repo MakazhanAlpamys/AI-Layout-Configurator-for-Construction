@@ -18,6 +18,8 @@ Checkpoint C.1.2 verifies usable daylight facades against real cutout extents
 in both room backends.
 Checkpoint QA.1 records the platform/startup repair and its fresh deployed
 pilot verification; CI acceptance remains distinct from local verification.
+Checkpoint G.4 verifies typed program proposals and confirmed regeneration;
+network model calls remain a separate adapter requirement.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

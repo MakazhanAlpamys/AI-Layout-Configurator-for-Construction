@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/proposed-edits-0.1.json",
+  "title": "Draft typed BuildingIR program edits",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "state", "base_sha256", "source", "edits"],
+  "properties": {
+    "format": {"const": "FLC-proposed-edits"},
+    "version": {"const": "0.1"},
+    "state": {"const": "DRAFT"},
+    "base_sha256": {"$ref": "#/$defs/hash"},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "producer", "text", "sha256"],
+      "properties": {
+        "kind": {"enum": ["human_text", "ai_proposal"]},
+        "producer": {"$ref": "#/$defs/id"},
+        "text": {"$ref": "#/$defs/id"},
+        "sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "edits": {
+      "type": "array", "minItems": 1, "maxItems": 100,
+      "items": {"oneOf": [{"$ref": "#/$defs/roomEdit"}, {"$ref": "#/$defs/equipmentEdit"}, {"$ref": "#/$defs/flowEdit"}]}
+    }
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "pattern": "\\S"},
+    "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "idList": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "area": {
+      "type": "object", "additionalProperties": false, "required": ["value", "unit"],
+      "properties": {"value": {"type": "number", "exclusiveMinimum": 0}, "unit": {"const": "m2"}}
+    },
+    "length": {
+      "type": "object", "additionalProperties": false, "required": ["value", "unit"],
+      "properties": {"value": {"type": "number", "exclusiveMinimum": 0}, "unit": {"const": "mm"}}
+    },
+    "clearance": {
+      "type": "object", "additionalProperties": false, "required": ["value", "unit"],
+      "properties": {"value": {"type": "number", "minimum": 0}, "unit": {"const": "mm"}}
+    },
+    "roomEdit": {
+      "type": "object", "additionalProperties": false, "required": ["operation", "target_id", "changes"],
+      "properties": {
+        "operation": {"const": "set_room"}, "target_id": {"$ref": "#/$defs/id"},
+        "changes": {
+          "type": "object", "additionalProperties": false, "minProperties": 1,
+          "properties": {
+            "target_area": {"$ref": "#/$defs/area"}, "min_area": {"$ref": "#/$defs/area"}, "max_area": {"$ref": "#/$defs/area"},
+            "min_width": {"$ref": "#/$defs/length"}, "min_depth": {"$ref": "#/$defs/length"},
+            "required_adjacency": {"$ref": "#/$defs/idList"}, "preferred_adjacency": {"$ref": "#/$defs/idList"}, "forbidden_adjacency": {"$ref": "#/$defs/idList"},
+            "needs_daylight": {"type": "boolean"}, "is_heated": {"type": "boolean"}, "rotatable": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "equipmentEdit": {
+      "type": "object", "additionalProperties": false, "required": ["operation", "target_id", "changes"],
+      "properties": {
+        "operation": {"const": "set_equipment"}, "target_id": {"$ref": "#/$defs/id"},
+        "changes": {
+          "type": "object", "additionalProperties": false, "minProperties": 1,
+          "properties": {
+            "width_mm": {"$ref": "#/$defs/length"}, "depth_mm": {"$ref": "#/$defs/length"},
+            "clearance_front_mm": {"$ref": "#/$defs/clearance"}, "clearance_back_mm": {"$ref": "#/$defs/clearance"},
+            "clearance_left_mm": {"$ref": "#/$defs/clearance"}, "clearance_right_mm": {"$ref": "#/$defs/clearance"},
+            "rotation_allowed": {"type": "boolean"}
+          }
+        }
+      }
+    },
+    "flowEdit": {
+      "type": "object", "additionalProperties": false, "required": ["operation", "target_id", "changes"],
+      "properties": {
+        "operation": {"const": "set_flow"}, "target_id": {"$ref": "#/$defs/id"},
+        "changes": {
+          "type": "object", "additionalProperties": false, "minProperties": 1,
+          "properties": {
+            "from_ids": {"$ref": "#/$defs/idList"}, "to_ids": {"$ref": "#/$defs/idList"},
+            "minimum_clear_width_mm": {"$ref": "#/$defs/length"}, "required": {"type": "boolean"}, "stage": {"$ref": "#/$defs/id"}
+          }
+        }
+      }
+    }
+  }
+}

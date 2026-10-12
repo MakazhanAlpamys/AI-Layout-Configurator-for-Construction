@@ -20,6 +20,8 @@ Checkpoint C.1.2 aligns automatic cutout daylight with actual usable window
 facades in both backends, including fractional/off-grid cutout extents.
 Checkpoint QA.1 repairs Linux collection assertions and container startup
 readiness after the first new remote CI run exposed these two differences.
+Checkpoint G.4 adds strict typed room/equipment/flow proposals, confirmed
+canonical application and an independently checked CLI regeneration path.
 
 ## 1. Why we are expanding the project
 

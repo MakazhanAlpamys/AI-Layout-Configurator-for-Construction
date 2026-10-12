@@ -5,6 +5,8 @@ Persistent generation, batch, check and review jobs are available through the
 checkpoints are tracked in [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
 Existing rectangular DXF/IFC plans can be [imported as reviewed drafts](docs/PLAN_IMPORT.md)
 and used as fixed solver constraints.
+Assistant/manual changes use [typed program proposals](docs/PROGRAM_EDITS.md),
+explicit confirmation and regeneration through the same solver and QA.
 
 ## Domain rule packs
 

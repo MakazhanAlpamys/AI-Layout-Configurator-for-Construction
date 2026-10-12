@@ -27,6 +27,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | G.1 | Source-backed rectangular plan import | DXF semantic/provisional outlines and selected-storey IFC footprints become a hashed DRAFT. Explicit named confirmation rechecks source geometry, units and metadata, rejects unresolved issues, and passes verified fixed rectangles into both generation commands. Manifests retain confirmation evidence. | Fresh import/CLI run: 23 passed, 40 subtests. Export/QA/API regression: 25 passed; agent pharma acceptance: 14 passed. Confirmed import generated a complete bundle with unchanged source coordinates and independent QA. | complete 2026-10-12 for rectangular DXF/IFC |
 | C.1.2 | Automatic daylight facade parity | Both backends require an actual exposed facade long enough for the automatic opening and margins, including fractional/off-grid cutout extents. Existing no-cutout and explicit-window behavior is preserved. | Fresh daylight/core/hierarchy-constraints run: 31 passed; agent preferences/hierarchy regression: 20 passed. | complete 2026-10-12 |
 | QA.1 | CI platform and container startup repair | Empty IFC query assertions accept both list and tuple results; the deployed smoke waits through startup TCP resets before submitting work. | First container/Linux CI exposed both defects. A real TCP-reset regression and IFC group tests: 10 passed. Fresh Docker pharma smoke after the repair: full QA passed, 7.05 s; remote acceptance remains pending. | repair complete 2026-10-12; CI gate pending |
+| G.4 | Typed program proposal and confirmed application | Room, equipment and flow changes use strict operations and explicit units. Hashed drafts apply only to their exact canonical base with named confirmation; schema/reference checks are atomic and old artifacts are invalidated. CLI supports proposal, application and regeneration. | Fresh contract/CLI tests: 13 passed, 16 subtests, including a real changed-area solve/export/QA bundle. | complete 2026-10-12 for structured proposals; external model adapter pending |
 
 ## Remaining implementation
 
@@ -40,8 +41,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
   and spatial exchange; grouping does not establish engineered MEP design.
 - F: retain scoped, sourced rule packs and UNKNOWN/IDS separation; add domain
   acceptance examples without claiming unperformed expert sign-off.
-- G: vector-PDF imports, draft raster extraction and LLM-to-typed-edit
-  integration; rectangular DXF/IFC and explicit geometry confirmation exist.
+- G: vector-PDF imports, draft raster extraction and an opt-in model adapter
+  for the strict edit contract; DXF/IFC and explicit confirmation exist.
 - H: unified multi-storey IFC and shared grid, typed vertical connectors,
   service links, non-editable package resources and remote container acceptance.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed
