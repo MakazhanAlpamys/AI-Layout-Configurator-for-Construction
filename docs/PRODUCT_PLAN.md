@@ -26,6 +26,8 @@ Checkpoint H.5 bundles authoritative schemas/rules/IDS into installable
 distributions; isolated installed CLI generation and bundle QA are verified.
 Checkpoint C.2.2 propagates preferred functional-zone relations through both
 room backends, facility generation and interactive repair with bounded weights.
+Checkpoint H.5.1 verifies the private Docker service using a regular installed
+wheel and bundled resources, including the full pharma-pilot HTTP smoke.
 
 ## 1. Why we are expanding the project
 

@@ -58,7 +58,8 @@ $env:LAYOUT_API_TOKEN = 'choose-a-private-token'
 docker compose up --build -d
 ```
 
-The image includes source, schemas, rule packs, IDS and examples, runs as an
+The image installs a regular wheel with schemas, rule packs and IDS, includes
+examples, runs as an
 unprivileged user, and stores jobs in the `layout-jobs` volume. The host port is
 bound to loopback. `docker compose down` stops the service and preserves its
 volume; use one service instance per volume. This is a private single-user

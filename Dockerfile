@@ -1,13 +1,13 @@
 FROM python:3.11-slim
 
 WORKDIR /app
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md setup.py MANIFEST.in ./
 COPY src ./src
 COPY schemas ./schemas
 COPY rules ./rules
 COPY ids ./ids
 COPY examples ./examples
-RUN python -m pip install --no-cache-dir -e . \
+RUN python -m pip install --no-cache-dir . \
     && useradd --create-home --uid 10001 layout \
     && mkdir /data \
     && chown layout:layout /data
