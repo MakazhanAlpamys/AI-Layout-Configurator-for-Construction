@@ -125,6 +125,13 @@ this finite pattern family. A complete requested pool is DRAFT with `ok: false`;
 partial pools stay UNKNOWN. Equipment packing, routes, rule packs and complete
 exports remain separate integration gates.
 
+The backend stores its integral CP objective through `solver.Value` on the
+actual integer expression. Native floating objective residues cannot invalidate
+otherwise canonical multi-candidate results. A real third candidate previously
+returned `2650.0000000000005`; the four-candidate regression now passes strict
+result round-trip without rounding geometry or weakening the schema. Fresh root
+room/objective regression: 17 tests and 16 subtests passed in 8.98 s.
+
 ## Opt-in finite equipment packing
 
 `place_orthogonal_equipment(building, layout, ...)` in `orthogonal_equipment`

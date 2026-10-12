@@ -55,6 +55,7 @@ retaining source provenance and separate full-artifact/engineering acceptance.
 Checkpoint B.10.1 preserves original nested layout types at that validation boundary.
 Checkpoint H.3.6 verifies the small physical zones-to-clusters-to-rooms repair
 bridge while retaining independent containers and separate large-scale evidence.
+Checkpoint B.5.1 repairs native floating objective residues in real polygon candidate pools.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

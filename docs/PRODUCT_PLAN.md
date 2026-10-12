@@ -143,6 +143,7 @@ negative evidence and strict shared numeric policy parameters; full bundle integ
 Checkpoint B.10.1 strictly checks original nested layout types before normalization.
 Checkpoint H.3.6 adds soft physical-zone guidance, shared leaf-cluster reuse and
 source-pinned room/equipment repairs through actual recursive container checks.
+Checkpoint B.5.1 preserves exact integral objectives in canonical polygon candidate pools.
 
 ## 1. Why we are expanding the project
 

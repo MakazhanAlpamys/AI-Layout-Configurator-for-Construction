@@ -236,7 +236,8 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
         coefficient_bound += max(coefficients)
     if coefficient_bound + len(preferred) * preference_weight >= 2**62:
         return finish("objective_numeric_limit")
-    model.Minimize(sum(terms) - sum(preference_terms) * preference_weight)
+    objective = sum(terms) - sum(preference_terms) * preference_weight
+    model.Minimize(objective)
     remaining_units = deterministic_units
     while state["attempts"] < budget.max_attempts and len(accepted) < variants:
         remaining_seconds = deadline - time.monotonic()
@@ -251,7 +252,9 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             return finish("finite_catalog_exhausted" if status == cp_model.INFEASIBLE else "solver_model_invalid" if status == cp_model.MODEL_INVALID else "search_budget_exhausted")
         selected = {room_id: next(index for index, choice in enumerate(choices[room_id]) if solver.Value(choice)) for room_id in room_ids}
-        result = LayoutResult(len(accepted) + 1, {room_id: domains[room_id][index][1] for room_id, index in selected.items()}, solver.ObjectiveValue())
+        # CP coefficients are integral. Native ObjectiveValue is a float and
+        # can expose a tiny residue that violates canonical integer result IR.
+        result = LayoutResult(len(accepted) + 1, {room_id: domains[room_id][index][1] for room_id, index in selected.items()}, solver.Value(objective))
         report = validate_orthogonal_layout(spec, result, dimension_policy=budget.dimension_policy)
         if report.ok:
             accepted.append(OrthogonalRoomCandidate(result, report, {room_id: domains[room_id][index][0] for room_id, index in selected.items()}))
