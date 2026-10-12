@@ -110,6 +110,8 @@ Checkpoint C.5 preserves structured room-search and rejected-candidate stage
 evidence, including equipment retries, actual route issues and unresolved profile sources.
 Checkpoint D.6 / NEXT 3.4 adds an indexed source-backed client PDF to every
 shared accepted bundle, with complete paginated evidence and independent readback.
+Checkpoint H.3.4.1 adds a source-pinned, supervised complete 80-room warm-start
+bundle benchmark and manual single-runner CI; the scoped local request passed in 64.735 s.
 
 ## 1. Why we are expanding the project
 

@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "scope": "Explicit synthetic A/B clone of supplied accepted40; not generation of arbitrary80 from scratch",
+  "source_commit": "35eff27f334a0b77741cabf841f8c5000046b316",
+  "source_ci": {
+    "run_id": "38282006413",
+    "artifact_name": "scale_40_rooms",
+    "artifact_path": "seed_7/building_02.json",
+    "seed": 7,
+    "variant": 2
+  },
+  "files": {
+    "raw40": {
+      "path": "source40.yaml",
+      "sha256": "9b2fb2671a2ec911a53e23b5c14d34af8d56de46e24ab6575d4e56cf00c33877"
+    },
+    "accepted40": {
+      "path": "accepted40.json",
+      "sha256": "d0b61615130b7900e5f327528abe9a47d6c9be30319e5d6cb1db80c02f8e1ded"
+    },
+    "profile": {
+      "path": "profile.yaml",
+      "sha256": "7da00494215758c86634d18749f2c82e71cc80de95cd83dfabd7ce2ddca9c3b5"
+    },
+    "program80": {
+      "path": "program80.json",
+      "sha256": "d064c82e9f419353f4c44b960d28a4cb3bb99e2660cff9cb68e2155b520d55fd"
+    }
+  },
+  "derivation": {
+    "version": "unweakened_A_B_clone_v1",
+    "prefixes": [
+      "A/",
+      "B/"
+    ],
+    "boundary_width_multiplier": 2,
+    "hard_bridge": [
+      "A/receiving",
+      "B/receiving"
+    ],
+    "hint_A": "mirror x around occupied source40 width",
+    "hint_B": "translate x by occupied source40 width",
+    "preserved_categories": [
+      "rooms",
+      "zones",
+      "equipment",
+      "flows"
+    ],
+    "structural_grid": "duplicate drawing x axes; source declares no selected axis alignment constraints"
+  },
+  "derivation_sha256": "8da158001d73c74d2b1810a07110ae02c8518938723f7610c7ea4339ac17307f"
+}

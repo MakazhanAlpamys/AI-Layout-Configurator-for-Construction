@@ -1,0 +1,3 @@
+# Preserve authoritative source bytes, including Windows CRLF in pinned JSON.
+*.json -text whitespace=cr-at-eol
+*.yaml -text whitespace=cr-at-eol

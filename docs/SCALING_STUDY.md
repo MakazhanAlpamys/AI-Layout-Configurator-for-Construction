@@ -284,3 +284,42 @@ hint values. Source-40 generation from scratch was excluded; its readback/check
 and derivation were included. This measurement excludes full persisted export
 and bundle QA. It is a scoped warm-start result, not general 80-room generation
 or CI acceptance. The unchanged complete persisted CI gate remains to measure.
+
+## Complete supervised warm-start bundle — 2026-10-12
+
+The manual `warmstart80.yml` workflow measures one installed-package Ubuntu
+request. It is separate from quick checkpoint CI and the existing full scale
+matrix. The source fixture pins raw40, full profile, the exact accepted
+`35eff27` seed-7 variant-2 bytes and the derived80 program. Every source room,
+zone, equipment and flow attribute is copied into qualified A/B IDs; one hard
+receiving bridge is added. Source40 is independently rechecked before its
+geometry supplies soft hints. Original40 generation from scratch is excluded.
+
+A native parent supervises the complete worker under a 120-second ceiling,
+including startup/imports, source validation/derivation, unrestricted global
+room search, fresh equipment/routes/pharma checks, shared full bundle export,
+independent persisted DXF/PDF/thematic/IFC/BCF/manifest/client-report QA and
+strict IFC EXPRESS. Timeout retains negative evidence and cannot publish
+acceptance. Runtime/dependency/executable/resource/fixture fingerprints are
+rechecked; CI rejects editable/check-out package imports. Workflow concurrency
+cancels duplicate requests without cancelling independent full acceptance.
+
+The one measured Windows request passed in **64.735 s**: preparation including
+imports 1.235 s, rooms 20.766 s, equipment/routes/pharma 27.281 s, complete export
+3.062 s, persisted QA 2.609 s and strict EXPRESS 8.875 s. The remaining time is
+supervision, fingerprints and reporting. Its [raw report](../research/scale80/2026_10_12/windows_warmstart.json)
+identifies actual `a899ac1` plus the then-working client-report implementation
+and its earlier runner fingerprint. Later launch/provenance/resource refinements
+and the final report continuation changes are covered by focused tests and
+await their own pinned CI measurement; this raw local timing is not relabelled
+as a clean latest-commit result.
+
+Run explicitly, or dispatch the manual workflow at a pinned commit:
+
+```powershell
+python scripts/scale80_warmstart_acceptance.py --output out/scale80-warmstart --max-seconds 120
+```
+
+This measures the supplied synthetic warm-start scenario only.
+General scratch80 solving, a third physical zone level and incremental re-solve
+remain open parts of NEXT 1.5.

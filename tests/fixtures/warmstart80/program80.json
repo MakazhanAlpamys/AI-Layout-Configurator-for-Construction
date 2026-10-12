@@ -1,0 +1,2670 @@
+{
+  "version": "0.2",
+  "project_name": "Explicit synthetic 80-room duplication of scale_40_rooms",
+  "layout": {
+    "version": "0.1",
+    "project_name": "Explicit synthetic 80-room duplication of scale_40_rooms",
+    "tolerance": 0.05,
+    "grid_mm": 100,
+    "wall_thickness_mm": 200.0,
+    "door_width_mm": 900.0,
+    "window_width_mm": 1200.0,
+    "window_height_mm": 1500.0,
+    "window_sill_mm": 900.0,
+    "doors": [],
+    "windows": [],
+    "entry_room": "A/receiving",
+    "boundary": {
+      "width": 152800.0,
+      "height": 42500.0,
+      "cutouts": []
+    },
+    "rooms": [
+      {
+        "id": "A/receiving",
+        "type": "receiving",
+        "target_area": 48.0,
+        "min_area": 40.0,
+        "max_area": 60.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/raw_storage",
+          "B/receiving"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/raw_storage",
+        "type": "storage_raw",
+        "target_area": 72.0,
+        "min_area": 60.0,
+        "max_area": 90.0,
+        "min_width": 6000.0,
+        "min_depth": 8000.0,
+        "required_adjacency": [
+          "A/receiving",
+          "A/material_airlock"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/material_airlock",
+        "type": "material_airlock",
+        "target_area": 30.0,
+        "min_area": 24.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/raw_storage",
+          "A/preparation"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/preparation",
+        "type": "preparation",
+        "target_area": 110.0,
+        "min_area": 100.0,
+        "max_area": 140.0,
+        "min_width": 9000.0,
+        "min_depth": 10000.0,
+        "required_adjacency": [
+          "A/material_airlock",
+          "A/production"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/production",
+        "type": "clean_production",
+        "target_area": 250.0,
+        "min_area": 220.0,
+        "max_area": 300.0,
+        "min_width": 13000.0,
+        "min_depth": 13000.0,
+        "required_adjacency": [
+          "A/preparation",
+          "A/packaging",
+          "A/waste_hold",
+          "A/personnel_airlock"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/packaging",
+        "type": "packaging",
+        "target_area": 120.0,
+        "min_area": 105.0,
+        "max_area": 150.0,
+        "min_width": 9000.0,
+        "min_depth": 10000.0,
+        "required_adjacency": [
+          "A/production",
+          "A/finished_storage"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/finished_storage",
+        "type": "storage_finished",
+        "target_area": 70.0,
+        "min_area": 55.0,
+        "max_area": 85.0,
+        "min_width": 6000.0,
+        "min_depth": 8000.0,
+        "required_adjacency": [
+          "A/packaging",
+          "A/dispatch"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/dispatch",
+        "type": "dispatch",
+        "target_area": 42.0,
+        "min_area": 35.0,
+        "max_area": 55.0,
+        "min_width": 4000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/finished_storage"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/waste_hold",
+        "type": "waste_hold",
+        "target_area": 30.0,
+        "min_area": 24.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/production"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/personnel_airlock",
+        "type": "personnel_airlock",
+        "target_area": 30.0,
+        "min_area": 24.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/staff_corridor",
+          "A/production"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/staff_changing",
+        "type": "changing_room",
+        "target_area": 36.0,
+        "min_area": 30.0,
+        "max_area": 45.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/staff_corridor"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/staff_corridor",
+        "type": "corridor",
+        "target_area": 54.0,
+        "min_area": 45.0,
+        "max_area": 70.0,
+        "min_width": 2400.0,
+        "min_depth": 2400.0,
+        "required_adjacency": [
+          "A/staff_changing",
+          "A/personnel_airlock",
+          "A/office"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/office",
+        "type": "office",
+        "target_area": 32.0,
+        "min_area": 25.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/staff_corridor"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": true,
+        "is_heated": false
+      },
+      {
+        "id": "A/support_corridor_01",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "A/staff_corridor"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "A/support_corridor_02",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "A/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "A/support_corridor_03",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "A/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "A/support_corridor_04",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "A/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "A/technical_01",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/storage_consumables_01",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/qc_laboratory_01",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "A/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/wash_01",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/plant_room_01",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/staff_support_01",
+        "type": "staff_support",
+        "target_area": 26.0,
+        "min_area": 22.1,
+        "max_area": 32.5,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/technical_02",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/storage_consumables_02",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/qc_laboratory_02",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "A/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/wash_02",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/plant_room_02",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/staff_support_02",
+        "type": "staff_support",
+        "target_area": 26.0,
+        "min_area": 22.1,
+        "max_area": 32.5,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/technical_03",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/storage_consumables_03",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/qc_laboratory_03",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "A/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/wash_03",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/plant_room_03",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/staff_support_03",
+        "type": "staff_support",
+        "target_area": 26.0,
+        "min_area": 22.1,
+        "max_area": 32.5,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/technical_04",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/storage_consumables_04",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/qc_laboratory_04",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "A/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/wash_04",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "A/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "A/plant_room_04",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "A/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/receiving",
+        "type": "receiving",
+        "target_area": 48.0,
+        "min_area": 40.0,
+        "max_area": 60.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/raw_storage"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/raw_storage",
+        "type": "storage_raw",
+        "target_area": 72.0,
+        "min_area": 60.0,
+        "max_area": 90.0,
+        "min_width": 6000.0,
+        "min_depth": 8000.0,
+        "required_adjacency": [
+          "B/receiving",
+          "B/material_airlock"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/material_airlock",
+        "type": "material_airlock",
+        "target_area": 30.0,
+        "min_area": 24.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/raw_storage",
+          "B/preparation"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/preparation",
+        "type": "preparation",
+        "target_area": 110.0,
+        "min_area": 100.0,
+        "max_area": 140.0,
+        "min_width": 9000.0,
+        "min_depth": 10000.0,
+        "required_adjacency": [
+          "B/material_airlock",
+          "B/production"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/production",
+        "type": "clean_production",
+        "target_area": 250.0,
+        "min_area": 220.0,
+        "max_area": 300.0,
+        "min_width": 13000.0,
+        "min_depth": 13000.0,
+        "required_adjacency": [
+          "B/preparation",
+          "B/packaging",
+          "B/waste_hold",
+          "B/personnel_airlock"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/packaging",
+        "type": "packaging",
+        "target_area": 120.0,
+        "min_area": 105.0,
+        "max_area": 150.0,
+        "min_width": 9000.0,
+        "min_depth": 10000.0,
+        "required_adjacency": [
+          "B/production",
+          "B/finished_storage"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/finished_storage",
+        "type": "storage_finished",
+        "target_area": 70.0,
+        "min_area": 55.0,
+        "max_area": 85.0,
+        "min_width": 6000.0,
+        "min_depth": 8000.0,
+        "required_adjacency": [
+          "B/packaging",
+          "B/dispatch"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/dispatch",
+        "type": "dispatch",
+        "target_area": 42.0,
+        "min_area": 35.0,
+        "max_area": 55.0,
+        "min_width": 4000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/finished_storage"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/waste_hold",
+        "type": "waste_hold",
+        "target_area": 30.0,
+        "min_area": 24.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/production"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/personnel_airlock",
+        "type": "personnel_airlock",
+        "target_area": 30.0,
+        "min_area": 24.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/staff_corridor",
+          "B/production"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/staff_changing",
+        "type": "changing_room",
+        "target_area": 36.0,
+        "min_area": 30.0,
+        "max_area": 45.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/staff_corridor"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/staff_corridor",
+        "type": "corridor",
+        "target_area": 54.0,
+        "min_area": 45.0,
+        "max_area": 70.0,
+        "min_width": 2400.0,
+        "min_depth": 2400.0,
+        "required_adjacency": [
+          "B/staff_changing",
+          "B/personnel_airlock",
+          "B/office"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/office",
+        "type": "office",
+        "target_area": 32.0,
+        "min_area": 25.0,
+        "max_area": 40.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/staff_corridor"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": true,
+        "is_heated": false
+      },
+      {
+        "id": "B/support_corridor_01",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "B/staff_corridor"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "B/support_corridor_02",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "B/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "B/support_corridor_03",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "B/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "B/support_corridor_04",
+        "type": "corridor",
+        "target_area": 40.0,
+        "min_area": 32.0,
+        "max_area": 52.0,
+        "min_width": 2400.0,
+        "min_depth": 12000.0,
+        "required_adjacency": [
+          "B/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false,
+        "rotatable": true
+      },
+      {
+        "id": "B/technical_01",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/storage_consumables_01",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/qc_laboratory_01",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "B/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/wash_01",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/plant_room_01",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/staff_support_01",
+        "type": "staff_support",
+        "target_area": 26.0,
+        "min_area": 22.1,
+        "max_area": 32.5,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_01"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/technical_02",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/storage_consumables_02",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/qc_laboratory_02",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "B/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/wash_02",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/plant_room_02",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/staff_support_02",
+        "type": "staff_support",
+        "target_area": 26.0,
+        "min_area": 22.1,
+        "max_area": 32.5,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_02"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/technical_03",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/storage_consumables_03",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/qc_laboratory_03",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "B/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/wash_03",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/plant_room_03",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/staff_support_03",
+        "type": "staff_support",
+        "target_area": 26.0,
+        "min_area": 22.1,
+        "max_area": 32.5,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_03"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/technical_04",
+        "type": "technical",
+        "target_area": 36.0,
+        "min_area": 30.6,
+        "max_area": 45.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/storage_consumables_04",
+        "type": "storage_consumables",
+        "target_area": 28.0,
+        "min_area": 23.8,
+        "max_area": 35.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/qc_laboratory_04",
+        "type": "qc_laboratory",
+        "target_area": 44.0,
+        "min_area": 37.4,
+        "max_area": 55.0,
+        "min_width": 5500.0,
+        "min_depth": 6500.0,
+        "required_adjacency": [
+          "B/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/wash_04",
+        "type": "wash",
+        "target_area": 24.0,
+        "min_area": 20.4,
+        "max_area": 30.0,
+        "min_width": 4000.0,
+        "min_depth": 5000.0,
+        "required_adjacency": [
+          "B/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      },
+      {
+        "id": "B/plant_room_04",
+        "type": "plant_room",
+        "target_area": 40.0,
+        "min_area": 34.0,
+        "max_area": 50.0,
+        "min_width": 5000.0,
+        "min_depth": 6000.0,
+        "required_adjacency": [
+          "B/support_corridor_04"
+        ],
+        "preferred_adjacency": [],
+        "forbidden_adjacency": [],
+        "needs_daylight": false,
+        "is_heated": false
+      }
+    ]
+  },
+  "zones": [
+    {
+      "id": "A/logistics",
+      "type": "logistics",
+      "room_ids": [
+        "A/receiving",
+        "A/raw_storage",
+        "A/finished_storage",
+        "A/dispatch"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    },
+    {
+      "id": "A/cleanroom_core",
+      "type": "cleanroom",
+      "room_ids": [
+        "A/preparation",
+        "A/production",
+        "A/packaging"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "cleanroom_class": "ISO 7",
+      "pressure_pa": 30.0
+    },
+    {
+      "id": "A/personnel_gateway",
+      "type": "personnel_airlock",
+      "room_ids": [
+        "A/personnel_airlock"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "parent_zone_id": "A/cleanroom_core",
+      "cleanroom_class": "ISO 8",
+      "pressure_pa": 20.0,
+      "airlock": true
+    },
+    {
+      "id": "A/material_gateway",
+      "type": "material_airlock",
+      "room_ids": [
+        "A/material_airlock"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "parent_zone_id": "A/cleanroom_core",
+      "cleanroom_class": "ISO 8",
+      "pressure_pa": 20.0,
+      "airlock": true
+    },
+    {
+      "id": "A/waste_zone",
+      "type": "waste",
+      "room_ids": [
+        "A/waste_hold"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    },
+    {
+      "id": "A/staff_zone",
+      "type": "staff",
+      "room_ids": [
+        "A/staff_changing",
+        "A/staff_corridor",
+        "A/office"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    },
+    {
+      "id": "A/support_zone",
+      "type": "support",
+      "room_ids": [
+        "A/technical_01",
+        "A/storage_consumables_01",
+        "A/qc_laboratory_01",
+        "A/wash_01",
+        "A/plant_room_01",
+        "A/staff_support_01",
+        "A/technical_02",
+        "A/storage_consumables_02",
+        "A/qc_laboratory_02",
+        "A/wash_02",
+        "A/plant_room_02",
+        "A/staff_support_02",
+        "A/technical_03",
+        "A/storage_consumables_03",
+        "A/qc_laboratory_03",
+        "A/wash_03",
+        "A/plant_room_03",
+        "A/staff_support_03",
+        "A/technical_04",
+        "A/storage_consumables_04",
+        "A/qc_laboratory_04",
+        "A/wash_04",
+        "A/plant_room_04",
+        "A/support_corridor_01",
+        "A/support_corridor_02",
+        "A/support_corridor_03",
+        "A/support_corridor_04"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    },
+    {
+      "id": "B/logistics",
+      "type": "logistics",
+      "room_ids": [
+        "B/receiving",
+        "B/raw_storage",
+        "B/finished_storage",
+        "B/dispatch"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    },
+    {
+      "id": "B/cleanroom_core",
+      "type": "cleanroom",
+      "room_ids": [
+        "B/preparation",
+        "B/production",
+        "B/packaging"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "cleanroom_class": "ISO 7",
+      "pressure_pa": 30.0
+    },
+    {
+      "id": "B/personnel_gateway",
+      "type": "personnel_airlock",
+      "room_ids": [
+        "B/personnel_airlock"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "parent_zone_id": "B/cleanroom_core",
+      "cleanroom_class": "ISO 8",
+      "pressure_pa": 20.0,
+      "airlock": true
+    },
+    {
+      "id": "B/material_gateway",
+      "type": "material_airlock",
+      "room_ids": [
+        "B/material_airlock"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": [],
+      "parent_zone_id": "B/cleanroom_core",
+      "cleanroom_class": "ISO 8",
+      "pressure_pa": 20.0,
+      "airlock": true
+    },
+    {
+      "id": "B/waste_zone",
+      "type": "waste",
+      "room_ids": [
+        "B/waste_hold"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    },
+    {
+      "id": "B/staff_zone",
+      "type": "staff",
+      "room_ids": [
+        "B/staff_changing",
+        "B/staff_corridor",
+        "B/office"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    },
+    {
+      "id": "B/support_zone",
+      "type": "support",
+      "room_ids": [
+        "B/technical_01",
+        "B/storage_consumables_01",
+        "B/qc_laboratory_01",
+        "B/wash_01",
+        "B/plant_room_01",
+        "B/staff_support_01",
+        "B/technical_02",
+        "B/storage_consumables_02",
+        "B/qc_laboratory_02",
+        "B/wash_02",
+        "B/plant_room_02",
+        "B/staff_support_02",
+        "B/technical_03",
+        "B/storage_consumables_03",
+        "B/qc_laboratory_03",
+        "B/wash_03",
+        "B/plant_room_03",
+        "B/staff_support_03",
+        "B/technical_04",
+        "B/storage_consumables_04",
+        "B/qc_laboratory_04",
+        "B/wash_04",
+        "B/plant_room_04",
+        "B/support_corridor_01",
+        "B/support_corridor_02",
+        "B/support_corridor_03",
+        "B/support_corridor_04"
+      ],
+      "required_adjacency": [],
+      "preferred_adjacency": [],
+      "forbidden_adjacency": []
+    }
+  ],
+  "equipment": [
+    {
+      "id": "A/loading_dock_01",
+      "type": "loading_dock",
+      "width_mm": 3000.0,
+      "depth_mm": 2500.0,
+      "clearance_front_mm": 2500.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": false,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/receiving"
+    },
+    {
+      "id": "A/cold_store_01",
+      "type": "cold_store",
+      "width_mm": 2800.0,
+      "depth_mm": 3200.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": false,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/raw_storage"
+    },
+    {
+      "id": "A/mixer_01",
+      "type": "mixer",
+      "width_mm": 1800.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 600.0,
+      "clearance_right_mm": 600.0,
+      "rotation_allowed": false,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/preparation"
+    },
+    {
+      "id": "A/production_line_01",
+      "type": "production_line",
+      "width_mm": 9000.0,
+      "depth_mm": 2200.0,
+      "clearance_front_mm": 1800.0,
+      "clearance_back_mm": 1200.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": false,
+      "fixed": true,
+      "anchor_offset_mm": 1000.0,
+      "room_id": "A/production",
+      "anchor_side": "top"
+    },
+    {
+      "id": "A/packaging_line_01",
+      "type": "packaging_line",
+      "width_mm": 6000.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1500.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 600.0,
+      "clearance_right_mm": 600.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/packaging"
+    },
+    {
+      "id": "A/autoclave_01",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/technical_01"
+    },
+    {
+      "id": "A/bench_02",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/storage_consumables_01"
+    },
+    {
+      "id": "A/chiller_03",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/qc_laboratory_01"
+    },
+    {
+      "id": "A/cabinet_04",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/wash_01"
+    },
+    {
+      "id": "A/pump_skid_05",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/plant_room_01"
+    },
+    {
+      "id": "A/autoclave_06",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/staff_support_01"
+    },
+    {
+      "id": "A/bench_07",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/technical_02"
+    },
+    {
+      "id": "A/chiller_08",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/storage_consumables_02"
+    },
+    {
+      "id": "A/cabinet_09",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/qc_laboratory_02"
+    },
+    {
+      "id": "A/pump_skid_10",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/wash_02"
+    },
+    {
+      "id": "A/autoclave_11",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/plant_room_02"
+    },
+    {
+      "id": "A/bench_12",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/staff_support_02"
+    },
+    {
+      "id": "A/chiller_13",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/technical_03"
+    },
+    {
+      "id": "A/cabinet_14",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/storage_consumables_03"
+    },
+    {
+      "id": "A/pump_skid_15",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/qc_laboratory_03"
+    },
+    {
+      "id": "A/autoclave_16",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/wash_03"
+    },
+    {
+      "id": "A/bench_17",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/plant_room_03"
+    },
+    {
+      "id": "A/chiller_18",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/staff_support_03"
+    },
+    {
+      "id": "A/cabinet_19",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/technical_04"
+    },
+    {
+      "id": "A/pump_skid_20",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/storage_consumables_04"
+    },
+    {
+      "id": "A/autoclave_21",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/qc_laboratory_04"
+    },
+    {
+      "id": "A/bench_22",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/wash_04"
+    },
+    {
+      "id": "A/chiller_23",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/plant_room_04"
+    },
+    {
+      "id": "A/cabinet_24",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/technical_01"
+    },
+    {
+      "id": "A/pump_skid_25",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "A/storage_consumables_01"
+    },
+    {
+      "id": "B/loading_dock_01",
+      "type": "loading_dock",
+      "width_mm": 3000.0,
+      "depth_mm": 2500.0,
+      "clearance_front_mm": 2500.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": false,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/receiving"
+    },
+    {
+      "id": "B/cold_store_01",
+      "type": "cold_store",
+      "width_mm": 2800.0,
+      "depth_mm": 3200.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": false,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/raw_storage"
+    },
+    {
+      "id": "B/mixer_01",
+      "type": "mixer",
+      "width_mm": 1800.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 600.0,
+      "clearance_right_mm": 600.0,
+      "rotation_allowed": false,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/preparation"
+    },
+    {
+      "id": "B/production_line_01",
+      "type": "production_line",
+      "width_mm": 9000.0,
+      "depth_mm": 2200.0,
+      "clearance_front_mm": 1800.0,
+      "clearance_back_mm": 1200.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": false,
+      "fixed": true,
+      "anchor_offset_mm": 1000.0,
+      "room_id": "B/production",
+      "anchor_side": "top"
+    },
+    {
+      "id": "B/packaging_line_01",
+      "type": "packaging_line",
+      "width_mm": 6000.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1500.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 600.0,
+      "clearance_right_mm": 600.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/packaging"
+    },
+    {
+      "id": "B/autoclave_01",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/technical_01"
+    },
+    {
+      "id": "B/bench_02",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/storage_consumables_01"
+    },
+    {
+      "id": "B/chiller_03",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/qc_laboratory_01"
+    },
+    {
+      "id": "B/cabinet_04",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/wash_01"
+    },
+    {
+      "id": "B/pump_skid_05",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/plant_room_01"
+    },
+    {
+      "id": "B/autoclave_06",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/staff_support_01"
+    },
+    {
+      "id": "B/bench_07",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/technical_02"
+    },
+    {
+      "id": "B/chiller_08",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/storage_consumables_02"
+    },
+    {
+      "id": "B/cabinet_09",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/qc_laboratory_02"
+    },
+    {
+      "id": "B/pump_skid_10",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/wash_02"
+    },
+    {
+      "id": "B/autoclave_11",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/plant_room_02"
+    },
+    {
+      "id": "B/bench_12",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/staff_support_02"
+    },
+    {
+      "id": "B/chiller_13",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/technical_03"
+    },
+    {
+      "id": "B/cabinet_14",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/storage_consumables_03"
+    },
+    {
+      "id": "B/pump_skid_15",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/qc_laboratory_03"
+    },
+    {
+      "id": "B/autoclave_16",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/wash_03"
+    },
+    {
+      "id": "B/bench_17",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/plant_room_03"
+    },
+    {
+      "id": "B/chiller_18",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/staff_support_03"
+    },
+    {
+      "id": "B/cabinet_19",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/technical_04"
+    },
+    {
+      "id": "B/pump_skid_20",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/storage_consumables_04"
+    },
+    {
+      "id": "B/autoclave_21",
+      "type": "autoclave",
+      "width_mm": 2200.0,
+      "depth_mm": 1600.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 900.0,
+      "clearance_left_mm": 900.0,
+      "clearance_right_mm": 900.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/qc_laboratory_04"
+    },
+    {
+      "id": "B/bench_22",
+      "type": "bench",
+      "width_mm": 3000.0,
+      "depth_mm": 900.0,
+      "clearance_front_mm": 1200.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/wash_04"
+    },
+    {
+      "id": "B/chiller_23",
+      "type": "chiller",
+      "width_mm": 1800.0,
+      "depth_mm": 1800.0,
+      "clearance_front_mm": 1000.0,
+      "clearance_back_mm": 1000.0,
+      "clearance_left_mm": 1000.0,
+      "clearance_right_mm": 1000.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/plant_room_04"
+    },
+    {
+      "id": "B/cabinet_24",
+      "type": "cabinet",
+      "width_mm": 1200.0,
+      "depth_mm": 800.0,
+      "clearance_front_mm": 900.0,
+      "clearance_back_mm": 0.0,
+      "clearance_left_mm": 0.0,
+      "clearance_right_mm": 0.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/technical_01"
+    },
+    {
+      "id": "B/pump_skid_25",
+      "type": "pump_skid",
+      "width_mm": 2400.0,
+      "depth_mm": 1400.0,
+      "clearance_front_mm": 800.0,
+      "clearance_back_mm": 800.0,
+      "clearance_left_mm": 800.0,
+      "clearance_right_mm": 800.0,
+      "rotation_allowed": true,
+      "fixed": false,
+      "anchor_offset_mm": 0.0,
+      "room_id": "B/storage_consumables_01"
+    }
+  ],
+  "flows": [
+    {
+      "id": "A/raw_material_to_airlock",
+      "type": "material",
+      "from_ids": [
+        "A/cold_store_01"
+      ],
+      "to_ids": [
+        "A/material_airlock"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "raw_material"
+    },
+    {
+      "id": "A/material_to_production",
+      "type": "material",
+      "from_ids": [
+        "A/material_airlock"
+      ],
+      "to_ids": [
+        "A/production_line_01"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "production"
+    },
+    {
+      "id": "A/packaging_transfer",
+      "type": "material",
+      "from_ids": [
+        "A/production_line_01"
+      ],
+      "to_ids": [
+        "A/packaging_line_01"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "packaging"
+    },
+    {
+      "id": "A/finished_goods_out",
+      "type": "finished_goods",
+      "from_ids": [
+        "A/packaging_line_01"
+      ],
+      "to_ids": [
+        "A/finished_storage",
+        "A/dispatch"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "finished_goods"
+    },
+    {
+      "id": "A/personnel_access",
+      "type": "people",
+      "from_ids": [
+        "A/staff_changing"
+      ],
+      "to_ids": [
+        "A/production_line_01"
+      ],
+      "minimum_clear_width_mm": 1200.0,
+      "required": true,
+      "stage": "personnel"
+    },
+    {
+      "id": "A/dirty_material_out",
+      "type": "dirty_material",
+      "from_ids": [
+        "A/production_line_01"
+      ],
+      "to_ids": [
+        "A/waste_hold"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true
+    },
+    {
+      "id": "A/waste_out",
+      "type": "waste",
+      "from_ids": [
+        "A/production_line_01"
+      ],
+      "to_ids": [
+        "A/waste_hold"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "waste"
+    },
+    {
+      "id": "B/raw_material_to_airlock",
+      "type": "material",
+      "from_ids": [
+        "B/cold_store_01"
+      ],
+      "to_ids": [
+        "B/material_airlock"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "raw_material"
+    },
+    {
+      "id": "B/material_to_production",
+      "type": "material",
+      "from_ids": [
+        "B/material_airlock"
+      ],
+      "to_ids": [
+        "B/production_line_01"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "production"
+    },
+    {
+      "id": "B/packaging_transfer",
+      "type": "material",
+      "from_ids": [
+        "B/production_line_01"
+      ],
+      "to_ids": [
+        "B/packaging_line_01"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "packaging"
+    },
+    {
+      "id": "B/finished_goods_out",
+      "type": "finished_goods",
+      "from_ids": [
+        "B/packaging_line_01"
+      ],
+      "to_ids": [
+        "B/finished_storage",
+        "B/dispatch"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "finished_goods"
+    },
+    {
+      "id": "B/personnel_access",
+      "type": "people",
+      "from_ids": [
+        "B/staff_changing"
+      ],
+      "to_ids": [
+        "B/production_line_01"
+      ],
+      "minimum_clear_width_mm": 1200.0,
+      "required": true,
+      "stage": "personnel"
+    },
+    {
+      "id": "B/dirty_material_out",
+      "type": "dirty_material",
+      "from_ids": [
+        "B/production_line_01"
+      ],
+      "to_ids": [
+        "B/waste_hold"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true
+    },
+    {
+      "id": "B/waste_out",
+      "type": "waste",
+      "from_ids": [
+        "B/production_line_01"
+      ],
+      "to_ids": [
+        "B/waste_hold"
+      ],
+      "minimum_clear_width_mm": 1800.0,
+      "required": true,
+      "stage": "waste"
+    }
+  ],
+  "structural_grid": {
+    "axes_x_mm": [
+      0.0,
+      6000.0,
+      12000.0,
+      18000.0,
+      24000.0,
+      30000.0,
+      36000.0,
+      42000.0,
+      48000.0,
+      54000.0,
+      60000.0,
+      66000.0,
+      72000.0,
+      76400.0,
+      82400.0,
+      88400.0,
+      94400.0,
+      100400.0,
+      106400.0,
+      112400.0,
+      118400.0,
+      124400.0,
+      130400.0,
+      136400.0,
+      142400.0,
+      148400.0
+    ],
+    "axes_y_mm": [
+      0.0,
+      6000.0,
+      12000.0,
+      18000.0,
+      24000.0,
+      30000.0,
+      36000.0,
+      42000.0
+    ],
+    "labels_x": [
+      "A/A",
+      "A/B",
+      "A/C",
+      "A/D",
+      "A/E",
+      "A/F",
+      "A/G",
+      "A/H",
+      "A/I",
+      "A/J",
+      "A/K",
+      "A/L",
+      "A/M",
+      "B/A",
+      "B/B",
+      "B/C",
+      "B/D",
+      "B/E",
+      "B/F",
+      "B/G",
+      "B/H",
+      "B/I",
+      "B/J",
+      "B/K",
+      "B/L",
+      "B/M"
+    ],
+    "labels_y": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8"
+    ]
+  }
+}
