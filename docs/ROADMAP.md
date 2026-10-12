@@ -31,6 +31,8 @@ real local HTTP fixtures and a confirmed changed-program solve.
 Checkpoint G.2 verifies calibrated vector-PDF candidate selection and confirmed
 fixed-coordinate generation. The pinned `dff5603` remote acceptance passed all
 four jobs; current-product work remains tracked separately from this archive.
+Checkpoint B.1 verifies the orthogonal kernel foundation; it does not mark
+polygon generation or downstream CAD/BIM acceptance complete.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

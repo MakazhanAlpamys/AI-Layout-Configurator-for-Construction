@@ -34,6 +34,8 @@ Checkpoint G.2 adds explicitly calibrated and selected rectangular vector-PDF
 drafts with source/page hashes, confirmed fixed coordinates and full bundle QA.
 The pinned `dff5603` acceptance run passed Windows, Linux, pharma and the
 deployed API/container; later checkpoint CI evidence is tracked in the ledger.
+Checkpoint B.1 supplies a validated orthogonal geometry kernel with exact
+footprint operations; result contracts and downstream integration remain open.
 
 ## 1. Why we are expanding the project
 
