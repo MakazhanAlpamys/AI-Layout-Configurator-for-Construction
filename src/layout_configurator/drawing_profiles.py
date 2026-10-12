@@ -8,6 +8,7 @@ _PRESETS = {
     "coordination_review": {},
     "architecture_dimensions": {
         "show_room_dimensions": True, "show_structural_grid": True,
+        "show_dimension_chains": True,
         "show_equipment_clearance": False, "show_flow_legend": False,
         "show_flow_labels": False,
     },
@@ -42,7 +43,7 @@ def resolve_drawing_settings(raw: Mapping) -> dict:
     if not isinstance(raw, Mapping):
         raise ValueError("Drawing settings must be an object")
     defaults = FacilityDrawingProfile().to_dict()
-    if set(raw) - set(defaults) - {"preset", "equipment_symbols"}:
+    if set(raw) - set(defaults) - {"preset", "equipment_symbols", "show_dimension_chains"}:
         raise ValueError("Drawing settings contain unknown fields")
     preset = raw.get("preset", "coordination_review")
     if not isinstance(preset, str) or preset not in _PRESETS:
@@ -54,6 +55,10 @@ def resolve_drawing_settings(raw: Mapping) -> dict:
             from .drawing_symbols import parse_symbol_assignments
 
             parse_symbol_assignments(value)
+            continue
+        if key == 'show_dimension_chains':
+            if type(value) is not bool:
+                raise ValueError('Drawing show_dimension_chains must be a boolean')
             continue
         if isinstance(defaults[key], bool):
             if type(value) is not bool:

@@ -141,6 +141,13 @@ def validate_building_bundle(
 
     checks.append(_qa_manifest(manifest, source, (dxf, pdf, ifc, bcf, coordination)))
     checks.append(_qa_dxf(dxf, len(equipment.placements), len(routes.routes)))
+    if selected_profile.drawing.show_dimension_chains:
+        from .dimension_chains import validate_dimension_chains_dxf
+
+        dimensions = validate_dimension_chains_dxf(dxf, building.layout, result, building.structural_grid)
+        checks.append(BundleQACheck('DIMENSION_CHAINS_READBACK', dimensions['ok'],
+            'Native source dimension readback passes' if dimensions['ok'] else 'Native source dimension readback failed',
+            dimensions))
     checks.append(_qa_pdf(pdf))
     history_check, history = _qa_optional_revision_history(manifest, source, payload, building, selected_profile)
     if history_check is not None:

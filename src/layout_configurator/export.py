@@ -9,6 +9,8 @@ from pathlib import Path
 from .building import BuildingIR, EquipmentSpec, StructuralGridSpec
 from .equipment import EquipmentLayoutResult, clearance_rect
 from .drawing_symbols import draw_equipment_symbol_pdf, equipment_symbol_paths, validate_symbol_assignments
+from .dimension_chains import (DIMENSION_PADDING_MM, DIMENSION_MIN_PADDING_PT, build_dimension_chains,
+                               draw_dimension_chains_dxf, draw_dimension_chains_pdf)
 from .facility import FacilityDrawingProfile
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
@@ -53,6 +55,7 @@ def export_dxf(
     if drawing.equipment_symbols:
         equipment_specs = tuple(equipment_specs or ())
     symbols = validate_symbol_assignments(drawing, equipment_specs or ()) if drawing.equipment_symbols else {}
+    chains = build_dimension_chains(spec, result, structural_grid) if drawing.show_dimension_chains else ()
     document = ezdxf.new("R2018")
     document.header["$INSUNITS"] = 4
     for name in LAYERS:
@@ -110,14 +113,17 @@ def export_dxf(
             )
             dimension.set_placement((rect.center[0], rect.y + 180), align=TextEntityAlignment.MIDDLE_CENTER)
 
-    modelspace.add_line((0, -500), (boundary.width_mm, -500), dxfattribs={"layer": "A-DIMS"})
-    modelspace.add_text(f"{boundary.width_mm:.0f} mm", dxfattribs={"height": 180, "layer": "A-DIMS"}).set_placement(
-        (boundary.width_mm / 2, -800), align=TextEntityAlignment.MIDDLE_CENTER
-    )
-    modelspace.add_line((-500, 0), (-500, boundary.height_mm), dxfattribs={"layer": "A-DIMS"})
-    modelspace.add_text(f"{boundary.height_mm:.0f} mm", dxfattribs={"height": 180, "layer": "A-DIMS"}).set_placement(
-        (-800, boundary.height_mm / 2), align=TextEntityAlignment.MIDDLE_CENTER
-    )
+    if not chains:
+        modelspace.add_line((0, -500), (boundary.width_mm, -500), dxfattribs={"layer": "A-DIMS"})
+        modelspace.add_text(f"{boundary.width_mm:.0f} mm", dxfattribs={"height": 180, "layer": "A-DIMS"}).set_placement(
+            (boundary.width_mm / 2, -800), align=TextEntityAlignment.MIDDLE_CENTER
+        )
+        modelspace.add_line((-500, 0), (-500, boundary.height_mm), dxfattribs={"layer": "A-DIMS"})
+        modelspace.add_text(f"{boundary.height_mm:.0f} mm", dxfattribs={"height": 180, "layer": "A-DIMS"}).set_placement(
+            (-800, boundary.height_mm / 2), align=TextEntityAlignment.MIDDLE_CENTER
+        )
+    if chains:
+        draw_dimension_chains_dxf(document, modelspace, chains)
 
     for opening in wall_plan.openings:
         block_name = f"DOOR_{opening.width:.0f}"
@@ -221,15 +227,21 @@ def export_pdf(
     if drawing.equipment_symbols:
         equipment_specs = tuple(equipment_specs or ())
     symbols = validate_symbol_assignments(drawing, equipment_specs or ()) if drawing.equipment_symbols else {}
+    chains = build_dimension_chains(spec, result, structural_grid) if drawing.show_dimension_chains else ()
     page_width, page_height = landscape(A3)
     margin = 45
     title_height = 45
+    padding = DIMENSION_PADDING_MM if chains else 0
     scale = min(
-        (page_width - 2 * margin) / spec.boundary.width_mm,
-        (page_height - 2 * margin - title_height) / spec.boundary.height_mm,
+        (page_width - 2 * margin) / (spec.boundary.width_mm + padding),
+        (page_height - 2 * margin - title_height) / (spec.boundary.height_mm + padding),
     )
-    origin_x = margin
-    origin_y = margin + title_height
+    if chains:
+        scale = min(scale, (page_width - 2 * margin - DIMENSION_MIN_PADDING_PT) / spec.boundary.width_mm,
+                    (page_height - 2 * margin - title_height - DIMENSION_MIN_PADDING_PT) / spec.boundary.height_mm)
+        padding = max(padding, DIMENSION_MIN_PADDING_PT / scale)
+    origin_x = margin + padding * scale
+    origin_y = margin + title_height + padding * scale
     pdf = canvas.Canvas(str(path), pagesize=(page_width, page_height))
     pdf.setTitle(f"{spec.project_name} - variant {result.variant}")
 
@@ -257,6 +269,9 @@ def export_pdf(
             path.lineTo(*point(ring_x, ring_y))
         path.close()
         pdf.drawPath(path, stroke=1, fill=0)
+
+    if chains:
+        draw_dimension_chains_pdf(pdf, point, chains)
 
     for room in spec.rooms:
         rect = result.placements[room.id]

@@ -69,6 +69,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | D.4.1 | Equipment DXF block label coordinates | Block text uses local equipment-frame coordinates, so insertion applies the source placement exactly once. Default and selected symbols retain centered ID/type labels for both orientations. | Actual DXF virtual-entity RED: four cases displaced by the full 3,400/4,500 mm source x offset. Fresh symbols/exports/facility regression after the repair: 38 passed, 10 subtests, including all four source-coordinate checks. | repair complete 2026-10-12 |
 | G.5 / NEXT 3.1 | Canonical browser program entry and checked generation | Blank visible schema controls produce canonical BuildingIR; protected input validation, persistent generation and downloads reuse the existing API. Stale edits invalidate validation; tokens remain in browser memory. Installed wheels serve the same controls/resources. | Fresh root API/form/UI/wheel: 48 passed, 55 subtests. Fresh real-browser full-pilot comparison: 1 passed in 57.15 s; agent additional blank/small cases: 2 passed. Same working-tree Windows runtime fingerprint `4ac1d791e0d209444a07d1991f2c872c2164dde911dad9637c05211913a5e763`: both complete QA and strict EXPRESS pass, all 540 IFC root IDs match. BCF has zero topics; no positive topic identity claim. Root inspected the final gate/download screenshot. | software criterion complete 2026-10-12 for same-runtime pilot; clean pinned milestone CI and external acceptance remain separate |
 | G.5.1 | Browser symbol assignments reference actual equipment | Input validation uses the shared strict assignment check against the canonical equipment inventory. Missing, room/zone or whitespace-altered IDs return scoped structured errors before queuing or output. | Actual VALID_INPUT RED: seven failures before the hook. Fresh root form/HTTP/symbol/preset: 22 passed, 60 subtests. Agent additional API regression: 33 passed, 64 subtests. HTTP negatives assert 400 and no jobs/files. | repair complete 2026-10-12 |
+| D.5 | Editable source dimension chains and scoped artifact QA | Native DXF dimensions retain actual room-edge/axis/overall coordinate stations, fractional millimetres and hashed identities. Vector PDFs reserve readable gutters and publish complete interval schedules. Opted-in bundle QA checks real native definitions, units, automatic text and measurement factor; legacy defaults remain. | Five missing-feature REDs, actual forged measurement-factor false PASS, and missing bundle-hook RED preceded implementation. Fresh root dimensions/profiles/symbols/sheets/readback/bundle/exports/facility/QA: 83 passed, 46 subtests. All seven final actual pilot PDF pages were Poppler-rendered and visually inspected. | complete 2026-10-12 for rectangular source dimension projection; vendor-tool and engineering acceptance remain separate |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -93,6 +94,7 @@ Cyrillic text.
 
 
 
+
 ## Remaining implementation
 
 - B: integrated selectable orthogonal generation, process routes, full
@@ -100,8 +102,8 @@ Cyrillic text.
   footprints, finite room/equipment solvers and scoped predicates exist.
 - C: zone-driven placement and containment; structured, per-stage constraint
   explanations. Preferred-zone singleton participants can increase search cost.
-- D: editable dimension chains and extended discipline/manufacturer symbol
-  libraries; named presentation presets, initial project schematic symbols,
+- D: extended discipline/manufacturer symbol libraries and receiving-tool
+  acceptance; editable source dimension chains, named presentation presets, initial project schematic symbols,
   thematic vector sheets, indexed legends and supplied revision history exist.
 - E: independent receiving-tool review of semantic IFC zones, declared systems
   and spatial exchange; grouping does not establish engineered MEP design.

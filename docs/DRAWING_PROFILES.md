@@ -29,11 +29,13 @@ legend offsets. Existing rule packs without a preset retain their previous
 behavior. `drawing_profile_catalog()` returns independent effective mappings;
 `resolve_drawing_settings(mapping)` also offers a strict programmatic boundary.
 
+The architecture preset also enables source dimension chains. Other presets
+retain their previous annotation settings unless explicitly overridden.
+
 These are project presentation presets, not jurisdiction standards or engineering
 approval. Hiding an annotation never removes its validation requirement. The
 thematic sheet set still includes every theme and its source inventory. Complete
-discipline-specific symbol libraries and editable dimension chains remain
-separate Cycle D requirements.
+discipline-specific symbol libraries remain a separate Cycle D requirement.
 
 ## Explicit equipment and sanitary symbols
 
@@ -61,3 +63,27 @@ assignments enter canonical drawing serialization and cache fingerprints.
 These schematic paths are not manufacturer geometry or engineering approval.
 They do not change equipment dimensions, placement, service clearances, routes
 or rule thresholds. Absent assignments preserve the existing drawing behavior.
+
+## Source dimension chains
+
+`show_dimension_chains: true` adds ordered coordinate chains for projected room
+edges, declared structural axes and overall source extents. It is enabled by
+`architecture_dimensions`; the legacy default is false and retains its canonical
+serialization. The switch is strictly boolean and can be overridden explicitly.
+
+Room-edge stations project all actual rectangular room edges onto each axis;
+they do not assert that the intervals form one continuous facade. Coordinates
+and fractional millimetres are preserved. Native DXF `DIMENSION` entities on
+`A-DIMS` retain editable definition points, automatic measurement text and stable
+source identities/hashes in `FLC_DIM`. Native overall dimensions replace the
+legacy overall line/text pair when enabled.
+
+PDFs draw the same measured spans as vectors. Thematic schedules list every
+source interval; dense values remain in the complete schedule when inline text
+does not fit. Paper-space gutters keep chains clear of grid labels, and the page
+scale accounts for their bounds. Projection is bounded to 1,000 segments.
+
+`validate_dimension_chains_dxf()` independently reads actual definition points,
+millimetre units, inventory, metadata, native measurement and measurement factor.
+Opted-in full bundle QA adds `DIMENSION_CHAINS_READBACK`; absent chains preserve
+legacy checks. Native CAD/BIM receiving-tool acceptance remains an external gate.

@@ -27,6 +27,8 @@ from .facility import FacilityDrawingProfile
 from .flows import FlowRoutingResult
 from .models import LayoutResult, Rect
 from .result_geometry import require_rectangular_layout
+from .dimension_chains import (DIMENSION_PADDING_MM, DIMENSION_MIN_PADDING_PT, build_dimension_chains,
+                               dimension_chain_schedule, draw_dimension_chains_pdf)
 from .walls import WallPlan, build_wall_plan
 
 
@@ -105,10 +107,13 @@ def export_drawing_sheet_set(
         source_text.extend((*building.structural_grid.labels_x, *building.structural_grid.labels_y))
     _check_glyphs(source_text, regular)
 
-    scale_denominator = _scale_denominator(building)
+    padding = DIMENSION_PADDING_MM if drawing.show_dimension_chains else 0
+    scale_denominator = _scale_denominator(building, padding)
     scale = 72.0 / 25.4 / scale_denominator
-    origin_x = _PLAN_LEFT + (_PLAN_RIGHT - _PLAN_LEFT - building.layout.boundary.width_mm * scale) / 2
-    origin_y = _PLAN_BOTTOM + (_PLAN_TOP - _PLAN_BOTTOM - building.layout.boundary.height_mm * scale) / 2
+    if padding:
+        padding = max(padding, DIMENSION_MIN_PADDING_PT / scale)
+    origin_x = _PLAN_LEFT + (_PLAN_RIGHT - _PLAN_LEFT - (building.layout.boundary.width_mm + padding) * scale) / 2 + padding * scale
+    origin_y = _PLAN_BOTTOM + (_PLAN_TOP - _PLAN_BOTTOM - (building.layout.boundary.height_mm + padding) * scale) / 2 + padding * scale
     point = lambda x, y: (origin_x + x * scale, origin_y + y * scale)
     planned = []
     for kind, suffix, title in _THEMES:
@@ -251,10 +256,14 @@ def _check_glyphs(texts, font_name):
                              + ", ".join(f"U+{ord(char):04X}" for char in sorted(set(unsupported))))
 
 
-def _scale_denominator(building):
+def _scale_denominator(building, padding_mm=0):
     boundary = building.layout.boundary
-    required = max(boundary.width_mm * 72 / 25.4 / (_PLAN_RIGHT - _PLAN_LEFT),
-                   boundary.height_mm * 72 / 25.4 / (_PLAN_TOP - _PLAN_BOTTOM))
+    required = max((boundary.width_mm + padding_mm) * 72 / 25.4 / (_PLAN_RIGHT - _PLAN_LEFT),
+                   (boundary.height_mm + padding_mm) * 72 / 25.4 / (_PLAN_TOP - _PLAN_BOTTOM))
+    if padding_mm:
+        required = max(required,
+            boundary.width_mm * 72 / 25.4 / (_PLAN_RIGHT - _PLAN_LEFT - DIMENSION_MIN_PADDING_PT),
+            boundary.height_mm * 72 / 25.4 / (_PLAN_TOP - _PLAN_BOTTOM - DIMENSION_MIN_PADDING_PT))
     return next((value for value in (50, 100, 200, 250, 500, 1000, 2000, 5000) if value >= required), math.ceil(required / 1000) * 1000)
 
 
@@ -306,6 +315,10 @@ def _paginate(entries, font):
 
 def _legends(building, result, equipment, flows, egress_rows, drawing):
     legends = {kind: [] for kind, _, _ in _THEMES}
+    if drawing.show_dimension_chains:
+        schedule = dimension_chain_schedule(build_dimension_chains(building.layout, result, building.structural_grid))
+        for rows in legends.values():
+            rows.extend((_MUTED, text) for text in schedule)
     for index, zone in enumerate(sorted(building.zones, key=lambda item: item.id)):
         text = f"Z{index + 1:02d} {zone.id} | {zone.type} | direct: {', '.join(zone.room_ids) or 'none'}"
         if zone.parent_zone_id:
@@ -454,6 +467,9 @@ def _base_plan(pdf, building, result, wall_plan, point, scale, drawing, font):
             path.lineTo(*point(*xy))
         path.close()
         pdf.drawPath(path)
+    if drawing.show_dimension_chains:
+        draw_dimension_chains_pdf(pdf, point,
+            build_dimension_chains(building.layout, result, building.structural_grid), font)
 
 
 def _room_labels(building, result, point, scale, drawing, font):

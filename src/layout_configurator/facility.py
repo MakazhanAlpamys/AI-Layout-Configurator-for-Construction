@@ -63,6 +63,7 @@ class FacilityDrawingProfile:
     legend_offset_x_mm: float = 900.0
     legend_offset_y_mm: float = 1_200.0
     equipment_symbols: tuple[tuple[str, str], ...] = ()
+    show_dimension_chains: bool = False
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "FacilityDrawingProfile":
@@ -73,6 +74,8 @@ class FacilityDrawingProfile:
 
             raw = resolve_drawing_settings(raw)
         from .drawing_symbols import parse_symbol_assignments
+        if type(raw.get('show_dimension_chains', False)) is not bool:
+            raise ValueError('Drawing show_dimension_chains must be a boolean')
         return cls(
             sheet_id=str(raw.get("sheet_id", "A-101")).strip() or "A-101",
             discipline=str(raw.get("discipline", "Facility layout")).strip() or "Facility layout",
@@ -86,6 +89,7 @@ class FacilityDrawingProfile:
             legend_offset_x_mm=_profile_non_negative(raw.get("legend_offset_x_mm", 900), "legend_offset_x_mm"),
             legend_offset_y_mm=_profile_non_negative(raw.get("legend_offset_y_mm", 1_200), "legend_offset_y_mm"),
             equipment_symbols=parse_symbol_assignments(raw.get("equipment_symbols", {})),
+            show_dimension_chains=raw.get('show_dimension_chains', False),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -104,6 +108,8 @@ class FacilityDrawingProfile:
         }
         if self.equipment_symbols:
             result["equipment_symbols"] = dict(self.equipment_symbols)
+        if self.show_dimension_chains:
+            result['show_dimension_chains'] = True
         return result
 
 

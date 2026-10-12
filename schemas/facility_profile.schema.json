@@ -61,6 +61,7 @@
         "title": {"type": "string", "minLength": 1, "maxLength": 1024},
         "revision": {"type": "string", "minLength": 1, "maxLength": 1024},
         "show_room_dimensions": {"type": "boolean"},
+        "show_dimension_chains": {"type": "boolean"},
         "show_flow_legend": {"type": "boolean"},
         "show_flow_labels": {"type": "boolean"},
         "show_equipment_clearance": {"type": "boolean"},

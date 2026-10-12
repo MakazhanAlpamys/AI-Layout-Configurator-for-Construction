@@ -10,6 +10,8 @@ Checkpoint G.5 verifies full canonical browser pilot entry and same-runtime
 regeneration through every existing bundle gate.
 Checkpoint G.5.1 preserves strict source references for explicit symbol choices
 at the browser validation boundary.
+Checkpoint D.5 verifies editable source dimension chains, exact millimetre
+readback and corresponding vector-PDF projection.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
