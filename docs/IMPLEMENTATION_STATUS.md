@@ -51,6 +51,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 
 | D.1.1 | Independent thematic-sheet readback | Optional indexed PDFs are rechecked for hash, primary/continuation identities, canonical printed source/profile/variant/revision, real page count/A3 scale and vector content. Corrupt pages, raster overlays and changed printed fields fail even with a recalculated hash; legacy absent-index bundles keep their original checks. | Fresh root sheet-readback/legacy-QA/bundle run: 21 passed, 16 subtests. Agent wheel/API/editor/review/stack-QA integration: 80 passed, 43 subtests. Expected missing-hook and real title/path tamper RED preceded the repair. | complete 2026-10-12 for artifact readback; history/symbol catalog and engineering review remain separate |
 
+| B.3 | Exact orthogonal wall/opening and semantic DXF consumer | Mixed canonical footprints project actual wall edges and contiguous shared/exterior door segments. Closed semantic DXF rings retain true area, IDs, units and source/artifact hashes. Output is DRAFT; incomplete components return UNKNOWN and full consumer guards stay in place. | Fresh root projection/kernel/result/import run: 55 passed, 100 subtests. Agent broader source/export regression: 75 passed. Real DXF readback proves a 20 m² L-shape, its concave wall and a 900 mm gap; root visually inspected the derived readback image. Missing behavior and malformed-source RED preceded implementation. | complete 2026-10-12 for DRAFT projection; polygon solver/full gates/IFC integration pending |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable

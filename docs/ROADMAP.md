@@ -43,6 +43,8 @@ Checkpoint C.3.3 adds opt-in recursive physical zone containment and subtree
 failure evidence; default auto, fixed/axis parity and 80-room gates stay separate.
 Checkpoint D.1.1 adds independent thematic-PDF artifact checks while preserving
 legacy bundles without a sheet index; it does not issue engineering approval.
+Checkpoint B.3 adds exact orthogonal wall/opening and semantic DXF DRAFT
+projection without promoting partially checked polygon geometry to full PASS.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

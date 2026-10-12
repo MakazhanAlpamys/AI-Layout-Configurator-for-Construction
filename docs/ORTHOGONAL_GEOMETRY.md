@@ -42,3 +42,23 @@ polygon currently raises `UnsupportedGeometryError` with structured `UNKNOWN`
 capability evidence at walls/openings, equipment, routes, rules, ranking, viewer
 and DXF/PDF/IFC export boundaries. Solver selection and polygon consumer
 integration remain separate steps; rectangular generation remains supported.
+
+## Exact DRAFT wall and DXF projection
+
+`build_orthogonal_wall_plan(spec, result)` and
+`export_orthogonal_draft_dxf(path, spec, result)` provide a separate bounded
+polygon consumer. Walls follow actual orthogonal edges; Boolean differences
+cut openings on real shared boundaries. Automatic required-adjacency doors
+must fit one continuous segment, never a sum of disconnected contacts. An
+explicit shared/exterior opening is supported only when its side/offset selects
+one unambiguous actual segment. Window/daylight generation and ambiguous manual
+selectors return structured UNKNOWN capability evidence before writing output.
+
+The semantic DXF preserves closed room rings, true areas, stable room/door IDs,
+millimetre units and hashes of canonical spec/result and delivered artifact.
+Concave-room labels use an interior slab anchor. Invalid source contracts,
+area/overlap/boundary failures and forbidden contacts are rejected before output.
+The artifact is always **DRAFT**, with `ok: false`: usable room dimensions,
+full circulation and equipment clearance still need their own checks. Complete
+exporters keep their existing capability guards. Rectangular plan import rejects
+these polygon outlines rather than replacing them with bounding rectangles.

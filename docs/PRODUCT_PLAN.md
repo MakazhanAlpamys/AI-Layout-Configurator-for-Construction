@@ -56,6 +56,8 @@ Checkpoint C.3.3 solves physical descendant-zone containers bottom-up and expose
 explicit recursive facility/CLI/API dispatch with scoped subtree evidence.
 Checkpoint D.1.1 independently reads optional thematic PDFs against canonical
 source identity, index, page geometry and vector content, including tamper cases.
+Checkpoint B.3 projects exact polygon walls/doors and semantic DXF with source
+hashes and DRAFT evidence; full polygon generation/acceptance remains open.
 
 ## 1. Why we are expanding the project
 
