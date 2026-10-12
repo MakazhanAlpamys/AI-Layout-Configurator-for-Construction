@@ -100,6 +100,8 @@ Checkpoint G.5.1 rejects drawing symbol assignments to missing equipment at
 browser input validation, before any job or output is created.
 Checkpoint D.5 adds source-derived editable DXF dimension chains and vector PDF
 spans/schedules, with opted-in independent actual-definition bundle readback.
+Checkpoint H.3.4 adds independently checked soft hierarchy warm-starts and
+bounded auxiliary completion; the actual local synthetic 80-room gates pass.
 
 ## 1. Why we are expanding the project
 

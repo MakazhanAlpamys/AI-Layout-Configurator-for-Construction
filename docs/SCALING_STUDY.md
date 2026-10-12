@@ -250,3 +250,37 @@ Different equipment requirements correctly prevent reuse even for similarly
 named support clusters. NEXT 1.5 still requires an actual accepted 80-room program
 under 120 s on pinned CI hardware, a third hierarchy level and incremental
 re-solving. That criterion remains open.
+
+## Soft hierarchy warm-starts — 2026-10-12
+
+The direct hierarchy and automatic dispatcher accept `hint_rects` as optional
+room-to-rectangle search guidance. Partial or stale cluster hints do not remove
+ordinary patterns. A complete source cluster may add one independently checked
+shape with at most eight legal orientations; source dimensions, adjacency,
+grid and equipment-fit requirements are rechecked before supplementation.
+Positions remain soft, and hard constraints and preferences retain priority.
+
+A bounded cloned-model stage completes auxiliary hint variables with supplied
+values fixed only in that clone. Its budget is at most one second and .05 work
+units when deterministic units are supplied. Successful independently checked
+coordinates become complete soft hints in the unrestricted original global
+model. Failed completion returns ordinary repair search and cannot prove source
+infeasibility. Evidence retains completion/global statuses and actual timings.
+Hint repair uses one worker: the current OR-Tools parallel repair portfolio
+aborted inside its fixed-search heuristic during the real small counterexample.
+Ordinary no-hint hierarchy searches retain their existing worker policy.
+
+Repeated source-room resizing passes complete room/equipment/flow/profile gates.
+Nine no-hint/empty/disabled-cache result and evidence comparisons with `501065e`
+are byte-exact. Fresh root checks: 87 hierarchy/hint/cache/constraint tests with
+67 subtests, plus 29 editor/facility-editor/UI tests.
+
+The exact synthetic A/B clone of a supplied pinned accepted 40-room layout,
+with one hard receiving-room bridge, reached 80 rooms locally in 48.019 s:
+.584 s source validation/derivation, 20.595 s room search including .591 s cloned
+completion, and 26.837 s fresh equipment, routes and independent pharma gates.
+Final **unrestricted** global CP-SAT returned FEASIBLE with 1,207 complete soft
+hint values. Source-40 generation from scratch was excluded; its readback/check
+and derivation were included. This measurement excludes full persisted export
+and bundle QA. It is a scoped warm-start result, not general 80-room generation
+or CI acceptance. The unchanged complete persisted CI gate remains to measure.

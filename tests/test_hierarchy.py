@@ -99,7 +99,7 @@ class HierarchicalSolverTests(unittest.TestCase):
         with self.assertRaises(HierarchyNotApplicable):
             solve_layouts_auto(
                 spec, 1, 5, 1, strategy="hierarchical",
-                hint_rects={"office": Rect(0, 0, 5000, 4000)},
+                first_solution_only=True,
             )
         with self.assertRaises(ValueError):
             solve_layouts_auto(spec, 1, 5, 1, strategy="fastest")

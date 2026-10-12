@@ -122,11 +122,11 @@ class HierarchyShapeCacheTests(unittest.TestCase):
         evidence = {}
         result = solve_layouts_auto(
             spec, 1, 1, 1, cache_cluster_shapes=True, evidence=evidence,
-            hint_rects={"a_hub": Rect(0, 0, 2000, 4000)},
+            first_solution_only=True,
         )[0]
         self.assertTrue(validate_layout(spec, result).ok)
         self.assertEqual(evidence["room_solver_used"], "monolithic")
-        self.assertIn("hint_rects", evidence["hierarchy_fallback_reason"])
+        self.assertIn("first_solution_only", evidence["hierarchy_fallback_reason"])
 
 
 class ShapeCacheSafetyTests(unittest.TestCase):

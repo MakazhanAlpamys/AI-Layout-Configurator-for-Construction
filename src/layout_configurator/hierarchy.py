@@ -40,6 +40,7 @@ from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 
 from .models import BoundarySpec, LayoutIR, LayoutResult, Rect
+from .hierarchy_hints import HierarchyHints
 from .search import configure_solver
 from .shape_cache import ClusterShapeCache, cluster_shape_request
 from .solver import (
@@ -148,6 +149,7 @@ def solve_layouts_hierarchical(
     structural_axes_y_mm: Iterable[float] | None = None,
     cache_cluster_shapes: bool = False,
     evidence: dict | None = None,
+    hint_rects: Mapping[str, Rect] | None = None,
 ) -> list[LayoutResult]:
     """Return up to ``variants`` distinct layouts from the cluster hierarchy.
 
@@ -159,6 +161,9 @@ def solve_layouts_hierarchical(
     ``cache_cluster_shapes`` reuses independently validated shapes of ordered
     equivalent clusters within this invocation only. Its hit/miss report is
     written to ``evidence`` when enabled; the default search is unchanged.
+    ``hint_rects`` supplies soft search guidance. A complete, independently
+    valid cluster hint may add one source shape with its legal orientations,
+    retaining all ordinary patterns. CP-SAT repairs conflicting positions.
     """
 
     if variants < 1:
@@ -168,6 +173,11 @@ def solve_layouts_hierarchical(
     cache = ClusterShapeCache() if cache_cluster_shapes else None
     if cache is not None and evidence is not None:
         evidence["cluster_shape_cache"] = cache.evidence
+    if hint_rects is not None and not isinstance(hint_rects, Mapping):
+        raise ValueError("hint_rects must be a room-to-rectangle mapping")
+    hints = HierarchyHints(spec, hint_rects) if hint_rects else None
+    if hints is not None and evidence is not None:
+        evidence["hierarchy_hints"] = hints.evidence
     try:
         from ortools.sat.python import cp_model
     except ImportError as exc:  # pragma: no cover - dependency is declared in pyproject.toml
@@ -218,14 +228,15 @@ def solve_layouts_hierarchical(
         side_contacts = {room_id: external[room_id] for room_id in members if len(members) > 1 and external[room_id]}
         request = None
         found = None
-        if cache is not None:
+        if cache is not None or hints is not None:
             request = cluster_shape_request(
                 spec, members, side_contacts=side_contacts, fit_options=fit_options,
                 adjacency_mm=adjacency_mm, time_limit_seconds=time_limit_seconds,
                 seed=seed, deterministic_units=deterministic_units,
                 aspects=_ASPECTS, fills=_FILLS, max_shapes=_MAX_SHAPES,
             )
-            found = cache.get(request)
+            if cache is not None:
+                found = cache.get(request)
         if found is None:
             found = _cluster_shapes(
                 spec,
@@ -244,9 +255,15 @@ def solve_layouts_hierarchical(
             for shape in found
             for placement in _orientations(shape, rooms_by_id, fit_options)
         ]
+        placements = list(dict.fromkeys(placements))
+        if hints is not None:
+            placements = hints.augment_cluster(
+                cluster_id, request, placements,
+                lambda shape: _orientations(shape, rooms_by_id, fit_options),
+            )
         if not placements:
             raise InfeasibleLayout(f"Cluster {cluster_id} has no shape that fits the boundary")
-        shapes[cluster_id] = list(dict.fromkeys(placements))
+        shapes[cluster_id] = placements
 
     grid = spec.grid_mm
     boundary_width = _ceil_grid(spec.boundary.width_mm, grid)
@@ -305,6 +322,8 @@ def solve_layouts_hierarchical(
         x_intervals.append(model.NewIntervalVar(x, width, x_end, f"{room.id}_x_interval"))
         y_intervals.append(model.NewIntervalVar(y, height, y_end, f"{room.id}_y_interval"))
         room_vars[room.id] = _RoomVars(x=x, y=y, width=width, height=height, area=area)
+        if hints is not None:
+            hints.apply_free_room(model, room.id, room_vars[room.id])
         cluster_vars.extend((x, y, width, height))
         anchors.append((x, y, ()))
     for cluster_id, options in shapes.items():
@@ -351,6 +370,8 @@ def solve_layouts_hierarchical(
             x_intervals.append(model.NewIntervalVar(x, width, x_end, f"{room_id}_x_interval"))
             y_intervals.append(model.NewIntervalVar(y, height, y_end, f"{room_id}_y_interval"))
             room_vars[room_id] = _RoomVars(x=x, y=y, width=width, height=height, area=None)
+        if hints is not None:
+            hints.apply_cluster(model, cluster_id, cx, cy, choices, options, room_vars)
     # Rooms, not cluster boxes, must not overlap: concave clusters interlock.
     model.AddNoOverlap2D(x_intervals, y_intervals)
     for room in spec.rooms:
@@ -395,6 +416,9 @@ def solve_layouts_hierarchical(
         preferred_groups=preferred_groups,
     )
     model.Minimize(objective)
+    if hints is not None:
+        hints.complete(model, room_vars, seed=seed, time_limit_seconds=time_limit_seconds,
+                       deterministic_units=deterministic_units)
 
     results: list[LayoutResult] = []
     for variant in range(1, variants + 1):
@@ -406,14 +430,21 @@ def solve_layouts_hierarchical(
             deterministic_units=deterministic_units,
             # The top level is where the search is hard; with a wall-clock
             # budget it may use the parallel portfolio.
-            workers=_top_level_workers(),
+            # OR-Tools' parallel portfolio can abort inside repair_hint's
+            # fixed-search heuristic. Keep hinted repair on one worker;
+            # ordinary wall-clock hierarchy searches retain the portfolio.
+            workers=1 if hints is not None and hints.evidence["repair_hint"] else _top_level_workers(),
         )
         # The top level is a feasibility search; the ranking that matters is
         # done afterwards by the independent gates.
         solver.parameters.stop_after_first_solution = not has_preferences
+        if hints is not None and hints.evidence["repair_hint"]:
+            solver.parameters.repair_hint = True
         status = solver.Solve(model)
         if cache is not None:
             cache.record_global_search(variant, solver.StatusName(status))
+        if hints is not None:
+            hints.record_global_search(variant, solver.StatusName(status))
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE) and model.Proto().assumptions:
             # No clearly different layout within the budget: accept one that
             # differs only in detail rather than returning fewer variants.
@@ -424,12 +455,16 @@ def solve_layouts_hierarchical(
                 seed=seed + variant - 1,
                 time_limit_seconds=time_limit_seconds,
                 deterministic_units=deterministic_units,
-                workers=_top_level_workers(),
+                workers=1 if hints is not None and hints.evidence["repair_hint"] else _top_level_workers(),
             )
             solver.parameters.stop_after_first_solution = not has_preferences
+            if hints is not None and hints.evidence["repair_hint"]:
+                solver.parameters.repair_hint = True
             status = solver.Solve(model)
             if cache is not None:
                 cache.record_global_search(variant, solver.StatusName(status), assumptions_dropped=True)
+            if hints is not None:
+                hints.record_global_search(variant, solver.StatusName(status), assumptions_dropped=True)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
                 context = f"; axis-constrained rooms: {', '.join(sorted(axis_rooms))}" if axis_rooms else ""
@@ -514,6 +549,7 @@ def solve_layouts_auto(
             "structural_axes_x_mm",
             "structural_axes_y_mm",
             "cache_cluster_shapes",
+            "hint_rects",
         }
     }
     unsupported = sorted(key for key, value in options.items() if key not in hierarchical_options and value)
@@ -523,7 +559,7 @@ def solve_layouts_auto(
             raise HierarchyNotApplicable(message)
         return monolithic(message)
     try:
-        if hierarchical_options.get("cache_cluster_shapes"):
+        if hierarchical_options.get("cache_cluster_shapes") or hierarchical_options.get("hint_rects"):
             hierarchical_options["evidence"] = evidence
         results = solve_layouts_hierarchical(spec, variants, time_limit_seconds, seed, **hierarchical_options)
     except InfeasibleLayout as exc:

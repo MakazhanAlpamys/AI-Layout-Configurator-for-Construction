@@ -12,6 +12,8 @@ Checkpoint G.5.1 preserves strict source references for explicit symbol choices
 at the browser validation boundary.
 Checkpoint D.5 verifies editable source dimension chains, exact millimetre
 readback and corresponding vector-PDF projection.
+Checkpoint H.3.4 verifies unrestricted hierarchy warm-start repair and scoped
+local 80-room geometry/equipment/flow gates; complete CI acceptance stays separate.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
