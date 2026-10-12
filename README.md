@@ -1,5 +1,9 @@
 # Facility Layout Compiler
 
+Persistent generation, batch, check and review jobs are available through the
+[local HTTP API and private container](docs/API.md). Verified implementation
+checkpoints are tracked in [IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md).
+
 ## Domain rule packs
 
 Rules for regulated facilities are defined by YAML profiles rather than hard-coded

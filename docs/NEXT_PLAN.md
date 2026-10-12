@@ -44,7 +44,7 @@ it). The order below follows that.
 | # | Work | Done when |
 | --- | --- | --- |
 | 4.1 | Laboratory, hospital and industrial profiles, each with a sourced rule pack and its own acceptance pilot | one accepted pilot per typology |
-| 4.2 | An HTTP API around generate / check / review with the same JSON contracts, plus a container image | the pilot runs end to end through the API in CI |
+| 4.2 | HTTP API, persistent batch/cache jobs and private container implemented on 2026-10-12; see [API.md](API.md) and checkpoint H.4 | local Docker pharma-pilot HTTP acceptance passed; the added CI job must pass before the CI gate closes |
 | 4.3 | Two or three before/after case studies on real projects | published with the owners' permission |
 
 ## Order of work

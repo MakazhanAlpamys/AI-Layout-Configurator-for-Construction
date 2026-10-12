@@ -1,0 +1,13 @@
+services:
+  layout:
+    build: .
+    ports:
+      - "127.0.0.1:8766:8766"
+    environment:
+      LAYOUT_API_TOKEN: ${LAYOUT_API_TOKEN:?Set a bearer token before starting the service}
+    volumes:
+      - layout-jobs:/data
+    restart: unless-stopped
+
+volumes:
+  layout-jobs:

@@ -19,6 +19,44 @@ env:
   PYTHONUTF8: "1"
 
 jobs:
+  api-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      LAYOUT_API_TOKEN: ci-acceptance-token
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - run: python -m pip install -e ".[test]"
+      - run: docker compose config --quiet
+      - run: docker build -t layout-configurator:ci .
+      - run: >-
+          docker run --detach --name layout-ci-api
+          --publish 127.0.0.1:8766:8766 --env LAYOUT_API_TOKEN
+          layout-configurator:ci
+      - name: Generate, download and independently check the pharma pilot over HTTP
+        run: python scripts/api_smoke.py --output out/api-smoke/report.json
+      - name: Retain service logs and stop the private service
+        if: always()
+        run: |
+          mkdir -p out/api-smoke
+          docker logs layout-ci-api > out/api-smoke/container.log 2>&1 || true
+          docker stop layout-ci-api || true
+      - name: Retain API acceptance evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: api-container-acceptance
+          path: out/api-smoke/
+          if-no-files-found: warn
+          retention-days: 14
+
   tests:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15

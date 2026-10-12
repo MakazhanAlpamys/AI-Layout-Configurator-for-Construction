@@ -1,0 +1,73 @@
+# Local facility API
+
+The service runs the same canonical `BuildingIR`, profile, solver, exporters
+and independent bundle QA as the CLI. One worker processes persistent jobs in
+sequence. Run one writing service per job directory; an OS lock enforces that.
+
+```powershell
+$env:LAYOUT_API_TOKEN = 'choose-a-private-token'
+.venv\Scripts\python.exe -m layout_configurator.cli api --output out\api-jobs --port 8766
+```
+
+Loopback binding is the default. A non-loopback bind requires the token, which
+comes from the environment and is never printed. Send
+`Authorization: Bearer <token>` and `Content-Type: application/json`.
+
+## Requests
+
+| Method and path | Behavior |
+| --- | --- |
+| `GET /health` | Runtime fingerprint and readiness. |
+| `POST /jobs` | Validate a canonical program and optional canonical profile, persist the request and queue a solve. Returns 202 and a job ID. |
+| `GET /jobs` | List persisted job states. |
+| `GET /jobs/{id}` | QUEUED, RUNNING, SUCCEEDED, FAILED, CANCEL_REQUESTED, CANCELLED or INTERRUPTED, plus evidence. |
+| `POST /jobs/batch` | Validate an entire `{"jobs": [...]}` batch before enqueueing any request; at most 32 requests. |
+| `POST /jobs/{id}/cancel` | Empty JSON object. Cancel queued work, or prevent publication after a running solver call finishes. |
+| `POST /jobs/{id}/check` | Empty JSON object. Independently re-read and check every accepted variant and exchange artifact. |
+| `GET /jobs/{id}/artifacts` | Names of accepted bundle artifacts. Failed and cancelled jobs do not publish bundles. |
+| `GET /jobs/{id}/artifacts/{name}` | Download a listed artifact; hashes and directory boundaries are checked. Review filenames may contain `review/`. |
+| `GET /jobs/{id}/review` | Three role dossiers and the artifact inventory for each variant. Expert acceptance remains PENDING. |
+
+`POST /jobs` accepts `program`, optional `profile`, and `variants`,
+`max_attempts`, `time_limit_seconds`, `seed`, `equipment_retries`,
+`deterministic_units`, `room_solver` and `reuse`. Programs use the canonical
+schema, including the normalized fields emitted by `BuildingIR.to_dict()`;
+shorthand YAML must be normalized before submission. Unknown fields, paths,
+coordinates, invalid settings and non-finite numbers are rejected before work
+is queued. Defaults match the facility generator: one variant, 60 seconds per
+solver invocation, seed 42, two equipment retries and automatic room backend.
+
+Successful jobs retain JSON/DXF/PDF/IFC/BCF, a manifest, QA report and review
+dossiers. Failed jobs retain their error and available candidate rejection
+evidence in `generation-failure.json`. A solver budget failure does not prove
+mathematical impossibility. Restart preserves completed jobs and marks any
+unfinished job INTERRUPTED; resubmit it explicitly.
+
+## Cache
+
+`reuse: true` requires `deterministic_units`. It reuses an accepted job only
+when canonical program, profile, settings, executable source, schemas and
+dependency versions match. Every artifact hash and the independent bundle QA
+are checked before reuse. A hit returns HTTP 200 and `cache_hit: true`; changed
+inputs or artifacts cause a fresh job. Wall-clock searches are not cached.
+
+## Private container
+
+```powershell
+$env:LAYOUT_API_TOKEN = 'choose-a-private-token'
+docker compose up --build -d
+```
+
+The image includes source, schemas, rule packs, IDS and examples, runs as an
+unprivileged user, and stores jobs in the `layout-jobs` volume. The host port is
+bound to loopback. `docker compose down` stops the service and preserves its
+volume; use one service instance per volume. This is a private single-user
+service, without multi-tenant accounts or hosted deployment.
+
+`scripts/api_smoke.py` submits the canonical pharma pilot to a running service,
+downloads its PDF and rechecks its full bundle and three unsigned dossiers.
+Set `LAYOUT_API_TOKEN` and pass `--url` for a non-default port. CI builds the
+image and runs this check, retaining its JSON evidence and service logs.
+
+Software QA and dossiers do not close process/QA, HVAC or receiving CAD/BIM
+reviews. Their decision blocks remain external acceptance conditions.

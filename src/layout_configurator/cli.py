@@ -269,7 +269,20 @@ def main(argv: list[str] | None = None) -> int:
     ui.add_argument("--variant", type=int, default=1, help="variant number when input is a generated bundle directory")
     ui.add_argument("--require-provenance", action="store_true", help="require complete ruleset provenance")
     ui.add_argument("--edit", action="store_true", help="facility bundles: allow room moves/resizes with live re-check and save revisions")
+    api = subparsers.add_parser("api", help="serve persistent facility generation, batch, check and review jobs over HTTP")
+    api.add_argument("--output", "-o", type=Path, default=Path("out/api-jobs"))
+    api.add_argument("--host", default="127.0.0.1")
+    api.add_argument("--port", type=int, default=8766)
     args = parser.parse_args(argv)
+
+    if args.command == "api":
+        try:
+            from .api import serve_api
+
+            return serve_api(args.output, host=args.host, port=args.port, token=os.environ.get("LAYOUT_API_TOKEN"))
+        except (OSError, ValueError, RuntimeError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
 
     if args.command == "generate":
         try:

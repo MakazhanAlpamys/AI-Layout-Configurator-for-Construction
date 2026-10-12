@@ -10,6 +10,8 @@ Checkpoint E.1 adds validated native IFC zone/system groups and fixes spatial
 exchange; external CAD/BIM acceptance remains a separate open gate.
 Checkpoint C.1.1 verifies cutouts and structural axes in hierarchical room
 placement on the same date.
+Checkpoint H.4 adds the local API/container and a real pharma-pilot HTTP
+acceptance script; remote CI status is recorded in the execution ledger.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

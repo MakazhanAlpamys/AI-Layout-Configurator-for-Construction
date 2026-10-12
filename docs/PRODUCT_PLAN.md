@@ -11,6 +11,9 @@ with zero IFC4 EXPRESS violations in the single- and multi-floor regression
 fixtures. Independent receiving-tool review remains open.
 Checkpoint C.1.1 models cutouts and selected structural-axis constraints in
 the hierarchical backend, including usable automatic daylight facades.
+Checkpoint H.4 adds persistent HTTP generation/check/review, batch jobs,
+versioned deterministic caching and private Docker deployment. The deployed
+container passed the pharma pilot locally; its CI acceptance job is added.
 
 ## 1. Why we are expanding the project
 
