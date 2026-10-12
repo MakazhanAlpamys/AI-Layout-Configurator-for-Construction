@@ -14,6 +14,7 @@ from .facility import (DEFAULT_FACILITY_PROFILE_SCHEMA_PATH, FacilityProfile,
                        default_facility_profile, load_facility_profile)
 from .resources import resource_path
 from .drawing_profiles import resolve_drawing_settings
+from .drawing_symbols import validate_symbol_assignments
 from .facility_generation import FACILITY_SOLVER_STRATEGIES
 from .schema import (DEFAULT_BUILDING_SCHEMA_PATH, DEFAULT_SCHEMA_PATH,
                      load_json_schema, validate_mapping)
@@ -76,6 +77,10 @@ def validate_program_form(payload):
             _fail("$.profile", str(exc))
     else:
         profile = default_facility_profile()
+    try:
+        validate_symbol_assignments(profile.drawing, building.equipment)
+    except (ValueError, TypeError) as exc:
+        _fail("$.profile.drawing.equipment_symbols", str(exc))
     program = building.to_dict()
     canonical = json.dumps(program, sort_keys=True, ensure_ascii=False,
                            allow_nan=False, separators=(",", ":")).encode("utf-8")

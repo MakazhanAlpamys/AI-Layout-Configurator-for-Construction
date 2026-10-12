@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 
 from layout_configurator.api import create_api_server
 from layout_configurator.io import load_building
+from layout_configurator.facility import default_facility_profile
 
 
 class ProgramFormHttpTests(unittest.TestCase):
@@ -79,6 +80,24 @@ class ProgramFormHttpTests(unittest.TestCase):
             self.assertEqual(status, 400, body)
             issues = json.loads(body)["issues"]
             self.assertTrue(any(issue["path"] == ("$.program.layout" if layout_name else "$.program") for issue in issues))
+
+    def test_symbol_assignment_errors_are_structured_and_never_queue_work(self):
+        before = set(self.root.rglob("*"))
+        no_equipment = copy.deepcopy(self.program)
+        no_equipment["equipment"] = []
+        no_equipment["flows"] = []
+        cases = [(self.program, equipment_id) for equipment_id in ("missing", "receiving", "", "   ")]
+        cases.append((no_equipment, "mixer_01"))
+        for program, equipment_id in cases:
+            profile = default_facility_profile().to_dict()
+            profile["drawing"]["equipment_symbols"] = {equipment_id: "generic"}
+            status, body, _ = self.request("/program/validate", {"program": program, "profile": profile})
+            with self.subTest(equipment_id=equipment_id):
+                self.assertEqual(status, 400, body)
+                self.assertTrue(any(issue["path"].startswith("$.profile.drawing")
+                                    for issue in json.loads(body)["issues"]))
+                self.assertEqual(self.server.service.list(), [])
+                self.assertEqual(set(self.root.rglob("*")), before)
 
     def test_only_static_form_bootstrap_is_public_and_has_no_inline_executable_code(self):
         for route, content_type, marker in (("/", "text/html", b"Facility program"),

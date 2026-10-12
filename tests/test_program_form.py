@@ -91,3 +91,25 @@ class ProgramFormBoundaryTests(unittest.TestCase):
         self.assertEqual(response["profile"]["drawing"]["revision"], "P02")
         self.assertFalse(response["profile"]["drawing"]["show_room_dimensions"])
         self.assertNotIn("preset", response["profile"]["drawing"])
+
+    def test_symbol_assignments_require_actual_equipment_source_ids(self):
+        profile = default_facility_profile().to_dict()
+        profile["drawing"]["equipment_symbols"] = {"mixer_01": "process_vessel"}
+        accepted = self.validate({"program": self.program, "profile": profile})
+        self.assertEqual(accepted["profile"]["drawing"]["equipment_symbols"], {"mixer_01": "process_vessel"})
+        self.assertEqual(accepted["program"], self.program)
+        for equipment_id in ("missing", "receiving", "cleanroom_core", " mixer_01", 1, "", "   ", "x" * 1025):
+            profile = default_facility_profile().to_dict()
+            profile["drawing"]["equipment_symbols"] = {equipment_id: "generic"}
+            with self.subTest(equipment_id=equipment_id):
+                with self.assertRaises(self.error) as raised:
+                    self.validate({"program": self.program, "profile": profile})
+                self.assertTrue(any(issue["path"].startswith("$.profile.drawing.equipment_symbols")
+                                    or issue["path"] == "$.profile.drawing" for issue in raised.exception.issues))
+        no_equipment = copy.deepcopy(self.program)
+        no_equipment["equipment"] = []
+        no_equipment["flows"] = []
+        profile = default_facility_profile().to_dict()
+        profile["drawing"]["equipment_symbols"] = {"mixer_01": "generic"}
+        with self.assertRaises(self.error):
+            self.validate({"program": no_equipment, "profile": profile})

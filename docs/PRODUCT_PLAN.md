@@ -96,6 +96,8 @@ Checkpoint D.4.1 repairs equipment block labels to use local coordinates;
 actual inserted labels remain centered for both equipment orientations.
 Checkpoint G.5 / NEXT 3.1 adds blank browser program entry through strict schemas
 and the existing jobs; full pilot browser/direct geometry and IFC identity match.
+Checkpoint G.5.1 rejects drawing symbol assignments to missing equipment at
+browser input validation, before any job or output is created.
 
 ## 1. Why we are expanding the project
 
