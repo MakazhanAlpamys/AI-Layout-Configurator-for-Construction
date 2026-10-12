@@ -28,6 +28,8 @@ Checkpoint G.1.1 verifies supplied full-pilot DXF/IFC software import/regenerati
 human geometry review and third-party receiving-tool acceptance remain separate.
 Checkpoint QA.9 updates English current-status guidance while preserving this
 roadmap's historical decisions and measured runtime limitations.
+Checkpoint H.3.4.2 adds a clean installed-wheel 80-room warm-start CI measurement
+with complete persisted acceptance, preserving its supplied-source scope.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

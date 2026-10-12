@@ -310,9 +310,25 @@ imports 1.235 s, rooms 20.766 s, equipment/routes/pharma 27.281 s, complete expo
 supervision, fingerprints and reporting. Its [raw report](../research/scale80/2026_10_12/windows_warmstart.json)
 identifies actual `a899ac1` plus the then-working client-report implementation
 and its earlier runner fingerprint. Later launch/provenance/resource refinements
-and the final report continuation changes are covered by focused tests and
-await their own pinned CI measurement; this raw local timing is not relabelled
+and the final report continuation changes are covered by focused tests and the
+separate pinned CI measurement below; this raw local timing is not relabelled
 as a clean latest-commit result.
+
+The installed-wheel Ubuntu [run 38291669488](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38291669488)
+at clean `ac0408b42a5ccbf6b6a895cf568832ab529d93c3` passed the complete request in
+**33.008 s**. Preparation including imports took 1.193 s, room search 10.742 s,
+equipment/routes/profile gates 12.051 s, complete export 1.875 s, persisted QA
+1.311 s and strict EXPRESS 5.025 s. All nine saved-artifact checks passed:
+80 IFC spaces, 60 equipment objects, 16 routes, nine thematic pages and fourteen
+client-report pages. The unrestricted global model returned FEASIBLE; six
+cache hits were independently checked. No source positions became constraints.
+All four supplied-source byte hashes and nine exported-artifact hashes were
+verified after download. The report confirms regular installed package imports
+and all 22 authoritative resources resolved from its installed `_data` tree.
+Its unchanged runtime fingerprint is
+`1f7867569f92b284733fd4f5b86f013e8869657522da01cc9d116e30275b999c`.
+The [raw Linux report](../research/scale80/2026_10_12/linux_warmstart.json)
+retains the exact scope, source derivation, dependency versions and timings.
 
 Run explicitly, or dispatch the manual workflow at a pinned commit:
 

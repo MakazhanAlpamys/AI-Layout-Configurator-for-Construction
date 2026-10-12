@@ -27,9 +27,10 @@ Canonical browser entry, named drawing presets, explicit project symbols,
 editable dimension chains and per-variant client reports are implemented.
 Orthogonal room/equipment/routes have independent scoped checks; complete
 polygon facility/export integration remains in progress. The supplied synthetic
-80-room warm-start passed all local persisted/EXPRESS gates in 64.735 s; its own
-pinned CI measurement, general scratch80 solving, third-zone hierarchy and
-incremental edits remain distinct. Deterministic work budgets support measured
+80-room warm-start passed all local persisted/EXPRESS gates in 64.735 s and
+clean installed-wheel Ubuntu CI in 33.008 s at `ac0408b`. General scratch80
+solving, third-zone hierarchy and incremental edits remain distinct.
+Deterministic work budgets support measured
 same-runtime repeatability; they do not guarantee identical cross-platform output.
 
 Process/QA, cleanroom/HVAC and architecture/BIM signed decisions, receiving

@@ -116,6 +116,8 @@ Checkpoint G.1.1 verifies full supplied-pilot DXF/IFC import and fixed-coordinat
 regeneration through every persisted bundle gate and strict IFC EXPRESS.
 Checkpoint QA.9 records the current English handoff and accurate CLI wording for
 runtime-specific repeatability and incomplete bounded candidate searches.
+Checkpoint H.3.4.2 verifies the complete installed-wheel synthetic 80-room
+warm-start in pinned Ubuntu CI in 33.008 s; general scratch80 remains separate.
 
 ## 1. Why we are expanding the project
 
