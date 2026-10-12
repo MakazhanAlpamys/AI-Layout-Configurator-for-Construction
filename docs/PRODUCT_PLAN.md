@@ -134,6 +134,8 @@ Checkpoint H.3.5.4 exposes explicit editor launch controls for hierarchical
 repair and local shape reuse, with an actual HTTP move/save and revision QA.
 Checkpoint B.8 adds exact orthogonal IFC4 DRAFT geometry, stable semantic GUIDs
 and independent actual-profile readback; full polygon bundle acceptance remains open.
+Checkpoint B.9 adds an exact vector PDF DRAFT plan and paginated source inventory,
+with independent painted-path and visible identity readback.
 
 ## 1. Why we are expanding the project
 

@@ -213,3 +213,33 @@ strict IFC4 EXPRESS with zero statements and native reconstruction of all eight
 represented products. This establishes the stated local exchange predicates.
 Export remains DRAFT, full facility validation UNKNOWN and engineering
 acceptance PENDING; the existing rectangular dispatch guards remain unchanged.
+
+## Exact vector PDF coordination export
+
+`export_orthogonal_draft_pdf` projects actual room contours, wall material with
+holes and real openings onto an A3 vector plan. Supplied equipment/service and
+full-width route corridors require independent local checks. Directional service
+envelopes retain actual rotations; the opening marker is drawn above corridors.
+A paginated source inventory retains all canonical IDs and source dimensions.
+Every page prints its variant, revision, source hashes, DRAFT status, full
+facility UNKNOWN and engineering acceptance PENDING.
+
+The strict artifact index records the PDF byte hash, exact canonical source
+hashes, supplied component states, projection, page inventory and resource limits.
+`validate_orthogonal_pdf` independently parses actual painted paths and effective
+transforms, compares contours/material and ordered polylines to the source,
+and checks visible printed identity. Rehashed bounding rectangles, displaced or
+missing vectors, hidden background order, zero-size text, clipping, raster/form
+resources and forged statuses cannot satisfy this bounded contract.
+
+Default limits are 32 rooms/equipment, 64 routes, 4,096 room vertices, eight
+pages, 8 MiB PDF bytes, 4 MiB streams, 50,000 operators and 256 resource objects.
+Writing checks the generated in-memory streams before creating a destination.
+The supported vector material readback has a 0.001 mm coordinate tolerance.
+
+Fresh root PDF/sheet regression: 32 tests and 46 subtests passed in 6.20 s.
+All five final concave and dense-inventory pages were rendered with Poppler and
+inspected; root separately inspected the plan and final inventory continuation.
+This is an exact source projection with local exchange predicates. Shared
+polygon bundle dispatch, profile integration and engineering review remain
+separate gates.
