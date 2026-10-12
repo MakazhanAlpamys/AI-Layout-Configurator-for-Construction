@@ -148,6 +148,17 @@ remain in the evidence. Exhaustion is UNKNOWN about the bounded search. A checke
 placement is still DRAFT with `ok: false`; process routing, full dispatch and
 complete facility export remain separate gates.
 
+Packing also accepts optional `excluded_layouts`: at most 128 independently
+valid, complete equipment combinations for the current exact room layout.
+Canonical no-good constraints exclude each complete selected combination while
+allowing alternatives that reuse some individual placements. Valid combinations
+absent from the retained domain are recorded as unmatched; no hash alone removes
+geometry. Nonempty exclusions have canonical count/hash/match evidence. Omitted,
+empty and null exclusions preserve ordinary serialized output exactly. Fresh
+root packing/exclusion regression: 24 tests and 31 subtests passed in 11.29 s.
+This supplies bounded alternate packing for later route/profile retries;
+exhausting the finite catalog remains UNKNOWN about the complete program.
+
 ## Actual-width orthogonal process routes
 
 `route_orthogonal_flows(building, layout, equipment)` searches bounded

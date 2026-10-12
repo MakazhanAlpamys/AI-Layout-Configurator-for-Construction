@@ -187,10 +187,17 @@ def validate_orthogonal_door_approaches(building: BuildingIR, layout: LayoutResu
 
 def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
                                catalog: Mapping[str, Sequence[EquipmentPlacement]] | None = None,
+                               excluded_layouts: Sequence[EquipmentLayoutResult] | None = None,
                                seed: int = 42, time_limit_seconds: float = 10,
                                deterministic_units: float | None = None,
                                budget: OrthogonalPackingBudget = OrthogonalPackingBudget()) -> OrthogonalPackingResult:
-    """Select one finite real-footprint/service candidate per source item."""
+    """Select one finite real-footprint/service candidate per source item.
+
+    Optional exclusions contain at most 128 independently valid complete
+    equipment combinations for this exact room layout. They remove only the
+    selected combination, preserving other packings that reuse any item.
+    Empty/omitted exclusions preserve the existing output contract exactly.
+    """
     from ortools.sat.python import cp_model
 
     layout = _canonical_inputs(building, layout)
@@ -229,6 +236,9 @@ def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
 
     if len(building.layout.rooms) > budget.max_rooms or len(building.equipment) > budget.max_equipment:
         return finish("source_size_limit")
+    excluded = _exclusion_data(building, layout, excluded_layouts)
+    if excluded:
+        state.update(excluded_layouts_count=len(excluded), excluded_layouts_sha256=_hash(excluded), matched_excluded_layouts=0)
     room_report = validate_orthogonal_layout(building.layout, layout, dimension_policy=budget.room_policy)
     if not room_report.ok:
         reject("room_qa", "; ".join(check.id for check in room_report.checks if check.status != "PASS"), status=room_report.status)
@@ -281,6 +291,17 @@ def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
     choices = {item_id: tuple(model.NewBoolVar(f"{item_id}_{index}") for index in range(len(values))) for item_id, values in domains.items()}
     for item_id in domains:
         model.AddExactlyOne(choices[item_id])
+    for combination in excluded:
+        selected = []
+        for item_id, placement in combination.items():
+            matches = [index for index, (_, candidate) in enumerate(domains[item_id]) if _placement_data(candidate) == placement]
+            if not matches:
+                break
+            selected.append(choices[item_id][matches[0]])
+        else:
+            # Match actual canonical placements; hashes identify evidence only.
+            model.Add(sum(selected) <= len(selected) - 1)
+            state["matched_excluded_layouts"] += 1
     specs = {item.id: item for item in building.equipment}
     services = {item_id: tuple(clearance_rect(specs[item_id], placement.rect, placement.rotated) for _, placement in values) for item_id, values in domains.items()}
     item_ids = list(domains)
@@ -464,6 +485,27 @@ def _placement_data(placement):
     OrthogonalPolygon.from_rect(placement.rect)
     return {"equipment_id": placement.equipment_id, "room_id": placement.room_id, "rotated": placement.rotated,
             "units": "mm", "rect": {"x": placement.rect.x, "y": placement.rect.y, "width": placement.rect.width, "height": placement.rect.height}}
+
+
+def _exclusion_data(building, layout, excluded_layouts):
+    if excluded_layouts is None:
+        return ()
+    if not isinstance(excluded_layouts, (list, tuple)) or len(excluded_layouts) > 128:
+        raise ValueError("excluded_layouts requires a list/tuple of at most 128 complete EquipmentLayoutResult combinations")
+    identifiers = {item.id for item in building.equipment}
+    canonical = {}
+    for result in excluded_layouts:
+        if not isinstance(result, EquipmentLayoutResult) or not isinstance(result.placements, (list, tuple)) or len(result.placements) != len(identifiers):
+            raise ValueError("Every excluded layout must contain each source equipment ID exactly once")
+        data = [_placement_data(placement) for placement in result.placements]
+        if {placement["equipment_id"] for placement in data} != identifiers:
+            raise ValueError("Every excluded layout must contain each source equipment ID exactly once")
+        if not validate_orthogonal_equipment(building, layout, result).ok or not validate_orthogonal_door_approaches(building, layout, result).ok:
+            raise ValueError("Excluded equipment combinations require independently valid actual equipment and door approaches")
+        combination = {placement["equipment_id"]: placement for placement in sorted(data, key=lambda item: item["equipment_id"])}
+        serialized = json.dumps(combination, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))
+        canonical[serialized] = combination
+    return tuple(canonical[key] for key in sorted(canonical))
 
 
 def _placement_key(placement):

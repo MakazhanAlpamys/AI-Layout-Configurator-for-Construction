@@ -136,6 +136,8 @@ Checkpoint B.8 adds exact orthogonal IFC4 DRAFT geometry, stable semantic GUIDs
 and independent actual-profile readback; full polygon bundle acceptance remains open.
 Checkpoint B.9 adds an exact vector PDF DRAFT plan and paginated source inventory,
 with independent painted-path and visible identity readback.
+Checkpoint B.6.1 adds independently validated complete-combination packing
+exclusions for bounded real alternatives, preserving ordinary default output.
 
 ## 1. Why we are expanding the project
 
