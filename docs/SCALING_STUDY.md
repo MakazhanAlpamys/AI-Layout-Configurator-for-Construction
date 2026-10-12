@@ -362,5 +362,21 @@ Actual room-area and equipment-width edits on a six-room, two-cluster source
 repair stale geometry and pass every current gate. Root verification covered
 54 tests and 49 subtests across incremental requests, stage evidence, hints,
 cache and both zone dispatch strategies. Empty/disabled options preserve default
-generation output. CLI/API/editor exposure, recursive zone guidance and measured
+generation output. API/editor exposure, recursive zone guidance and measured
 80-room edits remain separate follow-up work.
+
+The CLI exposes this path explicitly:
+
+```powershell
+python -m layout_configurator.cli generate-building edited.json --incremental-from prior/building_01.json --output out/edited --room-solver hierarchical --variants 1
+```
+
+The supplied result may contain room geometry only; prior full-facility acceptance
+is not inferred from it. Its exact file SHA256 is retained alongside canonical
+source/edit/profile hashes in both the manifest and saved variant. Actual current
+gates and the shared complete bundle writer run afresh. Changed IDs or malformed
+sources produce structured input-rejection evidence; unresolved current profile
+conditions preserve incremental provenance and stage evidence. Imported fixed-room
+constraints cannot be combined with this soft mode. Source and edited-input files
+must be outside the output directory to avoid overwriting supplied evidence.
+Ordinary no-option CLI behavior retains its existing path.

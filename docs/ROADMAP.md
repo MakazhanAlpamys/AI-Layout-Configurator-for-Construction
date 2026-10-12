@@ -36,6 +36,8 @@ Checkpoint F.1 adds full software acceptance pilots for three further typologies
 broader sourced domain predicates and actual external approval remain separate.
 Checkpoint QA.10 records complete `ac0408b` platform/container/pharma CI without
 reopening the archived MVP or claiming acceptance of later commits.
+Checkpoint H.3.5.1 adds explicit soft canonical edit regeneration to the CLI
+with exact source-file provenance and fresh complete facility checks.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

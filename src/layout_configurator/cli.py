@@ -21,6 +21,7 @@ from .export import export_building_bundle, export_bundle
 from .equipment import validate_equipment_layout
 from .facility import default_facility_profile, load_facility_profile, validate_building
 from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
+from .facility_incremental import IncrementalSourceError, re_solve_facility_after_edit
 from .flows import route_flows, validate_flow_routes
 from .ifc import export_building_ifc, export_ifc, export_multifloor_ifc, validate_ifc_roundtrip
 from .llm import llm_settings_from_environment, parse_with_openai_compatible
@@ -73,6 +74,48 @@ def _add_import_options(parser):
     parser.add_argument("--room-map", nargs=2, action="append", default=[], metavar=("SOURCE", "ROOM"), help="map an imported ID to a canonical room ID; repeat as needed")
 
 
+def _solve_incremental_cli(args, building, profile):
+    """Retain exact prior file identity alongside canonical soft-hint evidence."""
+    source_hash = None
+    try:
+        if args.incremental_from.stat().st_size > 8 * 1024 * 1024:
+            raise ValueError("Incremental source result exceeds 8 MiB")
+        with args.incremental_from.open("rb") as stream:
+            source_bytes = stream.read(8 * 1024 * 1024 + 1)
+        if len(source_bytes) > 8 * 1024 * 1024:
+            raise ValueError("Incremental source result exceeds 8 MiB")
+        source_hash = hashlib.sha256(source_bytes).hexdigest()
+        prior_building, prior_result, _ = load_building_result(args.incremental_from)
+        if args.incremental_from.read_bytes() != source_bytes:
+            raise ValueError("Incremental source changed while it was being loaded")
+    except (ValueError, OSError, TypeError, KeyError) as exc:
+        raise IncrementalSourceError(str(exc), {
+            "stage": "input", "status": "FAIL", "code": "invalid_source_result",
+            "message": str(exc), "source_file_sha256": source_hash,
+            "proof_scope": "supplied_incremental_source", "proven_building_infeasible": False,
+        }) from exc
+    try:
+        generation = re_solve_facility_after_edit(
+            prior_building, prior_result, building, profile, variants=args.variants,
+            time_limit_seconds=args.time_limit, seed=args.seed, max_attempts=args.max_attempts,
+            equipment_retries=args.equipment_retries, deterministic_units=args.deterministic_units,
+            room_solver=args.room_solver, cache_cluster_shapes=True)
+    except IncrementalSourceError as exc:
+        exc.evidence["source_file_sha256"] = source_hash
+        raise
+    except InfeasibleFacilityGeneration as exc:
+        evidence = {**exc.generation.incremental_evidence, "source_file_sha256": source_hash}
+        raise InfeasibleFacilityGeneration(str(exc), replace(exc.generation, incremental_evidence=evidence)) from exc
+    if args.incremental_from.read_bytes() != source_bytes:
+        raise IncrementalSourceError("Incremental source changed during re-solve", {
+            "stage": "input", "status": "FAIL", "code": "source_changed",
+            "source_file_sha256": source_hash, "proof_scope": "supplied_incremental_source",
+            "proven_building_infeasible": False,
+        })
+    return replace(generation, incremental_evidence={
+        **generation.incremental_evidence, "source_file_sha256": source_hash})
+
+
 def _confirmed_import(args, spec):
     if args.imported_plan is None:
         if args.confirm_import or args.import_reviewer or args.room_map:
@@ -118,6 +161,7 @@ def main(argv: list[str] | None = None) -> int:
         "generate-building", help="solve a dense-building program and place equipment"
     )
     generate_building.add_argument("spec", type=Path)
+    generate_building.add_argument("--incremental-from", type=Path, help="prior canonical building result for soft geometry guidance and local shape reuse; source IDs must remain unchanged")
     _add_import_options(generate_building)
     generate_building.add_argument("--output", "-o", type=Path, default=Path("out/building"))
     generate_building.add_argument("--variants", type=int, default=1)
@@ -734,11 +778,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "generate-building":
         try:
+            if args.incremental_from is not None:
+                if args.imported_plan or args.confirm_import or args.import_reviewer or args.room_map:
+                    raise ValueError("Incremental soft geometry cannot be combined with imported fixed-room constraints")
+                if any(path.resolve().is_relative_to(args.output.resolve())
+                       for path in (args.incremental_from, args.spec)):
+                    raise ValueError("Incremental source and edited input must be outside the output directory")
             (args.output / "generation-failure.json").unlink(missing_ok=True)
             building = load_building(args.spec).with_required_flow_opening_width()
             fixed_rects, import_confirmation = _confirmed_import(args, building.layout)
             profile = load_facility_profile(args.profile) if args.profile else default_facility_profile()
-            generation = solve_feasible_facility_variants(
+            generation = _solve_incremental_cli(args, building, profile) if args.incremental_from is not None else solve_feasible_facility_variants(
                 building,
                 profile,
                 variants=args.variants,
@@ -750,6 +800,14 @@ def main(argv: list[str] | None = None) -> int:
                 room_solver=args.room_solver,
                 fixed_rects=fixed_rects,
             )
+        except IncrementalSourceError as exc:
+            args.output.mkdir(parents=True, exist_ok=True)
+            failure = {"ok": False, "status": "INCREMENTAL_SOURCE_REJECTED", "message": str(exc),
+                       "spec": building.to_dict(), "profile": profile.to_dict(), "input_evidence": exc.evidence}
+            (args.output / "generation-failure.json").write_text(
+                json.dumps(failure, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
         except InfeasibleFacilityGeneration as exc:
             args.output.mkdir(parents=True, exist_ok=True)
             failure = {
@@ -787,6 +845,10 @@ def main(argv: list[str] | None = None) -> int:
             manifest["import_confirmation"] = import_confirmation
         for candidate in generation.accepted:
             try:
+                variant_evidence = candidate.generation_evidence()
+                if generation.incremental_evidence is not None:
+                    variant_evidence.update(incremental_evidence=generation.incremental_evidence,
+                                            room_solver_evidence=generation.room_solver_evidence)
                 entry = write_facility_variant(
                     args.output,
                     building,
@@ -798,7 +860,7 @@ def main(argv: list[str] | None = None) -> int:
                     flow_routes=candidate.flow_routes,
                     flow_report=candidate.flow_report,
                     facility_report=candidate.facility_report,
-                    generation_evidence=candidate.generation_evidence(),
+                    generation_evidence=variant_evidence,
                     bcf_input=args.bcf_input,
                 )
             except VariantExportError as exc:
