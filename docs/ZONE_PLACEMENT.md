@@ -1,4 +1,4 @@
-# Explicit root-zone placement
+# Explicit root and recursive zone placement
 
 `solve_zone_layouts(BuildingIR, ..., evidence={})` in `zone_hierarchy.py` is an
 opt-in rectangular backend. It compiles canonical descendant memberships into
@@ -39,7 +39,26 @@ stage explanations. Fixed rectangles and explicit axis constraints are currently
 rejected as `unsupported_constraints` before constructing a model, including
 multi-floor pinned cores. There is no fallback for this explicit strategy.
 
-This foundation has root containers only. Physical descendant containers,
-fixed-room/axis parity and larger-scale acceptance are subsequent steps.
-Existing `auto` generation remains unchanged. External engineering acceptance
-remains necessary after automatic checks.
+## Recursive physical descendants
+
+Select `--room-solver zone_recursive`, or call `solve_zone_layouts` with
+`recursive_zones=True`, to place physical containers for every nonempty
+canonical descendant zone. Leaves are solved first; each parent CP-SAT model
+packs bounded child-shape alternatives and its direct rooms. Global placement
+then positions the complete root subtrees. Container geometry remains explicit
+even when a selected container is larger than the bounding box of its rooms.
+
+Ancestor containers may contain descendants. Siblings and unrelated containers
+must be disjoint; rooms cannot occupy unrelated containers. Independent QA
+checks missing descendants, child containment, hard relations and connectivity.
+Rooms repeated in ancestor membership retain their deepest canonical ownership;
+empty zones are recorded without inventing physical geometry.
+
+Evidence includes leaf/subtree/global attempts, selected physical coordinates
+and scoped failures. Recursive shape candidates can use a bounded boundary strip
+when the original aspect shortlist is empty. This mode still uses rectangular
+containers: split/interleaved functional memberships, fixed rooms/axes and
+80-room CI acceptance require subsequent work. Both explicit zone strategies
+currently reject fixed/axis inputs before a model, without fallback. Default
+root-only calls and `auto` generation retain their existing behavior. External
+engineering acceptance remains necessary after automatic checks.

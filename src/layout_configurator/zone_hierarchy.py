@@ -3,8 +3,9 @@
 Each nonempty root zone includes its canonical descendant membership. Local
 room/cluster CP-SAT solves provide a bounded set of shapes inside rectangular
 containers; a second CP-SAT model places those containers and chooses shapes.
-Unassigned rooms have explicit singleton units. Descendant zones do not yet
-have separate physical containers. This backend is not in the auto dispatcher.
+Unassigned rooms have explicit singleton units. The optional recursive mode
+solves physical descendant containers from leaves to roots, preserving canonical
+ancestry. Neither zone mode is in the auto dispatcher.
 
 Budgets apply per CP-SAT solve; the local hierarchy can perform several solves
 per option. Rectangular
@@ -17,7 +18,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from numbers import Real
 
 from .building import BuildingIR
@@ -72,6 +73,7 @@ class _ZoneShape:
     width: float
     height: float
     placements: Mapping[str, Rect]
+    containers: Mapping[str, Rect] = field(default_factory=dict)
 
 
 def _fail(evidence, message, *, not_applicable=False, **details):
@@ -140,7 +142,57 @@ def _root_units(building, evidence):
     return units
 
 
-def _size_options(building, units, supplied, maximum, evidence):
+def _recursive_units(building, root_units, evidence):
+    """Project canonical ancestry into solve units, without changing membership."""
+    zones = {zone.id: zone for zone in building.zones}
+    units = dict(root_units)
+    ancestors = {}
+    children = {}
+    descriptions = list(evidence.get("units", ()))
+    described = {description["id"] for description in descriptions}
+    empty = []
+    for zone in building.zones:
+        members = building.room_ids_for_zone(zone.id)
+        if not members:
+            empty.append(zone.id)
+            continue
+        units[zone.id] = members
+        lineage = []
+        current = zone
+        while current.parent_zone_id is not None:
+            lineage.append(current.parent_zone_id)
+            current = zones[current.parent_zone_id]
+        ancestors[zone.id] = tuple(lineage)
+        if zone.id not in described:
+            descriptions.append({"id": zone.id, "kind": "child_zone", "room_ids": list(members),
+                                 "parent_zone_id": zone.parent_zone_id})
+    for zone in building.zones:
+        if zone.id not in units:
+            continue
+        physical_children = [child.id for child in building.zones
+                             if child.parent_zone_id == zone.id and child.id in units]
+        if not physical_children:
+            continue
+        assigned = {room_id for child_id in physical_children for room_id in units[child_id]}
+        direct = []
+        for room_id in units[zone.id]:
+            if room_id in assigned:
+                continue
+            unit_id = f"room:{room_id}"
+            while unit_id in zones or unit_id in units:
+                unit_id = f"room:{unit_id}"
+            units[unit_id] = (room_id,)
+            ancestors[unit_id] = (zone.id, *ancestors[zone.id])
+            direct.append(unit_id)
+            descriptions.append({"id": unit_id, "kind": "direct_room", "room_ids": [room_id],
+                                 "parent_zone_id": zone.id})
+        children[zone.id] = tuple((*physical_children, *direct))
+    evidence["units"] = descriptions
+    evidence["empty_zone_ids"] = empty
+    return units, children, ancestors
+
+
+def _size_options(building, units, supplied, maximum, evidence, *, allow_boundary_strips=False):
     spec = building.layout
     unknown = set(supplied or {}) - set(units)
     if unknown:
@@ -176,6 +228,14 @@ def _size_options(building, units, supplied, maximum, evidence):
             h = math.ceil(area / fill / w / spec.grid_mm) * spec.grid_mm
             if w <= spec.boundary.width_mm and h <= spec.boundary.height_mm:
                 candidates.append((w, h))
+        if allow_boundary_strips and not candidates:
+            usable_width = math.floor(spec.boundary.width_mm / spec.grid_mm) * spec.grid_mm
+            usable_height = math.floor(spec.boundary.height_mm / spec.grid_mm) * spec.grid_mm
+            if usable_width > 0 and usable_height > 0:
+                for w, h in ((math.ceil(area / usable_height / spec.grid_mm) * spec.grid_mm, usable_height),
+                             (usable_width, math.ceil(area / usable_width / spec.grid_mm) * spec.grid_mm)):
+                    if w <= usable_width and h <= usable_height:
+                        candidates.append((w, h))
         result[unit_id] = tuple(dict.fromkeys(candidates))[:maximum]
     return result
 
@@ -196,19 +256,22 @@ def _group_issues(placements, required, forbidden, minimum):
     return issues
 
 
-def _mirrored_shapes(width, height, placements):
+def _mirrored_shapes(width, height, placements, containers=None):
     seen = set()
     shapes = []
     for mirror_x, mirror_y in ((False, False), (True, False), (False, True), (True, True)):
-        mirrored = {
-            room_id: Rect(width - rect.right if mirror_x else rect.x,
-                          height - rect.top if mirror_y else rect.y, rect.width, rect.height)
-            for room_id, rect in placements.items()
-        }
+        def mirror(geometry):
+            return {item_id: Rect(width - rect.right if mirror_x else rect.x,
+                                  height - rect.top if mirror_y else rect.y, rect.width, rect.height)
+                    for item_id, rect in geometry.items()}
+
+        mirrored = mirror(placements)
+        child_rects = mirror(containers or {})
         key = tuple((room_id, rect.x, rect.y, rect.width, rect.height) for room_id, rect in mirrored.items())
+        key += tuple((unit_id, rect.x, rect.y, rect.width, rect.height) for unit_id, rect in child_rects.items())
         if key not in seen:
             seen.add(key)
-            shapes.append(_ZoneShape(width, height, mirrored))
+            shapes.append(_ZoneShape(width, height, mirrored, child_rects))
     return shapes
 
 
@@ -267,6 +330,77 @@ def _local_shapes(building, units, options, groups, minimum, time_limit, seed, d
     return found
 
 
+def _recursive_shapes(building, roots, units, children, ancestors, options, groups,
+                      minimum, time_limit, seed, deterministic_units, evidence):
+    """Solve leaves once, then pack cached child shapes inside canonical parents."""
+    spec = building.layout
+    zone_ids = {zone.id for zone in building.zones}
+    found = {}
+
+    def visit(unit_id):
+        if unit_id in found:
+            return found[unit_id]
+        members = units[unit_id]
+        if unit_id not in children:
+            found.update(_local_shapes(building, {unit_id: members}, options, groups,
+                                       minimum, time_limit, seed, deterministic_units, evidence))
+            return found[unit_id]
+        child_units = {child_id: units[child_id] for child_id in children[unit_id]}
+        child_shapes = {child_id: visit(child_id) for child_id in child_units}
+        member_set = set(members)
+        rooms = tuple(replace(
+            room, needs_daylight=False,
+            required_adjacency=tuple(other for other in room.required_adjacency if other in member_set),
+            forbidden_adjacency=tuple(other for other in room.forbidden_adjacency if other in member_set),
+            preferred_adjacency=tuple(other for other in room.preferred_adjacency if other in member_set),
+        ) for room in spec.rooms if room.id in member_set)
+        local_groups = {relation: _internal_groups(value, member_set) for relation, value in groups.items()}
+        all_containers = dict.fromkeys(child_units)
+        for shapes in child_shapes.values():
+            all_containers.update(dict.fromkeys(shapes[0].containers))
+        local_members = {container_id: units[container_id] for container_id in all_containers}
+        local_ancestors = {container_id: tuple(parent for parent in ancestors.get(container_id, ())
+                                              if parent in all_containers) for container_id in all_containers}
+        parent_shapes = []
+        for index, (width, height) in enumerate(options[unit_id]):
+            attempt = {"stage": "subtree", "unit_id": unit_id, "size_mm": [width, height], "accepted": False}
+            evidence["stage_attempts"].append(attempt)
+            if width > spec.boundary.width_mm or height > spec.boundary.height_mm:
+                attempt["reason"] = "Container exceeds the global bounding dimensions"
+                continue
+            local = replace(spec, rooms=rooms, boundary=BoundarySpec(width, height, ()),
+                            entry_room=spec.entry_room if spec.entry_room in member_set else rooms[0].id,
+                            external_entry=None, doors=(), windows=())
+            # This is a stage projection of canonical rooms, not another public IR.
+            projected = replace(building, layout=local)
+            local_evidence = {"stage_attempts": [], "variants": []}
+            attempt["search_attempts"] = local_evidence["stage_attempts"]
+            try:
+                candidate = _solve_shape_layouts(
+                    projected, child_units, child_shapes, local_groups, minimum, 1,
+                    time_limit, seed + index, 3, deterministic_units, local_evidence,
+                    container_members=local_members, ancestors=local_ancestors,
+                    recursive_zones=True, stage="subtree", stage_unit=unit_id,
+                )[0]
+            except ZoneHierarchyFailure as failure:
+                attempt["failure"] = failure.to_dict()
+                attempt["reason"] = str(failure)
+                continue
+            attempt["accepted"] = True
+            attempt["model_status"] = local_evidence["stage_attempts"][-1]["model_status"]
+            rectangles = {key: Rect(**raw) for key, raw in local_evidence["variants"][0]["zone_rects"].items()
+                          if key in zone_ids}
+            parent_shapes.extend(_mirrored_shapes(width, height, candidate.placements, rectangles))
+        if not parent_shapes:
+            _fail(evidence, f"No valid subtree shape for zone {unit_id} in the bounded options",
+                  stage="subtree", code="no_valid_subtree_shape", unit_ids=(unit_id,), room_ids=members,
+                  proof_scope="bounded_subtree_candidates")
+        found[unit_id] = parent_shapes
+        return parent_shapes
+
+    return {unit_id: visit(unit_id) for unit_id in roots}
+
+
 def _constrain_explicit_window(model, room, spec, window):
     """Constrain the selected side to a real facade usable by the wall builder."""
     span = window.offset_mm + window.width_mm / 2
@@ -308,8 +442,7 @@ def _constrain_explicit_window(model, room, spec, window):
     model.AddBoolOr(contacts)
 
 
-def validate_zone_layout(building: BuildingIR, result: LayoutResult, zone_rects: Mapping[str, Rect], *, minimum_adjacency_mm=None):
-    """Independently check canonical rooms, root containers and hard relations."""
+def _validate_container_layout(spec, result, zone_rects, units, ancestors, *, check_unrelated_rooms=False):
     from shapely.geometry import box
 
     geometry = (*result.placements.values(), *zone_rects.values())
@@ -317,8 +450,6 @@ def validate_zone_layout(building: BuildingIR, result: LayoutResult, zone_rects:
         return ValidationReport((ValidationIssue("unsupported_geometry", "Root-zone containment supports rectangular rooms and containers"),))
     if any(not math.isfinite(value) for rect in geometry for value in (rect.x, rect.y, rect.width, rect.height)):
         return ValidationReport((ValidationIssue("invalid_rect", "Root-zone containment requires finite coordinates"),))
-    units = _root_units(building, {})
-    spec = building.layout
     issues = list(validate_layout(spec, result).issues)
     allowed = box(0, 0, spec.boundary.width_mm, spec.boundary.height_mm)
     for cutout in spec.boundary.cutouts:
@@ -337,11 +468,39 @@ def validate_zone_layout(building: BuildingIR, result: LayoutResult, zone_rects:
             if room is not None and (room.x < container.x - 1e-6 or room.y < container.y - 1e-6 or
                                      room.right > container.right + 1e-6 or room.top > container.top + 1e-6):
                 issues.append(ValidationIssue("zone_containment", f"Room {room_id} is outside container {unit_id}"))
+        for ancestor_id in ancestors.get(unit_id, ()):
+            ancestor = zone_rects.get(ancestor_id)
+            if ancestor is not None and (container.x < ancestor.x - 1e-6 or container.y < ancestor.y - 1e-6 or
+                                         container.right > ancestor.right + 1e-6 or container.top > ancestor.top + 1e-6):
+                issues.append(ValidationIssue("child_zone_containment", f"Container {unit_id} is outside ancestor {ancestor_id}"))
+        if check_unrelated_rooms:
+            for room_id, room in result.placements.items():
+                if room_id not in members and room.intersection_area(container) > 1e-6:
+                    issues.append(ValidationIssue("room_zone_overlap", f"Room {room_id} overlaps unrelated container {unit_id}"))
     containers = list(zone_rects.items())
     for index, (unit_id, rect) in enumerate(containers):
         for other_id, other in containers[index + 1:]:
-            if rect.intersection_area(other) > 1e-6:
+            related = unit_id in ancestors.get(other_id, ()) or other_id in ancestors.get(unit_id, ())
+            if not related and rect.intersection_area(other) > 1e-6:
                 issues.append(ValidationIssue("zone_overlap", f"Containers {unit_id} and {other_id} overlap"))
+    return ValidationReport(tuple(issues))
+
+
+def validate_zone_layout(building: BuildingIR, result: LayoutResult, zone_rects: Mapping[str, Rect], *,
+                         minimum_adjacency_mm=None, recursive_zones=False):
+    """Independently check rooms, physical containers, ancestry and hard relations."""
+    units = _root_units(building, {})
+    ancestors = {}
+    if recursive_zones:
+        all_units, _, ancestors = _recursive_units(building, units, {})
+        zone_ids = {zone.id for zone in building.zones}
+        units = {unit_id: members for unit_id, members in all_units.items() if unit_id in units or unit_id in zone_ids}
+    spec = building.layout
+    report = _validate_container_layout(spec, result, zone_rects, units, ancestors,
+                                        check_unrelated_rooms=recursive_zones)
+    if any(issue.code in {"unsupported_geometry", "invalid_rect"} for issue in report.issues):
+        return report
+    issues = list(report.issues)
     if set(result.placements) == set(spec.room_by_id):
         minimum = spec.door_width_mm if minimum_adjacency_mm is None else minimum_adjacency_mm
         issues.extend(_group_issues(result.placements, building.zone_relation_groups("required_adjacency"),
@@ -361,6 +520,7 @@ def solve_zone_layouts(
     minimum_adjacency_mm: float | None = None,
     deterministic_units: float | None = None,
     evidence: dict | None = None,
+    recursive_zones: bool = False,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -368,13 +528,20 @@ def solve_zone_layouts(
     they are not silently rotated or rescaled. Budgets are per CP-SAT solve, rather
     than a total orchestration deadline. Inspect ``evidence`` for local option
     failures, global CP status and accepted container coordinates.
+    ``recursive_zones=False`` preserves the root-only contract. When enabled,
+    each nonempty descendant zone has a physically solved container; parent
+    containers pack child alternatives and direct-room units with CP-SAT.
     """
-    from ortools.sat.python import cp_model
-
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
                     descendant_container_geometry=False, stage_attempts=[], variants=[])
     evidence.pop("failure", None)
+    if not isinstance(recursive_zones, bool):
+        _fail(evidence, "recursive_zones must be a boolean", stage="input",
+              code="invalid_recursive_mode", not_applicable=True)
+    if recursive_zones:
+        evidence.update(room_solver_used="zone_recursive", scope="recursive_zone_containers",
+                        descendant_container_geometry=True)
     counts = (variants, max_local_options)
     if max_validation_attempts is not None:
         counts += (max_validation_attempts,)
@@ -397,12 +564,36 @@ def solve_zone_layouts(
     boundary_height = _ceil_grid(spec.boundary.height_mm, spec.grid_mm)
     if max(boundary_width, boundary_height) >= 1 << 60:
         _fail(evidence, "Boundary coordinates exceed safe integer bounds", stage="input", code="integer_bounds", not_applicable=True)
-    options = _size_options(building, units, zone_size_options_mm, max_local_options, evidence)
+    shape_units, children, ancestors = _recursive_units(building, units, evidence) if recursive_zones else (units, {}, {})
+    options = _size_options(building, shape_units, zone_size_options_mm, max_local_options, evidence,
+                            allow_boundary_strips=recursive_zones)
     minimum = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
     if not math.isfinite(minimum) or minimum <= 0:
         _fail(evidence, "minimum_adjacency_mm must be finite and positive", stage="input", code="invalid_adjacency_width", not_applicable=True)
     groups = {relation: building.zone_relation_groups(f"{relation}_adjacency") for relation in ("required", "forbidden", "preferred")}
-    shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units, evidence)
+    if recursive_zones:
+        shapes = _recursive_shapes(building, units, shape_units, children, ancestors, options, groups,
+                                   minimum, time_limit_seconds, seed, deterministic_units, evidence)
+    else:
+        shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units, evidence)
+    return _solve_shape_layouts(
+        building, units, shapes, groups, minimum, variants, time_limit_seconds, seed,
+        attempts_limit, deterministic_units, evidence,
+        container_members={unit_id: members for unit_id, members in shape_units.items()
+                           if unit_id in units or unit_id in {zone.id for zone in building.zones}},
+        ancestors=ancestors, recursive_zones=recursive_zones,
+    )
+
+
+def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, time_limit_seconds,
+                         seed, attempts_limit, deterministic_units, evidence, *,
+                         container_members, ancestors, recursive_zones=False,
+                         stage="global", stage_unit=None):
+    from ortools.sat.python import cp_model
+
+    spec = building.layout
+    boundary_width = _ceil_grid(spec.boundary.width_mm, spec.grid_mm)
+    boundary_height = _ceil_grid(spec.boundary.height_mm, spec.grid_mm)
     model = cp_model.CpModel()
     grid = spec.grid_mm
     room_vars = {}
@@ -454,9 +645,39 @@ def solve_zone_layouts(
             model.Add(rx + rw <= x + width)
             model.Add(ry + rh <= y + height)
             room_vars[room_id] = _RoomVars(rx, ry, rw, rh, None)
+        for child_id in unit_shapes[0].containers:
+            geometry = [shape.containers[child_id] for shape in unit_shapes]
+            cx = model.NewIntVar(0, boundary_width, f"zone_{child_id}_x")
+            cy = model.NewIntVar(0, boundary_height, f"zone_{child_id}_y")
+            cw = model.NewIntVar(1, boundary_width, f"zone_{child_id}_width")
+            ch = model.NewIntVar(1, boundary_height, f"zone_{child_id}_height")
+            model.Add(cx == x + pick([round(rect.x / grid) for rect in geometry]))
+            model.Add(cy == y + pick([round(rect.y / grid) for rect in geometry]))
+            model.Add(cw == pick([round(rect.width / grid) for rect in geometry]))
+            model.Add(ch == pick([round(rect.height / grid) for rect in geometry]))
+            model.Add(cx >= x)
+            model.Add(cy >= y)
+            model.Add(cx + cw <= x + width)
+            model.Add(cy + ch <= y + height)
+            unit_vars[child_id] = _RoomVars(cx, cy, cw, ch, None)
         for index, cutout in enumerate(spec.boundary.cutouts):
             _avoid_cutout(model, x, y, width, height, cutout, grid, f"zone_{unit_id}_cutout_{index}")
     model.AddNoOverlap2D(x_intervals, y_intervals)
+    if recursive_zones:
+        for unit_id, values in unit_vars.items():
+            for room_id in container_members[unit_id]:
+                room = room_vars[room_id]
+                model.Add(room.x >= values.x)
+                model.Add(room.y >= values.y)
+                model.Add(room.x + room.width <= values.x + values.width)
+                model.Add(room.y + room.height <= values.y + values.height)
+            for ancestor_id in ancestors.get(unit_id, ()):
+                if ancestor_id in unit_vars:
+                    parent = unit_vars[ancestor_id]
+                    model.Add(values.x >= parent.x)
+                    model.Add(values.y >= parent.y)
+                    model.Add(values.x + values.width <= parent.x + parent.width)
+                    model.Add(values.y + values.height <= parent.y + parent.height)
     minimum_shared = max(1, _ceil_grid(minimum, grid))
     for a, b in spec.relation_pairs("required_adjacency"):
         _add_required_adjacency(model, room_vars[a], room_vars[b], minimum_shared, f"required_{a}_{b}")
@@ -466,7 +687,7 @@ def solve_zone_layouts(
         indicators = [_add_adjacency_indicator(model, room_vars[a], room_vars[b], minimum_shared, f"zone_required_{name}_{a}_{b}")
                       for a in left for b in right if a != b]
         if not indicators:
-            _fail(evidence, f"Required zone relation {name} has no distinct room pair", stage="global", code="empty_required_group")
+            _fail(evidence, f"Required zone relation {name} has no distinct room pair", stage=stage, code="empty_required_group")
         model.AddBoolOr(indicators)
     for name, left, right in groups["forbidden"]:
         for a in left:
@@ -491,7 +712,7 @@ def solve_zone_layouts(
             area_domain_bound=area_bound, preferred_groups=groups["preferred"],
         )
     except (InfeasibleLayout, ValueError) as exc:
-        _fail(evidence, f"Cannot construct global zone constraints: {exc}", stage="global",
+        _fail(evidence, f"Cannot construct {stage} zone constraints: {exc}", stage=stage,
               code="invalid_global_constraint", model_status="NOT_BUILT")
     model.Minimize(objective)
     results = []
@@ -502,21 +723,31 @@ def solve_zone_layouts(
         solver = cp_model.CpSolver()
         configure_solver(solver, seed=seed + attempt, time_limit_seconds=time_limit_seconds, deterministic_units=deterministic_units)
         status = solver.Solve(model)
-        record = {"stage": "global", "attempt": attempt + 1, "model_status": solver.StatusName(status), "accepted": False}
+        record = {"stage": stage, "attempt": attempt + 1, "model_status": solver.StatusName(status), "accepted": False}
+        if stage_unit is not None:
+            record["unit_id"] = stage_unit
         evidence["stage_attempts"].append(record)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if last_issues:
                 break
-            _fail(evidence, f"Global zone placement returned {solver.StatusName(status)} for the selected shapes",
-                  stage="global", code="no_global_placement", unit_ids=units,
-                  model_status=solver.StatusName(status), proof_scope="selected_zone_shapes")
+            _fail(evidence, f"{stage.title()} zone placement returned {solver.StatusName(status)} for the selected shapes",
+                  stage=stage, code=f"no_{stage}_placement", unit_ids=units,
+                  model_status=solver.StatusName(status),
+                  proof_scope="selected_zone_shapes" if stage == "global" else "selected_subtree_shapes")
 
         def rectangle(values):
             return Rect(*(solver.Value(value) * grid for value in (values.x, values.y, values.width, values.height)))
 
         candidate = LayoutResult(len(results) + 1, {room.id: rectangle(room_vars[room.id]) for room in spec.rooms}, solver.Value(objective))
         zone_rects = {unit_id: rectangle(values) for unit_id, values in unit_vars.items()}
-        report = validate_zone_layout(building, candidate, zone_rects, minimum_adjacency_mm=minimum)
+        if stage == "global":
+            report = validate_zone_layout(building, candidate, zone_rects, minimum_adjacency_mm=minimum,
+                                          recursive_zones=recursive_zones)
+        else:
+            report = _validate_container_layout(spec, candidate, zone_rects, container_members, ancestors,
+                                                check_unrelated_rooms=True)
+            report = ValidationReport((*report.issues,
+                                       *_group_issues(candidate.placements, groups["required"], groups["forbidden"], minimum)))
         model.AddForbiddenAssignments(variables, [[solver.Value(value) for value in variables]])
         if not report.ok:
             last_issues = [f"{issue.code}: {issue.message}" for issue in report.issues]
@@ -531,4 +762,5 @@ def solve_zone_layouts(
         if len(results) == variants:
             return results
     _fail(evidence, f"Only {len(results)} of {variants} independently valid zone layouts within the bounded search",
-          stage="validation", code="insufficient_valid_candidates", proof_scope="bounded_candidates", issues=last_issues)
+          stage="validation" if stage == "global" else stage, code="insufficient_valid_candidates",
+          proof_scope="bounded_candidates" if stage == "global" else "bounded_subtree_candidates", issues=last_issues)

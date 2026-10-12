@@ -134,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         dest="deterministic_units",
         help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine",
     )
-    generate_building.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, or opt-in root zone containers (zone_hierarchical)")
+    generate_building.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, root zone containers (zone_hierarchical), or recursive zone containers (zone_recursive)")
     generate_building.add_argument("--seed", type=int, default=42)
     generate_building.add_argument(
         "--max-attempts",
@@ -216,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:
     acceptance_matrix.add_argument("--variants", type=int, default=3)
     acceptance_matrix.add_argument("--time-limit", type=float, default=30)
     acceptance_matrix.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units", help="spend a machine-independent CP-SAT work budget instead of the wall clock, so the same input, seed and budget repeat exactly; wall time then varies by machine")
-    acceptance_matrix.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, or opt-in root zone containers (zone_hierarchical)")
+    acceptance_matrix.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, root zone containers (zone_hierarchical), or recursive zone containers (zone_recursive)")
     acceptance_matrix.add_argument("--seeds", type=int, nargs="+", default=[1, 7, 42])
     acceptance_matrix.add_argument("--max-attempts", type=int, default=None)
     acceptance_matrix.add_argument("--equipment-retries", type=int, default=2)
@@ -237,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     facility_floors.add_argument("--max-attempts", type=int, default=None)
     facility_floors.add_argument("--time-limit", type=float, default=60)
     facility_floors.add_argument("--seed", type=int, default=42)
-    facility_floors.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="zone_hierarchical rejects pinned cores and structural axes")
+    facility_floors.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="zone_hierarchical and zone_recursive reject pinned cores and structural axes")
     facility_floors.add_argument("--unified-ifc", action="store_true", help="require a unified IFC and an explicitly declared shared grid; shared-grid programs export it automatically")
     compare_variants = subparsers.add_parser(
         "compare-variants",

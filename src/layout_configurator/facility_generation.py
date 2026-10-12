@@ -29,7 +29,7 @@ from .validation import ValidationReport, validate_layout
 from .zone_hierarchy import ZoneHierarchyNotApplicable, solve_zone_layouts
 
 
-FACILITY_SOLVER_STRATEGIES = (*SOLVER_STRATEGIES, "zone_hierarchical")
+FACILITY_SOLVER_STRATEGIES = (*SOLVER_STRATEGIES, "zone_hierarchical", "zone_recursive")
 
 
 @dataclass(frozen=True)
@@ -153,8 +153,9 @@ def solve_feasible_facility_variants(
 
     ``room_solver`` picks the room stage: ``auto`` (hierarchical, falling back
     to monolithic), ``hierarchical``, ``monolithic`` or the opt-in BuildingIR
-    root-container backend ``zone_hierarchical``. The latter rejects fixed room
-    and structural-axis constraints with stage evidence. ``fixed_rects`` pins
+    root-container backend ``zone_hierarchical`` or ``zone_recursive``, which
+    also solves physical descendant containers. Both zone backends reject fixed
+    room and structural-axis constraints with stage evidence. ``fixed_rects`` pins
     rooms, for example a vertical core already placed on another floor.
     """
 
@@ -179,7 +180,7 @@ def solve_feasible_facility_variants(
     solver_evidence: dict[str, object] = {}
     try:
         minimum = prepared.layout.door_width_mm + 2 * prepared.layout.wall_thickness_mm if prepared.flows else None
-        if room_solver == "zone_hierarchical":
+        if room_solver in {"zone_hierarchical", "zone_recursive"}:
             unsupported = [name for name, supplied in (
                 ("fixed_rects", bool(fixed_rects)),
                 ("axis_aligned_room_ids", axis_aligned_room_ids is not None),
@@ -188,18 +189,19 @@ def solve_feasible_facility_variants(
             ) if supplied]
             if unsupported:
                 failure = ZoneHierarchyNotApplicable(
-                    "zone_hierarchical does not support: " + ", ".join(unsupported),
+                    room_solver + " does not support: " + ", ".join(unsupported),
                     stage="input", code="unsupported_constraints", model_status="NOT_BUILT",
                     proof_scope="unsupported_input",
                     room_ids=tuple(fixed_rects or ()), issues=tuple(unsupported),
                 )
-                solver_evidence.update(room_solver_used="zone_hierarchical", stage_attempts=[],
+                solver_evidence.update(room_solver_used=room_solver, stage_attempts=[],
                                        failure=failure.to_dict())
                 raise failure
             room_candidates = solve_zone_layouts(
                 prepared, max_attempts, time_limit_seconds, seed,
                 minimum_adjacency_mm=minimum, deterministic_units=deterministic_units,
                 evidence=solver_evidence,
+                recursive_zones=room_solver == "zone_recursive",
             )
         else:
             room_candidates = solve_layouts_auto(
@@ -229,7 +231,7 @@ def solve_feasible_facility_variants(
             room_solver=room_solver,
             room_solver_used=solver_evidence.get("room_solver_used"),
             hierarchy_fallback_reason=solver_evidence.get("hierarchy_fallback_reason"),
-            room_solver_evidence=solver_evidence if room_solver == "zone_hierarchical" else None,
+            room_solver_evidence=solver_evidence if room_solver in {"zone_hierarchical", "zone_recursive"} else None,
         )
         raise InfeasibleFacilityGeneration(
             f"The room solver returned no candidate within the configured search budget: {exc}",
@@ -341,7 +343,7 @@ def solve_feasible_facility_variants(
         room_solver=room_solver,
         room_solver_used=solver_evidence.get("room_solver_used"),
         hierarchy_fallback_reason=solver_evidence.get("hierarchy_fallback_reason"),
-        room_solver_evidence=solver_evidence if room_solver == "zone_hierarchical" else None,
+        room_solver_evidence=solver_evidence if room_solver in {"zone_hierarchical", "zone_recursive"} else None,
     )
     if len(accepted) != variants:
         detail = "; ".join(
