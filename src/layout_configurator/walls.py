@@ -13,6 +13,7 @@ from shapely.geometry import LineString
 from shapely.ops import unary_union
 
 from .models import DoorSpec, ExternalEntrySpec, LayoutIR, LayoutResult, Rect, WindowSpec
+from .result_geometry import require_rectangular_layout
 
 
 @dataclass(frozen=True)
@@ -98,6 +99,7 @@ class WallPlan:
 def build_wall_plan(spec: LayoutIR, result: LayoutResult) -> WallPlan:
     """Build a valid wall band with a gap for every required adjacency door."""
 
+    require_rectangular_layout(result, "Walls and openings")
     centerlines = []
     for room in spec.rooms:
         rect = result.placements[room.id]

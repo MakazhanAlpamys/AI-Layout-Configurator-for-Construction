@@ -11,6 +11,7 @@ from .equipment import EquipmentLayoutResult, clearance_rect
 from .facility import FacilityDrawingProfile
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
+from .result_geometry import require_rectangular_layout
 from .validation import ValidationReport
 from .walls import build_wall_plan
 
@@ -43,6 +44,7 @@ def export_dxf(
     flow_types: Mapping[str, str] | None = None,
     drawing_profile: FacilityDrawingProfile | None = None,
 ) -> None:
+    require_rectangular_layout(result, "DXF export")
     import ezdxf
     from ezdxf.enums import TextEntityAlignment
 
@@ -206,6 +208,7 @@ def export_pdf(
     flow_types: Mapping[str, str] | None = None,
     drawing_profile: FacilityDrawingProfile | None = None,
 ) -> None:
+    require_rectangular_layout(result, "PDF export")
     from reportlab.lib.pagesizes import A3, landscape
     from reportlab.pdfgen import canvas
 

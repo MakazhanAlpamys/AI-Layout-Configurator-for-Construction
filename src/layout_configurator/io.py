@@ -12,6 +12,7 @@ from .facility import FacilityValidationReport
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
 from .schema import load_mapping
+from .result_geometry import parse_layout_result
 
 
 def load_spec(path: str | Path) -> LayoutIR:
@@ -36,46 +37,26 @@ def load_building(path: str | Path) -> BuildingIR:
 
 def write_result(path: str | Path, spec: LayoutIR, result: LayoutResult) -> None:
     payload = {"spec": spec.to_dict(), "layout": result.to_dict()}
+    parse_layout_result(payload["layout"])
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def load_result(path: str | Path) -> tuple[LayoutIR, LayoutResult]:
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    payload = _read_result_payload(path)
     spec = LayoutIR.from_mapping(payload["spec"])
     layout = payload["layout"]
-    placements = {
-        room_id: Rect(
-            x=float(values["x"]),
-            y=float(values["y"]),
-            width=float(values["width"]),
-            height=float(values["height"]),
-        )
-        for room_id, values in layout["rooms"].items()
-    }
-    return spec, LayoutResult(
-        variant=int(layout.get("variant", 1)),
-        placements=placements,
-        objective_value=layout.get("objective_value"),
-    )
+    return spec, parse_layout_result(layout)
 
 
 def load_building_result(path: str | Path) -> tuple[BuildingIR, LayoutResult, EquipmentLayoutResult]:
     """Read a generated facility result for an independent re-check."""
 
-    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    payload = _read_result_payload(path)
     building = BuildingIR.from_mapping(payload["spec"])
     layout = payload["layout"]
-    placements = {
-        room_id: Rect(
-            x=float(values["x"]),
-            y=float(values["y"]),
-            width=float(values["width"]),
-            height=float(values["height"]),
-        )
-        for room_id, values in layout["rooms"].items()
-    }
+    result = parse_layout_result(layout)
     equipment_placements = tuple(
         EquipmentPlacement(
             equipment_id=str(item["equipment_id"]),
@@ -92,13 +73,26 @@ def load_building_result(path: str | Path) -> tuple[BuildingIR, LayoutResult, Eq
     )
     return (
         building,
-        LayoutResult(
-            variant=int(layout.get("variant", 1)),
-            placements=placements,
-            objective_value=layout.get("objective_value"),
-        ),
+        result,
         EquipmentLayoutResult(equipment_placements),
     )
+
+
+def _read_result_payload(path: str | Path) -> dict:
+    def unique_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError(f"Duplicate result JSON field: {key}")
+            result[key] = value
+        return result
+    try:
+        payload = json.loads(Path(path).read_text(encoding="utf-8"), object_pairs_hook=unique_keys)
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError(f"Malformed or unavailable result JSON: {exc}") from exc
+    if not isinstance(payload, dict) or not isinstance(payload.get("spec"), dict) or not isinstance(payload.get("layout"), dict):
+        raise ValueError("Result JSON requires spec and layout objects")
+    return payload
 
 
 def write_building_result(
@@ -120,6 +114,7 @@ def write_building_result(
         "layout": result.to_dict(),
         **equipment.to_dict(building),
     }
+    parse_layout_result(payload["layout"])
     if flow_routes is not None:
         payload["flow_routes"] = flow_routes.to_dict()
     if flow_report is not None:

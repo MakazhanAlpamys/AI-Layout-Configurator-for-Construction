@@ -18,6 +18,7 @@ from .equipment import EquipmentLayoutResult, clearance_rect
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
 from .multifloor import MultiFloorResult, MultiFloorSpec
+from .result_geometry import require_rectangular_layout
 from .walls import DoorOpening, WallPlan, WindowOpening, build_wall_plan
 
 if TYPE_CHECKING:
@@ -133,6 +134,7 @@ def export_ifc(
 ) -> IfcExportSummary:
     """Write a small, readable IFC4 model and return entity counts."""
 
+    require_rectangular_layout(result, "IFC export")
     import ifcopenshell
 
     document = ifcopenshell.file(schema="IFC4")
@@ -313,6 +315,7 @@ def export_building_ifc(
 ) -> IfcExportSummary:
     """Export equipment proxies, functional zones and declared process systems."""
 
+    require_rectangular_layout(result, "Building IFC export")
     return export_ifc(
         path,
         building.layout,
@@ -437,6 +440,8 @@ def export_facility_floors_ifc(
     levels = {entry.level for entry in multi_spec.floors}
     if set(stack.floors) != levels or len(levels) != len(multi_spec.floors):
         raise ValueError("Facility IFC stack floors do not match the specification")
+    for level, candidate in sorted(stack.floors.items()):
+        require_rectangular_layout(candidate.result, f"Unified facility IFC export floor {level}")
     if not stack.ok:
         raise ValueError("Facility IFC requires an accepted stack")
     failures = [check.id for check in vertical_checks(multi_spec, stack.floors) if check.status != "PASS"]
@@ -688,6 +693,8 @@ def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: 
 
     if result.spec != multi_spec or len(result.floors) != len(multi_spec.floors):
         raise ValueError("Multi-floor IFC result does not match its specification")
+    for floor, floor_result in zip(multi_spec.floors, result.floors):
+        require_rectangular_layout(floor_result, f"Legacy multi-floor IFC export floor {floor.level}")
     document = ifcopenshell.file(schema="IFC4")
     owner_history = _owner_history(document)
     context = _model_context(document)

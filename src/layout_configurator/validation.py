@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .models import LayoutIR, LayoutResult, Rect
+from .result_geometry import require_rectangular_layout
 
 
 @dataclass(frozen=True)
@@ -23,6 +24,7 @@ class ValidationReport:
 
 
 def validate_layout(spec: LayoutIR, result: LayoutResult) -> ValidationReport:
+    require_rectangular_layout(result, "Full layout validation")
     from shapely.geometry import box
 
     issues: list[ValidationIssue] = []

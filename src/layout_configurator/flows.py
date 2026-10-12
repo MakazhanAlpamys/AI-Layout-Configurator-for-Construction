@@ -11,6 +11,7 @@ from shapely.geometry import LineString, box
 from .building import BuildingIR, FlowSpec
 from .equipment import EquipmentLayoutResult, EquipmentPlacement, clearance_rect, flow_portal_offset_mm
 from .models import LayoutResult, Rect
+from .result_geometry import require_rectangular_layout
 from .walls import DoorOpening, WallPlan, build_wall_plan
 
 
@@ -110,6 +111,7 @@ def route_flows(
     it does not prove that no feasible route exists.
     """
 
+    require_rectangular_layout(layout, "Flow routing")
     for name, limit in (
         ("max_route_candidates", max_route_candidates),
         ("max_room_path_expansions", max_room_path_expansions),
@@ -214,6 +216,7 @@ def validate_flow_routes(
 ) -> FlowValidationReport:
     """Independently check route completeness, doors, walls and equipment."""
 
+    require_rectangular_layout(layout, "Flow validation")
     issues: list[FlowValidationIssue] = []
     wall_plan = build_wall_plan(building.layout, layout)
     graph = _door_graph(building, layout, wall_plan)

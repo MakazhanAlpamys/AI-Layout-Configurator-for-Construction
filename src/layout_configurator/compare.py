@@ -23,6 +23,7 @@ import math
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from .result_geometry import parse_layout_result, require_rectangular_layout
 from typing import Any
 
 DISCLAIMER = (
@@ -81,6 +82,7 @@ def variant_metrics(path: str | Path) -> VariantMetrics:
 
     path = Path(path)
     data = json.loads(path.read_text(encoding="utf-8"))
+    require_rectangular_layout(parse_layout_result(data["layout"]), "Variant ranking")
     spec = data["spec"]
     layout_spec = spec.get("layout", spec)
     placed = data["layout"]["rooms"]

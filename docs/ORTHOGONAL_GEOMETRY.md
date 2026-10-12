@@ -26,7 +26,19 @@ split at a narrow neck. Its mitre offset implements an axis-aligned clearance
 policy. It is not a regulatory clearance verdict or a round-corner Euclidean
 offset. Predicates use floating-point GEOS geometry.
 
-This checkpoint supplies the kernel. Versioned result serialization, solver
-selection, wall/opening topology, equipment/routes and complete polygon export
-acceptance are separate integration steps; the rectangular backend remains the
-working generation path.
+Result JSON can contain both `Rect` and `OrthogonalPolygon`. Polygon results
+declare `geometry_version: '0.2'` and `units: 'mm'`, with typed vertex arrays;
+an all-rectangle result retains the legacy JSON representation. Loaders preserve
+the original footprint and reject unknown fields, versions, units, duplicate
+keys, invalid coordinates and incorrect derived areas.
+
+`validate_result_geometry(spec, result)` reports exact room identity, area,
+boundary/cutout coverage and overlap evidence. Its overall acceptance remains
+`UNKNOWN` or `FAIL`: minimum dimensions, opening topology and full connectivity
+are still unevaluated. It cannot issue a full layout PASS.
+
+Full rectangular consumers use `require_rectangular_layout` before work. A
+polygon currently raises `UnsupportedGeometryError` with structured `UNKNOWN`
+capability evidence at walls/openings, equipment, routes, rules, ranking, viewer
+and DXF/PDF/IFC export boundaries. Solver selection and polygon consumer
+integration remain separate steps; rectangular generation remains supported.

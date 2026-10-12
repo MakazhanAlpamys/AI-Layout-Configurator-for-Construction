@@ -15,6 +15,7 @@ from typing import Any, Literal, Mapping
 from .models import LayoutIR, LayoutResult, RoomSpec
 from .resources import resolve_resource_path
 from .validation import validate_layout
+from .result_geometry import require_rectangular_layout
 from .walls import build_wall_plan
 
 
@@ -264,6 +265,7 @@ def _merge_rule_mappings(base: list[dict[str, Any]], updates) -> list[dict[str, 
 def check_layout(spec: LayoutIR, result: LayoutResult, ruleset: RuleSet) -> NormsReport:
     """Run every rule in a ruleset against one LayoutIR/LayoutResult pair."""
 
+    require_rectangular_layout(result, "Rules evaluation")
     results = tuple(_run_rule(rule, spec, result) for rule in ruleset.rules)
     return NormsReport(ruleset.name, ruleset.version, ruleset.jurisdiction, results, ruleset.provenance)
 

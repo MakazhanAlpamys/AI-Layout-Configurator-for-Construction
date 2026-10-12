@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Mapping
+from typing import Any, Literal, Mapping, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .orthogonal import OrthogonalPolygon
 
 
 class SpecError(ValueError):
@@ -441,24 +444,13 @@ class LayoutResult:
     """One solver candidate, with dimensions returned in millimetres."""
 
     variant: int
-    placements: dict[str, Rect]
+    placements: dict[str, Rect | OrthogonalPolygon]
     objective_value: int | None = None
+    geometry_version: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "variant": self.variant,
-            "objective_value": self.objective_value,
-            "rooms": {
-                room_id: {
-                    "x": rect.x,
-                    "y": rect.y,
-                    "width": rect.width,
-                    "height": rect.height,
-                    "area_m2": rect.area_m2,
-                }
-                for room_id, rect in self.placements.items()
-            },
-        }
+        from .result_geometry import layout_result_to_dict
+        return layout_result_to_dict(self)
 
 
 def _positive_float(value: Any, field_name: str) -> float:

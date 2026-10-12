@@ -10,6 +10,7 @@ from shapely.geometry import box
 
 from .building import BuildingIR, EquipmentSpec
 from .models import LayoutResult, Rect
+from .result_geometry import require_rectangular_layout
 from .search import configure_solver
 from .walls import build_wall_plan
 
@@ -112,6 +113,7 @@ def door_approach_zones(building: BuildingIR, layout: LayoutResult) -> dict[str,
     about doors. Buildings without required flows get no zones.
     """
 
+    require_rectangular_layout(layout, "Equipment door approaches")
     clear_width = max(
         (flow.minimum_clear_width_mm for flow in building.flows if flow.required),
         default=0.0,
@@ -170,6 +172,7 @@ def place_equipment(
     its declared position and ignores them.
     """
 
+    require_rectangular_layout(layout, "Equipment placement")
     if time_limit_seconds <= 0:
         raise ValueError("Equipment placement time limit must be positive")
     try:
@@ -368,6 +371,7 @@ def validate_equipment_layout(
 ) -> EquipmentValidationReport:
     """Independently validate footprint, clearance, host and wall collisions."""
 
+    require_rectangular_layout(layout, "Equipment validation")
     issues: list[EquipmentValidationIssue] = []
     specs = {item.id: item for item in building.equipment}
     placements = equipment_layout.placements

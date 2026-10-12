@@ -38,6 +38,8 @@ Checkpoint B.1 supplies a validated orthogonal geometry kernel with exact
 footprint operations; result contracts and downstream integration remain open.
 Checkpoint H.1 verifies shared-grid core constraints and one semantic facility
 IFC across storeys; the CLI retains per-floor QA and unified read-back evidence.
+Checkpoint B.2 adds mixed, versioned result footprints and exact scoped
+geometry evidence; unsupported full consumers report UNKNOWN explicitly.
 
 ## 1. Why we are expanding the project
 

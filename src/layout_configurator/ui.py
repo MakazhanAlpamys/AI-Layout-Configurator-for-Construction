@@ -52,6 +52,7 @@ from .issue_management import (
     write_issue_management,
 )
 from .models import LayoutIR, LayoutResult
+from .result_geometry import require_rectangular_layout
 from .norms import RuleSet, check_layout, load_ruleset
 from .solver import InfeasibleLayout, solve_layouts
 from .validation import validate_layout
@@ -100,6 +101,7 @@ class FacilityReviewSession:
     ) -> "FacilityReviewSession":
         source = Path(input_path)
         building, result, equipment = load_building_result(source)
+        require_rectangular_layout(result, "Facility viewer")
         profile = _facility_profile_for_result(source, profile_path)
         equipment_report = validate_equipment_layout(building, result, equipment)
         routes = route_flows(building, result, equipment)
@@ -759,6 +761,7 @@ class UiSession:
                 time_limit_seconds=solve_time_limit_seconds,
                 seed=seed,
             )[0]
+        require_rectangular_layout(result, "Layout viewer")
         state = EditorState.from_layout(spec, result)
         ruleset = load_ruleset(rules_path) if rules_path else None
         if ruleset and require_provenance:
