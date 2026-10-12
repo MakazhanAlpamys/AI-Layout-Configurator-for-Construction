@@ -1,0 +1,3 @@
+recursive-include schemas *.json
+recursive-include rules *.yaml
+recursive-include ids *.ids

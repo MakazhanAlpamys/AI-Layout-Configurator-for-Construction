@@ -28,6 +28,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | C.1.2 | Automatic daylight facade parity | Both backends require an actual exposed facade long enough for the automatic opening and margins, including fractional/off-grid cutout extents. Existing no-cutout and explicit-window behavior is preserved. | Fresh daylight/core/hierarchy-constraints run: 31 passed; agent preferences/hierarchy regression: 20 passed. | complete 2026-10-12 |
 | QA.1 | CI platform and container startup repair | Empty IFC query assertions accept both list and tuple results; the deployed smoke waits through startup TCP resets before submitting work. | First container/Linux CI exposed both defects. A real TCP-reset regression and IFC group tests: 10 passed. Fresh Docker pharma smoke after the repair: full QA passed, 7.05 s; remote acceptance remains pending. | repair complete 2026-10-12; CI gate pending |
 | G.4 | Typed program proposal and confirmed application | Room, equipment and flow changes use strict operations and explicit units. Hashed drafts apply only to their exact canonical base with named confirmation; schema/reference checks are atomic and old artifacts are invalidated. CLI supports proposal, application and regeneration. | Fresh contract/CLI tests: 13 passed, 16 subtests, including a real changed-area solve/export/QA bundle. | complete 2026-10-12 for structured proposals; external model adapter pending |
+| H.5 | Installable wheel and source distribution | Build-time copies bundle the authoritative schemas/rules/IDS without maintaining a second source tree. Loaders work from foreign working directories while respecting local and absolute overrides. | Fresh packaging/schema/norms/QA run: 29 passed, 17 subtests. Built wheel and rebuilt sdist were installed outside checkout; isolated CLI generated, checked IDS and passed full facility QA. Agent broader run: 83 passed. | complete 2026-10-12 |
 
 ## Remaining implementation
 
@@ -44,7 +45,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 - G: vector-PDF imports, draft raster extraction and an opt-in model adapter
   for the strict edit contract; DXF/IFC and explicit confirmation exist.
 - H: unified multi-storey IFC and shared grid, typed vertical connectors,
-  service links, non-editable package resources and remote container acceptance.
+  service links and remote container acceptance.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed
   engineering library; scenario and pressure-network checks; synchronized
   drawings/schedules; medical-plastics benchmark and change scenario.

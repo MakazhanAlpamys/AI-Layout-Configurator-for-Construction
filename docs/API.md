@@ -71,3 +71,8 @@ image and runs this check, retaining its JSON evidence and service logs.
 
 Software QA and dossiers do not close process/QA, HVAC or receiving CAD/BIM
 reviews. Their decision blocks remain external acceptance conditions.
+
+Non-editable wheels also include the built-in schema/rule/IDS resources.
+After installation, CLI defaults work from another directory. Existing local
+`schemas/`, `rules/` or `ids/` files override relative defaults; explicit
+absolute paths retain their meaning, including errors for missing files.

@@ -9,9 +9,10 @@ from typing import Any, Mapping
 
 from .building import BuildingIR
 from .models import LayoutIR
+from .resources import resource_path, resolve_resource_path
 
-DEFAULT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "layout_ir.schema.json"
-DEFAULT_BUILDING_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "building_ir.schema.json"
+DEFAULT_SCHEMA_PATH = resource_path("schemas/layout_ir.schema.json")
+DEFAULT_BUILDING_SCHEMA_PATH = resource_path("schemas/building_ir.schema.json")
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,7 @@ class SchemaIssue:
 
 
 def load_json_schema(path: str | Path = DEFAULT_SCHEMA_PATH) -> dict[str, Any]:
-    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    raw = json.loads(resolve_resource_path(path).read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise ValueError("JSON Schema root must be an object")
     return raw

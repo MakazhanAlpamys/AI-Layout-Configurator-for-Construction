@@ -18,6 +18,7 @@ from .ifc import read_ifc_summary, validate_ifc_roundtrip
 from .issue_management import issue_state_map, load_issue_management
 from .io import load_building_result
 from .equipment import validate_equipment_layout
+from .schema import load_json_schema
 
 
 @dataclass(frozen=True)
@@ -479,7 +480,7 @@ def _qa_coordination(path: Path, facility_report, schema_path: str | Path, *, ex
         data = json.loads(path.read_text(encoding="utf-8"))
         from jsonschema import Draft202012Validator
 
-        schema = json.loads(Path(schema_path).read_text(encoding="utf-8"))
+        schema = load_json_schema(schema_path)
         errors = list(Draft202012Validator(schema).iter_errors(data))
         if errors:
             return BundleQACheck("COORDINATION_JSON", False, "Coordination sidecar violates its JSON Schema", {"errors": [error.message for error in errors]})

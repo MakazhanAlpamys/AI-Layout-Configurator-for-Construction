@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .resources import resolve_resource_path
+
 
 @dataclass(frozen=True)
 class IdsSpecificationResult:
@@ -30,6 +32,7 @@ def validate_ids(ifc_path: str | Path, ids_path: str | Path) -> IdsValidationRep
     import ifcopenshell
     from ifctester import ids
 
+    ids_path = resolve_resource_path(ids_path)
     ids_file = ids.open(str(ids_path), validate=True)
     ifc_file = ifcopenshell.open(str(ifc_path))
     ids_file.validate(ifc_file, should_filter_version=True, filepath=str(ids_path))

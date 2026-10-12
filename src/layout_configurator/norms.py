@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Literal, Mapping
 
 from .models import LayoutIR, LayoutResult, RoomSpec
+from .resources import resolve_resource_path
 from .validation import validate_layout
 from .walls import build_wall_plan
 
@@ -224,7 +225,7 @@ def load_ruleset(path: str | Path) -> RuleSet:
                 merged[key] = raw[key]
         return RuleSet.from_mapping(merged)
 
-    return load(Path(path), ())
+    return load(resolve_resource_path(path), ())
 
 
 def _provenance(raw) -> dict[str, str]:

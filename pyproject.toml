@@ -23,7 +23,7 @@ dependencies = [
 layout-configurator = "layout_configurator.cli:main"
 
 [project.optional-dependencies]
-test = ["pytest>=8.0"]
+test = ["pytest>=8.0", "pip>=24.0", "setuptools>=68", "wheel>=0.43"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

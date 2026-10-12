@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from .schema import validate_mapping
+from .resources import resource_path
 
 
 ISSUE_MANAGEMENT_VERSION = "0.1"
-DEFAULT_ISSUE_MANAGEMENT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "issue_management.schema.json"
+DEFAULT_ISSUE_MANAGEMENT_SCHEMA_PATH = resource_path("schemas/issue_management.schema.json")
 
 
 def new_issue_management_state() -> dict[str, Any]:

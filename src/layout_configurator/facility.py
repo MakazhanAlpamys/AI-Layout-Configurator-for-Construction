@@ -17,6 +17,7 @@ from .building import BuildingIR
 from .equipment import EquipmentLayoutResult, EquipmentValidationReport
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutResult
+from .resources import resource_path, resolve_resource_path
 from .validation import ValidationReport, validate_layout
 
 
@@ -42,8 +43,8 @@ _FACILITY_RULE_KINDS = frozenset(
         "zone_classification",
     }
 )
-DEFAULT_FACILITY_PROFILE_PATH = Path(__file__).resolve().parents[2] / "rules" / "default_facility.yaml"
-DEFAULT_FACILITY_PROFILE_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "facility_profile.schema.json"
+DEFAULT_FACILITY_PROFILE_PATH = resource_path("rules/default_facility.yaml")
+DEFAULT_FACILITY_PROFILE_SCHEMA_PATH = resource_path("schemas/facility_profile.schema.json")
 
 
 @dataclass(frozen=True)
@@ -365,7 +366,7 @@ def load_facility_profile(path: str | Path) -> FacilityProfile:
 
     import yaml
 
-    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    raw = yaml.safe_load(resolve_resource_path(path).read_text(encoding="utf-8"))
     if isinstance(raw, Mapping) and "rules" in raw:
         from .schema import validate_mapping
 

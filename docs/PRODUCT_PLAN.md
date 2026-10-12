@@ -22,6 +22,8 @@ Checkpoint QA.1 repairs Linux collection assertions and container startup
 readiness after the first new remote CI run exposed these two differences.
 Checkpoint G.4 adds strict typed room/equipment/flow proposals, confirmed
 canonical application and an independently checked CLI regeneration path.
+Checkpoint H.5 bundles authoritative schemas/rules/IDS into installable
+distributions; isolated installed CLI generation and bundle QA are verified.
 
 ## 1. Why we are expanding the project
 
