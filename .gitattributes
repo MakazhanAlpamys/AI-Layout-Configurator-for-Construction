@@ -1,0 +1,2 @@
+src/layout_configurator/fonts/*.txt text eol=lf
+src/layout_configurator/fonts/*.json text eol=lf

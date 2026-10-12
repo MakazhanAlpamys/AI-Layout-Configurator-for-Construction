@@ -44,6 +44,8 @@ Checkpoint QA.3 pins the comparison regression's work budget after a busy-machin
 full run exposed its wall-clock-dependent quality assertion.
 Checkpoint C.3.1 adds opt-in physical root-zone containment and scoped per-stage
 failure evidence; recursive containers and large-scale gates remain separate.
+Checkpoint D.1 adds indexed thematic vector sheets and portable Cyrillic fonts.
+The clean `3e9d4b3` snapshot also passed the complete 354-test local gate.
 
 ## 1. Why we are expanding the project
 

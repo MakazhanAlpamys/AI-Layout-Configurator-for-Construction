@@ -82,15 +82,17 @@ def _digest(path: Path):
 
 
 def _runtime_fingerprint():
-    """Cache keys change with executable source, schemas and solver versions."""
+    """Cache keys change with executable source, fonts, schemas and versions."""
     digest = hashlib.sha256()
-    for path in sorted(Path(__file__).parent.glob("*.py")):
-        digest.update(path.name.encode())
+    package = Path(__file__).parent
+    paths = [*package.glob("*.py"), *(path for path in package.glob("fonts/*") if path.is_file())]
+    for path in sorted(paths):
+        digest.update(path.relative_to(package).as_posix().encode())
         digest.update(path.read_bytes())
     for path in sorted(DEFAULT_FACILITY_PROFILE_SCHEMA_PATH.parent.glob("*.json")):
         digest.update(path.name.encode())
         digest.update(path.read_bytes())
-    for dependency in ("ortools", "shapely", "ezdxf", "reportlab", "ifcopenshell", "jsonschema"):
+    for dependency in ("ortools", "shapely", "ezdxf", "reportlab", "pypdf", "ifcopenshell", "jsonschema"):
         digest.update(f"{dependency}={version(dependency)}".encode())
     return digest.hexdigest()
 

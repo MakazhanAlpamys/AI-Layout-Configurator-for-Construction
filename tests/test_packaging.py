@@ -108,6 +108,9 @@ class InstalledWheelTests(unittest.TestCase):
                 for source in sorted((PROJECT / directory).glob(pattern)):
                     member = f"{prefix}/{directory}/{source.name}"
                     self.assertTrue(member in names, f"Missing sdist resource: {member}")
+            for source in sorted((PROJECT / "src/layout_configurator/fonts").glob("*")):
+                member = f"{prefix}/src/layout_configurator/fonts/{source.name}"
+                self.assertIn(member, names, f"Missing sdist font resource: {member}")
             archive.extractall(extracted, filter="data")
         wheels = self.root / "sdist-wheels"
         self._command([sys.executable, "-m", "pip", "wheel", "--no-deps", "--no-build-isolation",
@@ -117,6 +120,8 @@ class InstalledWheelTests(unittest.TestCase):
                 for source in sorted((PROJECT / directory).glob(pattern)):
                     member = f"layout_configurator/_data/{directory}/{source.name}"
                     self.assertEqual(archive.read(member), source.read_bytes())
+            for source in sorted((PROJECT / "src/layout_configurator/fonts").glob("*")):
+                self.assertEqual(archive.read(f"layout_configurator/fonts/{source.name}"), source.read_bytes())
 
     def test_installed_loaders_find_defaults_from_a_foreign_working_directory(self):
         # Hard-coded parents[2] paths, missing package resources and unbundled
@@ -173,6 +178,26 @@ class InstalledWheelTests(unittest.TestCase):
             "       'changes': {'rotatable': False}}]}, source_text='Keep hall orientation fixed')\n"
             "write_proposed_edits('draft.json', draft)\n"
             "assert read_proposed_edits('draft.json').to_dict() == draft.to_dict()\n"
+        )
+
+    def test_installed_cli_uses_pinned_licensed_fonts_for_cyrillic_sheets(self):
+        from test_drawing_fonts import cyrillic_program
+        source = self.work / "cyrillic.json"
+        source.write_text(json.dumps(cyrillic_program(), ensure_ascii=False), encoding="utf-8")
+        with zipfile.ZipFile(self.wheel) as archive:
+            for name in ("NotoSans-Regular.ttf", "NotoSans-Bold.ttf", "OFL.txt", "SOURCE.json"):
+                member = f"layout_configurator/fonts/{name}"
+                self.assertIn(member, archive.namelist(), f"Missing portable licensed font resource: {name}")
+                self.assertEqual(archive.read(member), (PROJECT / "src/layout_configurator/fonts" / name).read_bytes())
+        self._cli("generate-building", "cyrillic.json", "--output", "cyrillic-output",
+                  "--variants", "1", "--max-attempts", "1", "--time-limit", "3")
+        self._run(
+            "import json\n"
+            "from pypdf import PdfReader\n"
+            "manifest = json.loads(Path('cyrillic-output/manifest.json').read_text(encoding='utf-8'))\n"
+            "sheets = Path('cyrillic-output') / manifest['variants'][0]['sheet_set']['pdf']\n"
+            "text = '\\n'.join(page.extract_text() for page in PdfReader(sheets).pages)\n"
+            "assert 'Фармацевтический завод' in text and 'аппарат' in text and 'помещение' in text\n"
         )
 
     def test_explicit_local_and_missing_absolute_paths_keep_their_meaning(self):

@@ -41,6 +41,8 @@ Checkpoint QA.3 retains the quality/diversity target with a fixed search-work
 budget; full and remote acceptance are recorded against their actual commits.
 Checkpoint C.3.1 verifies a bounded root-zone model and independent containment
 checks, without promoting restricted-model failure to program infeasibility.
+Checkpoint D.1 supplies source-derived sheet sets; the clean `3e9d4b3` complete
+suite passed 354 tests. Newer checkpoint acceptance remains separately recorded.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

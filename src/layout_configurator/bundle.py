@@ -9,11 +9,13 @@ history.
 
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from typing import Any
 
 from .bcf import write_bcf_package
 from .building import BuildingIR
+from .drawing_sheets import export_drawing_sheet_set
 from .equipment import EquipmentLayoutResult, EquipmentValidationReport
 from .export import export_building_bundle
 from .facility import FacilityProfile, FacilityValidationReport
@@ -42,6 +44,7 @@ def write_facility_variant(
     facility_report: FacilityValidationReport,
     generation_evidence: dict[str, Any] | None = None,
     bcf_input: str | Path | None = None,
+    sheet_font_path: str | Path | None = None,
 ) -> dict[str, Any]:
     """Export every artifact of one variant and return its manifest entry."""
 
@@ -70,6 +73,14 @@ def write_facility_variant(
         flow_report,
         profile.drawing,
     )
+    sheets_path = output / f"{stem}_sheets.pdf"
+    try:
+        sheets = export_drawing_sheet_set(
+            sheets_path, building, result, equipment, flows=flow_routes,
+            drawing_profile=profile.drawing, font_path=sheet_font_path,
+        )
+    except (OSError, ValueError, RuntimeError) as exc:
+        raise VariantExportError(f"Drawing sheets for variant {result.variant} could not be generated: {exc}") from exc
     json_path = output / f"{stem}.json"
     write_building_result(
         json_path,
@@ -124,6 +135,11 @@ def write_facility_variant(
         "facility_ok": facility_report.ok,
         "dxf": dxf_path.name,
         "pdf": pdf_path.name,
+        "sheet_set": {
+            "pdf": sheets_path.name,
+            "sha256": hashlib.sha256(sheets_path.read_bytes()).hexdigest(),
+            "pages": [sheet.to_dict() for sheet in sheets],
+        },
         "ifc": ifc_path.name,
         "ifc_entities": {
             "spaces": ifc_summary.spaces,
