@@ -30,7 +30,11 @@ comes from the environment and is never printed. Send
 
 `POST /jobs` accepts `program`, optional `profile`, and `variants`,
 `max_attempts`, `time_limit_seconds`, `seed`, `equipment_retries`,
-`deterministic_units`, `room_solver` and `reuse`. Programs use the canonical
+`deterministic_units`, `room_solver`, `reuse` and optional `revision_history`.
+The history contains exact self-contained prior source JSON and hashes,
+never server filesystem paths; see [DRAWING_SHEETS.md](DRAWING_SHEETS.md).
+Invalid history is rejected before enqueueing, including in batch requests.
+Programs use the canonical
 schema, including the normalized fields emitted by `BuildingIR.to_dict()`;
 shorthand YAML must be normalized before submission. Unknown fields, paths,
 coordinates, invalid settings and non-finite numbers are rejected before work

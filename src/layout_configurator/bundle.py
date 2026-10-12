@@ -10,12 +10,14 @@ history.
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 from typing import Any
 
 from .bcf import write_bcf_package
 from .building import BuildingIR
 from .drawing_sheets import export_drawing_sheet_set
+from .drawing_revision_history import parse_revision_history, write_revision_sources
 from .equipment import EquipmentLayoutResult, EquipmentValidationReport
 from .export import export_building_bundle
 from .facility import FacilityProfile, FacilityValidationReport
@@ -45,11 +47,15 @@ def write_facility_variant(
     generation_evidence: dict[str, Any] | None = None,
     bcf_input: str | Path | None = None,
     sheet_font_path: str | Path | None = None,
+    revision_history: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Export every artifact of one variant and return its manifest entry."""
 
+    history = parse_revision_history(revision_history, building=building, drawing=profile.drawing) if revision_history is not None else None
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
+    if history is not None:
+        write_revision_sources(output, history)
     stem = f"building_{result.variant:02d}"
     try:
         ifc_path = output / f"{stem}.ifc"
@@ -78,6 +84,7 @@ def write_facility_variant(
         sheets = export_drawing_sheet_set(
             sheets_path, building, result, equipment, flows=flow_routes,
             drawing_profile=profile.drawing, font_path=sheet_font_path,
+            revision_history=history.to_input() if history is not None else None,
         )
     except (OSError, ValueError, RuntimeError) as exc:
         raise VariantExportError(f"Drawing sheets for variant {result.variant} could not be generated: {exc}") from exc
@@ -93,6 +100,10 @@ def write_facility_variant(
         facility_report=facility_report,
         generation_evidence=generation_evidence,
     )
+    if history is not None:
+        canonical = json.loads(json_path.read_text(encoding="utf-8"))
+        canonical["drawing_revision_history"] = history.to_index()
+        json_path.write_text(json.dumps(canonical, ensure_ascii=False, indent=2), encoding="utf-8")
     references = {"program": json_path.name, "dxf": dxf_path.name, "pdf": pdf_path.name, "ifc": ifc_path.name}
     issues_path = output / f"{stem}.coordination.json"
     write_coordination_issues(
@@ -139,6 +150,7 @@ def write_facility_variant(
             "pdf": sheets_path.name,
             "sha256": hashlib.sha256(sheets_path.read_bytes()).hexdigest(),
             "pages": [sheet.to_dict() for sheet in sheets],
+            **({"revision_history": history.to_index()} if history is not None else {}),
         },
         "ifc": ifc_path.name,
         "ifc_entities": {

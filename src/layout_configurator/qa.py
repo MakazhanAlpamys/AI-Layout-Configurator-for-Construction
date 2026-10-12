@@ -13,6 +13,7 @@ import xml.etree.ElementTree as ET
 
 from .bcf import read_bcf_package
 from .drawing_sheet_qa import validate_drawing_sheet_set
+from .drawing_revision_history import read_revision_sources
 from .facility import FacilityProfile, default_facility_profile, validate_building
 from .flows import route_flows, validate_flow_routes
 from .ifc import read_ifc_summary, validate_ifc_roundtrip
@@ -141,7 +142,10 @@ def validate_building_bundle(
     checks.append(_qa_manifest(manifest, source, (dxf, pdf, ifc, bcf, coordination)))
     checks.append(_qa_dxf(dxf, len(equipment.placements), len(routes.routes)))
     checks.append(_qa_pdf(pdf))
-    sheet_check = _qa_optional_sheets(manifest, source, building, result, equipment, routes, selected_profile)
+    history_check, history = _qa_optional_revision_history(manifest, source, payload, building, selected_profile)
+    if history_check is not None:
+        checks.append(history_check)
+    sheet_check = _qa_optional_sheets(manifest, source, building, result, equipment, routes, selected_profile, history=history)
     if sheet_check is not None:
         checks.append(sheet_check)
     checks.append(
@@ -157,7 +161,31 @@ def validate_building_bundle(
     return BundleQAReport(source, tuple(checks))
 
 
-def _qa_optional_sheets(manifest, source, building, result, equipment, routes, profile):
+def _qa_optional_revision_history(manifest, source, payload, building, profile):
+    present = "drawing_revision_history" in payload
+    canonical = payload.get("drawing_revision_history")
+    manifest_present = False
+    scope = {"scope": "Supplied revision records and exact source identity; no authenticated authorship or engineering approval"}
+    try:
+        raw = json.loads(manifest.read_text(encoding="utf-8"))
+        matches = [row for row in raw["variants"] if isinstance(row, dict) and row.get("json") == source.name]
+        entry = matches[0] if len(matches) == 1 else {}
+        sheets = entry.get("sheet_set", {})
+        manifest_present = isinstance(sheets, dict) and "revision_history" in sheets
+        if not present and not manifest_present:
+            return None, None
+        if not present or not manifest_present or canonical != sheets["revision_history"]:
+            raise ValueError("Canonical result and manifest revision history differ or one is missing")
+        history = read_revision_sources(source.parent, canonical, building=building, drawing=profile.drawing)
+        return BundleQACheck("DRAWING_REVISION_HISTORY", True, "Supplied revision sources match the canonical history",
+                             {**scope, "records": len(history.records)}), history
+    except (OSError, ValueError, TypeError, KeyError, AttributeError) as exc:
+        if not present and not manifest_present:
+            return None, None  # A malformed mandatory manifest is handled separately.
+        return BundleQACheck("DRAWING_REVISION_HISTORY", False, str(exc), scope), None
+
+
+def _qa_optional_sheets(manifest, source, building, result, equipment, routes, profile, *, history=None):
     """An absent optional index preserves the original legacy QA contract."""
     try:
         payload = json.loads(manifest.read_text(encoding="utf-8"))
@@ -173,7 +201,7 @@ def _qa_optional_sheets(manifest, source, building, result, equipment, routes, p
     entry = matching[0]
     readback = validate_drawing_sheet_set(manifest.parent, entry["sheet_set"], manifest_variant=entry.get("variant"),
                                           building=building, result=result, equipment=equipment, flows=routes,
-                                          drawing=profile.drawing)
+                                          drawing=profile.drawing, revision_history=history)
     return BundleQACheck("SHEET_SET_READBACK", readback.ok,
                          "Thematic PDF artifact identity and vector readback pass" if readback.ok else "Thematic PDF artifact readback failed",
                          readback.to_dict())

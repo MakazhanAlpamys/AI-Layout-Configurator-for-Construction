@@ -168,6 +168,28 @@ class InstalledWheelTests(unittest.TestCase):
                          {"FACILITY_VALIDATION", "MANIFEST", "DXF_READBACK", "PDF_READBACK",
                           "IFC_READBACK", "BCF_READBACK", "COORDINATION_JSON", "SHEET_SET_READBACK"})
 
+    def test_installed_revision_history_validates_and_copies_sources_outside_checkout(self):
+        from test_drawing_revision_history import supplied_history
+        history_path = self.work / "supplied-history.json"
+        history_path.write_text(json.dumps(supplied_history(), ensure_ascii=False), encoding="utf-8")
+        self._run(
+            "import json\n"
+            "from dataclasses import replace\n"
+            "from layout_configurator.building import BuildingIR\n"
+            "from layout_configurator.facility import default_facility_profile\n"
+            "from layout_configurator.drawing_revision_history import parse_revision_history, write_revision_sources, read_revision_sources\n"
+            "raw = json.loads(Path('supplied-history.json').read_text(encoding='utf-8'))\n"
+            "source = json.loads(raw['records'][0]['source_json'])\n"
+            "building = BuildingIR.from_mapping(source['spec'])\n"
+            "drawing = replace(default_facility_profile().drawing, revision='P02')\n"
+            "history = parse_revision_history(raw, building=building, drawing=drawing)\n"
+            "write_revision_sources('history-bundle', history)\n"
+            "actual = read_revision_sources('history-bundle', history.to_index(), building=building, drawing=drawing)\n"
+            "assert actual.to_input() == raw\n"
+            "assert all((Path('history-bundle') / row['source_file']).read_bytes() == record.source_bytes "
+            "for row, record in zip(actual.to_index()['records'], actual.records))\n"
+        )
+
     def test_installed_proposed_edits_validate_with_the_bundled_schema(self):
         self._run(
             "import json\n"

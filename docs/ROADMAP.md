@@ -55,6 +55,8 @@ Checkpoint C.3.5 verifies fixed/axis constraints in both explicit zone modes;
 the bounded shape pool still limits what an infeasibility result proves.
 Checkpoint B.4 verifies exact polygon room/equipment predicates under an
 explicit project geometry policy; full facility integration remains separate.
+Checkpoint D.2 adds source-backed supplied revision history and independent
+printed/source checks; authenticated attribution and sign-off remain external.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

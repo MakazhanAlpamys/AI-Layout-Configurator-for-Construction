@@ -17,6 +17,7 @@ from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 
 from .building import BuildingIR
+from .drawing_revision_history import DrawingRevisionHistory
 from .equipment import EquipmentLayoutResult
 from .facility import FacilityDrawingProfile
 from .flows import FlowRoutingResult
@@ -58,6 +59,7 @@ def validate_drawing_sheet_set(
     equipment: EquipmentLayoutResult,
     flows: FlowRoutingResult,
     drawing: FacilityDrawingProfile,
+    revision_history: DrawingRevisionHistory | None = None,
 ) -> DrawingSheetReadback:
     """Read the optional manifest index and real PDF without modifying files."""
 
@@ -75,7 +77,7 @@ def validate_drawing_sheet_set(
     if not isinstance(rows, list) or len(rows) < 4:
         issue("SHEET_INDEX", "Page index must contain all four thematic plans")
         rows = []
-    _validate_index(rows, building, result, equipment, flows, drawing, issue)
+    _validate_index(rows, building, result, equipment, flows, drawing, issue, history=revision_history)
     name = sheet_set.get("pdf")
     bundle_root = Path(root).resolve()
     if not isinstance(name, str) or not name or Path(name).is_absolute():
@@ -98,6 +100,7 @@ def validate_drawing_sheet_set(
     if not isinstance(expected_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_hash) or hashlib.sha256(data).hexdigest() != expected_hash:
         issue("SHEET_HASH", "Delivered sheet PDF does not match its SHA256")
     page_count = 0
+    history_body = []
     try:
         reader = PdfReader(path, strict=True)
         if reader.is_encrypted:
@@ -117,14 +120,19 @@ def validate_drawing_sheet_set(
             if not math.isclose(width, 1190.55118, abs_tol=0.02) or not math.isclose(height, 841.88976, abs_tol=0.02) or page.rotation != 0 or page.user_unit != 1:
                 issue("SHEET_PAGE_SIZE", "Sheet is not an unrotated A3 landscape page in points", page=number)
             if number <= len(rows) and isinstance(rows[number - 1], dict) and _FIELDS <= rows[number - 1].keys():
-                _validate_printed_identity(page, rows[number - 1], page_count, building, drawing, issue)
+                fragments = _validate_printed_identity(page, rows[number - 1], page_count, building, drawing, issue, history=revision_history)
+                if rows[number - 1]["kind"] == "revisions" and revision_history is not None:
+                    _validate_history_page(fragments, height, revision_history, number, history_body, issue)
+        if revision_history is not None:
+            _validate_history_body(history_body, revision_history, issue)
     except (OSError, PyPdfError, ValueError, TypeError, KeyError, AttributeError, IndexError, OverflowError, RecursionError) as exc:
         issue("SHEET_PDF", f"Sheet PDF readback failed: {exc}")
     return DrawingSheetReadback(tuple(issues), page_count)
 
 
-def _validate_index(rows, building, result, equipment, flows, drawing, issue):
-    counts = {kind: 0 for kind in _THEMES}
+def _validate_index(rows, building, result, equipment, flows, drawing, issue, *, history=None):
+    themes = {**_THEMES, **({"revisions": ("REV", "Supplied revision history")} if history is not None else {})}
+    counts = {kind: 0 for kind in themes}
     ids = set()
     previous_theme = -1
     for number, row in enumerate(rows, 1):
@@ -132,15 +140,15 @@ def _validate_index(rows, building, result, equipment, flows, drawing, issue):
             issue("SHEET_INDEX", "Page index entry is missing required fields", page=number)
             continue
         kind = row["kind"]
-        if not isinstance(kind, str) or kind not in _THEMES:
+        if not isinstance(kind, str) or kind not in themes:
             issue("SHEET_INDEX", "Unknown sheet theme", page=number)
             continue
-        theme = tuple(_THEMES).index(kind)
+        theme = tuple(themes).index(kind)
         if theme < previous_theme:
             issue("SHEET_INDEX", "Themes must be ordered zones, equipment, flows, egress", page=number)
         previous_theme = theme
         counts[kind] += 1
-        suffix, title = _THEMES[kind]
+        suffix, title = themes[kind]
         expected_id = f"{drawing.sheet_id}-{suffix}" + (f"-{counts[kind]:02d}" if counts[kind] > 1 else "")
         sheet_id = row["sheet_id"]
         if not isinstance(sheet_id, str) or sheet_id != expected_id or sheet_id in ids:
@@ -152,7 +160,7 @@ def _validate_index(rows, building, result, equipment, flows, drawing, issue):
         if type(row["page_number"]) is not int or row["page_number"] != number or type(row["source_variant"]) is not int or row["source_variant"] != result.variant:
             issue("SHEET_IDENTITY", "Page number or variant differs from the canonical result", page=number)
         scale = row["scale_denominator"]
-        if (counts[kind] == 1 and (type(scale) is not int or scale <= 0)) or (counts[kind] > 1 and scale is not None):
+        if (kind != "revisions" and counts[kind] == 1 and (type(scale) is not int or scale <= 0)) or ((kind == "revisions" or counts[kind] > 1) and scale is not None):
             issue("SHEET_INDEX", "Primary plans need a positive scale; legend continuations have no plan scale", page=number)
         status = "UNKNOWN" if kind == "egress" else "SOURCE PROJECTION"
         if kind == "equipment" and len(equipment.placements) != len(building.equipment):
@@ -168,7 +176,7 @@ def _validate_index(rows, building, result, equipment, flows, drawing, issue):
         issue("SHEET_THEMES", "One or more required thematic plans are missing")
 
 
-def _validate_printed_identity(page, row, page_count, building, drawing, issue):
+def _validate_printed_identity(page, row, page_count, building, drawing, issue, *, history=None):
     width, height = float(page.mediabox.width), float(page.mediabox.height)
     fragments = []
 
@@ -187,10 +195,10 @@ def _validate_printed_identity(page, row, page_count, building, drawing, issue):
         ("project", region(0, width - 280, height - 81, height - 51), " ".join(building.layout.project_name.split())),
         ("sheet_id", region(width / 2, width, height - 61, height - 51), row["sheet_id"]),
         ("revision/page", region(width / 2, width, height - 79, height - 69), f"Revision {row['revision']} | Page {row['page_number']}/{page_count}"),
-        ("theme title", region(0, width / 2, height - 106, height - 96), row["title"] + (" - legend continuation" if row["scale_denominator"] is None else "")),
+        ("theme title", region(0, width / 2, height - 106, height - 96), row["title"] + (" - legend continuation" if row["scale_denominator"] is None and row["sheet_id"] != f"{drawing.sheet_id}-REV" else "")),
         ("source variant", region(0, width / 2, 86, 96), f"{drawing.discipline} | Variant {row['source_variant']}"),
         ("source versions", region(0, width / 2, 70, 80), f"LayoutIR {building.layout.version} / BuildingIR {building.version} | Geometry: millimetres"),
-        ("current revision", region(width / 2, width, 86, 96), f"{drawing.revision} | Current revision only"),
+        ("current revision", region(width / 2, width, 86, 96), f"{drawing.revision} | History: {drawing.sheet_id}-REV" if history is not None else f"{drawing.revision} | Current revision only"),
         ("drawing title", region(width / 2, width, 60, 80), " ".join(drawing.title.split())),
         ("status", region(width / 2, width, 37, 47), f"Status: {row['status']}"),
     )
@@ -201,3 +209,29 @@ def _validate_printed_identity(page, row, page_count, building, drawing, issue):
         scale_caption = f"1:{row['scale_denominator']} at A3, 100% print"
         if not any(text.strip() == scale_caption for x, y, text in fragments if 111 <= y <= 121):
             issue("SHEET_PRINTED_IDENTITY", "Printed plan scale differs from the index", page=row["page_number"], field="scale")
+    return fragments
+
+
+def _validate_history_page(fragments, height, history, number, body, issue):
+    current = " ".join(text.strip() for x, y, text in fragments if height - 150 <= y <= height - 140)
+    if current != f"Current {history.current_revision} | Previous {history.previous_revision}":
+        issue("SHEET_PRINTED_HISTORY", "Printed current/predecessor relation differs from the supplied chain", page=number)
+    attribution = " ".join(text.strip() for x, y, text in fragments if height - 170 <= y <= height - 160)
+    if attribution != "Dates and authors are supplied attribution; no authenticated authorship or approval.":
+        issue("SHEET_PRINTED_HISTORY", "Printed history does not identify supplied attribution", page=number)
+    body.extend(text for x, y, text in fragments if 150 <= y <= height - 178)
+
+
+def _validate_history_body(body, history, issue):
+    expected = []
+    for record in history.records:
+        source = record.source_identity
+        expected.extend((f"Revision {record.revision} | Previous {record.previous_revision or 'NONE'} | Date {record.date}",
+                         f"Author (supplied): {record.author}", f"Description (supplied): {record.description}",
+                         f"Source project: {source['project_name']}",
+                         f"Source identity: Variant {source['variant']} | BuildingIR {source['building_version']} / LayoutIR {source['layout_version']}",
+                         f"Source drawing revision: {source['revision']}", f"Source SHA256: {record.source_sha256}"))
+    # Word wrapping changes whitespace only. Preserve every non-whitespace
+    # character and record order, including exact full source hashes.
+    if "".join("".join(body).split()) != "".join("".join(expected).split()):
+        issue("SHEET_PRINTED_HISTORY", "Printed revision records differ from their verified source index")

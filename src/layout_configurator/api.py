@@ -25,6 +25,7 @@ from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 from .bundle import write_facility_variant
+from .drawing_revision_history import parse_revision_history
 from .facility import FacilityProfile, default_facility_profile, DEFAULT_FACILITY_PROFILE_SCHEMA_PATH
 from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
 from .qa import validate_building_set
@@ -35,7 +36,7 @@ from .schema import normalize_building_mapping, validate_mapping
 _JOB_ID = re.compile(r"[0-9a-f]{32}\Z")
 _TERMINAL = {"SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"}
 _FIELDS = {"program", "profile", "variants", "max_attempts", "time_limit_seconds",
-           "seed", "equipment_retries", "deterministic_units", "room_solver", "reuse"}
+           "seed", "equipment_retries", "deterministic_units", "room_solver", "reuse", "revision_history"}
 
 
 class JobUnavailable(RuntimeError):
@@ -135,7 +136,9 @@ def _validated_request(payload):
     reuse = payload.get("reuse", False)
     if not isinstance(reuse, bool) or reuse and settings["deterministic_units"] is None:
         raise ValueError("reuse requires a deterministic_units budget")
-    return {"program": building.to_dict(), "profile": profile.to_dict(), "settings": settings, "reuse": reuse}
+    history = parse_revision_history(payload["revision_history"], building=building, drawing=profile.drawing) if "revision_history" in payload else None
+    return {"program": building.to_dict(), "profile": profile.to_dict(), "settings": settings, "reuse": reuse,
+            **({"revision_history": history.to_input()} if history is not None else {})}
 
 
 class FacilityService:
@@ -266,7 +269,8 @@ class FacilityService:
                     layout_report=candidate.layout_report, equipment=candidate.equipment,
                     equipment_report=candidate.equipment_report, flow_routes=candidate.flow_routes,
                     flow_report=candidate.flow_report, facility_report=candidate.facility_report,
-                    generation_evidence=candidate.generation_evidence()))
+                    generation_evidence=candidate.generation_evidence(),
+                    **({"revision_history": request["revision_history"]} if "revision_history" in request else {})))
                 write_review_dossier(root / "review", prepared, candidate.result, candidate.equipment,
                                      candidate.flow_routes, candidate.facility_report, profile,
                                      source=root / f"building_{candidate.result.variant:02d}.json")

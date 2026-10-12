@@ -40,4 +40,28 @@ rejected. API cache keys include font assets and PDF dependency versions.
 The public exporter consumes the existing BuildingIR, LayoutResult, equipment
 and routes. It requires rectangular room geometry until polygon drawing topology
 is integrated. The current checkpoint does not supply a complete equipment-symbol
-catalog, historical revision ledger or an approved evacuation drawing.
+catalog or an approved evacuation drawing.
+
+## Supplied revision history
+
+The API and `write_facility_variant(..., revision_history=...)` accept an optional
+history envelope: `current_revision`, `previous_revision`, and an ordered
+`records` array. Each record contains `revision`, `previous_revision` (null for
+the first), ISO `date`, supplied `author` and `description`, exact UTF-8
+`source_json` from a prior canonical BuildingResult, and its `source_sha256`.
+Current revision must match the drawing profile; the chain must be unique,
+chronological and end at the declared predecessor. Prior revision and project
+identity are read from the actual source, including its explicit drawing
+profile. A previously embedded history must agree with the supplied chain.
+
+Verified source bytes are copied to `revision-sources/<sha256>.json`. Canonical
+result and manifest retain matching indexes; the sheet set adds indexed REV
+appendices with full source hashes, identity, dates and attribution. Long records
+continue on additional pages. `DRAWING_REVISION_HISTORY` independently checks
+delivered source files and indexes, while sheet QA checks the actual printed
+chain and records. Source or PDF tampering fails even after replacing an
+artifact hash. History and attribution affect deterministic API cache keys.
+
+Dates and authors remain supplied attribution. This is neither authenticated
+authorship nor professional approval. Without an explicit history, the existing
+four themes and current-revision block remain unchanged.

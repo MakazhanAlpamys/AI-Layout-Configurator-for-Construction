@@ -67,14 +67,16 @@ Its result is pending; later changes require their own evidence.
 
 | B.4 | Independent orthogonal minimum dimensions, doors and equipment | The explicit project coverage policy evaluates the complete footprint with one source-allowed orientation; wall-half insets and actual full-width doors determine connectivity. Supplied directional equipment service envelopes use actual room components, wall bands and pair intersections. Exhausted dimension search or ambiguous anchors remain UNKNOWN. | Fresh root kernel/result/projection/new-validation run: 57 passed, 94 subtests. Agent broader affected regression: 92 passed, 94 subtests. Real narrow-neck, spur, severed bridge, undersized usable door approach, reentrant corner, rotation and clearance-collision negatives are covered. | complete 2026-10-12 for independent predicates; selectable solver/routes/full export remain separate |
 
+| D.2 | Supplied source-backed revision history | Strict optional chains reference exact canonical prior source bytes and their actual revision/project. Bundle/API preserve matching indexes and immutable source files; indexed REV appendices print complete ordered records. Independent source and printed-body QA catches rehashed tampering. History changes invalidate cache reuse. | Fresh root history/bundle/HTTP/sheet-QA run: 38 passed, 62 subtests. Agent complete affected wheel/API/editor/review regression: 84 passed, 91 subtests. Agent rendered/inspected all 18 pages of normal, dense and oversized samples; root separately inspected Cyrillic history and long-record continuation. | complete 2026-10-12 for supplied history; authenticated attribution/signatures and engineering acceptance remain separate |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
   backend alongside rectangles.
 - C: zone-driven placement and containment; structured, per-stage constraint
   explanations. Preferred-zone singleton participants can increase search cost.
-- D: drawing-profile and symbol catalogs, editable dimension chains and supplied
-  revision history; thematic vector sheets and indexed legends exist.
+- D: drawing-profile and symbol catalogs, editable dimension chains;
+  thematic vector sheets, indexed legends and supplied revision history exist.
 - E: independent receiving-tool review of semantic IFC zones, declared systems
   and spatial exchange; grouping does not establish engineered MEP design.
 - F: retain scoped, sourced rule packs and UNKNOWN/IDS separation; add domain

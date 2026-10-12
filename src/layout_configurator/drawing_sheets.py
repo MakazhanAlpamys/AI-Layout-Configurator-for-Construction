@@ -20,6 +20,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 from .building import BuildingIR
+from .drawing_revision_history import parse_revision_history
 from .equipment import EquipmentLayoutResult, clearance_rect
 from .facility import FacilityDrawingProfile
 from .flows import FlowRoutingResult
@@ -73,6 +74,7 @@ def export_drawing_sheet_set(
     flows: FlowRoutingResult | None = None,
     drawing_profile: FacilityDrawingProfile | None = None,
     font_path: str | Path | None = None,
+    revision_history: dict | None = None,
 ) -> tuple[DrawingSheetMetadata, ...]:
     """Write thematic A3 sheets and readable schedule continuations.
 
@@ -85,6 +87,7 @@ def export_drawing_sheet_set(
 
     require_rectangular_layout(result, "thematic drawing sheet export")
     drawing = drawing_profile or FacilityDrawingProfile()
+    history = parse_revision_history(revision_history, building=building, drawing=drawing) if revision_history is not None else None
     routes = flows or FlowRoutingResult(())
     _check_sources(building, result, equipment, routes)
     wall_plan = build_wall_plan(building.layout, result)
@@ -94,6 +97,8 @@ def export_drawing_sheet_set(
     source_text = [building.layout.project_name, drawing.sheet_id, drawing.title,
                    drawing.discipline, drawing.revision]
     source_text.extend(text for entries in legends.values() for _, text in entries)
+    if history is not None:
+        source_text.extend(_revision_lines(history))
     if building.structural_grid and drawing.show_structural_grid:
         source_text.extend((*building.structural_grid.labels_x, *building.structural_grid.labels_y))
     _check_glyphs(source_text, regular)
@@ -109,6 +114,9 @@ def export_drawing_sheet_set(
         planned.append((kind, suffix, title, 0, [chunks[0]]))
         for continuation, start in enumerate(range(1, len(chunks), 3), 1):
             planned.append((kind, suffix, title, continuation, chunks[start:start + 3]))
+    if history is not None:
+        for continuation, chunk in enumerate(_revision_chunks(history, regular)):
+            planned.append(("revisions", "REV", "Supplied revision history", continuation, chunk))
     output = Path(path)
     output.parent.mkdir(parents=True, exist_ok=True)
     pdf = canvas.Canvas(str(output), pagesize=(_PAGE_W, _PAGE_H), invariant=1, pageCompression=1)
@@ -123,9 +131,14 @@ def export_drawing_sheet_set(
         if kind == "equipment" and len(equipment.placements) != len(building.equipment):
             status = "UNKNOWN"
         meta = DrawingSheetMetadata(kind, sheet_id, title, drawing.revision, page_number,
-                                    None if continuation else scale_denominator, status, result.variant,
+                                    None if continuation or kind == "revisions" else scale_denominator, status, result.variant,
                                     len(candidates) if kind == "egress" else 0)
-        _frame(pdf, meta, building, drawing, len(planned), regular, bold, continuation)
+        _frame(pdf, meta, building, drawing, len(planned), regular, bold, continuation, history=history is not None)
+        if kind == "revisions":
+            _revision_page(pdf, history, columns[0], regular, bold, continuation_record=columns[1])
+            pdf.showPage()
+            metadata.append(meta)
+            continue
         if continuation:
             pdf.setFont(bold, 18)
             pdf.drawString(_PLAN_LEFT, _PAGE_H - 145, "Legend continuation")
@@ -146,6 +159,52 @@ def export_drawing_sheet_set(
         metadata.append(meta)
     pdf.save()
     return tuple(metadata)
+
+
+def _revision_lines(history):
+    return [line for record in history.records for line in _revision_record_lines(record)]
+
+
+def _revision_record_lines(record):
+    source = record.source_identity
+    return (f"Revision {record.revision} | Previous {record.previous_revision or 'NONE'} | Date {record.date}",
+            f"Author (supplied): {record.author}", f"Description (supplied): {record.description}",
+            f"Source project: {source['project_name']}",
+            f"Source identity: Variant {source['variant']} | BuildingIR {source['building_version']} / LayoutIR {source['layout_version']}",
+            f"Source drawing revision: {source['revision']}", f"Source SHA256: {record.source_sha256}", "")
+
+
+def _revision_chunks(history, font):
+    pages, current = [], []
+    for record in history.records:
+        lines = [wrapped for text in _revision_record_lines(record)
+                 for wrapped in (_wrap(text, font, 9, _PAGE_W - 2 * _PLAN_LEFT) if text else [""])]
+        if len(lines) <= 39:
+            if len(current) + len(lines) > 39:
+                pages.append((current, None))
+                current = []
+            current.extend(lines)
+        else:
+            if current:
+                pages.append((current, None))
+                current = []
+            for start in range(0, len(lines), 39):
+                pages.append((lines[start:start + 39], record.revision if start else None))
+    return pages + ([(current, None)] if current else [])
+
+
+def _revision_page(pdf, history, lines, regular, bold, *, continuation_record=None):
+    pdf.setFillColorRGB(*_INK)
+    pdf.setFont(bold, 11)
+    pdf.drawString(_PLAN_LEFT, _PAGE_H - 145, f"Current {history.current_revision} | Previous {history.previous_revision}")
+    pdf.setFont(regular, 9)
+    pdf.drawString(_PLAN_LEFT, _PAGE_H - 165, "Dates and authors are supplied attribution; no authenticated authorship or approval.")
+    if continuation_record is not None:
+        pdf.setFont(bold, 8)
+        pdf.drawString(_PLAN_LEFT, _PAGE_H - 177, f"Record continuation: {continuation_record}")
+        pdf.setFont(regular, 9)
+    for index, line in enumerate(lines):
+        pdf.drawString(_PLAN_LEFT, _PAGE_H - 193 - 13 * index, line)
 
 
 def _check_sources(building, result, equipment, flows):
@@ -320,7 +379,7 @@ def _egress_candidates(building, result, wall_plan):
     return candidates, rows
 
 
-def _frame(pdf, meta, building, drawing, page_count, regular, bold, continuation):
+def _frame(pdf, meta, building, drawing, page_count, regular, bold, continuation, *, history=False):
     pdf.setStrokeColorRGB(*_INK)
     pdf.setLineWidth(0.7)
     pdf.rect(_MARGIN, _MARGIN, _PAGE_W - 2 * _MARGIN, _PAGE_H - 2 * _MARGIN)
@@ -338,7 +397,7 @@ def _frame(pdf, meta, building, drawing, page_count, regular, bold, continuation
     pdf.setFont(regular, 9)
     pdf.drawRightString(_PAGE_W - _MARGIN - 16, _PAGE_H - 74, f"Revision {meta.revision} | Page {meta.page_number}/{page_count}")
     pdf.line(_MARGIN, 110, _PAGE_W - _MARGIN, 110)
-    if not continuation:
+    if not continuation and meta.kind != "revisions":
         pdf.line(_SIDE_X - 16, 110, _SIDE_X - 16, _PAGE_H - 115)
     pdf.setFont(bold, 8)
     pdf.drawString(_MARGIN + 14, 91, f"{drawing.discipline} | Variant {meta.source_variant}")
@@ -346,7 +405,7 @@ def _frame(pdf, meta, building, drawing, page_count, regular, bold, continuation
     pdf.drawString(_MARGIN + 14, 75, f"LayoutIR {building.layout.version} / BuildingIR {building.version} | Geometry: millimetres")
     pdf.drawString(_MARGIN + 14, 58, "Source projection - independent technical and regulatory review required")
     pdf.setFont(bold, 8)
-    pdf.drawString(_SIDE_X, 91, f"{meta.revision} | Current revision only")
+    pdf.drawString(_SIDE_X, 91, f"{meta.revision} | History: {drawing.sheet_id}-REV" if history else f"{meta.revision} | Current revision only")
     pdf.setFont(regular, 8)
     title_lines = _wrap(drawing.title, regular, 8, _LEGEND_WIDTH)
     for index, line in enumerate(title_lines[:2]):

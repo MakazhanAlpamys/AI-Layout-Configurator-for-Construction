@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/drawing-revision-history-0.1.json",
+  "title": "Supplied source-backed drawing revision history",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["current_revision", "previous_revision", "records"],
+  "properties": {
+    "current_revision": {"type": "string", "minLength": 1},
+    "previous_revision": {"type": "string", "minLength": 1},
+    "records": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/record"}}
+  },
+  "$defs": {
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["revision", "previous_revision", "date", "author", "description", "source_json", "source_sha256"],
+      "properties": {
+        "revision": {"type": "string", "minLength": 1},
+        "previous_revision": {"type": ["string", "null"], "minLength": 1},
+        "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "author": {"type": "string", "minLength": 1},
+        "description": {"type": "string", "minLength": 1},
+        "source_json": {"type": "string", "minLength": 1},
+        "source_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    }
+  }
+}

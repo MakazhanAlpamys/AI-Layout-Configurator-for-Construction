@@ -68,6 +68,8 @@ Checkpoint C.3.5 applies fixed rectangles and structural axes in both physical
 zone strategies, with independent checks and scoped bounded-shape failures.
 Checkpoint B.4 independently checks actual orthogonal room minima, wall-inset
 and door connectivity, plus supplied directional equipment clearance.
+Checkpoint D.2 validates supplied prior-source revision chains, preserves exact
+source bytes and checks indexed PDF history through bundle and HTTP paths.
 
 ## 1. Why we are expanding the project
 
