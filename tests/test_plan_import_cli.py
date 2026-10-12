@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 import ezdxf
+from reportlab.pdfgen.canvas import Canvas
 
 from layout_configurator.building import BuildingIR
 from layout_configurator.io import load_building_result, load_result
@@ -92,6 +93,50 @@ class PlanImportCliTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         _, placement = load_result(output / "layout_01.json")
         self.assertEqual(placement.placements["room"], Rect(1000, 1000, 3000, 3000))
+
+    def _pdf_import(self):
+        source = self.root / "vector.pdf"
+        canvas = Canvas(str(source), pagesize=(100, 100))
+        canvas.rect(10, 20, 30, 30)
+        canvas.save()
+        result = self._run("import-plan", source, "--output", self.draft, "--page", "1",
+                           "--unit-scale-mm", "100", "--origin-pt", "0", "0")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        return json.loads(self.draft.read_text())
+
+    def test_explicit_pdf_calibration_and_selection_generate_a_rechecked_fixed_bundle(self):
+        draft = self._pdf_import()
+        self.assertEqual(draft["state"], "DRAFT")
+        self.assertEqual(draft["source"]["format"], "PDF")
+        candidate = draft["candidates"][0]["id"]
+        output = self.root / "pdf-output"
+        result = self._run("generate-building", self.spec, "--output", output,
+                           "--time-limit", "2", "--max-attempts", "1",
+                           "--imported-plan", self.draft, "--confirm-import", "--import-reviewer", "Reviewer",
+                           "--room-map", candidate, "room")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        _, placement, _ = load_building_result(output / "building_01.json")
+        self.assertEqual(placement.placements["room"], Rect(1000, 2000, 3000, 3000))
+        self.assertTrue(validate_building_bundle(output / "building_01.json").ok)
+        confirmation = json.loads((output / "manifest.json").read_text())["import_confirmation"]
+        self.assertEqual(confirmation["candidate_mapping"], {candidate: "room"})
+        self.assertEqual(confirmation["calibration"]["unit_scale_mm"], 100)
+
+    def test_pdf_confirmation_without_candidate_selection_cannot_generate(self):
+        self._pdf_import()
+        output = self.root / "unselected-pdf"
+        result = self._run("generate-building", self.spec, "--output", output,
+                           "--imported-plan", self.draft, "--confirm-import", "--import-reviewer", "Reviewer")
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("selection", result.stderr)
+        self.assertFalse((output / "manifest.json").exists())
+
+    def test_malformed_draft_root_is_rejected_as_an_input_error(self):
+        self.draft.write_text("[]", encoding="utf-8")
+        result = self._run("generate-building", self.spec, "--imported-plan", self.draft,
+                           "--confirm-import", "--import-reviewer", "Reviewer", "--output", self.root / "invalid")
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":

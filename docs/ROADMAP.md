@@ -28,6 +28,9 @@ Checkpoint H.5.1 verifies the installed-wheel production container and its
 pharma-pilot HTTP bundle.
 Checkpoint G.4.1 verifies the compatible-provider typed-edit adapter using
 real local HTTP fixtures and a confirmed changed-program solve.
+Checkpoint G.2 verifies calibrated vector-PDF candidate selection and confirmed
+fixed-coordinate generation. The pinned `dff5603` remote acceptance passed all
+four jobs; current-product work remains tracked separately from this archive.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schemas/pdf_plan_draft.schema.json",
+  "title": "Source-backed rectangular PDF candidates awaiting human selection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "state", "source", "page", "page_object", "content_sha256", "calibration", "candidates", "issues", "ambiguities", "assumptions"],
+  "properties": {
+    "format": {"const": "FLC-pdf-plan-draft"},
+    "version": {"const": "0.1"},
+    "state": {"const": "DRAFT"},
+    "source": {
+      "type": "object", "additionalProperties": false, "required": ["path", "sha256", "format"],
+      "properties": {"path": {"$ref": "#/$defs/nonempty"}, "sha256": {"$ref": "#/$defs/hash"}, "format": {"const": "PDF"}}
+    },
+    "page": {"type": "integer", "minimum": 1},
+    "page_object": {"$ref": "#/$defs/nonempty"},
+    "content_sha256": {"$ref": "#/$defs/hash"},
+    "calibration": {
+      "type": "object", "additionalProperties": false, "required": ["unit_scale_mm", "origin_pt"],
+      "properties": {
+        "unit_scale_mm": {"type": "number", "exclusiveMinimum": 0},
+        "origin_pt": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}
+      }
+    },
+    "candidates": {
+      "type": "array", "maxItems": 1000,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "operator_index", "rect"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^pdf:page[1-9][0-9]*:op[0-9]+$"},
+          "operator_index": {"type": "integer", "minimum": 0},
+          "rect": {
+            "type": "object", "additionalProperties": false, "required": ["x", "y", "width", "height"],
+            "properties": {"x": {"type": "number"}, "y": {"type": "number"}, "width": {"type": "number", "exclusiveMinimum": 0}, "height": {"type": "number", "exclusiveMinimum": 0}}
+          }
+        }
+      }
+    },
+    "issues": {"$ref": "#/$defs/messages"},
+    "ambiguities": {"$ref": "#/$defs/messages"},
+    "assumptions": {"$ref": "#/$defs/messages"}
+  },
+  "$defs": {
+    "nonempty": {"type": "string", "pattern": "\\S"},
+    "hash": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "messages": {"type": "array", "maxItems": 20000, "items": {"type": "string"}}
+  }
+}

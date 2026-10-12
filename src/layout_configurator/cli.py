@@ -66,7 +66,7 @@ def _dossier_sources(input_path: Path, variant: int | None) -> list[Path]:
 
 
 def _add_import_options(parser):
-    parser.add_argument("--imported-plan", type=Path, help="source-backed DXF/IFC DRAFT JSON to validate and pin")
+    parser.add_argument("--imported-plan", type=Path, help="source-backed DXF/IFC/PDF DRAFT JSON to validate and pin")
     parser.add_argument("--confirm-import", action="store_true", help="explicitly confirm reviewed import geometry")
     parser.add_argument("--import-reviewer", help="name of the person confirming imported geometry")
     parser.add_argument("--room-map", nargs=2, action="append", default=[], metavar=("SOURCE", "ROOM"), help="map an imported ID to a canonical room ID; repeat as needed")
@@ -84,8 +84,18 @@ def _confirmed_import(args, spec):
         if source_id in mapping:
             raise ValueError(f"Duplicate room mapping for {source_id}")
         mapping[source_id] = room_id
-    fixed = load_imported_constraints(args.imported_plan, spec, confirmed=args.confirm_import,
-                                      reviewer=args.import_reviewer, room_mapping=mapping)
+    draft_header = json.loads(args.imported_plan.read_text(encoding="utf-8"))
+    if not isinstance(draft_header, dict):
+        raise ValueError("Import draft root must be an object")
+    draft_format = draft_header.get("format")
+    if draft_format == "FLC-pdf-plan-draft":
+        from .pdf_plan_import import load_pdf_imported_constraints
+
+        fixed = load_pdf_imported_constraints(args.imported_plan, spec, confirmed=args.confirm_import,
+                                              reviewer=args.import_reviewer, candidate_mapping=mapping)
+    else:
+        fixed = load_imported_constraints(args.imported_plan, spec, confirmed=args.confirm_import,
+                                          reviewer=args.import_reviewer, room_mapping=mapping)
     evidence = json.loads(args.imported_plan.with_suffix(".confirmation.json").read_text(encoding="utf-8"))
     return fixed, evidence
 
@@ -300,11 +310,13 @@ def main(argv: list[str] | None = None) -> int:
     api.add_argument("--output", "-o", type=Path, default=Path("out/api-jobs"))
     api.add_argument("--host", default="127.0.0.1")
     api.add_argument("--port", type=int, default=8766)
-    import_source = subparsers.add_parser("import-plan", help="extract DXF/IFC room geometry into an unconfirmed source-backed draft")
+    import_source = subparsers.add_parser("import-plan", help="extract DXF/IFC rooms or calibrated PDF candidates into an unconfirmed draft")
     import_source.add_argument("source", type=Path)
     import_source.add_argument("--output", "-o", type=Path, required=True)
-    import_source.add_argument("--unit-scale-mm", type=float, help="explicit millimetres per drawing unit for unitless DXF")
+    import_source.add_argument("--unit-scale-mm", type=float, help="millimetres per DXF unit or PDF page point")
     import_source.add_argument("--storey", help="IFC storey GlobalId or name")
+    import_source.add_argument("--page", type=int, help="one-based PDF page; required for PDF")
+    import_source.add_argument("--origin-pt", type=float, nargs=2, metavar=("X", "Y"), help="PDF point coordinates corresponding to canonical (0,0); required for PDF")
     propose = subparsers.add_parser("propose-edits", help="validate typed program edits into a reviewable draft")
     propose.add_argument("spec", type=Path)
     propose.add_argument("edits", type=Path, help="JSON object containing the typed edits array")
@@ -374,9 +386,22 @@ def main(argv: list[str] | None = None) -> int:
         try:
             from .plan_import import import_plan, write_import_draft
 
-            draft = import_plan(args.source, unit_scale_mm=args.unit_scale_mm, storey=args.storey)
-            write_import_draft(args.output, draft)
-            print(f"DRAFT: {args.output}; {len(draft.rooms)} rooms; {len(draft.issues)} unresolved issues")
+            if args.source.suffix.lower() == ".pdf":
+                from .pdf_plan_import import import_pdf_plan, write_pdf_plan_draft
+
+                if args.page is None or args.unit_scale_mm is None or args.origin_pt is None or args.storey is not None:
+                    raise ValueError("PDF import requires --page, --unit-scale-mm and --origin-pt")
+                draft = import_pdf_plan(args.source, page=args.page, unit_scale_mm=args.unit_scale_mm,
+                                        origin_pt=tuple(args.origin_pt))
+                write_pdf_plan_draft(args.output, draft)
+                count = len(draft.candidates)
+            else:
+                if args.page is not None or args.origin_pt is not None:
+                    raise ValueError("--page and --origin-pt apply to PDF sources only")
+                draft = import_plan(args.source, unit_scale_mm=args.unit_scale_mm, storey=args.storey)
+                write_import_draft(args.output, draft)
+                count = len(draft.rooms)
+            print(f"DRAFT: {args.output}; {count} objects; {len(draft.issues)} unresolved issues")
             return 0
         except (OSError, ValueError, RuntimeError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)

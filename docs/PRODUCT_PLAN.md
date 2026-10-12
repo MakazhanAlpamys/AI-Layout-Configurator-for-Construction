@@ -30,6 +30,10 @@ Checkpoint H.5.1 verifies the private Docker service using a regular installed
 wheel and bundled resources, including the full pharma-pilot HTTP smoke.
 Checkpoint G.4.1 adds opt-in provider commands through the strict typed-edit
 boundary; application and solver/check regeneration still require review.
+Checkpoint G.2 adds explicitly calibrated and selected rectangular vector-PDF
+drafts with source/page hashes, confirmed fixed coordinates and full bundle QA.
+The pinned `dff5603` acceptance run passed Windows, Linux, pharma and the
+deployed API/container; later checkpoint CI evidence is tracked in the ledger.
 
 ## 1. Why we are expanding the project
 

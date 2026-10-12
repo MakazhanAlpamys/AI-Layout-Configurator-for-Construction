@@ -32,6 +32,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | C.2.2 | Preferred zone relations through generation and editing | Both backends reward one usable room contact per declared zone relation, below hard constraints and area accuracy. Descendant membership, fallback replay and editor repair preserve the preference; bounded search does not guarantee optimality. Facility generation also accepts explicit axis constraints. | Fresh zone/room preferences/editor run: 25 passed, 33 subtests; axis/core integration: 10 passed. Agent core/daylight/facility/hierarchy regressions passed. | complete 2026-10-12 |
 | H.5.1 | Installed production container | Docker builds and installs a regular wheel using the canonical resource build hook. Runtime imports and schemas come from site-packages rather than the editable source tree. | Clean committed-source image build passed; runtime path assertions found site-packages and bundled `_data`. Real pharma-pilot HTTP generation, download and full QA passed in 4.06 s. | complete 2026-10-12 |
 | G.4.1 | Opt-in model adapter for typed proposals | An explicitly configured chat-compatible provider receives canonical input and the edit catalog. Its output must pass the strict proposal boundary; CLI emits an unconfirmed DRAFT and leaves application/regeneration to the reviewed workflow. | Fresh provider/CLI/original-LLM/proposal tests: 21 passed, 25 subtests. Real local HTTP fixtures verify request, malformed/hostile replies, missing opt-in, confirmation and a changed-area solve; no external model was called. | complete 2026-10-12 for compatible-provider protocol |
+| G.2 | Calibrated rectangular vector-PDF draft | Explicit page, scale and origin produce provisional candidates. Named confirmation requires explicit selection, unchanged source/page content and exact calibration, then reuses all fixed-room and bundle checks. Unsupported page graphics and ambiguous selections retain evidence. | Fresh PDF/import/CLI run: 39 passed, 81 subtests. A calibrated PDF generated a fixed-coordinate facility bundle with full QA and hashed selection evidence. Rendered source fixture was visually inspected. | complete 2026-10-12 for bounded rectangular page paths; OCR/general PDF pending |
+| QA.2 | Remote acceptance after packaging/API repair | The pinned `dff5603` checkpoint passed Windows and Linux suites, deployed API/container acceptance and pharma acceptance. This closes the original H.4/QA.1 remote gate for that commit; subsequent commits require their own CI. | [Acceptance run 38272192580](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38272192580): all four jobs successful. | complete 2026-10-12 for pinned checkpoint |
 
 ## Remaining implementation
 
@@ -45,8 +47,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
   and spatial exchange; grouping does not establish engineered MEP design.
 - F: retain scoped, sourced rule packs and UNKNOWN/IDS separation; add domain
   acceptance examples without claiming unperformed expert sign-off.
-- G: vector-PDF imports and draft raster/OCR extraction; strict typed model
-  proposals, DXF/IFC and explicit confirmation exist.
+- G: general PDF and draft raster/OCR extraction; calibrated rectangular
+  vector paths, strict typed model proposals and DXF/IFC confirmation exist.
 - H: unified multi-storey IFC and shared grid, typed vertical connectors,
   service links and remote container acceptance.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed

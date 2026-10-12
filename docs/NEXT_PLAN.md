@@ -37,14 +37,14 @@ it). The order below follows that.
 | 3.2 | Browser editing for facility results: move/resize a room, re-run equipment, routing and gates instantly, keep the BCF history | an edit round-trip under two seconds on the pilot — **done** 2026-09-27: `ui --edit`, 0.4–1.1 s per edit on the pilot, revisions saved to `revisions/rev_NN/` |
 | 3.3 | Side-by-side comparison of variants: area deviation, route lengths, conflicts, clean/dirty separation | a comparison view and a JSON/CSV export — **done** 2026-09-27: `compare-variants` (JSON, CSV, PDF); variants are now forced to differ |
 | 3.4 | A client-facing PDF report "why this variant": metrics, gate evidence, open issues, disclaimer | generated for every accepted bundle — first version in `comparison.pdf`; next: per-check gate evidence pages |
-| 3.5 | Source-backed rectangular DXF/IFC import with explicit human confirmation and fixed solver constraints; see [PLAN_IMPORT.md](PLAN_IMPORT.md) | implementation and confirmed small-bundle QA done 2026-10-12; imported full pilot acceptance remains to measure |
+| 3.5 | Source-backed rectangular DXF/IFC and calibrated vector-PDF import with explicit human confirmation and fixed solver constraints; see [PLAN_IMPORT.md](PLAN_IMPORT.md) | implementation and confirmed small-bundle QA done 2026-10-12; imported full pilot acceptance remains to measure |
 
 ## 4. Product
 
 | # | Work | Done when |
 | --- | --- | --- |
 | 4.1 | Laboratory, hospital and industrial profiles, each with a sourced rule pack and its own acceptance pilot | one accepted pilot per typology |
-| 4.2 | HTTP API, persistent batch/cache jobs and private container implemented on 2026-10-12; see [API.md](API.md) and checkpoint H.4 | local Docker pharma-pilot HTTP acceptance passed; the added CI job must pass before the CI gate closes |
+| 4.2 | HTTP API, persistent batch/cache jobs and private container implemented on 2026-10-12; see [API.md](API.md) and checkpoint H.4 | local Docker pharma-pilot HTTP acceptance and all four CI jobs passed at `dff5603` ([evidence](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38272192580)); later commits retain separate CI gates |
 | 4.3 | Two or three before/after case studies on real projects | published with the owners' permission |
 
 ## Order of work

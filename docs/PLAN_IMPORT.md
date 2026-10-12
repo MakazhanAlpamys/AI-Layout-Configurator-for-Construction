@@ -35,6 +35,32 @@ still apply. The draft's `.confirmation.json` sidecar and generated manifest
 retain reviewer and source/draft/program hashes. This confirms geometry and
 does not constitute engineering sign-off.
 
-This slice supports rectangular DXF/IFC, at most 1,000 rooms and 100,000 IFC
-triangles per space. PDF, raster/OCR and arbitrary orthogonal footprints
-remain separate plan requirements.
+## Calibrated vector PDF
+
+```powershell
+layout-configurator import-plan survey.pdf --output out/pdf-draft.json `
+  --page 1 --unit-scale-mm 100 --origin-pt 0 0
+layout-configurator generate-building program.yaml --output out/pdf-imported `
+  --imported-plan out/pdf-draft.json --confirm-import `
+  --import-reviewer "Geometry reviewer" --room-map pdf:page1:op7 canonical-room
+```
+
+Use the candidate ID actually recorded in the draft. `--page` is one-based;
+the calibration is millimetres per unrotated default PDF point. `--origin-pt`
+identifies the page coordinates corresponding to canonical `(0, 0)`; x points
+right and y points up. The importer does not infer scale or room identity from
+labels. Every selected candidate needs an explicit mapping. Other rectangular
+paths may be title frames or symbols, so they are not automatically rooms.
+
+Only closed axis-aligned rectangular page-content paths are accepted. Page
+rotation, nondefault UserUnit, annotations, forms, raster images, clipping,
+curves and compound paths produce unresolved issues. Crop-crossing candidates
+are rejected. Ambiguous overlapping candidates remain visible; overlapping
+selected rooms cannot be confirmed. Confirmation re-extracts the unchanged
+source, checks calibration and candidate selection, and records source, page,
+content, draft, selection and program hashes before using fixed rectangles.
+
+Limits are 20 MiB source, 8 MiB decoded page content, 20,000 operators and
+1,000 candidates. Rectangular DXF/IFC supports at most 1,000 rooms and
+100,000 IFC triangles per space. Raster/OCR, general PDF drawings and
+arbitrary orthogonal footprints remain separate requirements.

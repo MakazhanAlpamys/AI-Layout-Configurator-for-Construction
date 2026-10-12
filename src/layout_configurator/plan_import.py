@@ -154,11 +154,26 @@ def load_imported_constraints(
     if original.issues or original.rooms != draft.rooms:
         raise ValueError("Draft geometry no longer matches its original source; import it again")
     mapping = dict(room_mapping or {})
-    if set(mapping) - {room.id for room in draft.rooms}:
+    fixed = validate_fixed_rooms(draft.rooms, layout_spec, mapping)
+    _write_json(draft_path.with_suffix(".confirmation.json"), {
+        "format": "FLC-import-confirmation", "confirmed": True, "reviewer": reviewer.strip(),
+        "source_sha256": draft.source_sha256, "draft_sha256": _file_hash(draft_path),
+        "layout_sha256": hashlib.sha256(_canonical_json(layout_spec.to_dict())).hexdigest(),
+        "room_mapping": {room.id: mapping.get(room.id, room.id) for room in draft.rooms},
+        "scope": "Imported geometry acceptance; not engineering sign-off",
+    })
+    return fixed
+
+
+def validate_fixed_rooms(rooms: tuple[ImportedRoom, ...], layout_spec: LayoutIR,
+                         room_mapping: Mapping[str, str] | None = None) -> dict[str, Rect]:
+    """Shared source-geometry mapping and solver fixed-rectangle constraints."""
+    mapping = dict(room_mapping or {})
+    if set(mapping) - {room.id for room in rooms}:
         raise ValueError("Room mapping references an unknown source room")
     fixed: dict[str, Rect] = {}
-    issues: list[str] = []
-    for imported in draft.rooms:
+    issues: list[str] = _room_issues(rooms)
+    for imported in rooms:
         room_id = mapping.get(imported.id, imported.id)
         if room_id not in layout_spec.room_by_id:
             issues.append(f"unknown room: {imported.id} maps to {room_id}")
@@ -181,13 +196,6 @@ def load_imported_constraints(
             issues.append(f"area: {room_id} is outside its allowed area range")
     if issues:
         raise ValueError("Imported constraints rejected: " + "; ".join(issues))
-    _write_json(draft_path.with_suffix(".confirmation.json"), {
-        "format": "FLC-import-confirmation", "confirmed": True, "reviewer": reviewer.strip(),
-        "source_sha256": draft.source_sha256, "draft_sha256": _file_hash(draft_path),
-        "layout_sha256": hashlib.sha256(_canonical_json(layout_spec.to_dict())).hexdigest(),
-        "room_mapping": {room.id: mapping.get(room.id, room.id) for room in draft.rooms},
-        "scope": "Imported geometry acceptance; not engineering sign-off",
-    })
     return fixed
 
 
@@ -362,7 +370,11 @@ def _finish(draft, units, scale, rooms, issues, assumptions, storey=None) -> Imp
 
 def _file_hash(path: Path) -> str:
     try:
-        return hashlib.sha256(path.read_bytes()).hexdigest()
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
     except OSError as exc:
         raise ValueError(f"Original source/draft unavailable: {path}") from exc
 
