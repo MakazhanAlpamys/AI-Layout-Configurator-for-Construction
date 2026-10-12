@@ -1,0 +1,136 @@
+# Synthetic 20 + 20-room benchmark; no future placement coordinates.
+facility_multi_floor:
+  project_name: Synthetic 40-room shared-grid pharma facility
+  floor_height_mm: 4500
+  floors:
+  - level: 0
+    elevation_mm: 0
+    program: pharma_40_two_floor_ground.yaml
+    profile: ../rules/pharma_cleanroom_pilot.yaml
+  - level: 1
+    elevation_mm: 4500
+    program: pharma_40_two_floor_upper.yaml
+    profile: ../rules/default_facility.yaml
+  vertical_cores:
+  - id: stair_core
+    kind: stair
+    rooms:
+      0: stair_core
+      1: stair_core
+  - id: goods_lift
+    kind: goods_lift
+    rooms:
+      0: goods_lift
+      1: goods_lift
+  cross_floor_flows:
+  - id: qc_retained_samples
+    type: finished_goods
+    from:
+      level: 0
+      id: packaging_line_01
+    to:
+      level: 1
+      id: sample_reception
+    via:
+    - goods_lift
+    minimum_clear_width_mm: 1200
+  - id: staff_to_upper_floor
+    type: people
+    from:
+      level: 0
+      id: staff_changing
+    to:
+      level: 1
+      id: office_upper
+    via:
+    - stair_core
+    minimum_clear_width_mm: 1200
+  structural_grid:
+    axes_x_mm:
+    - 0
+    - 1000
+    - 2000
+    - 3000
+    - 4000
+    - 5000
+    - 6000
+    - 7000
+    - 8000
+    - 9000
+    - 10000
+    - 11000
+    - 12000
+    - 13000
+    - 14000
+    - 15000
+    - 16000
+    - 17000
+    - 18000
+    - 19000
+    - 20000
+    - 21000
+    - 22000
+    - 23000
+    - 24000
+    - 25000
+    - 26000
+    - 27000
+    - 28000
+    - 29000
+    - 30000
+    - 31000
+    - 32000
+    - 33000
+    - 34000
+    - 35000
+    - 36000
+    - 37000
+    - 38000
+    - 39000
+    - 40000
+    - 41000
+    - 42000
+    - 43000
+    - 44000
+    - 45000
+    - 46000
+    - 47000
+    - 48000
+    - 49000
+    - 50000
+    - 51000
+    - 52000
+    - 53000
+    - 54000
+    axes_y_mm:
+    - 0
+    - 1000
+    - 2000
+    - 3000
+    - 4000
+    - 5000
+    - 6000
+    - 7000
+    - 8000
+    - 9000
+    - 10000
+    - 11000
+    - 12000
+    - 13000
+    - 14000
+    - 15000
+    - 16000
+    - 17000
+    - 18000
+    - 19000
+    - 20000
+    - 21000
+    - 22000
+    - 23000
+    - 24000
+    - 25000
+    - 26000
+    - 27000
+    - 28000
+    - 29000
+    - 30000

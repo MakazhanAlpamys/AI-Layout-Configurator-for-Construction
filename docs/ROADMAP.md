@@ -37,6 +37,8 @@ Checkpoint H.1 verifies shared-grid facility stacks and unified IFC exchange;
 40-room acceptance and independent receiving-tool review remain open gates.
 Checkpoint H.1.2 adds bounded retries of base-floor core placements; exhaustion
 is evidence about that candidate pool rather than the entire facility.
+Checkpoint H.1.1 verifies 40 rooms across two floors on all three local seeds,
+with source-backed stack QA; pinned remote scale acceptance remains separate.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

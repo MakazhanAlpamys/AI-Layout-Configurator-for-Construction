@@ -45,6 +45,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 
 | H.1.2 | Bounded cross-floor base-placement retries | A feasible base floor is retained in a bounded pool; a failed pinned upper floor causes another accepted base placement to be tried. Published floor variants stay coherent and exhaustion never proves building infeasibility. | RED reproduced a real two-floor cutout/core counterexample. Fresh root backtracking/unified-IFC/CLI/runner run: 21 passed, 8 subtests; fresh legacy-floor/independent-stack-QA run: 23 passed. Malformed IFC negatives report FAIL; the installed IfcOpenShell destructor emits warnings on deliberately invalid headers. | complete 2026-10-12 for base-pool retries; deeper-floor backtracking/40-room series remain separate |
 
+| H.1.1 / NEXT 1.4 local gate | Independent persisted stack QA and 40-room scale benchmark | Sources/profiles, complete floor inventories, recalculated routes/core predicates and actual IFC footprints, elevations, grid and native memberships are checked independently. A source/version-pinned acceptance runner retains failures and a three-seed CI series. | Fresh root: 23 legacy-floor/stack-QA tests; 21 backtracking/IFC/CLI/runner tests with 8 subtests; runner provenance RED then all 3 tests GREEN. Synthetic 20+20 program passed 17 stack checks and complete per-floor QA on seeds 1/7/42 in 141.313/70.750/88.203 s. A separate current-runtime read-only 40-room recheck passed in 6.219 s. | implementation and local 40-room criterion complete 2026-10-12; pinned scale CI and external review pending |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
@@ -59,7 +61,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
   acceptance examples without claiming unperformed expert sign-off.
 - G: general PDF and draft raster/OCR extraction; calibrated rectangular
   vector paths, strict typed model proposals and DXF/IFC confirmation exist.
-- H: two-floor 40-room acceptance, linked service zones, larger-scale
+- H: pinned remote two-floor 40-room acceptance, linked service zones, larger-scale
   incremental solving and runner budget calibration; shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
 - I.1–I.6: production program; unified BuildingIR extensions; source-backed

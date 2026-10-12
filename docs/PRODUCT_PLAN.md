@@ -50,6 +50,8 @@ Checkpoint C.3.2 exposes root-zone placement through facility CLI/API with all
 existing gates and persistent stage evidence, while retaining default auto.
 Checkpoint H.1.2 retries bounded base-floor candidates when a core placement
 fails on an upper floor, retaining scoped negative evidence and coherent IDs.
+Checkpoint H.1.1 independently verifies the synthetic two-floor 40-room program
+on seeds 1/7/42; source/IFC tamper checks and a separate scale CI job are added.
 
 ## 1. Why we are expanding the project
 

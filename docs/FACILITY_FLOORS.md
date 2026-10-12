@@ -57,5 +57,38 @@ floor-local flow legs and the selected core.
 These groups describe coordination intent. Room volumes use the existing
 2,800 mm exchange height, equipment proxies 1,000 mm; detailed stairs, lifts,
 structural analysis and designed MEP are separate work. Receiving-tool and
-engineering review remain open. The small shared-grid and existing 25-room
-fixtures pass; the separate two-floor 40-room acceptance criterion remains open.
+engineering review remain open.
+
+## Independent stack acceptance
+
+`validate_facility_floors_bundle(spec, output_dir, expected_stacks=1)` reopens
+the source programs/profiles and every saved floor bundle. It recomputes all
+floor and vertical predicates, reconciles the exact variant inventory, hashes
+artifacts, runs IFC4 EXPRESS checks, compares actual world room footprints and
+storey elevations, and checks physical grid curves/references and native group
+membership. Saved PASS flags are not acceptance evidence. IFC wall/equipment
+solids and detailed engineering have separate scope.
+
+The synthetic `examples/pharma_40_two_floor.yaml` benchmark extends the earlier
+pilot to 20 rooms per floor, with declared shared axes, stair/goods-lift cores
+and both cross-floor flow types. It contains no future placement coordinates
+and is not an approved real project. On 2026-10-12 all three seeds 1/7/42 passed
+independent floor/stack QA at 40 seconds per solve. Total generation plus QA
+took 141.313/70.750/88.203 seconds on the local machine under concurrent work;
+this is not an 80-room CI performance measurement.
+
+```powershell
+python scripts/facility_floors_acceptance.py examples/pharma_40_two_floor.yaml `
+  --output out/pharma40-stack --seeds 1 7 42 --variants 1 `
+  --max-attempts 3 --time-limit 40 --minimum-rooms 40
+```
+
+The runner refuses fewer than 40 declared rooms by default and requires a
+shared grid. Its JSON report records source/effective-profile hashes, executable
+and runner fingerprints, dependency versions, CI commit when supplied, settings,
+elapsed times and independent QA evidence. Source or implementation changes
+during a run prevent PASS. `--check-only` rechecks existing `seed_N` bundles;
+preserve an earlier timing report before rechecking the same output directory.
+The nightly/on-demand scale workflow runs a separate job for each seed and
+uploads failures as well as accepted bundles. The new CI series remains pending
+until a pinned remote run completes.
