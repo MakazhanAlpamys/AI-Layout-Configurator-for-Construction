@@ -29,13 +29,14 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.1 | CI platform and container startup repair | Empty IFC query assertions accept both list and tuple results; the deployed smoke waits through startup TCP resets before submitting work. | First container/Linux CI exposed both defects. A real TCP-reset regression and IFC group tests: 10 passed. Fresh Docker pharma smoke after the repair: full QA passed, 7.05 s; remote acceptance remains pending. | repair complete 2026-10-12; CI gate pending |
 | G.4 | Typed program proposal and confirmed application | Room, equipment and flow changes use strict operations and explicit units. Hashed drafts apply only to their exact canonical base with named confirmation; schema/reference checks are atomic and old artifacts are invalidated. CLI supports proposal, application and regeneration. | Fresh contract/CLI tests: 13 passed, 16 subtests, including a real changed-area solve/export/QA bundle. | complete 2026-10-12 for structured proposals; external model adapter pending |
 | H.5 | Installable wheel and source distribution | Build-time copies bundle the authoritative schemas/rules/IDS without maintaining a second source tree. Loaders work from foreign working directories while respecting local and absolute overrides. | Fresh packaging/schema/norms/QA run: 29 passed, 17 subtests. Built wheel and rebuilt sdist were installed outside checkout; isolated CLI generated, checked IDS and passed full facility QA. Agent broader run: 83 passed. | complete 2026-10-12 |
+| C.2.2 | Preferred zone relations through generation and editing | Both backends reward one usable room contact per declared zone relation, below hard constraints and area accuracy. Descendant membership, fallback replay and editor repair preserve the preference; bounded search does not guarantee optimality. Facility generation also accepts explicit axis constraints. | Fresh zone/room preferences/editor run: 25 passed, 33 subtests; axis/core integration: 10 passed. Agent core/daylight/facility/hierarchy regressions passed. | complete 2026-10-12 |
 
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
   backend alongside rectangles.
-- C: preferred zone groups; zone-driven placement and containment;
-  structured, per-stage constraint explanations.
+- C: zone-driven placement and containment; structured, per-stage constraint
+  explanations. Preferred-zone singleton participants can increase search cost.
 - D: drawing-profile and symbol catalogs, editable dimension chains, separate
   zone/equipment/flow/egress sheets, sheet-set legends and revision history.
 - E: independent receiving-tool review of semantic IFC zones, declared systems

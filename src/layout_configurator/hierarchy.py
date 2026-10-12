@@ -137,6 +137,7 @@ def solve_layouts_hierarchical(
     *,
     required_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
     forbidden_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
+    preferred_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
     minimum_adjacency_mm: float | None = None,
     equipment_fit_options: Mapping[str, Iterable[tuple[str, Iterable[tuple[float, float]]]]] | None = None,
     deterministic_units: float | None = None,
@@ -174,6 +175,7 @@ def solve_layouts_hierarchical(
     axes_y = None if structural_axes_y_mm is None else tuple(structural_axes_y_mm)
     required_groups = _normalise_adjacency_groups(required_adjacency_groups, known, "required")
     forbidden_groups = _normalise_adjacency_groups(forbidden_adjacency_groups, known, "forbidden")
+    preferred_groups = _normalise_adjacency_groups(preferred_adjacency_groups, known, "preferred")
     fit_options = {
         str(room_id): tuple(
             (str(equipment_id), tuple((float(w), float(h)) for w, h in options))
@@ -182,11 +184,13 @@ def solve_layouts_hierarchical(
         for room_id, requirements in (equipment_fit_options or {}).items()
     }
     adjacency_mm = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
-    in_groups = {room_id for _, left, right in (*required_groups, *forbidden_groups) for room_id in (*left, *right)}
+    # Group members retain free dimensions/positions rather than committing
+    # their potential contacts to a bounded local motif shortlist.
+    in_groups = {room_id for _, left, right in (*required_groups, *forbidden_groups, *preferred_groups) for room_id in (*left, *right)}
     clusters = cluster_rooms(spec, pinned=in_groups | set(fixed_rects) | axis_rooms)
     cluster_of = {room_id: cluster_id for cluster_id, members in clusters.items() for room_id in members}
     rooms_by_id = {room.id: room for room in spec.rooms}
-    has_preferences = bool(spec.relation_pairs("preferred_adjacency"))
+    has_preferences = bool(preferred_groups or spec.relation_pairs("preferred_adjacency"))
 
     external: dict[str, int] = defaultdict(int)
     for room_a, room_b in spec.relation_pairs("required_adjacency"):
@@ -363,6 +367,7 @@ def solve_layouts_hierarchical(
         model, spec, room_vars, area_deviations, minimum_shared,
         [v for item in room_vars.values() for v in (item.x, item.y)],
         area_domain_bound=area_domain_bound,
+        preferred_groups=preferred_groups,
     )
     model.Minimize(objective)
 
@@ -459,6 +464,10 @@ def solve_layouts_auto(
     for key in ("axis_aligned_room_ids", "structural_axes_x_mm", "structural_axes_y_mm"):
         if options.get(key) is not None:
             options[key] = tuple(options[key])
+    for relation in ("required", "forbidden", "preferred"):
+        key = f"{relation}_adjacency_groups"
+        if options.get(key) is not None:
+            options[key] = _normalise_adjacency_groups(options[key], {room.id for room in spec.rooms}, relation)
     hierarchical_options = {
         key: value
         for key, value in options.items()
@@ -466,6 +475,7 @@ def solve_layouts_auto(
         in {
             "required_adjacency_groups",
             "forbidden_adjacency_groups",
+            "preferred_adjacency_groups",
             "minimum_adjacency_mm",
             "equipment_fit_options",
             "deterministic_units",

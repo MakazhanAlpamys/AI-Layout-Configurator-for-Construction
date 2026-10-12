@@ -576,6 +576,7 @@ class FacilityEditSession(FacilityReviewSession):
     def _resolve_around(self, room_id: str, moved: LayoutResult) -> LayoutResult:
         building = self.building
         layout = building.layout
+        preferred_groups = building.zone_relation_groups("preferred_adjacency")
         fit_options: dict[str, list] = {}
         for item in building.equipment:
             if item.room_id is not None:
@@ -589,12 +590,13 @@ class FacilityEditSession(FacilityReviewSession):
                 fixed_rects={room_id: moved.placements[room_id]},
                 required_adjacency_groups=building.zone_relation_groups("required_adjacency"),
                 forbidden_adjacency_groups=building.zone_relation_groups("forbidden_adjacency"),
+                preferred_adjacency_groups=preferred_groups,
                 minimum_adjacency_mm=layout.door_width_mm + 2 * layout.wall_thickness_mm if building.flows else None,
                 equipment_fit_options=fit_options,
-                # Start from where the rooms are now and stop at the first
-                # repaired layout: interactive time, and the least surprise.
+                # Start from the current rooms. Preferences use the bounded
+                # optimisation budget; without them stop after one repair.
                 hint_rects={key: rect for key, rect in self.result.placements.items() if key != room_id},
-                first_solution_only=True,
+                first_solution_only=not (preferred_groups or layout.relation_pairs("preferred_adjacency")),
             )[0]
         except (InfeasibleLayout, ValueError) as exc:
             raise EditError(f"Edit rejected: the other rooms cannot be re-placed around {room_id}: {exc}") from exc

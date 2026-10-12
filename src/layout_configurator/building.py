@@ -437,8 +437,9 @@ class BuildingIR:
 
         A required zone relation means that at least one room pair from the two
         zones must share a usable boundary. A forbidden relation means that no
-        pair may touch. Duplicate reverse declarations are collapsed here so
-        the solver and evidence report stay deterministic.
+        pair may touch. A preferred relation earns one soft credit when any
+        pair shares a usable boundary. Duplicate reverse declarations are
+        collapsed here so the solver and evidence report stay deterministic.
         """
 
         known = {zone.id for zone in self.zones}

@@ -40,6 +40,7 @@ def solve_layouts(
     boundary_side_contacts: Mapping[str, int] | None = None,
     hint_rects: Mapping[str, Rect] | None = None,
     first_solution_only: bool = False,
+    preferred_adjacency_groups: Iterable[tuple[str, Iterable[str], Iterable[str]]] | None = None,
 ) -> list[LayoutResult]:
     """Solve grid-snapped layouts with optional fixed rectangles and axes.
 
@@ -47,7 +48,10 @@ def solve_layouts(
     "logistics must touch production". Each group is ``(name, left_rooms,
     right_rooms)`` and requires at least one room pair to share a boundary.
     ``forbidden_adjacency_groups`` uses the same shape and prevents every pair
-    from touching. Room-level LayoutIR relations remain supported unchanged.
+    from touching. ``preferred_adjacency_groups`` rewards each group once
+    when any pair shares a usable edge, after area accuracy and before the
+    position tie-breaker. An impossible preference remains soft. Room-level
+    LayoutIR relations remain supported unchanged.
     ``minimum_adjacency_mm`` can reserve extra room beside a generated opening
     for a wider facility flow corridor.
     ``equipment_fit_options`` adds necessary room width/height constraints for
@@ -81,6 +85,7 @@ def solve_layouts(
     known_room_ids = {room.id for room in spec.rooms}
     required_groups = _normalise_adjacency_groups(required_adjacency_groups, known_room_ids, "required")
     forbidden_groups = _normalise_adjacency_groups(forbidden_adjacency_groups, known_room_ids, "forbidden")
+    preferred_groups = _normalise_adjacency_groups(preferred_adjacency_groups, known_room_ids, "preferred")
     room_fit_options = _normalise_equipment_fit_options(equipment_fit_options, known_room_ids)
     adjacency_width_mm = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
     if adjacency_width_mm <= 0:
@@ -207,6 +212,7 @@ def solve_layouts(
     objective = _layout_objective(
         model, spec, room_vars, area_deviations, minimum_shared,
         [v for room in spec.rooms for v in (room_vars[room.id].x, room_vars[room.id].y)],
+        preferred_groups=preferred_groups,
     )
     model.Minimize(objective)
 
@@ -239,7 +245,7 @@ def solve_layouts(
             break
 
         placements = {room.id: _rect_from_solver(solver, room_vars[room.id], grid) for room in spec.rooms}
-        objective_value = solver.Value(objective) if spec.relation_pairs("preferred_adjacency") else int(solver.ObjectiveValue())
+        objective_value = solver.Value(objective) if preferred_groups or spec.relation_pairs("preferred_adjacency") else int(solver.ObjectiveValue())
         results.append(LayoutResult(variant=variant, placements=placements, objective_value=objective_value))
         model.AddForbiddenAssignments(
             [value for room in spec.rooms for value in (room_vars[room.id].x, room_vars[room.id].y, room_vars[room.id].width, room_vars[room.id].height)],
@@ -257,36 +263,51 @@ def solve_layouts(
     return results
 
 
-def _layout_objective(model, spec, room_vars, area_deviations, minimum_shared, position_terms, *, area_domain_bound=None):
+def _layout_objective(model, spec, room_vars, area_deviations, minimum_shared, position_terms, *, area_domain_bound=None, preferred_groups=()):
     """Area, preferred contacts, then position, with bounded integer weights.
 
     Preserve the original model exactly when no preferences are declared.
-    With P preferred pairs and position bound B, one contact costs B+1 and
+    With P preferred pairs/groups and position bound B, one credit costs B+1 and
     one area unit costs (P+1)*(B+1), exceeding every lower-priority change.
     This orders feasible solutions; a budget-limited solve need not prove
     optimality. Required and forbidden relations remain hard constraints.
     """
 
     pairs = spec.relation_pairs("preferred_adjacency")
-    if not pairs:
+    preference_count = len(pairs) + len(preferred_groups)
+    if not preference_count:
         return sum(area_deviations) * 10_000 + sum(position_terms)
     width = _ceil_grid(spec.boundary.width_mm, spec.grid_mm)
     height = _ceil_grid(spec.boundary.height_mm, spec.grid_mm)
     position_bound = len(spec.rooms) * (width + height)
     preference_weight = position_bound + 1
-    area_weight = (len(pairs) + 1) * preference_weight
+    area_weight = (preference_count + 1) * preference_weight
     # CP-SAT validates objective domains before presolve. This conservative
     # bound covers independent variable domains, before constraints such as
     # ExactlyOne tighten the bound on a hierarchy's selected motif. Callers
     # with motif expressions supply that unconditioned domain bound.
     area_bound = len(spec.rooms) * width * height if area_domain_bound is None else area_domain_bound
-    if area_bound * area_weight + len(pairs) * preference_weight + position_bound > (1 << 62) - 1:
+    if area_bound * area_weight + preference_count * preference_weight + position_bound > (1 << 62) - 1:
         raise ValueError("Preferred-adjacency objective exceeds safe integer bounds; use a coarser grid or smaller boundary")
     contacts = [
         _add_adjacency_indicator(model, room_vars[a], room_vars[b], minimum_shared, f"preferred_{a}_{b}")
         for a, b in pairs
     ]
-    return sum(area_deviations) * area_weight + (len(pairs) - sum(contacts)) * preference_weight + sum(position_terms)
+    for index, (name, left, right) in enumerate(preferred_groups):
+        # Descendant zones may overlap. Each distinct pair is a candidate,
+        # but the entire zone relation earns at most one preference credit.
+        candidate_pairs = sorted({tuple(sorted((a, b))) for a in left for b in right if a != b})
+        indicators = [
+            _add_adjacency_indicator(model, room_vars[a], room_vars[b], minimum_shared, f"zone_preferred_{index}_{name}_{a}_{b}")
+            for a, b in candidate_pairs
+        ]
+        contact = model.NewBoolVar(f"zone_preferred_{index}_{name}_contact")
+        if indicators:
+            model.AddMaxEquality(contact, indicators)
+        else:
+            model.Add(contact == 0)
+        contacts.append(contact)
+    return sum(area_deviations) * area_weight + (preference_count - sum(contacts)) * preference_weight + sum(position_terms)
 
 
 def _room_size_vars(model, room, grid: int, boundary_width: int, boundary_height: int):

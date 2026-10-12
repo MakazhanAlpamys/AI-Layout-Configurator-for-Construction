@@ -22,6 +22,8 @@ Checkpoint G.4 verifies typed program proposals and confirmed regeneration;
 network model calls remain a separate adapter requirement.
 Checkpoint H.5 verifies a wheel and rebuilt source distribution outside the
 checkout, including their canonical resources and complete CLI QA.
+Checkpoint C.2.2 verifies preferred zone relations in generation and editing,
+with one soft credit per zone relation and all hard gates retained.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

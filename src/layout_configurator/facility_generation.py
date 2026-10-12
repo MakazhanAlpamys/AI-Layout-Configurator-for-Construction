@@ -9,7 +9,7 @@ records rejected candidates instead of silently publishing a lucky seed.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, replace
 
 from .building import BuildingIR
@@ -131,6 +131,9 @@ def solve_feasible_facility_variants(
     deterministic_units: float | None = None,
     room_solver: str = "auto",
     fixed_rects: Mapping[str, Rect] | None = None,
+    axis_aligned_room_ids: Iterable[str] | None = None,
+    structural_axes_x_mm: Iterable[float] | None = None,
+    structural_axes_y_mm: Iterable[float] | None = None,
 ) -> FacilityGenerationResult:
     """Return only candidates that pass every deterministic facility gate.
 
@@ -172,6 +175,7 @@ def solve_feasible_facility_variants(
             seed,
             required_adjacency_groups=prepared.zone_relation_groups("required_adjacency"),
             forbidden_adjacency_groups=prepared.zone_relation_groups("forbidden_adjacency"),
+            preferred_adjacency_groups=prepared.zone_relation_groups("preferred_adjacency"),
             minimum_adjacency_mm=(
                 prepared.layout.door_width_mm + 2 * prepared.layout.wall_thickness_mm
                 if prepared.flows
@@ -182,6 +186,9 @@ def solve_feasible_facility_variants(
             strategy=room_solver,
             evidence=solver_evidence,
             fixed_rects=dict(fixed_rects) if fixed_rects else None,
+            axis_aligned_room_ids=axis_aligned_room_ids,
+            structural_axes_x_mm=structural_axes_x_mm,
+            structural_axes_y_mm=structural_axes_y_mm,
         )
     except InfeasibleLayout as exc:
         generation = FacilityGenerationResult(

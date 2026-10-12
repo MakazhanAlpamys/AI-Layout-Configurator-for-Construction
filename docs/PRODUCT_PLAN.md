@@ -24,6 +24,8 @@ Checkpoint G.4 adds strict typed room/equipment/flow proposals, confirmed
 canonical application and an independently checked CLI regeneration path.
 Checkpoint H.5 bundles authoritative schemas/rules/IDS into installable
 distributions; isolated installed CLI generation and bundle QA are verified.
+Checkpoint C.2.2 propagates preferred functional-zone relations through both
+room backends, facility generation and interactive repair with bounded weights.
 
 ## 1. Why we are expanding the project
 
