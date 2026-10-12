@@ -6,6 +6,8 @@ routes) was verified on 2026-10-12; it extends the current product plan without
 reopening the completed residential MVP below.
 Checkpoint C.2.1 verifies soft room preferences in both solver backends on the
 same date; the archived MVP completion flags below remain historical.
+Checkpoint E.1 adds validated native IFC zone/system groups and fixes spatial
+exchange; external CAD/BIM acceptance remains a separate open gate.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

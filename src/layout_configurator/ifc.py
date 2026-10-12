@@ -122,6 +122,8 @@ def export_ifc(
     flows: FlowRoutingResult | None = None,
     flow_report: FlowValidationReport | None = None,
     flow_types: Mapping[str, str] | None = None,
+    *,
+    facility: BuildingIR | None = None,
 ) -> IfcExportSummary:
     """Write a small, readable IFC4 model and return entity counts."""
 
@@ -217,7 +219,14 @@ def export_ifc(
         )
         spaces.append(space)
         spaces_by_id[room.id] = space
-        elements.append(space)
+
+    document.create_entity(
+        "IfcRelAggregates",
+        GlobalId=_guid(spec, "aggregate-storey-spaces"),
+        OwnerHistory=owner_history,
+        RelatingObject=storey,
+        RelatedObjects=spaces,
+    )
 
     wall_plan = build_wall_plan(spec, result)
     walls, wall_records = _make_walls(document, owner_history, context, storey_placement, spec, result, wall_plan)
@@ -244,6 +253,11 @@ def export_ifc(
         flow_report,
         flow_types or {},
     )
+    if facility is not None:
+        _make_facility_groups(
+            document, owner_history, facility, spaces_by_id,
+            equipment_elements, flow_elements,
+        )
     _add_bim_relationships(document, owner_history, spec, result, spaces_by_id, wall_records, opening_records)
     elements.extend(walls)
     elements.extend(doors)
@@ -291,7 +305,7 @@ def export_building_ifc(
     flows: FlowRoutingResult | None = None,
     flow_report: FlowValidationReport | None = None,
 ) -> IfcExportSummary:
-    """Export a BuildingIR result with equipment as BIM proxy elements."""
+    """Export equipment proxies, functional zones and declared process systems."""
 
     return export_ifc(
         path,
@@ -302,6 +316,7 @@ def export_building_ifc(
         flows,
         flow_report,
         {item.id: item.type for item in building.flows},
+        facility=building,
     )
 
 
@@ -508,6 +523,14 @@ def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: 
             spaces.append(space)
             spaces_by_id[room.id] = space
 
+        document.create_entity(
+            "IfcRelAggregates",
+            GlobalId=_guid(floor_layout, "aggregate-storey-spaces"),
+            OwnerHistory=owner_history,
+            RelatingObject=storey,
+            RelatedObjects=spaces,
+        )
+
         wall_plan = build_wall_plan(floor_layout, floor_result)
         walls, wall_records = _make_walls(document, owner_history, context, storey_placement, floor_layout, floor_result, wall_plan)
         doors = _make_doors(document, owner_history, context, storey_placement, wall_plan)
@@ -515,7 +538,7 @@ def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: 
         opening_records = _make_openings(document, owner_history, context, storey_placement, floor_layout, wall_plan, doors, windows)
         type_records = _make_element_types(document, owner_history, floor_layout, walls, doors, windows)
         _add_bim_relationships(document, owner_history, floor_layout, floor_result, spaces_by_id, wall_records, opening_records)
-        floor_elements = [*spaces, *walls, *doors, *windows]
+        floor_elements = [*walls, *doors, *windows]
         document.create_entity(
             "IfcRelContainedInSpatialStructure",
             GlobalId=_guid(floor_layout, "containment-storey"),
@@ -589,6 +612,119 @@ def export_multifloor_ifc(path: str | Path, multi_spec: MultiFloorSpec, result: 
         external_entries=all_external_entries,
         storeys=len(storeys),
         stairs=len(stairs),
+    )
+
+
+def _make_facility_groups(
+    document,
+    owner_history,
+    building: BuildingIR,
+    spaces_by_id,
+    equipment_elements,
+    flow_elements,
+) -> None:
+    """Preserve declared zone hierarchy and process membership in native groups.
+
+    Grouping adds no physical geometry or engineering calculations. Direct
+    space membership is kept separate from nested zone membership; process
+    systems group existing route and explicitly declared equipment endpoints.
+    """
+
+    spec = building.layout
+    source_contract = f"BuildingIR {building.version}"
+    zones_by_id = {}
+    for zone in sorted(building.zones, key=lambda item: item.id):
+        element = document.create_entity(
+            "IfcZone",
+            GlobalId=_guid(spec, f"zone-{zone.id}"),
+            OwnerHistory=owner_history,
+            Name=zone.id,
+            ObjectType=zone.type,
+            Description="Declared functional zone; not a qualified cleanroom boundary",
+        )
+        values = {
+            "ZoneId": zone.id,
+            "ZoneType": zone.type,
+            "DirectRoomIds": ",".join(sorted(zone.room_ids)),
+            "Airlock": zone.airlock,
+            "SourceContract": source_contract,
+            "SourceEntityType": "ZoneSpec",
+        }
+        if zone.parent_zone_id is not None:
+            values["ParentZoneId"] = zone.parent_zone_id
+        if zone.cleanroom_class is not None:
+            values["CleanroomClass"] = zone.cleanroom_class
+        if zone.pressure_pa is not None:
+            values["PressurePa"] = zone.pressure_pa
+        _add_properties(document, owner_history, [element], "Pset_LayoutZone", values)
+        zones_by_id[zone.id] = element
+
+    for zone in sorted(building.zones, key=lambda item: item.id):
+        members = [spaces_by_id[room_id] for room_id in sorted(zone.room_ids)]
+        members.extend(
+            zones_by_id[child.id]
+            for child in sorted(building.zones, key=lambda item: item.id)
+            if child.parent_zone_id == zone.id
+        )
+        _assign_group(
+            document, owner_history, spec, zones_by_id[zone.id], members,
+            f"zone-membership-{zone.id}",
+        )
+
+    equipment_by_id = {
+        str(_ifc_property_values(element, "Pset_LayoutEquipment")["EquipmentId"]): element
+        for element in equipment_elements
+    }
+    routes_by_flow = {}
+    for element in flow_elements:
+        flow_id = str(_ifc_property_values(element, "Pset_LayoutFlow")["FlowId"])
+        routes_by_flow.setdefault(flow_id, []).append(element)
+    for flow in sorted(building.flows, key=lambda item: item.id):
+        system = document.create_entity(
+            "IfcSystem",
+            GlobalId=_guid(spec, f"flow-system-{flow.id}"),
+            OwnerHistory=owner_history,
+            Name=flow.id,
+            ObjectType=flow.type,
+            Description="Declared process movement; not a designed MEP system",
+        )
+        values = {
+            "FlowId": flow.id,
+            "FlowType": flow.type,
+            "FromIds": ",".join(sorted(flow.from_ids)),
+            "ToIds": ",".join(sorted(flow.to_ids)),
+            "Required": flow.required,
+            "MinimumClearWidthMm": flow.minimum_clear_width_mm,
+            "SourceContract": source_contract,
+            "SourceEntityType": "FlowSpec",
+            "RepresentationKind": "Declared process movement group; not an MEP system",
+        }
+        if flow.stage is not None:
+            values["Stage"] = flow.stage
+        _add_properties(document, owner_history, [system], "Pset_LayoutFlowSystem", values)
+        members = list(routes_by_flow.get(flow.id, ()))
+        members.extend(
+            equipment_by_id[endpoint]
+            for endpoint in sorted(set(flow.from_ids) | set(flow.to_ids))
+            if endpoint in equipment_by_id
+        )
+        _assign_group(
+            document, owner_history, spec, system, members,
+            f"flow-system-membership-{flow.id}",
+        )
+
+
+def _assign_group(document, owner_history, spec, group, members, suffix) -> None:
+    # RelatedObjects is a nonempty SET in IFC4. An unrouted declaration or an
+    # empty zone still exists as a group, without an invalid empty relation.
+    if not members:
+        return
+    document.create_entity(
+        "IfcRelAssignsToGroup",
+        GlobalId=_guid(spec, suffix),
+        OwnerHistory=owner_history,
+        RelatedObjects=sorted(members, key=lambda element: element.GlobalId),
+        RelatingGroup=group,
     )
 
 
@@ -744,6 +880,7 @@ def _make_equipment(
             Name=f"Equipment {type_name}",
             ApplicableOccurrence="IfcBuildingElementProxy",
             ElementType=type_name,
+            PredefinedType="USERDEFINED",
         )
         _assign_type(document, owner_history, spec, by_type[type_name], type_element, f"equipment-type-assignment-{type_name}")
         types.append(type_element)
@@ -1119,11 +1256,11 @@ def _polyline_representation(document, context, points, z: float = 0):
 
 def _box_representation(document, context, width: float, depth: float, height: float):
     points = [
-        _point(document, (0, 0, 0)),
-        _point(document, (width, 0, 0)),
-        _point(document, (width, depth, 0)),
-        _point(document, (0, depth, 0)),
-        _point(document, (0, 0, 0)),
+        _point(document, (0, 0)),
+        _point(document, (width, 0)),
+        _point(document, (width, depth)),
+        _point(document, (0, depth)),
+        _point(document, (0, 0)),
     ]
     profile = document.create_entity(
         "IfcArbitraryClosedProfileDef",
@@ -1193,6 +1330,9 @@ def _owner_history(document):
         OwningApplication=application,
         ChangeAction="ADDED",
         CreationDate=0,
+        LastModifiedDate=0,
+        LastModifyingUser=user,
+        LastModifyingApplication=application,
     )
 
 

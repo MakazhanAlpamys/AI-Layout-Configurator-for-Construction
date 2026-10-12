@@ -35,7 +35,7 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - run: python -m pip install -e .
+      - run: python -m pip install -e ".[test]"
       - run: python -m unittest discover -s tests -v
 
   pharma-cleanroom:
@@ -51,7 +51,7 @@ jobs:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: pyproject.toml
-      - run: python -m pip install -e .
+      - run: python -m pip install -e ".[test]"
       - name: Record installed dependencies
         run: |
           python -c "from pathlib import Path; Path('out/ci-acceptance').mkdir(parents=True, exist_ok=True)"
