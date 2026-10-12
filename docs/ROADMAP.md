@@ -51,6 +51,8 @@ Checkpoint QA.4 fixes ordinary-install EXPRESS execution; the original three
 single-floor scale CI programs passed while the new stack job exposed this gap.
 Checkpoint H.2 adds explicit multi-storey block/service-zone coordination and
 independent native membership checks without claiming designed MEP systems.
+Checkpoint C.3.5 verifies fixed/axis constraints in both explicit zone modes;
+the bounded shape pool still limits what an infeasibility result proves.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

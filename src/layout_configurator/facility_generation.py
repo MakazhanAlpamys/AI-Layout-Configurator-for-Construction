@@ -26,7 +26,7 @@ from .models import LayoutResult, Rect
 from .hierarchy import SOLVER_STRATEGIES, solve_layouts_auto
 from .solver import InfeasibleLayout
 from .validation import ValidationReport, validate_layout
-from .zone_hierarchy import ZoneHierarchyNotApplicable, solve_zone_layouts
+from .zone_hierarchy import solve_zone_layouts
 
 
 FACILITY_SOLVER_STRATEGIES = (*SOLVER_STRATEGIES, "zone_hierarchical", "zone_recursive")
@@ -181,28 +181,16 @@ def solve_feasible_facility_variants(
     try:
         minimum = prepared.layout.door_width_mm + 2 * prepared.layout.wall_thickness_mm if prepared.flows else None
         if room_solver in {"zone_hierarchical", "zone_recursive"}:
-            unsupported = [name for name, supplied in (
-                ("fixed_rects", bool(fixed_rects)),
-                ("axis_aligned_room_ids", axis_aligned_room_ids is not None),
-                ("structural_axes_x_mm", structural_axes_x_mm is not None),
-                ("structural_axes_y_mm", structural_axes_y_mm is not None),
-            ) if supplied]
-            if unsupported:
-                failure = ZoneHierarchyNotApplicable(
-                    room_solver + " does not support: " + ", ".join(unsupported),
-                    stage="input", code="unsupported_constraints", model_status="NOT_BUILT",
-                    proof_scope="unsupported_input",
-                    room_ids=tuple(fixed_rects or ()), issues=tuple(unsupported),
-                )
-                solver_evidence.update(room_solver_used=room_solver, stage_attempts=[],
-                                       failure=failure.to_dict())
-                raise failure
             room_candidates = solve_zone_layouts(
                 prepared, max_attempts, time_limit_seconds, seed,
                 minimum_adjacency_mm=minimum, deterministic_units=deterministic_units,
                 evidence=solver_evidence,
                 recursive_zones=room_solver == "zone_recursive",
                 allow_partial=True,
+                fixed_rects=fixed_rects,
+                axis_aligned_room_ids=axis_aligned_room_ids,
+                structural_axes_x_mm=structural_axes_x_mm,
+                structural_axes_y_mm=structural_axes_y_mm,
             )
         else:
             room_candidates = solve_layouts_auto(

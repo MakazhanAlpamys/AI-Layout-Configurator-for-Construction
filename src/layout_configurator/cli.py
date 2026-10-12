@@ -237,7 +237,7 @@ def main(argv: list[str] | None = None) -> int:
     facility_floors.add_argument("--max-attempts", type=int, default=None)
     facility_floors.add_argument("--time-limit", type=float, default=60)
     facility_floors.add_argument("--seed", type=int, default=42)
-    facility_floors.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="zone_hierarchical and zone_recursive reject pinned cores and structural axes")
+    facility_floors.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, root zone containers (zone_hierarchical), or recursive zone containers (zone_recursive)")
     facility_floors.add_argument("--unified-ifc", action="store_true", help="require a unified IFC and an explicitly declared shared grid; shared-grid programs export it automatically")
     compare_variants = subparsers.add_parser(
         "compare-variants",

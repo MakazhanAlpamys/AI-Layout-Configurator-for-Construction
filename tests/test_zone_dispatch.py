@@ -72,27 +72,35 @@ class ZoneFacilityDispatchTests(unittest.TestCase):
                 self.assertLessEqual(room.right, container.right)
         self.assertEqual(containers["left"].intersection_area(containers["right"]), 0)
 
-    def test_explicit_fixed_and_axis_constraints_are_rejected_without_fallback_or_model(self):
+    def test_explicit_fixed_and_axis_constraints_reach_actual_zone_solver(self):
         options = (
-            {"fixed_rects": {"a": Rect(0, 0, 2000, 2000)}},
-            {"axis_aligned_room_ids": ["a"]},
+            {"fixed_rects": {"a": Rect(6000, 0, 2000, 2000)}},
+            {"axis_aligned_room_ids": ["a"], "structural_axes_x_mm": [6000, 8000]},
             {"axis_aligned_room_ids": []},
             {"structural_axes_x_mm": [0, 2000, 4000]},
             {"structural_axes_y_mm": [0, 2000]},
         )
         for kwargs in options:
             with self.subTest(kwargs=kwargs):
-                with self.assertRaises(InfeasibleFacilityGeneration) as caught:
-                    self._solve(**kwargs)
-                cause = caught.exception.__cause__
-                self.assertIsInstance(cause, ZoneHierarchyNotApplicable)
-                evidence = caught.exception.generation.to_dict()["room_solver_evidence"]
-                self.assertEqual(evidence["stage_attempts"], [])
-                self.assertEqual(evidence["failure"]["stage"], "input")
-                self.assertEqual(evidence["failure"]["code"], "unsupported_constraints")
-                self.assertEqual(evidence["failure"]["model_status"], "NOT_BUILT")
-                self.assertFalse(evidence["failure"]["proven_building_infeasible"])
-                self.assertIsNone(caught.exception.generation.hierarchy_fallback_reason)
+                generation = self._solve(**kwargs)
+                candidate = generation.accepted[0]
+                self.assertTrue(candidate.layout_report.ok)
+                self.assertTrue(candidate.facility_report.ok)
+                self.assertEqual(generation.room_solver_used, "zone_hierarchical")
+                self.assertIsNone(generation.hierarchy_fallback_reason)
+                if "fixed_rects" in kwargs or kwargs.get("axis_aligned_room_ids"):
+                    self.assertEqual(candidate.result.placements["a"], Rect(6000, 0, 2000, 2000))
+
+    def test_invalid_constraints_keep_structured_input_failure_without_fallback(self):
+        with self.assertRaises(InfeasibleFacilityGeneration) as caught:
+            self._solve(axis_aligned_room_ids=["missing"])
+        self.assertIsInstance(caught.exception.__cause__, ZoneHierarchyNotApplicable)
+        evidence = caught.exception.generation.to_dict()["room_solver_evidence"]
+        self.assertEqual(evidence["stage_attempts"], [])
+        self.assertEqual(evidence["failure"]["stage"], "input")
+        self.assertEqual(evidence["failure"]["code"], "unknown_axis_room")
+        self.assertEqual(evidence["failure"]["model_status"], "NOT_BUILT")
+        self.assertIsNone(caught.exception.generation.hierarchy_fallback_reason)
 
     def test_default_strategy_keeps_existing_manifest_shape(self):
         generation = solve_feasible_facility_variants(

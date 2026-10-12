@@ -59,6 +59,12 @@ their own evidence. The old GitHub billing blocker is no longer current.
 
 | H.2 | Multi-storey functional blocks and linked service zones | Strict declarations reference nonempty canonical zones and a service shaft. Links compile into stable ordinary floor legs checked by all routing/core gates; native IFC block/link groups retain source identities and independently checked memberships. Legacy absent declarations keep their report shape. | Initial source/contract/native-group RED, then fresh root service/unified-IFC/CLI run: 19 passed, 18 subtests; service/runner/stack-QA regression: 24 passed, 10 subtests. A local-leg collision RED then fresh service/CLI run: 6 passed, 10 subtests. Actual synthetic example passed all 17 independent stack checks, including strict EXPRESS and native memberships; rehashed membership tamper fails. | complete 2026-10-12 for declared service coordination; detailed building services/engineering remain separate |
 
+| C.3.5 | Fixed room and axis parity for physical zone strategies | Strict finite/grid/room-size checks precede local models; local shapes preserve fixed dimensions and global CP-SAT enforces exact room positions and selected axis endpoints. Independent validation rechecks the constraints without fallback. | Initial missing-kwargs/unsupported-dispatch RED; fresh root constraints/dispatch/recursive/partial-pool run: 37 passed, 79 subtests. Agent broader hierarchy/preferences regression: 102 passed. Pin/cutout and pin/axis conflicts fail; an unrestricted monolithic-valid shape absent from the zone shortlist demonstrates scoped infeasibility. | complete 2026-10-12 for both zone strategies; split containers/scale remain separate |
+
+The repaired production-install scale series is running against `35eff27`:
+[run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
+Its result is pending; later changes require their own evidence.
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable

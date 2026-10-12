@@ -35,9 +35,13 @@ layout-configurator generate-building program.yaml --output out/zones `
 The facility API accepts the same `room_solver` value. Accepted results still
 pass room, equipment, route and profile gates; generation metadata retains
 `room_solver_evidence`. CLI failure JSON and failed HTTP jobs preserve scoped
-stage explanations. Fixed rectangles and explicit axis constraints are currently
-rejected as `unsupported_constraints` before constructing a model, including
-multi-floor pinned cores. There is no fallback for this explicit strategy.
+stage explanations. Both zone strategies accept `fixed_rects`,
+`axis_aligned_room_ids` and structural X/Y axes, including pinned multi-floor
+cores. Fixed rectangles must use finite positive grid dimensions and canonical
+room size/area limits. Local shapes retain fixed dimensions; global placement
+constrains their exact coordinates and both selected room endpoints to the axes.
+Independent validation checks the same constraints. There is no fallback for
+an explicit strategy.
 
 ## Recursive physical descendants
 
@@ -57,10 +61,11 @@ empty zones are recorded without inventing physical geometry.
 Evidence includes leaf/subtree/global attempts, selected physical coordinates
 and scoped failures. Recursive shape candidates can use a bounded boundary strip
 when the original aspect shortlist is empty. This mode still uses rectangular
-containers: split/interleaved functional memberships, fixed rooms/axes and
-80-room CI acceptance require subsequent work. Both explicit zone strategies
-currently reject fixed/axis inputs before a model, without fallback. Default
-root-only calls and `auto` generation retain their existing behavior. External
+containers: split/interleaved functional memberships and 80-room CI acceptance
+require subsequent work. Bounded local shape choices also limit fixed/axis
+search: an unrestricted monolithic solution can be absent from the shortlist.
+Such failures retain the `selected_zone_shapes` proof scope. Calls without the
+new constraints and `auto` generation retain their existing behavior. External
 engineering acceptance remains necessary after automatic checks.
 
 Direct calls still demand exactly the requested number of independently valid

@@ -64,6 +64,8 @@ Checkpoint QA.4 declares the runtime assertion dependency used by IfcOpenShell
 EXPRESS checks after the new production-install scale job exposed its absence.
 Checkpoint H.2 adds declared multi-storey functional blocks and linked service
 zones through typed shafts, with derived checked routes and native IFC groups.
+Checkpoint C.3.5 applies fixed rectangles and structural axes in both physical
+zone strategies, with independent checks and scoped bounded-shape failures.
 
 ## 1. Why we are expanding the project
 

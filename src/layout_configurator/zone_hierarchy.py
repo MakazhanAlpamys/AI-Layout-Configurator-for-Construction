@@ -32,10 +32,12 @@ from .solver import (
     _add_forbidden_adjacency,
     _add_required_adjacency,
     _area_to_grid2,
+    _axis_pairs,
     _avoid_cutout,
     _ceil_grid,
     _constrain_automatic_window_facade,
     _constrain_external_entry,
+    _fixed_grid_value,
     _layout_objective,
 )
 from .validation import ValidationIssue, ValidationReport, validate_layout
@@ -81,6 +83,66 @@ def _fail(evidence, message, *, not_applicable=False, **details):
     failure = kind(message, **details)
     evidence["failure"] = failure.to_dict()
     raise failure
+
+
+def _normalise_room_constraints(spec, fixed_rects, axis_room_ids, axes_x, axes_y, evidence):
+    """Validate before any local solve, and materialize one-shot axis iterables."""
+    known = set(spec.room_by_id)
+    if fixed_rects is not None and not isinstance(fixed_rects, Mapping):
+        _fail(evidence, "fixed_rects must map room IDs to Rect values", stage="input",
+              code="invalid_fixed_rect", model_status="NOT_BUILT", not_applicable=True)
+    fixed = dict(fixed_rects or {})
+    unknown = set(fixed) - known
+    if unknown:
+        _fail(evidence, "Cannot fix unknown rooms", stage="input", code="unknown_fixed_room",
+              room_ids=sorted(unknown, key=str), model_status="NOT_BUILT", not_applicable=True)
+    for room_id, rect in fixed.items():
+        try:
+            if not isinstance(rect, Rect):
+                raise ValueError("the geometry must be a Rect")
+            values = (rect.x, rect.y, rect.width, rect.height)
+            if any(not isinstance(value, Real) or isinstance(value, bool) or not math.isfinite(value) for value in values):
+                raise ValueError("coordinates and dimensions must be finite numeric millimetres")
+            for name, value in zip(("x", "y", "width", "height"), values):
+                grid_value = _fixed_grid_value(value, spec.grid_mm, room_id, name)
+                if abs(grid_value) >= 1 << 60:
+                    raise ValueError("coordinates exceed safe integer bounds")
+            if rect.width < spec.grid_mm or rect.height < spec.grid_mm:
+                raise ValueError("dimensions must be positive grid lengths")
+            room = spec.room_by_id[room_id]
+            if not room.fits(rect.width, rect.height):
+                raise ValueError("dimensions violate the canonical room minimums")
+            if not room.min_area_m2 - 1e-6 <= rect.area_m2 <= room.max_area_m2 + 1e-6:
+                raise ValueError("area violates the canonical room range")
+        except (InfeasibleLayout, ValueError, TypeError, OverflowError) as exc:
+            _fail(evidence, f"Invalid fixed room {room_id}: {exc}", stage="input", code="invalid_fixed_rect",
+                  room_ids=(room_id,), model_status="NOT_BUILT", not_applicable=True)
+    try:
+        if isinstance(axis_room_ids, (str, bytes)):
+            raise ValueError("selected room IDs must be an iterable of IDs")
+        selected = tuple(dict.fromkeys(axis_room_ids if axis_room_ids is not None else ()))
+        unknown = set(selected) - known
+    except (ValueError, TypeError) as exc:
+        _fail(evidence, f"Invalid selected axis rooms: {exc}", stage="input", code="invalid_axis_rooms",
+              model_status="NOT_BUILT", not_applicable=True)
+    if unknown:
+        _fail(evidence, "Cannot bind unknown rooms to axes", stage="input", code="unknown_axis_room",
+              room_ids=sorted(unknown, key=str), model_status="NOT_BUILT", not_applicable=True)
+    axes = {}
+    # As in the monolithic backend, unused axis arguments impose no constraints.
+    for name, supplied, boundary in (("x", axes_x, spec.boundary.width_mm), ("y", axes_y, spec.boundary.height_mm)):
+        if not selected or supplied is None:
+            continue
+        try:
+            values = tuple(supplied)
+            if any(not isinstance(value, Real) or isinstance(value, bool) or not math.isfinite(value) for value in values):
+                raise ValueError("axes must be finite numeric millimetres")
+            _axis_pairs(values, _ceil_grid(boundary, spec.grid_mm), spec.grid_mm, selected[0], name)
+            axes[name] = values
+        except (InfeasibleLayout, ValueError, TypeError, OverflowError) as exc:
+            _fail(evidence, f"Invalid {name} structural axes: {exc}", stage="input", code="invalid_axes",
+                  room_ids=selected, model_status="NOT_BUILT", not_applicable=True)
+    return fixed, selected, axes
 
 
 def _root_units(building, evidence):
@@ -192,7 +254,7 @@ def _recursive_units(building, root_units, evidence):
     return units, children, ancestors
 
 
-def _size_options(building, units, supplied, maximum, evidence, *, allow_boundary_strips=False):
+def _size_options(building, units, supplied, maximum, evidence, *, allow_boundary_strips=False, fixed_rects=None):
     spec = building.layout
     unknown = set(supplied or {}) - set(units)
     if unknown:
@@ -221,8 +283,13 @@ def _size_options(building, units, supplied, maximum, evidence, *, allow_boundar
             result[unit_id] = tuple(dict.fromkeys((round(w / spec.grid_mm) * spec.grid_mm,
                                                   round(h / spec.grid_mm) * spec.grid_mm) for w, h in options))
             continue
-        area = sum(spec.room_by_id[room_id].target_area_m2 for room_id in members) * 1_000_000
+        fixed = fixed_rects or {}
+        area = sum(fixed[room_id].area_m2 if room_id in fixed else spec.room_by_id[room_id].target_area_m2
+                   for room_id in members) * 1_000_000
         candidates = []
+        if len(members) == 1 and members[0] in fixed:
+            rect = fixed[members[0]]
+            candidates.append((rect.width, rect.height))
         for fill, aspect in ((1, 1), (1, 2), (1, 0.5), (0.8, 1), (0.8, 2), (0.8, 0.5), (0.7, 3.5), (0.7, 0.29)):
             w = math.ceil(math.sqrt(area / fill * aspect) / spec.grid_mm) * spec.grid_mm
             h = math.ceil(area / fill / w / spec.grid_mm) * spec.grid_mm
@@ -275,7 +342,8 @@ def _mirrored_shapes(width, height, placements, containers=None):
     return shapes
 
 
-def _local_shapes(building, units, options, groups, minimum, time_limit, seed, deterministic_units, evidence):
+def _local_shapes(building, units, options, groups, minimum, time_limit, seed, deterministic_units, evidence,
+                  fixed_rects=None):
     spec = building.layout
     fit_options = {}
     for item in building.equipment:
@@ -290,6 +358,13 @@ def _local_shapes(building, units, options, groups, minimum, time_limit, seed, d
             forbidden_adjacency=tuple(other for other in room.forbidden_adjacency if other in member_set),
             preferred_adjacency=tuple(other for other in room.preferred_adjacency if other in member_set),
         ) for room in spec.rooms if room.id in member_set)
+        # Global positions are not local origins. Only dimensions are pinned in
+        # the local CP models; global coordinates are constrained after packing.
+        rooms = tuple(replace(room, min_width_mm=fixed_rects[room.id].width,
+                              min_depth_mm=fixed_rects[room.id].height,
+                              min_area_m2=fixed_rects[room.id].area_m2,
+                              max_area_m2=fixed_rects[room.id].area_m2, rotatable=False)
+                      if fixed_rects and room.id in fixed_rects else room for room in rooms)
         local_groups = {relation: _internal_groups(value, member_set) for relation, value in groups.items()}
         unit_shapes = []
         for index, (width, height) in enumerate(options[unit_id]):
@@ -331,7 +406,7 @@ def _local_shapes(building, units, options, groups, minimum, time_limit, seed, d
 
 
 def _recursive_shapes(building, roots, units, children, ancestors, options, groups,
-                      minimum, time_limit, seed, deterministic_units, evidence):
+                      minimum, time_limit, seed, deterministic_units, evidence, fixed_rects=None):
     """Solve leaves once, then pack cached child shapes inside canonical parents."""
     spec = building.layout
     zone_ids = {zone.id for zone in building.zones}
@@ -343,7 +418,7 @@ def _recursive_shapes(building, roots, units, children, ancestors, options, grou
         members = units[unit_id]
         if unit_id not in children:
             found.update(_local_shapes(building, {unit_id: members}, options, groups,
-                                       minimum, time_limit, seed, deterministic_units, evidence))
+                                       minimum, time_limit, seed, deterministic_units, evidence, fixed_rects))
             return found[unit_id]
         child_units = {child_id: units[child_id] for child_id in children[unit_id]}
         child_shapes = {child_id: visit(child_id) for child_id in child_units}
@@ -487,7 +562,8 @@ def _validate_container_layout(spec, result, zone_rects, units, ancestors, *, ch
 
 
 def validate_zone_layout(building: BuildingIR, result: LayoutResult, zone_rects: Mapping[str, Rect], *,
-                         minimum_adjacency_mm=None, recursive_zones=False):
+                         minimum_adjacency_mm=None, recursive_zones=False, fixed_rects=None,
+                         axis_aligned_room_ids=None, structural_axes_x_mm=None, structural_axes_y_mm=None):
     """Independently check rooms, physical containers, ancestry and hard relations."""
     units = _root_units(building, {})
     ancestors = {}
@@ -505,6 +581,19 @@ def validate_zone_layout(building: BuildingIR, result: LayoutResult, zone_rects:
         minimum = spec.door_width_mm if minimum_adjacency_mm is None else minimum_adjacency_mm
         issues.extend(_group_issues(result.placements, building.zone_relation_groups("required_adjacency"),
                                     building.zone_relation_groups("forbidden_adjacency"), minimum))
+        fixed, selected, axes = _normalise_room_constraints(
+            spec, fixed_rects, axis_aligned_room_ids, structural_axes_x_mm, structural_axes_y_mm, {})
+        for room_id, expected in fixed.items():
+            actual = result.placements[room_id]
+            if any(abs(getattr(actual, name) - getattr(expected, name)) > 1e-6
+                   for name in ("x", "y", "width", "height")):
+                issues.append(ValidationIssue("fixed_room_mismatch", f"Room {room_id} differs from its fixed rectangle"))
+        for room_id in selected:
+            room = result.placements[room_id]
+            for name, values in axes.items():
+                endpoints = (room.x, room.right) if name == "x" else (room.y, room.top)
+                if any(not any(abs(endpoint - value) <= 1e-6 for value in values) for endpoint in endpoints):
+                    issues.append(ValidationIssue("structural_axis_mismatch", f"Room {room_id} endpoints miss {name} axes"))
     return ValidationReport(tuple(issues))
 
 
@@ -522,6 +611,10 @@ def solve_zone_layouts(
     evidence: dict | None = None,
     recursive_zones: bool = False,
     allow_partial: bool = False,
+    fixed_rects: Mapping[str, Rect] | None = None,
+    axis_aligned_room_ids: Iterable[str] | None = None,
+    structural_axes_x_mm: Iterable[float] | None = None,
+    structural_axes_y_mm: Iterable[float] | None = None,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -535,6 +628,9 @@ def solve_zone_layouts(
     ``allow_partial=True`` is for candidate pools: a nonempty independently
     validated pool may be returned when enumeration stops before its requested
     size. The default still requires the exact number of requested variants.
+    Fixed rectangles and selected structural axes constrain final global room
+    coordinates. Local candidates retain fixed dimensions, but their relative
+    positions and bounded size options still restrict this backend's search.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -572,31 +668,35 @@ def solve_zone_layouts(
     boundary_height = _ceil_grid(spec.boundary.height_mm, spec.grid_mm)
     if max(boundary_width, boundary_height) >= 1 << 60:
         _fail(evidence, "Boundary coordinates exceed safe integer bounds", stage="input", code="integer_bounds", not_applicable=True)
+    fixed, selected, axes = _normalise_room_constraints(
+        spec, fixed_rects, axis_aligned_room_ids, structural_axes_x_mm, structural_axes_y_mm, evidence)
     shape_units, children, ancestors = _recursive_units(building, units, evidence) if recursive_zones else (units, {}, {})
     options = _size_options(building, shape_units, zone_size_options_mm, max_local_options, evidence,
-                            allow_boundary_strips=recursive_zones)
+                            allow_boundary_strips=recursive_zones, fixed_rects=fixed)
     minimum = spec.door_width_mm if minimum_adjacency_mm is None else float(minimum_adjacency_mm)
     if not math.isfinite(minimum) or minimum <= 0:
         _fail(evidence, "minimum_adjacency_mm must be finite and positive", stage="input", code="invalid_adjacency_width", not_applicable=True)
     groups = {relation: building.zone_relation_groups(f"{relation}_adjacency") for relation in ("required", "forbidden", "preferred")}
     if recursive_zones:
         shapes = _recursive_shapes(building, units, shape_units, children, ancestors, options, groups,
-                                   minimum, time_limit_seconds, seed, deterministic_units, evidence)
+                                   minimum, time_limit_seconds, seed, deterministic_units, evidence, fixed)
     else:
-        shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units, evidence)
+        shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units, evidence, fixed)
     return _solve_shape_layouts(
         building, units, shapes, groups, minimum, variants, time_limit_seconds, seed,
         attempts_limit, deterministic_units, evidence,
         container_members={unit_id: members for unit_id, members in shape_units.items()
                            if unit_id in units or unit_id in {zone.id for zone in building.zones}},
         ancestors=ancestors, recursive_zones=recursive_zones, allow_partial=allow_partial,
+        fixed_rects=fixed, axis_aligned_room_ids=selected, structural_axes=axes,
     )
 
 
 def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, time_limit_seconds,
                          seed, attempts_limit, deterministic_units, evidence, *,
                          container_members, ancestors, recursive_zones=False,
-                         stage="global", stage_unit=None, allow_partial=False):
+                         stage="global", stage_unit=None, allow_partial=False,
+                         fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -671,6 +771,15 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
         for index, cutout in enumerate(spec.boundary.cutouts):
             _avoid_cutout(model, x, y, width, height, cutout, grid, f"zone_{unit_id}_cutout_{index}")
     model.AddNoOverlap2D(x_intervals, y_intervals)
+    for room_id, rect in (fixed_rects or {}).items():
+        room = room_vars[room_id]
+        for name in ("x", "y", "width", "height"):
+            model.Add(getattr(room, name) == _fixed_grid_value(getattr(rect, name), grid, room_id, name))
+    for room_id in axis_aligned_room_ids:
+        room = room_vars[room_id]
+        for name, values in (structural_axes or {}).items():
+            coordinate, dimension, boundary = (room.x, room.width, boundary_width) if name == "x" else (room.y, room.height, boundary_height)
+            model.AddAllowedAssignments([coordinate, dimension], _axis_pairs(values, boundary, grid, room_id, name))
     if recursive_zones:
         for unit_id, values in unit_vars.items():
             for room_id in container_members[unit_id]:
@@ -761,7 +870,10 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
         zone_rects = {unit_id: rectangle(values) for unit_id, values in unit_vars.items()}
         if stage == "global":
             report = validate_zone_layout(building, candidate, zone_rects, minimum_adjacency_mm=minimum,
-                                          recursive_zones=recursive_zones)
+                                          recursive_zones=recursive_zones, fixed_rects=fixed_rects,
+                                          axis_aligned_room_ids=axis_aligned_room_ids,
+                                          structural_axes_x_mm=(structural_axes or {}).get("x"),
+                                          structural_axes_y_mm=(structural_axes or {}).get("y"))
         else:
             report = _validate_container_layout(spec, candidate, zone_rects, container_members, ancestors,
                                                 check_unrelated_rooms=True)

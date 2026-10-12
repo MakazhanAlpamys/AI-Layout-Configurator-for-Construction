@@ -59,19 +59,34 @@ class RecursiveDispatchTests(unittest.TestCase):
         self.assertEqual(set(containers), {"parent", "child", "grandchild"})
         self.assertTrue(validate_zone_layout(_program(), candidate.result, containers, recursive_zones=True).ok)
 
-    def test_recursive_strategy_rejects_explicit_fixed_and_axes_without_fallback(self):
-        for kwargs in ({"fixed_rects": {"a": Rect(0, 0, 2000, 2000)}},
-                       {"axis_aligned_room_ids": ["a"]}, {"structural_axes_x_mm": [0, 2000]},
+    def test_recursive_strategy_applies_explicit_fixed_and_axes_before_facility_gates(self):
+        for kwargs in ({"fixed_rects": {"a": Rect(4000, 0, 2000, 2000)}},
+                       {"axis_aligned_room_ids": ["a"], "structural_axes_x_mm": [4000, 6000]},
+                       {"structural_axes_x_mm": [0, 2000]},
                        {"structural_axes_y_mm": [0, 2000]}):
             with self.subTest(kwargs=kwargs):
-                with self.assertRaises(InfeasibleFacilityGeneration) as caught:
-                    self._solve(**kwargs)
-                self.assertIsInstance(caught.exception.__cause__, ZoneHierarchyNotApplicable)
-                raw = caught.exception.generation.to_dict()
-                self.assertEqual(raw["room_solver_used"], "zone_recursive")
-                self.assertEqual(raw["room_solver_evidence"]["failure"]["code"], "unsupported_constraints")
-                self.assertEqual(raw["room_solver_evidence"]["failure"]["model_status"], "NOT_BUILT")
-                self.assertIsNone(raw["hierarchy_fallback_reason"])
+                generation = self._solve(**kwargs)
+                candidate = generation.accepted[0]
+                for report in (candidate.layout_report, candidate.equipment_report,
+                               candidate.flow_report, candidate.facility_report):
+                    self.assertTrue(report.ok, str(report))
+                self.assertEqual(len(candidate.equipment.placements), 1)
+                self.assertEqual(len(candidate.flow_routes.routes), 1)
+                self.assertEqual(generation.room_solver_used, "zone_recursive")
+                self.assertIsNone(generation.hierarchy_fallback_reason)
+                if "fixed_rects" in kwargs or "axis_aligned_room_ids" in kwargs:
+                    self.assertEqual(candidate.result.placements["a"], Rect(4000, 0, 2000, 2000))
+
+    def test_recursive_invalid_axes_preserve_input_evidence_without_fallback(self):
+        with self.assertRaises(InfeasibleFacilityGeneration) as caught:
+            self._solve(axis_aligned_room_ids=["a"], structural_axes_x_mm=[])
+        self.assertIsInstance(caught.exception.__cause__, ZoneHierarchyNotApplicable)
+        raw = caught.exception.generation.to_dict()
+        self.assertEqual(raw["room_solver_used"], "zone_recursive")
+        self.assertEqual(raw["room_solver_evidence"]["failure"]["code"], "invalid_axes")
+        self.assertEqual(raw["room_solver_evidence"]["failure"]["model_status"], "NOT_BUILT")
+        self.assertEqual(raw["room_solver_evidence"]["stage_attempts"], [])
+        self.assertIsNone(raw["hierarchy_fallback_reason"])
 
     def test_cli_publishes_an_accepted_recursive_bundle_with_stage_evidence(self):
         with tempfile.TemporaryDirectory() as temporary:
