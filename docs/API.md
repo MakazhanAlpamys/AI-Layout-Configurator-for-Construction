@@ -17,6 +17,9 @@ comes from the environment and is never printed. Send
 
 | Method and path | Behavior |
 | --- | --- |
+| `GET /` | Browser facility-program form and static assets; this public bootstrap contains no jobs or token. |
+| `GET /program/config` | Authenticated canonical field schemas and packaged profile choices. |
+| `POST /program/validate` | Strict raw input/profile validation and canonical program identity; does not enqueue a job. |
 | `GET /health` | Runtime fingerprint and readiness. |
 | `POST /jobs` | Validate a canonical program and optional canonical profile, persist the request and queue a solve. Returns 202 and a job ID. |
 | `GET /jobs` | List persisted job states. |
@@ -40,6 +43,40 @@ shorthand YAML must be normalized before submission. Unknown fields, paths,
 coordinates, invalid settings and non-finite numbers are rejected before work
 is queued. Defaults match the facility generator: one variant, 60 seconds per
 solver invocation, seed 42, two equipment retries and automatic room backend.
+
+## Browser program entry
+
+Open `http://127.0.0.1:8766/` after starting the service. Enter the service token
+when configured, then fill the blank program controls: rooms, zones, equipment,
+flows, openings, cutouts and optional structural axes. Reorder or remove source
+rows with their visible controls. The form stores the token only in browser
+memory; configuration, validation, jobs and downloads retain API authentication.
+
+Choose the default or packaged pharma rule profile and validate the program.
+Raw nested schemas reject unknown fields, coerced numbers/booleans and invalid
+domain references. JSON requests reject duplicate keys. Validation displays a
+read-only canonical preview, its SHA256 and structured field errors; download
+returns the canonical program. Any source edit invalidates the previous preview
+and disables generation until validation succeeds again.
+
+Generation submits the validated source through the existing persistent job
+pipeline. The page displays actual job status, independent gate evidence and
+authenticated artifact downloads. VALID INPUT confirms the source contract;
+accepted software QA and engineering acceptance remain separate.
+
+The full 13-room pilot was entered through visible browser controls and compared
+with direct generation in the same Windows runtime using seed 1, one variant,
+three attempts and .25 deterministic units per solver invocation. Canonical and
+prepared input, rooms, wall openings, equipment, route points/topology and all
+540 unique IFC root identities matched; both complete bundle QA and strict IFC
+EXPRESS checks passed. Both BCF packages contained zero topics, so this sample
+does not prove positive issue-topic identity. Timestamps, job paths and PDF bytes
+are excluded; this is not a cross-platform geometry guarantee.
+
+The opt-in `test_program_form_browser.py` reproduces actual browser entry and
+generation via the pinned Playwright CLI. Set `FLC_PLAYWRIGHT_CLI` to its installed
+executable and `FLC_BROWSER_PILOT_GENERATION=1` to include full-pilot generation;
+`FLC_BROWSER_ARTIFACT_DIR` retains bundles, screenshots and runtime evidence.
 
 Successful jobs retain JSON/DXF/PDF/IFC/BCF, a manifest, QA report and review
 dossiers. Failed jobs retain their error and available candidate rejection

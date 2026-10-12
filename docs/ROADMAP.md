@@ -6,6 +6,8 @@ Checkpoint D.4 adds explicit source-backed project schematic symbols in DXF/PDF;
 manufacturer libraries and editable dimension chains remain separate.
 Checkpoint D.4.1 verifies actual DXF label coordinates after repairing a doubled
 equipment-position offset in block definitions.
+Checkpoint G.5 verifies full canonical browser pilot entry and same-runtime
+regeneration through every existing bundle gate.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

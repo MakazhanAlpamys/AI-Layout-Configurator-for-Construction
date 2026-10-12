@@ -90,6 +90,33 @@ class InstalledWheelTests(unittest.TestCase):
                         self.assertTrue(member in archive.namelist(), f"Missing wheel resource: {member}")
                         self.assertEqual(archive.read(member), source.read_bytes())
 
+    def test_installed_browser_form_serves_assets_and_validates_without_checkout(self):
+        self._run(
+            "import json, threading\n"
+            "from urllib.request import Request, urlopen\n"
+            "from layout_configurator.api import create_api_server\n"
+            "from layout_configurator.facility import FacilityDrawingProfile\n"
+            "drawing = FacilityDrawingProfile.from_mapping({'preset': 'equipment_service'})\n"
+            "assert not drawing.show_room_dimensions and drawing.show_equipment_clearance\n"
+            "server = create_api_server('browser-jobs', token='wheel-token')\n"
+            "thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()\n"
+            "base = f'http://127.0.0.1:{server.server_port}'\n"
+            "try:\n"
+            "  for route, marker in [('/', b'Facility program'), ('/program.js', b'/program/validate'), ('/program.css', b'font-family')]:\n"
+            "    with urlopen(base + route) as response:\n"
+            "      assert response.status == 200 and marker in response.read()\n"
+            "  headers = {'Authorization': 'Bearer wheel-token', 'Content-Type': 'application/json'}\n"
+            "  with urlopen(Request(base + '/program/config', headers=headers)) as response:\n"
+            "    config = json.load(response)\n"
+            "  assert len(config['profiles']) >= 2 and config['defaults']['rooms'] == []\n"
+            "  program = json.loads(Path('building.json').read_text())\n"
+            "  with urlopen(Request(base + '/program/validate', data=json.dumps({'program':program}).encode(), headers=headers)) as response:\n"
+            "    validated = json.load(response)\n"
+            "  assert validated['program'] == program and validated['status'] == 'VALID_INPUT'\n"
+            "  assert server.service.list() == []\n"
+            "finally:\n"
+            "  server.shutdown(); server.server_close(); thread.join(timeout=5)\n")
+
     def test_sdist_can_rebuild_a_wheel_with_the_same_bundled_resources(self):
         # A local wheel alone can hide missing source assets in a published sdist.
         output = self.root / "sdist"

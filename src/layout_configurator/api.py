@@ -21,6 +21,7 @@ import threading
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.metadata import version
+from importlib.resources import files
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -29,6 +30,7 @@ from .drawing_revision_history import parse_revision_history
 from .facility import FacilityProfile, default_facility_profile, DEFAULT_FACILITY_PROFILE_SCHEMA_PATH
 from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
 from .qa import validate_building_set
+from .program_form import ProgramFormError, program_form_config, validate_program_form
 from .review import write_review_dossier
 from .schema import normalize_building_mapping, validate_mapping
 
@@ -364,7 +366,15 @@ def create_api_server(directory, address=("127.0.0.1", 0), *, token=None):
             length = int(self.headers.get("Content-Length", "0"))
             if not 0 < length <= 2_000_000:
                 raise ValueError("JSON body must contain between 1 and 2000000 bytes")
-            return json.loads(self.rfile.read(length), parse_constant=lambda value: (_ for _ in ()).throw(ValueError(f"Non-finite JSON value: {value}")))
+            def unique_object(pairs):
+                result = {}
+                for key, value in pairs:
+                    if key in result:
+                        raise ValueError(f"Duplicate JSON key: {key}")
+                    result[key] = value
+                return result
+            return json.loads(self.rfile.read(length), object_pairs_hook=unique_object,
+                              parse_constant=lambda value: (_ for _ in ()).throw(ValueError(f"Non-finite JSON value: {value}")))
 
         def do_GET(self):
             self._dispatch(False)
@@ -373,10 +383,30 @@ def create_api_server(directory, address=("127.0.0.1", 0), *, token=None):
             self._dispatch(True)
 
         def _dispatch(self, post):
+            route = unquote(urlsplit(self.path).path)
+            static = {"/": ("program.html", "text/html; charset=utf-8"),
+                      "/program.js": ("program.js", "text/javascript; charset=utf-8"),
+                      "/program.css": ("program.css", "text/css; charset=utf-8"),
+                      "/favicon.ico": (None, "image/x-icon")}
+            if not post and route in static:
+                name, content_type = static[route]
+                body = files("layout_configurator").joinpath("static", name).read_bytes() if name else b""
+                self.send_response(200 if name else 204)
+                self.send_header("Content-Type", content_type)
+                self.send_header("Content-Length", str(len(body)))
+                self.send_header("X-Content-Type-Options", "nosniff")
+                self.send_header("Content-Security-Policy", "default-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'")
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+                return self.wfile.write(body)
             if not self._authorized():
                 return
             parts = unquote(urlsplit(self.path).path).strip("/").split("/")
             try:
+                if parts == ["program", "config"] and not post:
+                    return self._json(200, program_form_config())
+                if parts == ["program", "validate"] and post:
+                    return self._json(200, validate_program_form(self._payload()))
                 if parts == ["health"] and not post:
                     return self._json(200, {"status": "ok", "runtime": service.fingerprint})
                 if parts == ["jobs"]:
@@ -412,6 +442,8 @@ def create_api_server(directory, address=("127.0.0.1", 0), *, token=None):
                         self.end_headers()
                         return self.wfile.write(body)
                 self._json(404, {"error": "Unknown route"})
+            except ProgramFormError as exc:
+                self._json(400, {"error": str(exc), "issues": exc.issues})
             except KeyError:
                 self._json(404, {"error": "Unknown job or artifact"})
             except JobUnavailable as exc:

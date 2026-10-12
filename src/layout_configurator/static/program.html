@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Facility program</title>
+  <link rel="stylesheet" href="/program.css">
+  <script defer src="/program.js"></script>
+</head>
+<body>
+  <header><p class="eyebrow">Layout Configurator</p><h1>Facility program</h1>
+    <p>Define a single-floor program with browser controls. Validation records the input; generation checks geometry and exported files. Engineering acceptance remains pending.</p></header>
+  <main>
+    <section aria-labelledby="connection-title"><h2 id="connection-title">Connect</h2>
+      <label>Bearer token <input id="token" type="password" autocomplete="off" placeholder="Leave empty for a local API without a token"></label>
+      <button id="connect" type="button">Open program controls</button>
+      <p class="hint">The token stays in this page's memory and is sent only to this API.</p>
+    </section>
+    <p id="status" role="status" aria-live="polite">Connect to start a blank program.</p>
+    <form id="program-form" hidden>
+      <section><h2>Project and layout</h2><div id="layout-fields"></div></section>
+      <section><h2>Zones</h2><div id="zone-fields"></div></section>
+      <section><h2>Equipment</h2><div id="equipment-fields"></div></section>
+      <section><h2>Flows</h2><div id="flow-fields"></div></section>
+      <section><h2>Shared structural axes</h2><div id="grid-fields"></div></section>
+      <section><h2>Rule profile and generation</h2>
+        <label>Rule profile <select id="profile"></select></label>
+        <p id="profile-source" class="hint"></p>
+        <div class="fields">
+          <label>Variants <input id="variants" type="number" min="1" max="20" value="1" required></label>
+          <label>Maximum attempts <input id="max-attempts" type="number" min="1" max="100" value="1" required></label>
+          <label>Seed <input id="seed" type="number" min="0" value="42" required></label>
+          <label>Time limit (seconds) <input id="time-limit" type="number" min="0.001" max="3600" step="any" value="60" required></label>
+          <label>Deterministic work units (optional) <input id="deterministic-units" type="number" min="0.001" max="3600" step="any"></label>
+          <label>Room solver <select id="room-solver"></select></label>
+          <label>Equipment retries <input id="equipment-retries" type="number" min="1" max="20" value="2" required></label>
+        </div>
+        <p class="hint">Repeatability comparisons require the same runtime, dependency versions, ordered input, seed, solver and deterministic work budget.</p>
+        <div class="actions"><button type="submit">Validate program</button>
+          <button id="download-program" type="button" disabled>Download canonical program</button>
+          <button id="generate" type="button" disabled>Generate checked bundle</button></div>
+      </section>
+    </form>
+    <section id="validation" hidden><h2>Input validation</h2><ul id="errors"></ul>
+      <p id="identity"></p><details><summary>Canonical input preview (read only)</summary><pre id="preview"></pre></details></section>
+    <section id="job" hidden><h2>Generation job</h2><p id="job-status" role="status" aria-live="polite"></p>
+      <p id="job-identity"></p><ul id="job-checks"></ul>
+      <details><summary>Job and runtime evidence (read only)</summary><p id="job-runtime" class="hint"></p><pre id="job-evidence"></pre></details>
+      <h3>Accepted artifacts</h3><div id="artifacts"></div></section>
+  </main>
+</body>
+</html>
