@@ -20,12 +20,13 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | ID | Plan requirement | Result | Verification | Status |
 | --- | --- | --- | --- | --- |
 | C.4.1 | Flow graph and routing | A blocked shortest room chain triggers bounded, deterministic search of alternate chains. Door width, walls and equipment clearance stay mandatory. Exhausted search retains negative evidence and does not establish mathematical infeasibility. | `python -m unittest discover -s tests -p 'test_flow*.py' -v`: 16 tests; `test_facility.py`: 22; `test_pharma_cleanroom_acceptance.py`: 14 | complete 2026-10-12 |
+| C.2.1 | Preferred room relations | Both room backends rank area accuracy before preferred contacts, then position. Local and cross-cluster preferences survive hierarchy compilation; hard constraints remain mandatory. Inputs exceeding safe integer objective bounds are rejected explicitly. | `test_preferences.py`: 8; `test_core.py`: 10; `test_hierarchy.py`: 12; `test_search_budget.py`: 6 | complete 2026-10-12 |
 
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable
   backend alongside rectangles.
-- C: preferences in both room backends; zone-driven placement and containment;
+- C: preferred zone groups; zone-driven placement and containment;
   structured, per-stage constraint explanations; cutouts and structural-grid
   support in the hierarchy.
 - D: drawing-profile and symbol catalogs, editable dimension chains, separate

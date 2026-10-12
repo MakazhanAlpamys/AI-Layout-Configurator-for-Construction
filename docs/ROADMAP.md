@@ -4,6 +4,8 @@ Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
 routes) was verified on 2026-10-12; it extends the current product plan without
 reopening the completed residential MVP below.
+Checkpoint C.2.1 verifies soft room preferences in both solver backends on the
+same date; the archived MVP completion flags below remain historical.
 
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the

@@ -51,6 +51,7 @@ from .solver import (
     _ceil_grid,
     _constrain_daylight_contact,
     _constrain_external_entry,
+    _layout_objective,
     _normalise_adjacency_groups,
     _room_size_vars,
     solve_layouts,
@@ -172,6 +173,7 @@ def solve_layouts_hierarchical(
     clusters = cluster_rooms(spec, pinned=in_groups | set(fixed_rects))
     cluster_of = {room_id: cluster_id for cluster_id, members in clusters.items() for room_id in members}
     rooms_by_id = {room.id: room for room in spec.rooms}
+    has_preferences = bool(spec.relation_pairs("preferred_adjacency"))
 
     external: dict[str, int] = defaultdict(int)
     for room_a, room_b in spec.relation_pairs("required_adjacency"):
@@ -215,6 +217,7 @@ def solve_layouts_hierarchical(
     x_intervals = []
     y_intervals = []
     area_deviations = []
+    area_domain_bound = 0
     for cluster_id, members in clusters.items():
         if len(members) != 1 or not (_FLEXIBLE_SINGLETONS or members[0] in fixed_rects):
             continue
@@ -239,6 +242,7 @@ def solve_layouts_hierarchical(
         deviation = model.NewIntVar(0, boundary_width * boundary_height, f"{room.id}_area_deviation")
         model.AddAbsEquality(deviation, area - _area_to_grid2(room.target_area_m2, grid, ceil=False))
         area_deviations.append(deviation)
+        area_domain_bound += boundary_width * boundary_height
         for equipment_id, options in fit_options.get(room.id, ()):
             fits = []
             for option_index, (fit_width, fit_height) in enumerate(options):
@@ -267,6 +271,20 @@ def solve_layouts_hierarchical(
         def pick(values: list[int]):
             return sum(choice * value for choice, value in zip(choices, values))
 
+        if has_preferences:
+            # Rigid motifs can have different areas. Their deviations belong
+            # in the top-level priority alongside the free singleton rooms.
+            shape_deviations = [
+                sum(
+                    abs(_units(w, grid) * _units(h, grid) - _area_to_grid2(rooms_by_id[room_id].target_area_m2, grid, ceil=False))
+                    for room_id, _, _, w, h in option.rooms
+                )
+                for option in options
+            ]
+            area_deviations.append(pick(shape_deviations))
+            # CP-SAT's overflow check sees every choice Boolean as 0..1;
+            # it does not first apply the ExactlyOne constraint.
+            area_domain_bound += sum(shape_deviations)
         model.Add(cx + pick([_units(option.width, grid) for option in options]) <= boundary_width)
         model.Add(cy + pick([_units(option.height, grid) for option in options]) <= boundary_height)
         for member_index, room_id in enumerate(options[0].room_ids):
@@ -316,12 +334,12 @@ def solve_layouts_hierarchical(
             _constrain_daylight_contact(model, room_vars[room.id], spec, boundary_width, boundary_height, room.id)
     if spec.external_entry is not None:
         _constrain_external_entry(model, room_vars[spec.external_entry.room_id], spec, boundary_width, boundary_height)
-    # Cluster shapes already carry their area accuracy; single rooms are sized
-    # here, so their area deviation leads and position only breaks ties.
-    model.Minimize(
-        sum(area_deviations) * 10_000
-        + sum(v for item in room_vars.values() for v in (item.x, item.y))
+    objective = _layout_objective(
+        model, spec, room_vars, area_deviations, minimum_shared,
+        [v for item in room_vars.values() for v in (item.x, item.y)],
+        area_domain_bound=area_domain_bound,
     )
+    model.Minimize(objective)
 
     results: list[LayoutResult] = []
     for variant in range(1, variants + 1):
@@ -337,7 +355,7 @@ def solve_layouts_hierarchical(
         )
         # The top level is a feasibility search; the ranking that matters is
         # done afterwards by the independent gates.
-        solver.parameters.stop_after_first_solution = True
+        solver.parameters.stop_after_first_solution = not has_preferences
         status = solver.Solve(model)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE) and model.Proto().assumptions:
             # No clearly different layout within the budget: accept one that
@@ -351,13 +369,13 @@ def solve_layouts_hierarchical(
                 deterministic_units=deterministic_units,
                 workers=_top_level_workers(),
             )
-            solver.parameters.stop_after_first_solution = True
+            solver.parameters.stop_after_first_solution = not has_preferences
             status = solver.Solve(model)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
             if not results:
                 raise InfeasibleLayout("The hierarchical solver found no placement of the room clusters")
             break
-        if area_deviations and solver.Value(sum(area_deviations)) > 0:
+        if not has_preferences and area_deviations and solver.Value(sum(area_deviations)) > 0:
             # The first placement settles the hard part; a short second pass
             # starting from it brings the free single rooms back towards
             # their programmed areas without searching the placement again.
@@ -372,7 +390,8 @@ def solve_layouts_hierarchical(
             )
             for room in spec.rooms
         }
-        results.append(LayoutResult(variant=variant, placements=placements, objective_value=_area_objective(spec, placements)))
+        objective_value = solver.Value(objective) if has_preferences else _area_objective(spec, placements)
+        results.append(LayoutResult(variant=variant, placements=placements, objective_value=objective_value))
         model.AddForbiddenAssignments(cluster_vars, [[solver.Value(value) for value in cluster_vars]])
         _require_distinct_variant(model, solver, anchors, grid, variant)
     return results
@@ -456,7 +475,7 @@ def _cluster_shapes(
             room,
             required_adjacency=tuple(other for other in room.required_adjacency if other in member_set),
             forbidden_adjacency=tuple(other for other in room.forbidden_adjacency if other in member_set),
-            preferred_adjacency=(),
+            preferred_adjacency=tuple(other for other in room.preferred_adjacency if other in member_set),
             # Boundary obligations are the top level's job.
             needs_daylight=False,
         )

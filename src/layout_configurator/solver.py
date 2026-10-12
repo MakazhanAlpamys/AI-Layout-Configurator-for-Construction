@@ -204,8 +204,11 @@ def solve_layouts(
                     f"zone_forbidden_{group_name}_{room_a}_{room_b}",
                 )
 
-    # Area accuracy dominates; the position tie-breaker makes one run stable.
-    model.Minimize(sum(area_deviations) * 10_000 + sum(v for room in spec.rooms for v in (room_vars[room.id].x, room_vars[room.id].y)))
+    objective = _layout_objective(
+        model, spec, room_vars, area_deviations, minimum_shared,
+        [v for room in spec.rooms for v in (room_vars[room.id].x, room_vars[room.id].y)],
+    )
+    model.Minimize(objective)
 
     for room_id, rect in sorted((hint_rects or {}).items()):
         values = room_vars.get(room_id)
@@ -236,7 +239,8 @@ def solve_layouts(
             break
 
         placements = {room.id: _rect_from_solver(solver, room_vars[room.id], grid) for room in spec.rooms}
-        results.append(LayoutResult(variant=variant, placements=placements, objective_value=int(solver.ObjectiveValue())))
+        objective_value = solver.Value(objective) if spec.relation_pairs("preferred_adjacency") else int(solver.ObjectiveValue())
+        results.append(LayoutResult(variant=variant, placements=placements, objective_value=objective_value))
         model.AddForbiddenAssignments(
             [value for room in spec.rooms for value in (room_vars[room.id].x, room_vars[room.id].y, room_vars[room.id].width, room_vars[room.id].height)],
             [[
@@ -251,6 +255,38 @@ def solve_layouts(
             ]],
         )
     return results
+
+
+def _layout_objective(model, spec, room_vars, area_deviations, minimum_shared, position_terms, *, area_domain_bound=None):
+    """Area, preferred contacts, then position, with bounded integer weights.
+
+    Preserve the original model exactly when no preferences are declared.
+    With P preferred pairs and position bound B, one contact costs B+1 and
+    one area unit costs (P+1)*(B+1), exceeding every lower-priority change.
+    This orders feasible solutions; a budget-limited solve need not prove
+    optimality. Required and forbidden relations remain hard constraints.
+    """
+
+    pairs = spec.relation_pairs("preferred_adjacency")
+    if not pairs:
+        return sum(area_deviations) * 10_000 + sum(position_terms)
+    width = _ceil_grid(spec.boundary.width_mm, spec.grid_mm)
+    height = _ceil_grid(spec.boundary.height_mm, spec.grid_mm)
+    position_bound = len(spec.rooms) * (width + height)
+    preference_weight = position_bound + 1
+    area_weight = (len(pairs) + 1) * preference_weight
+    # CP-SAT validates objective domains before presolve. This conservative
+    # bound covers independent variable domains, before constraints such as
+    # ExactlyOne tighten the bound on a hierarchy's selected motif. Callers
+    # with motif expressions supply that unconditioned domain bound.
+    area_bound = len(spec.rooms) * width * height if area_domain_bound is None else area_domain_bound
+    if area_bound * area_weight + len(pairs) * preference_weight + position_bound > (1 << 62) - 1:
+        raise ValueError("Preferred-adjacency objective exceeds safe integer bounds; use a coarser grid or smaller boundary")
+    contacts = [
+        _add_adjacency_indicator(model, room_vars[a], room_vars[b], minimum_shared, f"preferred_{a}_{b}")
+        for a, b in pairs
+    ]
+    return sum(area_deviations) * area_weight + (len(pairs) - sum(contacts)) * preference_weight + sum(position_terms)
 
 
 def _room_size_vars(model, room, grid: int, boundary_width: int, boundary_height: int):
