@@ -55,6 +55,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 
 | C.3.4 | Partial bounded zone candidate pools | Facility enumeration retains a nonempty independently valid pool when fewer selected shapes exist than its attempt budget. Direct calls still require exact counts by default, and final facility acceptance still requires all requested variants. Exhaustion metadata stays scoped. | RED reproduced both zone modes rejecting a one-variant/default-three-attempt request despite two valid layouts. Fresh root partial/dispatch/backtracking run: 17 passed, 20 subtests; agent zone/recursive/dispatch regression: 47 passed. Empty and independently disconnected pools remain failures. | repair complete 2026-10-12 |
 
+| QA.4 | Production-install EXPRESS runtime dependency | `pytest` is a runtime requirement because IfcOpenShell's EXPRESS executor imports `_pytest.assertion`. Full strict validation is retained in ordinary installations rather than relying on test extras. | [Pinned scale run f95bc12](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38279923174): all three original single-floor scale jobs passed; all new stack jobs failed, with the downloaded seed-1 report recording `No module named '_pytest'`. Fresh venv without test extras, then regular installed wheel from the working source: actual 40-room bundle/17 stack checks PASS in 8.328 s (IfcOpenShell 0.9.0, pytest 9.1.1). Remote repaired scale gate remains pending. | repair complete 2026-10-12; pinned remote gate pending |
+
 ## Remaining implementation
 
 - B: canonical orthogonal room geometry, component geometry and a selectable

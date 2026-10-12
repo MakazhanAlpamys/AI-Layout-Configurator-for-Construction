@@ -60,6 +60,8 @@ Checkpoint B.3 projects exact polygon walls/doors and semantic DXF with source
 hashes and DRAFT evidence; full polygon generation/acceptance remains open.
 Checkpoint C.3.4 preserves valid partial zone candidate pools under the default
 facility attempt budget while retaining exact direct and final request counts.
+Checkpoint QA.4 declares the runtime assertion dependency used by IfcOpenShell
+EXPRESS checks after the new production-install scale job exposed its absence.
 
 ## 1. Why we are expanding the project
 

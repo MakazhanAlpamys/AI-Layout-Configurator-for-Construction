@@ -18,13 +18,15 @@ dependencies = [
   "jsonschema>=4.20",
   "ifcopenshell>=0.8",
   "ifctester>=0.8",
+  # IfcOpenShell's runtime EXPRESS executor imports _pytest.assertion.
+  "pytest>=8.0",
 ]
 
 [project.scripts]
 layout-configurator = "layout_configurator.cli:main"
 
 [project.optional-dependencies]
-test = ["pytest>=8.0", "pip>=24.0", "setuptools>=68", "wheel>=0.43"]
+test = ["pip>=24.0", "setuptools>=68", "wheel>=0.43"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
