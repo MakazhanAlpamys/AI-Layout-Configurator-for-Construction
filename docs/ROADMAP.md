@@ -71,6 +71,8 @@ Checkpoint G.3.1 retains hashed image and unverified OCR evidence without
 turning raster labels or resolution metadata into fixed canonical geometry.
 Checkpoint H.3.2 records actual runner measurements and narrows repeatability
 claims to the validated runtime instead of promising cross-platform equality.
+Checkpoint D.3 adds selectable presentation settings with actual DXF readback;
+full symbol catalogs and editable dimension chains stay in the current plan.
 Checkpoint B.2 preserves polygon result geometry and legacy rectangle files,
 with explicit consumer boundaries until complete polygon integration.
 Checkpoint QA.3 retains the quality/diversity target with a fixed search-work

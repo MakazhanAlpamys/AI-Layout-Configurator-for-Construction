@@ -44,9 +44,31 @@
       "minItems": 1,
       "items": {"$ref": "#/$defs/rule"}
     },
-    "drawing": {"type": "object"}
+    "drawing": {
+      "type": "object",
+      "allOf": [{"if": {"required": ["preset"]}, "then": {"$ref": "#/$defs/namedDrawing"}}]
+    }
   },
   "$defs": {
+    "namedDrawing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["preset"],
+      "properties": {
+        "preset": {"enum": ["coordination_review", "architecture_dimensions", "equipment_service", "process_flows"]},
+        "sheet_id": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "discipline": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "title": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "revision": {"type": "string", "minLength": 1, "maxLength": 1024},
+        "show_room_dimensions": {"type": "boolean"},
+        "show_flow_legend": {"type": "boolean"},
+        "show_flow_labels": {"type": "boolean"},
+        "show_equipment_clearance": {"type": "boolean"},
+        "show_structural_grid": {"type": "boolean"},
+        "legend_offset_x_mm": {"type": "number", "minimum": 0},
+        "legend_offset_y_mm": {"type": "number", "minimum": 0}
+      }
+    },
     "rule": {
       "type": "object",
       "additionalProperties": false,

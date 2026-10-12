@@ -84,6 +84,8 @@ Checkpoint G.3.1 adds bounded source-backed raster/OCR word drafts in pixels,
 with local-engine evidence and separate named selection; geometry inference stays open.
 Checkpoint H.3.2 records the pinned Linux/Windows calibration table and measured
 platform limitation; the scale matrix retains its full wall-clock acceptance.
+Checkpoint D.3 adds strict named drawing presentation presets resolved through
+the existing DXF/PDF/profile contract; source geometry and acceptance gates remain.
 
 ## 1. Why we are expanding the project
 

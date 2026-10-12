@@ -12,6 +12,9 @@ Project documentation, interface text, comments and examples are maintained in
 English. Dedicated Unicode compatibility fixtures still exercise imported text
 and multilingual font rendering.
 
+Rule packs can select [named drawing presentation profiles](docs/DRAWING_PROFILES.md)
+for coordination, architectural dimensions, equipment service or process flows.
+
 ## Domain rule packs
 
 Rules for regulated facilities are defined by YAML profiles rather than hard-coded

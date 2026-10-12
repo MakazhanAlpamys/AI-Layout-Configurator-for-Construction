@@ -67,6 +67,10 @@ class FacilityDrawingProfile:
     def from_mapping(cls, raw: Mapping[str, Any]) -> "FacilityDrawingProfile":
         if not isinstance(raw, Mapping):
             raise ValueError("Facility profile drawing must be an object")
+        if "preset" in raw:
+            from .drawing_profiles import resolve_drawing_settings
+
+            raw = resolve_drawing_settings(raw)
         return cls(
             sheet_id=str(raw.get("sheet_id", "A-101")).strip() or "A-101",
             discipline=str(raw.get("discipline", "Facility layout")).strip() or "Facility layout",
