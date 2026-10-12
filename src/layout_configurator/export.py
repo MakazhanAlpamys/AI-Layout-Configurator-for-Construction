@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .building import BuildingIR, EquipmentSpec, StructuralGridSpec
 from .equipment import EquipmentLayoutResult, clearance_rect
+from .drawing_symbols import draw_equipment_symbol_pdf, equipment_symbol_paths, validate_symbol_assignments
 from .facility import FacilityDrawingProfile
 from .flows import FlowRoutingResult, FlowValidationReport
 from .models import LayoutIR, LayoutResult, Rect
@@ -49,6 +50,9 @@ def export_dxf(
     from ezdxf.enums import TextEntityAlignment
 
     drawing = drawing_profile or FacilityDrawingProfile()
+    if drawing.equipment_symbols:
+        equipment_specs = tuple(equipment_specs or ())
+    symbols = validate_symbol_assignments(drawing, equipment_specs or ()) if drawing.equipment_symbols else {}
     document = ezdxf.new("R2018")
     document.header["$INSUNITS"] = 4
     for name in LAYERS:
@@ -144,6 +148,7 @@ def export_dxf(
             equipment,
             equipment_specs or (),
             show_clearance=drawing.show_equipment_clearance,
+            symbols=symbols,
         )
     if flows is not None:
         _draw_flows_dxf(
@@ -213,6 +218,9 @@ def export_pdf(
     from reportlab.pdfgen import canvas
 
     drawing = drawing_profile or FacilityDrawingProfile()
+    if drawing.equipment_symbols:
+        equipment_specs = tuple(equipment_specs or ())
+    symbols = validate_symbol_assignments(drawing, equipment_specs or ()) if drawing.equipment_symbols else {}
     page_width, page_height = landscape(A3)
     margin = 45
     title_height = 45
@@ -279,6 +287,7 @@ def export_pdf(
             equipment,
             equipment_specs or (),
             show_clearance=drawing.show_equipment_clearance,
+            symbols=symbols,
         )
     if flows is not None:
         reserved = []
@@ -401,6 +410,7 @@ def _draw_equipment_dxf(
     equipment_specs: Iterable[EquipmentSpec],
     *,
     show_clearance: bool = True,
+    symbols: Mapping[str, str] | None = None,
 ) -> None:
     specs = {item.id: item for item in equipment_specs}
     for placement in equipment.placements:
@@ -419,16 +429,13 @@ def _draw_equipment_dxf(
                 close=True,
                 dxfattribs={"layer": "A-EQUIP", "lineweight": 25},
             )
-            block.add_line(
-                (0, 0),
-                (placement.rect.width, placement.rect.height),
-                dxfattribs={"layer": "A-EQUIP"},
-            )
-            block.add_line(
-                (0, placement.rect.height),
-                (placement.rect.width, 0),
-                dxfattribs={"layer": "A-EQUIP"},
-            )
+            if symbols and spec.id in symbols:
+                for points, closed in equipment_symbol_paths(symbols[spec.id], spec, placement):
+                    block.add_lwpolyline([(x - placement.rect.x, y - placement.rect.y) for x, y in points],
+                                        close=closed, dxfattribs={"layer": "A-EQUIP"})
+            else:
+                block.add_line((0, 0), (placement.rect.width, placement.rect.height), dxfattribs={"layer": "A-EQUIP"})
+                block.add_line((0, placement.rect.height), (placement.rect.width, 0), dxfattribs={"layer": "A-EQUIP"})
             block.add_text(
                 spec.id,
                 dxfattribs={"height": _equipment_label_height(placement.rect), "layer": "A-EQUIP"},
@@ -437,7 +444,12 @@ def _draw_equipment_dxf(
                 spec.type,
                 dxfattribs={"height": max(45.0, _equipment_label_height(placement.rect) * 0.7), "layer": "A-EQUIP"},
             ).set_placement((placement.rect.center[0], placement.rect.center[1] - _equipment_label_height(placement.rect)))
-        modelspace.add_blockref(block_name, (placement.rect.x, placement.rect.y), dxfattribs={"layer": "A-EQUIP"})
+        insert = modelspace.add_blockref(block_name, (placement.rect.x, placement.rect.y), dxfattribs={"layer": "A-EQUIP"})
+        if symbols and spec.id in symbols:
+            if "FLC_SYMBOL" not in document.appids:
+                document.appids.new("FLC_SYMBOL")
+            insert.set_xdata("FLC_SYMBOL", [(1000, f"equipment_id={spec.id}"), (1000, f"symbol={symbols[spec.id]}"),
+                                            (1000, "scope=project_schematic_not_manufacturer_geometry")])
 
 
 def _draw_flows_dxf(
@@ -542,6 +554,7 @@ def _draw_equipment_pdf(
     equipment_specs: Iterable[EquipmentSpec],
     *,
     show_clearance: bool = True,
+    symbols: Mapping[str, str] | None = None,
 ) -> None:
     specs = {item.id: item for item in equipment_specs}
     for placement in equipment.placements:
@@ -563,6 +576,8 @@ def _draw_equipment_pdf(
         physical_x, physical_y = point(placement.rect.x, placement.rect.y)
         physical_right, physical_top = point(placement.rect.right, placement.rect.top)
         pdf.rect(physical_x, physical_y, physical_right - physical_x, physical_top - physical_y)
+        if symbols and spec.id in symbols:
+            draw_equipment_symbol_pdf(pdf, point, symbols[spec.id], spec, placement)
         pdf.setFillColorRGB(0.05, 0.25, 0.65)
         font_size = max(3.5, min(7.0, placement.rect.height * (top_y - y) / max(clearance.height, 1.0) / 3.0))
         pdf.setFont("Helvetica-Bold", font_size)

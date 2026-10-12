@@ -32,5 +32,32 @@ behavior. `drawing_profile_catalog()` returns independent effective mappings;
 These are project presentation presets, not jurisdiction standards or engineering
 approval. Hiding an annotation never removes its validation requirement. The
 thematic sheet set still includes every theme and its source inventory. Complete
-equipment/sanitary symbol catalogs and editable dimension chains remain separate
-Cycle D requirements.
+discipline-specific symbol libraries and editable dimension chains remain
+separate Cycle D requirements.
+
+## Explicit equipment and sanitary symbols
+
+An optional equipment-ID mapping selects project schematic symbols explicitly:
+
+```yaml
+drawing:
+  preset: equipment_service
+  equipment_symbols:
+    mixer_01: process_vessel
+    basin_01: washbasin
+```
+
+The initial catalog is `generic`, `rectangular_unit`, `process_vessel`,
+`washbasin`, `toilet` and `workbench`. `drawing_symbol_catalog()` returns fresh
+normalized vector paths and their scope. The equipment type does not infer a
+symbol. Unknown names or equipment references fail before export.
+
+DXF equipment blocks and PDF overlays retain the exact declared physical frame;
+selected detail scales inside it and follows the actual permitted quarter-turn.
+DXF inserts retain the source equipment ID and selection in `FLC_SYMBOL` XDATA.
+The equipment-sheet legend prints the selection and its project scope. Symbol
+assignments enter canonical drawing serialization and cache fingerprints.
+
+These schematic paths are not manufacturer geometry or engineering approval.
+They do not change equipment dimensions, placement, service clearances, routes
+or rule thresholds. Absent assignments preserve the existing drawing behavior.

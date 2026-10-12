@@ -42,13 +42,18 @@ def resolve_drawing_settings(raw: Mapping) -> dict:
     if not isinstance(raw, Mapping):
         raise ValueError("Drawing settings must be an object")
     defaults = FacilityDrawingProfile().to_dict()
-    if set(raw) - set(defaults) - {"preset"}:
+    if set(raw) - set(defaults) - {"preset", "equipment_symbols"}:
         raise ValueError("Drawing settings contain unknown fields")
     preset = raw.get("preset", "coordination_review")
     if not isinstance(preset, str) or preset not in _PRESETS:
         raise ValueError("Unknown drawing preset; use " + ", ".join(_PRESETS))
     for key, value in raw.items():
         if key == "preset":
+            continue
+        if key == "equipment_symbols":
+            from .drawing_symbols import parse_symbol_assignments
+
+            parse_symbol_assignments(value)
             continue
         if isinstance(defaults[key], bool):
             if type(value) is not bool:

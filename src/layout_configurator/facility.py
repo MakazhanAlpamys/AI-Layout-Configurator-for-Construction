@@ -62,6 +62,7 @@ class FacilityDrawingProfile:
     show_structural_grid: bool = True
     legend_offset_x_mm: float = 900.0
     legend_offset_y_mm: float = 1_200.0
+    equipment_symbols: tuple[tuple[str, str], ...] = ()
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "FacilityDrawingProfile":
@@ -71,6 +72,7 @@ class FacilityDrawingProfile:
             from .drawing_profiles import resolve_drawing_settings
 
             raw = resolve_drawing_settings(raw)
+        from .drawing_symbols import parse_symbol_assignments
         return cls(
             sheet_id=str(raw.get("sheet_id", "A-101")).strip() or "A-101",
             discipline=str(raw.get("discipline", "Facility layout")).strip() or "Facility layout",
@@ -83,10 +85,11 @@ class FacilityDrawingProfile:
             show_structural_grid=_profile_bool(raw.get("show_structural_grid", True)),
             legend_offset_x_mm=_profile_non_negative(raw.get("legend_offset_x_mm", 900), "legend_offset_x_mm"),
             legend_offset_y_mm=_profile_non_negative(raw.get("legend_offset_y_mm", 1_200), "legend_offset_y_mm"),
+            equipment_symbols=parse_symbol_assignments(raw.get("equipment_symbols", {})),
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        result = {
             "sheet_id": self.sheet_id,
             "discipline": self.discipline,
             "title": self.title,
@@ -99,6 +102,9 @@ class FacilityDrawingProfile:
             "legend_offset_x_mm": self.legend_offset_x_mm,
             "legend_offset_y_mm": self.legend_offset_y_mm,
         }
+        if self.equipment_symbols:
+            result["equipment_symbols"] = dict(self.equipment_symbols)
+        return result
 
 
 @dataclass(frozen=True)

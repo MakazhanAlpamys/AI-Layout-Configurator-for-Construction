@@ -22,6 +22,7 @@ from reportlab.pdfgen import canvas
 from .building import BuildingIR
 from .drawing_revision_history import parse_revision_history
 from .equipment import EquipmentLayoutResult, clearance_rect
+from .drawing_symbols import draw_equipment_symbol_pdf, validate_symbol_assignments
 from .facility import FacilityDrawingProfile
 from .flows import FlowRoutingResult
 from .models import LayoutResult, Rect
@@ -90,6 +91,7 @@ def export_drawing_sheet_set(
     history = parse_revision_history(revision_history, building=building, drawing=drawing) if revision_history is not None else None
     routes = flows or FlowRoutingResult(())
     _check_sources(building, result, equipment, routes)
+    validate_symbol_assignments(drawing, building.equipment)
     wall_plan = build_wall_plan(building.layout, result)
     candidates, egress_rows = _egress_candidates(building, result, wall_plan)
     legends = _legends(building, result, equipment, routes, egress_rows, drawing)
@@ -329,8 +331,13 @@ def _legends(building, result, equipment, flows, egress_rows, drawing):
                 text += f" | envelope {clearance.width:g} x {clearance.height:g} mm"
         else:
             text += " | UNPLACED - source position UNKNOWN"
+        symbol = dict(drawing.equipment_symbols).get(item.id)
+        if symbol is not None:
+            text += f" | project symbol: {symbol}"
         legends["equipment"].append((_PALETTE[0], text))
     legends["equipment"].append((None, "Solid footprint; dashed service envelope from declared clearance. Room tags refer to the zone-sheet room schedule."))
+    if drawing.equipment_symbols:
+        legends["equipment"].append((None, "Selected project schematic symbols are not manufacturer geometry; physical frames retain source dimensions."))
     for index, flow in enumerate(sorted(building.flows, key=lambda item: item.id)):
         supplied = [route for route in flows.routes if route.flow_id == flow.id]
         text = f"F{index + 1:02d} {flow.id} | {flow.type} | {', '.join(flow.from_ids)} to {', '.join(flow.to_ids)}"
@@ -499,6 +506,9 @@ def _overlay(pdf, kind, building, result, equipment, flows, candidates, point, s
                 _rect(pdf, point, scale, clearance_rect(specs[placement.equipment_id], placement.rect, placement.rotated))
                 pdf.setDash()
             _rect(pdf, point, scale, placement.rect)
+            symbol = dict(drawing.equipment_symbols).get(placement.equipment_id)
+            if symbol is not None:
+                draw_equipment_symbol_pdf(pdf, point, symbol, specs[placement.equipment_id], placement)
             x, y = point(placement.rect.x + placement.rect.width / 2, placement.rect.top)
             annotations.append((x, y + 7, tags[placement.equipment_id], _PALETTE[0]))
     elif kind == "flows":
