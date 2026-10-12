@@ -254,3 +254,34 @@ inspected; root separately inspected the plan and final inventory continuation.
 This is an exact source projection with local exchange predicates. Shared
 polygon bundle dispatch, profile integration and engineering review remain
 separate gates.
+
+## Declared facility and profile predicates
+
+`validate_orthogonal_building` independently recomputes actual room/opening,
+directional equipment/service, full-width door approaches and complete route
+predicates before evaluating the unchanged sourced facility policies. Required
+functional-zone contacts require one contiguous actual shared edge at least the
+source door width; disjoint contact lengths cannot be summed. Forbidden contacts
+also use actual footprints, including mixed rectangle/polygon results.
+
+Absent declared equipment or routes remain UNKNOWN. Supplied empty, undeclared
+or forged geometry is checked and can fail. Separation and process-sequence
+checks consume routes only after independent actual geometry passes. Every
+declared separation rule is evaluated with its own source provenance. Canonical
+building/layout/equipment/routing/profile hashes bind both positive and negative
+reports; invalid undeclared equipment retains its real frame without an invented
+service envelope.
+
+The shared rule helpers require actual finite numeric pressure thresholds and
+actual nonnegative integer airlock counts, excluding booleans. Strings such as
+`"NaN"` and fractional counts cannot establish PASS through coercion. Existing
+rectangular checks receive the same repair, while valid sourced pilot thresholds
+keep their original behavior. Missing supported policy evidence stays UNKNOWN.
+
+Fresh root geometry/profile/result/pharma regression: 83 tests and 77 subtests
+passed in 4.19 s. Meaningful RED exposed both numeric coercion defects and the
+undeclared-equipment source-hash failure before repair. Actual three-room routes
+prove an intermediate-room separation failure and a second independently sourced
+rule. The report's PASS covers these declared software predicates; complete
+facility artifact validation remains UNKNOWN and engineering acceptance PENDING.
+Windows/daylight and shared polygon bundle dispatch still require separate gates.

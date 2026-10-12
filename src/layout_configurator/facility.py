@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import hashlib
+import math
 from pathlib import Path
 from typing import Any, Iterable, Literal, Mapping
 
@@ -916,10 +917,9 @@ def _airlock_presence_check(building: BuildingIR, rule: FacilityRule) -> Facilit
             return _rule_check(rule, "UNKNOWN", ("Rule parameter 'required' must be a boolean",))
         minimum_count = 1 if required else 0
     else:
-        try:
-            minimum_count = int(raw_minimum)
-        except (TypeError, ValueError):
+        if not isinstance(raw_minimum, int) or isinstance(raw_minimum, bool):
             return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_count' must be an integer",))
+        minimum_count = raw_minimum
     if minimum_count < 0:
         return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_count' must be non-negative",))
     zones = _applicable_zones(building, zone_types)
@@ -979,10 +979,14 @@ def _pressure_cascade_check(building: BuildingIR, rule: FacilityRule) -> Facilit
         return _rule_check(rule, "UNKNOWN", ("Rule parameter 'direction' must be parent_gt_child or child_gt_parent",))
     minimum_delta = rule.parameters.get("minimum_delta_pa")
     if minimum_delta is not None:
+        if not isinstance(minimum_delta, (int, float)) or isinstance(minimum_delta, bool):
+            return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_delta_pa' must be an actual finite number",))
         try:
             minimum_delta = float(minimum_delta)
-        except (TypeError, ValueError):
-            return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_delta_pa' must be a number",))
+        except (TypeError, ValueError, OverflowError):
+            return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_delta_pa' must be an actual finite number",))
+        if not math.isfinite(minimum_delta):
+            return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_delta_pa' must be finite",))
         if minimum_delta < 0:
             return _rule_check(rule, "UNKNOWN", ("Rule parameter 'minimum_delta_pa' must be non-negative",))
     zones = _applicable_zones(building, zone_types)

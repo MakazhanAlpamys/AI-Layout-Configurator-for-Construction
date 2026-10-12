@@ -50,6 +50,8 @@ Checkpoint B.9 verifies exact vector PDF DRAFT geometry and indexed source
 inventory, separately from shared polygon bundle acceptance.
 Checkpoint B.6.1 verifies actual alternate finite equipment combinations,
 preserving default packing and scoped search-exhaustion evidence.
+Checkpoint B.10 verifies declared facility/profile rules over actual footprints,
+retaining source provenance and separate full-artifact/engineering acceptance.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
