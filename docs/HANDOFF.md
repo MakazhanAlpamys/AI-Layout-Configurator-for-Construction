@@ -117,7 +117,7 @@ statuses, route coordinates and BCF identifiers match the deterministic report.
 | 1 | Process and quality review | process engineer / pharma manufacturing QA | open; dossier `review/building_0N.technologist.md` is ready, review not yet held |
 | 2 | Cleanroom/HVAC review | cleanroom / HVAC engineer | open; dossier `review/building_0N.cleanroom-hvac.md` is ready, review not yet held |
 | 3 | Architectural/BIM review: open the DXF and IFC in the receiving CAD/BIM tools | architect / BIM coordinator | open; dossier is ready, but the environment has no CAD/BIM tool at all, and machine read-back does not replace this |
-| 4 | Green CI matrix run on GitHub | account owner | blocked by GitHub Actions billing; locally the same matrix passes after the 2026-09-26 fix |
+| 4 | Green CI matrix run on GitHub | development | closed for baseline `f598723`: [acceptance CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/36457857578) and [scale CI on 2026-10-12](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38228662745) succeeded; new checkpoints require their own runs |
 | 5 | Calibrate the `--deterministic-budget` budget for CI and decide whether to switch the matrix to that mode | product owner | open; the mode itself is ready |
 | 6 | Minor defects VQ-07…VQ-13 | development | **closed 2026-09-26**, verified in the browser |
 

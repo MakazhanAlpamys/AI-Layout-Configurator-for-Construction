@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Implementation checkpoints and remaining requirements are tracked in
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). The 2026-10-12 C.4.1
+checkpoint adds bounded alternate room-chain routing after a blocked shortest
+path, preserving all independent validation gates and failure evidence.
+
 ## 1. Why we are expanding the project
 
 The current `LayoutIR` MVP remains the technical foundation: it has proven

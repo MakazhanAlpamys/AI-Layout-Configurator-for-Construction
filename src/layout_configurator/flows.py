@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 from typing import Iterable
 
@@ -94,13 +94,28 @@ def route_flows(
     building: BuildingIR,
     layout: LayoutResult,
     equipment: EquipmentLayoutResult | None = None,
+    *,
+    max_route_candidates: int = 32,
+    max_room_path_expansions: int = 2048,
 ) -> FlowRoutingResult:
     """Build stable room-graph routes from flow endpoints.
 
     Coordinates are derived only from room placements and generated door
     openings. A room or zone endpoint is represented at its nearest portal;
-    equipment endpoints use the placed equipment centre.
+    equipment endpoints use their declared access point. If the shortest room
+    chain is blocked, try simple chains in stable breadth-first order. Each
+    endpoint pair has a candidate limit (including the primary route) and a
+    limit on allocated partial-path states. Exhausting either bound preserves
+    the primary route so independent validation retains its failure evidence;
+    it does not prove that no feasible route exists.
     """
+
+    for name, limit in (
+        ("max_route_candidates", max_route_candidates),
+        ("max_room_path_expansions", max_room_path_expansions),
+    ):
+        if not isinstance(limit, int) or isinstance(limit, bool) or limit < 1:
+            raise ValueError(f"{name} must be a positive integer")
 
     wall_plan = build_wall_plan(building.layout, layout)
     graph = _door_graph(building, layout, wall_plan)
@@ -125,19 +140,70 @@ def route_flows(
                     building,
                     equipment,
                 )
-                routes.append(
-                    FlowRoute(
-                        flow_id=flow.id,
-                        from_id=source.source_id,
-                        to_id=target.source_id,
-                        from_room_id=source.room_id,
-                        to_room_id=target.room_id,
-                        room_path=room_path,
-                        points=points,
-                        minimum_clear_width_mm=flow.minimum_clear_width_mm,
-                    )
+                route = FlowRoute(
+                    flow_id=flow.id,
+                    from_id=source.source_id,
+                    to_id=target.source_id,
+                    from_room_id=source.room_id,
+                    to_room_id=target.room_id,
+                    room_path=room_path,
+                    points=points,
+                    minimum_clear_width_mm=flow.minimum_clear_width_mm,
                 )
+                if not _route_is_clear(route, openings, wall_plan, building, equipment):
+                    for alternate_path, alternate_openings in _candidate_room_paths(
+                        source.room_id,
+                        target.room_id,
+                        graph,
+                        max_candidates=max_route_candidates,
+                        max_expansions=max_room_path_expansions,
+                    ):
+                        if alternate_path == room_path:
+                            continue
+                        candidate = replace(
+                            route,
+                            room_path=alternate_path,
+                            points=_route_points(
+                                alternate_path,
+                                alternate_openings,
+                                source,
+                                target,
+                                layout,
+                                flow.minimum_clear_width_mm,
+                                building,
+                                equipment,
+                            ),
+                        )
+                        if _route_is_clear(candidate, alternate_openings, wall_plan, building, equipment):
+                            route = candidate
+                            break
+                routes.append(route)
     return FlowRoutingResult(tuple(routes))
+
+
+def _route_is_clear(
+    route: FlowRoute,
+    openings: tuple[DoorOpening, ...],
+    wall_plan: WallPlan,
+    building: BuildingIR,
+    equipment: EquipmentLayoutResult | None,
+) -> bool:
+    """Select candidates without weakening the independent validator's checks."""
+
+    if len(route.points) < 2 or any(
+        opening.width + 1e-6 < route.minimum_clear_width_mm for opening in openings
+    ):
+        return False
+    corridor = LineString(route.points).buffer(route.minimum_clear_width_mm / 2, cap_style=2, join_style=3)
+    if wall_plan.geometry.intersection(corridor).area > 1e-6:
+        return False
+    for room_id in route.room_path:
+        for clearance in _room_clearance_obstacles(
+            room_id, building, equipment, excluded={route.from_id, route.to_id}
+        ):
+            if corridor.intersection(box(clearance.x, clearance.y, clearance.right, clearance.top)).area > 1e-6:
+                return False
+    return True
 
 
 def validate_flow_routes(
@@ -330,6 +396,44 @@ def _shortest_room_path(start: str, target: str, graph):
     rooms.reverse()
     openings.reverse()
     return tuple(rooms), tuple(openings)
+
+
+def _candidate_room_paths(
+    start: str,
+    target: str,
+    graph,
+    *,
+    max_candidates: int,
+    max_expansions: int,
+):
+    """Yield bounded simple paths by hop count, then stable neighbor order.
+
+    A separate shortest-path pass supplies the fallback even when this search
+    runs out of states before reaching the target. Limiting allocated states
+    bounds both work and queue size on graphs with many cyclic alternatives.
+    """
+
+    if start not in graph or target not in graph:
+        return
+    queue = deque([((start,), ())])
+    allocated = 1
+    completed = 0
+    while queue:
+        rooms, openings = queue.popleft()
+        current = rooms[-1]
+        if current == target:
+            yield rooms, openings
+            completed += 1
+            if completed >= max_candidates:
+                return
+            continue
+        for neighbor, opening in graph.get(current, ()):
+            if neighbor in rooms:
+                continue
+            if allocated >= max_expansions:
+                break
+            queue.append((rooms + (neighbor,), openings + (opening,)))
+            allocated += 1
 
 
 def _route_points(

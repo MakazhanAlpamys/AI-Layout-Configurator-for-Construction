@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Current product implementation checkpoints are recorded in
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
+routes) was verified on 2026-10-12; it extends the current product plan without
+reopening the completed residential MVP below.
+
 > This document preserves the decisions and history of the original residential MVP. It **does not
 > define the current product goal**. The current direction is the
 > [Facility Product Brief](FACILITY_PRODUCT_BRIEF.md) and the
