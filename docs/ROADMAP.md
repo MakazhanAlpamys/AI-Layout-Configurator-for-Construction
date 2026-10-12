@@ -18,6 +18,8 @@ Checkpoint D.6.1 verifies comparison evidence and prevents unresolved variants
 from receiving an accepted recommendation.
 Checkpoint B.7 verifies actual orthogonal process corridors, ordered door
 crossings and full-width endpoint access, retaining scoped DRAFT/UNKNOWN results.
+Checkpoint C.5 verifies persistent structured candidate/search explanations
+without converting bounded-search failure into whole-program infeasibility.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

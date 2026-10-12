@@ -84,6 +84,15 @@ evidence in `generation-failure.json`. A solver budget failure does not prove
 mathematical impossibility. Restart preserves completed jobs and marks any
 unfinished job INTERRUPTED; resubmit it explicitly.
 
+Generation failures also retain structured `failure_evidence` for a room-search
+stop and `stage_evidence` on rejected candidates. Actual room/equipment/flow
+predicates keep their issue codes and source identities; failed facility checks
+keep their saved status, evidence and rule provenance. Every unsuccessful
+equipment retry records its seed and search scope. Generic bounded-search errors
+remain UNKNOWN, while independently failed candidate predicates remain FAIL.
+These records explicitly set `proven_building_infeasible: false`; they do not
+claim a minimal conflicting constraint set or whole-program impossibility.
+
 ## Cache
 
 `reuse: true` requires `deterministic_units`. It reuses an accepted job only

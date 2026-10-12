@@ -73,6 +73,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | H.3.4 / C.3.8 foundation | Validated soft hierarchy warm-start and bounded completion | Supplied source shapes supplement ordinary cluster patterns after independent checks. A budgeted clone completes auxiliary guidance; the original global model remains unrestricted. Hint repair uses one worker to avoid the reproduced native parallel abort. Defaults stay byte-exact. | Fresh root hints/hierarchy/constraints/preferences/cache/daylight/core: 87 passed, 67 subtests; editor/facility-editor/UI: 29 passed. Nine default result/evidence comparisons with `501065e` match. Actual synthetic supplied-40 warm-start: 80 room/equipment/flow/pharma gates PASS in 48.019 s; final unrestricted global FEASIBLE. Source40 derivation included, original40 generation and persisted export/bundle QA excluded explicitly. | implementation and scoped local warm-start complete 2026-10-12; full persisted 80-room CI/third-zone scale remain open |
 | D.6.1 / NEXT 3.4 | Comparison gate evidence | Saved comparisons require explicit nonempty passing/not-applicable facility checks and boolean acceptance; missing, empty, UNKNOWN or contradictory evidence cannot establish PASS. JSON, CSV and actual PDF preserve unresolved gates and suppress accepted recommendations when none exists. Fresh root verification: 11 tests / 6 subtests passed, including a shorter unresolved variant ranked below an accepted one and actual PDF wording. Full per-variant client reports remain a separate checkpoint. |
 | B.7 | Actual orthogonal flow routes | Bounded deterministic visibility routing feeds canonical B.5/B.6 geometry into independently rebuilt square-swept corridor, actual-door and declared-front endpoint predicates. Fresh root verification: 111 tests / 97 subtests passed across routing, room/equipment solvers, actual projection/predicates and rectangular alternatives; actual positive route image inspected. Negatives include concave wall-inset corners, narrow necks/doors, forged width/path, unknown equipment and bounded source-pair allocation. Search exhaustion is UNKNOWN; successful geometry remains DRAFT, with flow segregation and complete polygon facility/export acceptance open. |
+| C.5 | Structured facility-stage explanations | Room-search stops and rejected candidates now retain source IDs, actual predicate codes, every failed equipment retry/seed, route endpoint findings and facility-check evidence/provenance. Generic solver exceptions remain UNKNOWN; actual candidate predicates retain FAIL and profile checks retain UNKNOWN. Original zone failure scope/status is preserved. Fresh root verification: 56 tests / 24 subtests passed across real CP packing/search negatives, independent room/equipment/route/profile failures, persisted CLI output, zone dispatch, pharma, editor and HTTP paths. Successful canonical geometry/default evidence remains unchanged. These explanations do not claim a minimal unsatisfiable core or whole-program infeasibility. |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -103,11 +104,13 @@ Cyrillic text.
 
 
 
+
 - B: integrated selectable orthogonal generation, full
   downstream consumers and independent complete facility acceptance; canonical
   footprints, finite room/equipment solvers and scoped predicates exist.
-- C: zone-driven placement and containment; structured, per-stage constraint
-  explanations. Preferred-zone singleton participants can increase search cost.
+- C: scalable zone-driven placement and containment; minimal conflicting
+  constraint sets remain separate from implemented structured stage evidence.
+  Preferred-zone singleton participants can increase search cost.
 - D: extended discipline/manufacturer symbol libraries and receiving-tool
   acceptance; editable source dimension chains, named presentation presets, initial project schematic symbols,
   thematic vector sheets, indexed legends and supplied revision history exist.

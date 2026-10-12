@@ -39,13 +39,17 @@ class FacilityCandidateRejection:
     attempt: int
     layout_seed: int
     reasons: tuple[str, ...]
+    stage_evidence: tuple[dict[str, object], ...] = ()
 
     def to_dict(self) -> dict[str, object]:
-        return {
+        result = {
             "attempt": self.attempt,
             "layout_seed": self.layout_seed,
             "reasons": list(self.reasons),
         }
+        if self.stage_evidence:
+            result["stage_evidence"] = list(self.stage_evidence)
+        return result
 
 
 @dataclass(frozen=True)
@@ -94,6 +98,7 @@ class FacilityGenerationResult:
     room_solver_used: str | None = None
     hierarchy_fallback_reason: str | None = None
     room_solver_evidence: dict[str, object] | None = None
+    failure_evidence: tuple[dict[str, object], ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         result = {
@@ -116,6 +121,8 @@ class FacilityGenerationResult:
         }
         if self.room_solver_evidence is not None:
             result["room_solver_evidence"] = self.room_solver_evidence
+        if self.failure_evidence:
+            result["failure_evidence"] = list(self.failure_evidence)
         return result
 
 
@@ -125,6 +132,17 @@ class InfeasibleFacilityGeneration(InfeasibleLayout):
     def __init__(self, message: str, generation: FacilityGenerationResult):
         super().__init__(message)
         self.generation = generation
+
+
+def _stage_evidence(stage, status, source_ids, *, proof_scope="candidate_predicates", **details):
+    """Describe a checked candidate or bounded search, never the entire program.
+
+    Generic solver exceptions do not expose a CP proof/status. Their search
+    outcome therefore stays UNKNOWN; actual independent predicates retain FAIL
+    and profile checks retain their original UNKNOWN and source provenance.
+    """
+    return {"stage": stage, "status": status, "proof_scope": proof_scope,
+            "source_ids": sorted(source_ids), "proven_building_infeasible": False, **details}
 
 
 def solve_feasible_facility_variants(
@@ -154,8 +172,8 @@ def solve_feasible_facility_variants(
     ``room_solver`` picks the room stage: ``auto`` (hierarchical, falling back
     to monolithic), ``hierarchical``, ``monolithic`` or the opt-in BuildingIR
     root-container backend ``zone_hierarchical`` or ``zone_recursive``, which
-    also solves physical descendant containers. Both zone backends reject fixed
-    room and structural-axis constraints with stage evidence. ``fixed_rects`` pins
+    also solves physical descendant containers. Both support checked fixed-room
+    and structural-axis constraints. ``fixed_rects`` pins
     rooms, for example a vertical core already placed on another floor.
     """
 
@@ -212,6 +230,14 @@ def solve_feasible_facility_variants(
                 structural_axes_y_mm=structural_axes_y_mm,
             )
     except InfeasibleLayout as exc:
+        failure = _stage_evidence(
+            "rooms", "UNKNOWN", (room.id for room in prepared.layout.rooms),
+            proof_scope="configured_room_search", message=str(exc),
+            search={"time_limit_seconds": time_limit_seconds, "deterministic_units": deterministic_units,
+                    "seed": seed, "max_attempts": max_attempts, "room_solver": room_solver},
+        )
+        if solver_evidence.get("failure") is not None:
+            failure["solver_failure"] = solver_evidence["failure"]
         generation = FacilityGenerationResult(
             requested_variants=variants, max_attempts=max_attempts,
             attempted_candidates=0, accepted=(), rejected=(), seed=seed,
@@ -221,6 +247,7 @@ def solve_feasible_facility_variants(
             room_solver_used=solver_evidence.get("room_solver_used"),
             hierarchy_fallback_reason=solver_evidence.get("hierarchy_fallback_reason"),
             room_solver_evidence=solver_evidence if room_solver in {"zone_hierarchical", "zone_recursive"} else None,
+            failure_evidence=(failure,),
         )
         raise InfeasibleFacilityGeneration(
             f"The room solver returned no candidate within the configured search budget: {exc}",
@@ -239,6 +266,9 @@ def solve_feasible_facility_variants(
                     attempt,
                     layout_seed,
                     tuple(f"layout.{issue.code}: {issue.message}" for issue in layout_report.issues),
+                    (_stage_evidence("rooms", "FAIL", (room.id for room in prepared.layout.rooms),
+                                     issues=[{"code": issue.code, "message": issue.message}
+                                             for issue in layout_report.issues]),),
                 )
             )
             continue
@@ -247,6 +277,7 @@ def solve_feasible_facility_variants(
         equipment_report: EquipmentValidationReport | None = None
         equipment_seed = layout_seed
         equipment_errors: list[str] = []
+        equipment_stages: list[dict[str, object]] = []
         door_exceptions: tuple[str, ...] = ()
         for retry in range(equipment_retries):
             equipment_seed = layout_seed + retry
@@ -267,14 +298,26 @@ def solve_feasible_facility_variants(
                 equipment_errors = [
                     f"equipment.{issue.code}: {issue.message}" for issue in equipment_report.issues
                 ]
+                equipment_stages.append(_stage_evidence(
+                    "equipment", "FAIL", (item.id for item in prepared.equipment),
+                    retry=retry + 1, equipment_seed=equipment_seed,
+                    issues=[issue.to_dict() for issue in equipment_report.issues],
+                ))
             except EquipmentPlacementError as exc:
                 equipment_errors = [f"equipment.infeasible: {exc}"]
+                equipment_stages.append(_stage_evidence(
+                    "equipment", "UNKNOWN", (item.id for item in prepared.equipment),
+                    proof_scope="configured_equipment_search", retry=retry + 1,
+                    equipment_seed=equipment_seed, message=str(exc),
+                    search={"time_limit_seconds": time_limit_seconds, "deterministic_units": deterministic_units},
+                ))
         if packed is None or equipment_report is None or not equipment_report.ok:
             rejected.append(
                 FacilityCandidateRejection(
                     attempt,
                     layout_seed,
                     tuple(equipment_errors or ("equipment.infeasible: no placement was returned",)),
+                    tuple(equipment_stages),
                 )
             )
             continue
@@ -296,7 +339,20 @@ def solve_feasible_facility_variants(
                 for check in facility_report.checks
                 if not check.ok
             )
-            rejected.append(FacilityCandidateRejection(attempt, layout_seed, reasons))
+            stages = list(equipment_stages)
+            if not flow_report.ok:
+                stages.append(_stage_evidence(
+                    "flows", "FAIL", (flow.id for flow in prepared.flows),
+                    issues=[issue.to_dict() for issue in flow_report.issues],
+                ))
+            checks = [check.to_dict() for check in facility_report.checks if not check.ok]
+            stages.append(_stage_evidence(
+                "facility", "FAIL" if any(check["status"] == "FAIL" for check in checks) else "UNKNOWN",
+                (zone.id for zone in prepared.zones), profile_name=profile.name,
+                profile_version=profile.version, checks=checks,
+                issues=[issue.to_dict() for issue in facility_report.issues],
+            ))
+            rejected.append(FacilityCandidateRejection(attempt, layout_seed, reasons, tuple(stages)))
             continue
 
         published_result = replace(room_candidate, variant=len(accepted) + 1)
