@@ -191,6 +191,10 @@ full pipelines. All 34 tests, 68 subtests and 126 assertion expressions remain;
 independent file readback and native EXPRESS still execute freshly. The observed
 local Windows duration decreased from 440.26 s across two earlier runs to
 293.88 s in one combined run; changed invocation/load limits the comparison.
+Checkpoint H.3.6.5 adds explicit bounded final-global diagnostics: exact effective
+candidate families and source hashes, actual CP model counts and per-attempt
+solver response metrics. Complete capture does not imply successful solving;
+default outputs and all original source/acceptance gates remain unchanged.
 
 ## 1. Why we are expanding the project
 

@@ -527,3 +527,33 @@ retains the actual artifact; [compact evidence](acceptance/1813e19.json) binds
 the source, installed runtime, requested/effective global settings, 101 stage
 attempts and raw report hash. Raw research copies stay local. Further work must
 address a measured search limitation rather than repeat the unchanged request.
+
+### Explicit final-global diagnostic capture
+
+`solve_zone_layouts(..., global_diagnostics=True)` adds source-bound metadata
+about the effective final finite shape family, including exact integer-grid
+room/container rectangles, ordered shape identities/hashes and fixed/axis
+constraints. Actual CP proto variable/constraint counts are recorded before each
+Solve, so added enumeration no-goods are included. Actual ResponseProto status,
+timing, branches, conflicts, propagations, objective/bound and solution presence
+describe that model attempt. Unavailable/nonfinite response values become null
+with explicit field names.
+
+Capture is bounded to 80 source rooms, 4096 candidate shapes, 65536 rectangle
+records and 8 MiB of canonical family JSON. Exceeding a bound gives INCOMPLETE
+with counts/reason and no partial geometry snapshot. COMPLETE means diagnostic
+capture is complete; it does not mean the source program is feasible, infeasible
+or accepted. Omitted/false options preserve earlier reports and solver behavior.
+
+The supervised runner exposes `--zone-global-diagnostics` with the explicit
+recursive backend. Its existing one-job manual workflow has a default-false
+boolean input. No automatic heavy workload or deadline is added. The unchanged
+120-second total budget includes diagnostic work and every original acceptance
+gate remains in force.
+
+Fresh recursive/runner regression passed 56 tests with 68 subtests in 45.36 s;
+independent root checks passed four actual model/UNKNOWN/complete persisted
+pipeline/deadline cases in 7.14 s. The accepted eight-room fixture retains native
+EXPRESS and complete bundle QA. Pre-checkpoint root/recursive default output
+comparisons and actionlint passed. No 80-room measurement is claimed for this
+diagnostic implementation; the two recorded physical80 failures remain open.

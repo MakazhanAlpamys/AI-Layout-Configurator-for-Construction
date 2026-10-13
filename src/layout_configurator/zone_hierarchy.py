@@ -665,6 +665,7 @@ def solve_zone_layouts(
     cache_cluster_shapes: bool = False,
     global_time_limit_seconds: float | None = None,
     global_workers: int = 1,
+    global_diagnostics: bool = False,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -689,6 +690,8 @@ def solve_zone_layouts(
     Final global search can explicitly use a separate per-attempt wall-clock
     limit and up to eight workers. Local/subtree budgets stay unchanged;
     deterministic search always uses one worker and its existing work budget.
+    Opted global diagnostics capture bounded effective candidate geometry and
+    actual final model/solver counters, without establishing a solver verdict.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -698,6 +701,10 @@ def solve_zone_layouts(
     evidence.pop("cluster_shape_cache", None)
     evidence.pop("zone_hierarchy_hints", None)
     evidence.pop("global_search_settings", None)
+    evidence.pop("global_diagnostics", None)
+    if not isinstance(global_diagnostics, bool):
+        _fail(evidence, "global_diagnostics must be a boolean", stage="input",
+              code="invalid_diagnostics_mode", model_status="NOT_BUILT", not_applicable=True)
     if (not isinstance(global_workers, int) or isinstance(global_workers, bool)
             or not 1 <= global_workers <= 8):
         _fail(evidence, "global_workers requires an integer in 1..8", stage="input",
@@ -788,6 +795,7 @@ def solve_zone_layouts(
         fixed_rects=fixed, axis_aligned_room_ids=selected, structural_axes=axes,
         hints=hints,
         workers=final_workers,
+        **({"global_diagnostics": True} if global_diagnostics else {}),
     )
 
 
@@ -796,7 +804,7 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                          container_members, ancestors, recursive_zones=False,
                          stage="global", stage_unit=None, allow_partial=False,
                          fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None,
-                         global_validator=None, hints=None, workers=1):
+                         global_validator=None, hints=None, workers=1, global_diagnostics=False):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -804,6 +812,16 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
     boundary_height = _ceil_grid(spec.boundary.height_mm, spec.grid_mm)
     model = cp_model.CpModel()
     grid = spec.grid_mm
+    diagnostic = None
+    if global_diagnostics:
+        from .zone_diagnostics import capture_candidate_family, model_counts, record_search
+
+        diagnostic = capture_candidate_family(
+            building, units, shapes, container_members=container_members, ancestors=ancestors,
+            recursive_zones=recursive_zones, minimum_grid=_ceil_grid(minimum, grid),
+            fixed_rects=fixed_rects, axis_room_ids=axis_aligned_room_ids, structural_axes=structural_axes,
+        )
+        evidence["global_diagnostics"] = diagnostic
     room_vars = {}
     unit_vars = {}
     x_intervals, y_intervals = [], []
@@ -979,7 +997,10 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                          deterministic_units=deterministic_units, workers=workers)
         if stage_hints is not None and stage_hints.evidence["repair_hint"]:
             solver.parameters.repair_hint = True
+        diagnostic_counts = model_counts(model) if diagnostic is not None else None
         status = solver.Solve(model)
+        if diagnostic is not None:
+            record_search(diagnostic, attempt=attempt + 1, solver=solver, status=status, counts=diagnostic_counts)
         if stage_hints is not None:
             stage_hints.record_global_search(attempt + 1, solver.StatusName(status))
             stage_hints.evidence["global_search"][-1]["proof_scope"] = "selected_physical_zone_shapes_with_soft_guidance"

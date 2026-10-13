@@ -289,6 +289,8 @@ Checkpoint B.15.1 adds strict bounded source reference-axis geometry without
 changing solver constraints or claiming structural engineering acceptance.
 Checkpoint QA.14 reduces duplicate test fixture generation while retaining all
 assertions, real writer failure/publication paths and independent saved-file QA.
+Checkpoint H.3.6.5 exposes opted final-model diagnostics for measured physical
+zone search; capture completeness remains separate from feasibility and acceptance.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

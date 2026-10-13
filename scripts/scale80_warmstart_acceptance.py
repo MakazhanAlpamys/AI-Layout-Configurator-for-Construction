@@ -34,7 +34,10 @@ def file_digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=None, zone_global_workers=1):
+def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=None, zone_global_workers=1,
+               zone_global_diagnostics=False):
+    if type(zone_global_diagnostics) is not bool:
+        raise ValueError("zone-global-diagnostics must be a boolean")
     report = {
         "status": "RUNNING", "accepted": False, "source_commit": SOURCE_COMMIT,
         "scope": "Source-pinned synthetic A/B clone of supplied accepted40 with complete persisted bundle acceptance",
@@ -49,30 +52,37 @@ def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=N
         "stages": {}, "stage_hashes": {}, "source_gates": {}, "gates": {},
         "final_hint_positions_fixed": False,
     }
-    _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=2)
+    _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=2,
+                        diagnostics=zone_global_diagnostics)
     return report
 
 
-def _record_zone_search(report, seconds, workers, *, room_seconds):
+def _record_zone_search(report, seconds, workers, *, room_seconds, diagnostics=False):
     if seconds is not None or workers != 1:
         value = room_seconds if seconds is None else seconds
         if type(value) in (int, float) and not math.isfinite(value):
             value = str(value)
         report["settings"].update(zone_global_seconds_per_model=value, zone_global_workers=workers)
+    if diagnostics:
+        report["settings"]["zone_global_diagnostics"] = True
 
 
-def _zone_search_options(room_solver, seconds, workers):
+def _zone_search_options(room_solver, seconds, workers, *, diagnostics=False):
+    if type(diagnostics) is not bool:
+        raise ValueError("zone-global-diagnostics must be a boolean")
     if type(workers) is not int or not 1 <= workers <= 8:
         raise ValueError("zone-global-workers must be an integer in 1..8")
     if seconds is not None and (type(seconds) not in (int, float) or not 0 < seconds <= 120):
         raise ValueError("zone-global-seconds must be finite and in (0,120]")
-    if room_solver != "zone_recursive" and (seconds is not None or workers != 1):
+    if room_solver != "zone_recursive" and (seconds is not None or workers != 1 or diagnostics):
         raise ValueError("Nondefault zone-global controls require room-solver zone_recursive")
     options = {}
     if seconds is not None:
         options["global_time_limit_seconds"] = seconds
     if workers != 1:
         options["global_workers"] = workers
+    if diagnostics:
+        options["global_diagnostics"] = True
     return options
 
 
@@ -82,6 +92,8 @@ def _requested_zone_controls(args):
         controls["zone_global_seconds"] = args.zone_global_seconds
     if args.zone_global_workers != 1:
         controls["zone_global_workers"] = args.zone_global_workers
+    if args.zone_global_diagnostics:
+        controls["zone_global_diagnostics"] = True
     return controls
 
 
@@ -247,9 +259,11 @@ def prepare_fixture(root, report):
 
 def accept_program(building, hints, profile, report, output, *, room_seconds=2, equipment_seconds=5,
                    seed=7, checkpoint=lambda: None, room_solver="hierarchical",
-                   zone_global_seconds=None, zone_global_workers=1):
-    zone_options = _zone_search_options(room_solver, zone_global_seconds, zone_global_workers)
-    _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=room_seconds)
+                   zone_global_seconds=None, zone_global_workers=1, zone_global_diagnostics=False):
+    zone_options = _zone_search_options(room_solver, zone_global_seconds, zone_global_workers,
+                                       diagnostics=zone_global_diagnostics)
+    _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=room_seconds,
+                        diagnostics=zone_global_diagnostics)
     from layout_configurator.bundle import write_facility_variant
     from layout_configurator.equipment import place_equipment_clear_of_doors, validate_equipment_layout
     from layout_configurator.facility import validate_building
@@ -453,6 +467,8 @@ def main(argv=None):
                         help="Recursive final global CP seconds per model in (0,120]; local/subtree budgets remain unchanged")
     parser.add_argument("--zone-global-workers", type=int, default=1,
                         help="Recursive final global CP workers in 1..8; the whole request remains bounded by max-seconds")
+    parser.add_argument("--zone-global-diagnostics", action="store_true",
+                        help="Capture bounded final recursive candidate families and actual CP model/search counters")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--started", type=float, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -463,7 +479,8 @@ def main(argv=None):
         write_report(args.output, report)
         return 2
     try:
-        _zone_search_options(args.room_solver, args.zone_global_seconds, args.zone_global_workers)
+        _zone_search_options(args.room_solver, args.zone_global_seconds, args.zone_global_workers,
+                             diagnostics=args.zone_global_diagnostics)
     except ValueError as exc:
         report.update(status="INPUT_REJECTED", message=str(exc))
         write_report(args.output, report)
@@ -481,6 +498,8 @@ def main(argv=None):
         command.extend(["--zone-global-seconds", str(args.zone_global_seconds)])
     if args.zone_global_workers != 1:
         command.extend(["--zone-global-workers", str(args.zone_global_workers)])
+    if args.zone_global_diagnostics:
+        command.append("--zone-global-diagnostics")
     process = subprocess.Popen(command, cwd=REPO_ROOT, shell=False,
                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     try:

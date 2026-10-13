@@ -29,6 +29,11 @@ on:
           - "1"
           - "2"
           - "4"
+      zone_global_diagnostics:
+        description: Capture bounded final recursive model and candidate diagnostics
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -59,11 +64,15 @@ jobs:
           ROOM_SOLVER: ${{ inputs.room_solver }}
           ZONE_GLOBAL_SECONDS: ${{ inputs.zone_global_seconds }}
           ZONE_GLOBAL_WORKERS: ${{ inputs.zone_global_workers }}
+          ZONE_GLOBAL_DIAGNOSTICS: ${{ inputs.zone_global_diagnostics }}
         shell: bash
         run: |
           args=(--output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER")
           if [[ "$ROOM_SOLVER" == "zone_recursive" ]]; then
             args+=(--zone-global-seconds "$ZONE_GLOBAL_SECONDS" --zone-global-workers "$ZONE_GLOBAL_WORKERS")
+          fi
+          if [[ "$ZONE_GLOBAL_DIAGNOSTICS" == "true" ]]; then
+            args+=(--zone-global-diagnostics)
           fi
           python scripts/scale80_warmstart_acceptance.py "${args[@]}"
       - name: Retain warm-start bundles and evidence, including failures
