@@ -307,6 +307,10 @@ UNKNOWN; no 80-room export or complete facility QA was reached.
 Checkpoint B.16.1 establishes bounded exact source group identities and direct
 memberships. This extends canonical draft exchange without establishing physical
 zone containers, engineered networks or approval of the residential MVP archive.
+Checkpoint H.3.6.8 adds bounded explicit final contact support tables and a
+default-false supervised runner control. This strengthens propagation within
+the selected finite family while retaining original source and acceptance gates;
+it does not close physical80 or prove whole-program infeasibility.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

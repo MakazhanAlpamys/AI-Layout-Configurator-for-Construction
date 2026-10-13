@@ -667,6 +667,7 @@ def solve_zone_layouts(
     global_workers: int = 1,
     global_diagnostics: bool = False,
     prune_cross_root_contacts: bool = False,
+    cross_root_contact_support: bool = False,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -695,6 +696,8 @@ def solve_zone_layouts(
     actual final model/solver counters, without establishing a solver verdict.
     Optional cross-root contact pruning adds only redundant no-goods for exact
     incompatible candidate pairs; it retains all original hard constraints.
+    Optional contact support also couples finite shape choices to the actual
+    shared translation intervals. All original clauses and the objective remain.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -706,6 +709,10 @@ def solve_zone_layouts(
     evidence.pop("global_search_settings", None)
     evidence.pop("global_diagnostics", None)
     evidence.pop("cross_root_contact_pruning", None)
+    evidence.pop("cross_root_contact_support", None)
+    if type(cross_root_contact_support) is not bool:
+        _fail(evidence, "cross_root_contact_support must be a boolean", stage="input",
+              code="invalid_contact_support_mode", model_status="NOT_BUILT", not_applicable=True)
     if not isinstance(prune_cross_root_contacts, bool):
         _fail(evidence, "prune_cross_root_contacts must be a boolean", stage="input",
               code="invalid_contact_pruning_mode", model_status="NOT_BUILT", not_applicable=True)
@@ -804,6 +811,7 @@ def solve_zone_layouts(
         workers=final_workers,
         **({"global_diagnostics": True} if global_diagnostics else {}),
         **({"prune_cross_root_contacts": True} if prune_cross_root_contacts else {}),
+        **({"cross_root_contact_support": True} if cross_root_contact_support else {}),
     )
 
 
@@ -813,7 +821,7 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                          stage="global", stage_unit=None, allow_partial=False,
                          fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None,
                          global_validator=None, hints=None, workers=1, global_diagnostics=False,
-                         prune_cross_root_contacts=False):
+                         prune_cross_root_contacts=False, cross_root_contact_support=False):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -970,6 +978,38 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
             model.AddBoolOr([choices_by_unit[a][index_a].Not(), choices_by_unit[b][index_b].Not()])
         pruning["counts"]["added_clauses"] = len(rejected)
         evidence["cross_root_contact_pruning"] = pruning
+    if cross_root_contact_support:
+        from .zone_contact_pruning import plan_contact_support
+
+        plans, support = plan_contact_support(building, units, shapes, minimum_grid=minimum_shared,
+                                             boundary_grid=(boundary_width, boundary_height))
+        indices = {}
+        for a, b, _ in plans:
+            for unit_id in (a, b):
+                if unit_id in indices:
+                    continue
+                choices = choices_by_unit[unit_id]
+                index = model.NewIntVar(0, len(choices) - 1, f"contact_support_{unit_id}_shape")
+                model.Add(index == sum(number * choice for number, choice in enumerate(choices)))
+                indices[unit_id] = index
+        for pair_number, (a, b, rows) in enumerate(plans):
+            # Empty safe support retains an actual empty table: only CP-SAT
+            # decides selected-family infeasibility, never source infeasibility.
+            endpoints = [model.NewIntVarFromDomain(
+                cp_model.Domain.FromValues(sorted({row[column] for row in rows}) or [0]),
+                f"contact_support_{pair_number}_{name}")
+                for column, name in enumerate(("dx_low", "dx_high", "dy_low", "dy_high"), start=2)]
+            model.AddAllowedAssignments([indices[a], indices[b], *endpoints], rows)
+            dx, dy = unit_vars[b].x - unit_vars[a].x, unit_vars[b].y - unit_vars[a].y
+            model.Add(dx >= endpoints[0])
+            model.Add(dx <= endpoints[1])
+            model.Add(dy >= endpoints[2])
+            model.Add(dy <= endpoints[3])
+        support["counts"].update(
+            added_index_variables=len(indices), added_endpoint_variables=4 * len(plans),
+            added_linear_constraints=len(indices) + 4 * len(plans), added_table_constraints=len(plans),
+        )
+        evidence["cross_root_contact_support"] = support
     def validate_candidate(candidate, zone_rects):
         if stage == "global":
             validator = validate_zone_layout if global_validator is None else global_validator

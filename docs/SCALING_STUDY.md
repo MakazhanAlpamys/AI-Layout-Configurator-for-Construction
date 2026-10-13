@@ -623,3 +623,41 @@ all original constraints and source gates. Repeating this unchanged request
 would not establish the remaining physical80 criterion. Durations across these
 single runs are observations under differing solver controls and runner load,
 without a general performance guarantee.
+
+### Bounded final shape/translation support
+
+`solve_zone_layouts(..., cross_root_contact_support=True)` adds exact necessary
+translation supports to the final root model. Each participating root's existing
+one-hot choice defines one candidate-index variable. Each eligible required
+cross-root pair has a six-column allowed-assignment table: two candidate indices
+and the lower/upper bounds for relative X and Y. Four linear constraints bind
+the actual root translation to that row. The four-side interval kernel uses
+the same effective integer-grid rectangles as the original CP model; no grid
+points are enumerated. All original hard clauses, geometry and objective remain.
+
+If any candidate in a root pair has unsafe rounded containment, that entire
+pair is skipped, including its otherwise safe candidates. Empty safe support
+is passed to CP-SAT as an empty table; a resulting INFEASIBLE status applies
+only to the selected finite shape family. It does not prove the source program
+infeasible. Optional pruning and support can run independently or together.
+
+The whole pass checks the existing 80-room/64-pair/65,536-candidate-pair/
+1,048,576-orientation limits and additionally 65,536 participating rectangle
+records and a conservative 16,384-row bound. Any exceeded budget skips the
+entire pass before posting constraints. Evidence records actual rows/cells,
+skipped pairs and extra model variables/linears/tables. Omitted and false
+controls preserve earlier serialized results, evidence and runner arguments.
+
+The supervised recursive runner exposes `--zone-contact-support`; the existing
+single-job manual workflow adds a default-false boolean input. Final-only
+controls retain the unchanged total deadline and all original physical/source,
+equipment, routing, saved-bundle and native EXPRESS acceptance gates.
+
+Final focused agent tests passed 18 cases / 36 subtests in 6.85 s; related
+regression passed 87 / 272 in 30.88 s. Root independently passed six actual
+geometry/model/unsafe/limit/selected-family/complete-bundle cases in 5.47 s.
+Actionlint and pinned-default comparisons passed. A helper-only reconstruction
+of the saved80 family gives 792 support rows and 4,752 cells, with potential
+raw-model additions of 46 variables, 46 linears and nine tables. This analysis
+does not run the 80-room solver or establish performance; the next changed
+source-pinned measurement remains a separate gate.

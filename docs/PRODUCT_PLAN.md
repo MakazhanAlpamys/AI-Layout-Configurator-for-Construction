@@ -222,6 +222,12 @@ reference only supplied routes and explicitly named supplied equipment endpoints
 Original declarations and four source hashes remain exact. Missing products are
 explicitly NOT_SUPPLIED; this semantic check does not evaluate geometry,
 physical containers or network engineering. Native delivery is the next B.16 gate.
+Checkpoint H.3.6.8 adds opted final shape/translation support tables. The existing
+one-hot shape choices bind exact common-contact intervals while all original
+hard constraints, objectives and candidate geometry remain. Unsafe root pairs
+skip entirely; whole-pass limits precede posting. Small real CP and complete
+bundle QA pass. The saved80 family yields 792 rows without executing a new solve;
+physical80 runtime and acceptance need a separately pinned changed measurement.
 
 ## 1. Why we are expanding the project
 
