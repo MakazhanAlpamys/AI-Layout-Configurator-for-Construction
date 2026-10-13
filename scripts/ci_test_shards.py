@@ -1,8 +1,9 @@
 """Run an exhaustive, disjoint partition of the existing unittest discovery.
 
-Every invocation discovers the complete test root once. The core shard keeps
-all cases except modules whose basename starts with test_orthogonal_bundle;
-the draft-bundles shard keeps exactly those modules, including future ones.
+Every invocation discovers the complete test root once. The draft-bundles
+shard keeps exactly modules starting with test_orthogonal_bundle. Complete
+CLI, floor exchange, packaging and domain-pilot modules form exchange-and-cli;
+the core shard keeps the remainder. Future modules follow the same prefixes.
 Collection failures, duplicate identities and empty partitions stop execution.
 """
 
@@ -10,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from itertools import combinations
 import json
 from pathlib import Path
 import platform
@@ -18,8 +20,12 @@ import time
 import unittest
 
 
-SHARDS = ("core", "draft-bundles")
+SHARDS = ("core", "draft-bundles", "exchange-and-cli")
 BUNDLE_MODULE_PREFIX = "test_orthogonal_bundle"
+EXCHANGE_MODULE_PREFIXES = (
+    "test_orthogonal_cli", "test_facility_floors", "test_packaging",
+    "test_domain_pilots", "test_plan_import_cli",
+)
 MAX_DETAIL_RECORDS = 100
 MAX_DETAIL_CHARACTERS = 2048
 
@@ -39,7 +45,13 @@ def partition(cases):
     selected = {name: [] for name in SHARDS}
     for case in cases:
         module = type(case).__module__.rsplit(".", 1)[-1]
-        selected["draft-bundles" if module.startswith(BUNDLE_MODULE_PREFIX) else "core"].append(case)
+        if module.startswith(BUNDLE_MODULE_PREFIX):
+            shard = "draft-bundles"
+        elif module.startswith(EXCHANGE_MODULE_PREFIXES):
+            shard = "exchange-and-cli"
+        else:
+            shard = "core"
+        selected[shard].append(case)
     identities = [case.id() for case in cases]
     if any(type(identity) is not str or not identity for identity in identities):
         raise ValueError("Collected test identities must be nonempty strings")
@@ -48,8 +60,8 @@ def partition(cases):
     sets = {name: set(values) for name, values in ids.items()}
     evidence = {"status": "FAIL", "counts": {name: len(values) for name, values in ids.items()},
                 "ids": ids, "duplicate_ids": duplicates, "unique": not duplicates,
-                "disjoint": not (sets["core"] & sets["draft-bundles"]),
-                "exhaustive": (sets["core"] | sets["draft-bundles"]) == set(identities)
+                "disjoint": all(not (sets[a] & sets[b]) for a, b in combinations(SHARDS, 2)),
+                "exhaustive": set().union(*sets.values()) == set(identities)
                     and sum(len(values) for values in ids.values()) == len(identities)}
     issues = []
     if not evidence["unique"]:
@@ -89,7 +101,7 @@ def run(start_dir: Path, shard: str | None):
     repository = str(Path(__file__).resolve().parents[1])
     if repository not in sys.path:
         sys.path.insert(0, repository)
-    report = {"schema": "ci-test-shards/0.1", "status": "FAIL",
+    report = {"schema": "ci-test-shards/0.2", "status": "FAIL",
               "mode": "run" if shard is not None else "verify-partition",
               "platform": platform.system(), "start_dir": str(start_dir),
               "discovery": {"count": 0, "ids": [], "import_errors": []},

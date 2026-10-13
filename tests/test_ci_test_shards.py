@@ -37,6 +37,39 @@ FUTURE_BUNDLE = FIXTURE_HEADER + '''class FutureBundle(unittest.TestCase):
         record('bundle-future')
         self.fail('expected fixture failure remains an expected failure')
 '''
+EXCHANGE_SOURCES = {
+    "test_orthogonal_cli.py": FIXTURE_HEADER + '''class CLI(unittest.TestCase):
+    def test_cli(self): record('cli')
+''',
+    "test_facility_floors.py": FIXTURE_HEADER + '''class Floors(unittest.TestCase):
+    def test_floors(self): record('floors')
+''',
+    "test_packaging.py": FIXTURE_HEADER + '''class Packaging(unittest.TestCase):
+    def test_packaging(self): record('packaging')
+''',
+    "test_domain_pilots.py": FIXTURE_HEADER + '''class Domain(unittest.TestCase):
+    def test_domain(self): record('domain-pilots')
+''',
+    "test_plan_import_cli.py": FIXTURE_HEADER + '''class Import(unittest.TestCase):
+    def test_import(self): record('plan-import')
+''',
+    "test_orthogonal_cli_future.py": FIXTURE_HEADER + '''class FutureCLI(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        record('exchange-setup')
+        cls.cached = ['actual shared class fixture']
+    @classmethod
+    def tearDownClass(cls): record('exchange-teardown')
+    def test_alpha(self):
+        self.assertEqual(self.cached, ['actual shared class fixture'])
+        record('future-alpha')
+    def test_beta(self):
+        self.assertEqual(self.cached, ['actual shared class fixture'])
+        record('future-beta')
+''',
+}
+EXCHANGE_TRACE = ['domain-pilots', 'floors', 'cli', 'exchange-setup', 'future-alpha',
+                  'future-beta', 'exchange-teardown', 'packaging', 'plan-import']
 
 
 class CITestShardTests(unittest.TestCase):
@@ -50,11 +83,14 @@ class CITestShardTests(unittest.TestCase):
         self.output = self.folder / "report.json"
         for name, contents in (("test_a_core.py", CORE), ("test_z_core.py", CORE_LATER),
                                ("test_orthogonal_bundle.py", BUNDLE),
-                               ("test_orthogonal_bundle_future.py", FUTURE_BUNDLE)):
+                               ("test_orthogonal_bundle_future.py", FUTURE_BUNDLE),
+                               *EXCHANGE_SOURCES.items()):
             (self.test_root / name).write_text(contents, encoding="utf-8")
 
     def run_runner(self, *arguments):
         self.assertTrue(RUNNER.is_file(), "CI shard runner with complete discovery safeguards is missing")
+        if self.output.exists():
+            self.output.unlink()
         result = subprocess.run([sys.executable, str(RUNNER), "--start-dir", str(self.test_root),
                                  "--output", str(self.output), *arguments], cwd=ROOT,
             env={**os.environ, "CI_SHARD_TRACE": str(self.trace)}, capture_output=True, text=True,
@@ -66,27 +102,33 @@ class CITestShardTests(unittest.TestCase):
         result, report = self.run_runner("--verify-partition")
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse(self.trace.exists())
+        self.assertEqual(report["schema"], "ci-test-shards/0.2")
         self.assertEqual(report["status"], "PASS")
-        self.assertEqual(report["discovery"]["count"], 5)
+        self.assertEqual(report["discovery"]["count"], 12)
         self.assertEqual(report["discovery"]["import_errors"], [])
-        self.assertEqual(report["partition"]["counts"], {"core": 3, "draft-bundles": 2})
+        self.assertEqual(report["partition"]["counts"], {"core": 3, "draft-bundles": 2, "exchange-and-cli": 7})
         self.assertTrue(report["partition"]["exhaustive"])
         self.assertTrue(report["partition"]["unique"])
         self.assertTrue(report["partition"]["disjoint"])
-        core, bundles = (report["partition"]["ids"][name] for name in ("core", "draft-bundles"))
+        core, bundles, exchange = (report["partition"]["ids"][name]
+                                  for name in ("core", "draft-bundles", "exchange-and-cli"))
         discovered = report["discovery"]["ids"]
-        self.assertEqual(set(core) | set(bundles), set(discovered))
+        self.assertEqual(set(core) | set(bundles) | set(exchange), set(discovered))
         self.assertEqual(set(core) & set(bundles), set())
+        self.assertEqual(set(core) & set(exchange), set())
+        self.assertEqual(set(bundles) & set(exchange), set())
         self.assertEqual(core, [identity for identity in discovered if identity in set(core)])
         self.assertEqual(bundles, [identity for identity in discovered if identity in set(bundles)])
+        self.assertEqual(exchange, [identity for identity in discovered if identity in set(exchange)])
         self.assertEqual(report["execution"]["status"], "NOT_RUN")
         summary = json.loads(result.stdout)
-        self.assertEqual((summary["discovered"], summary["selected"]), (5, 0))
+        self.assertEqual((summary["discovered"], summary["selected"]), (12, 0))
 
     def test_actual_core_and_future_bundle_execution_preserves_skips_expected_failures_and_order(self):
         for shard, expected, tests_run, skipped, expected_failures in (
                 ("core", ["core-alpha", "core-beta"], 3, 1, 0),
-                ("draft-bundles", ["bundle-base", "bundle-future"], 2, 0, 1)):
+                ("draft-bundles", ["bundle-base", "bundle-future"], 2, 0, 1),
+                ("exchange-and-cli", EXCHANGE_TRACE, 7, 0, 0)):
             with self.subTest(shard=shard):
                 if self.trace.exists():
                     self.trace.unlink()
@@ -102,7 +144,8 @@ class CITestShardTests(unittest.TestCase):
 
     def test_discovery_import_failure_stops_all_shards_before_execution(self):
         (self.test_root / "test_broken.py").write_text("raise RuntimeError('actual fixture import failure')", encoding="utf-8")
-        for arguments in (("--verify-partition",), ("--shard", "core"), ("--shard", "draft-bundles")):
+        for arguments in (("--verify-partition",), ("--shard", "core"), ("--shard", "draft-bundles"),
+                          ("--shard", "exchange-and-cli")):
             with self.subTest(arguments=arguments):
                 result, report = self.run_runner(*arguments)
                 self.assertNotEqual(result.returncode, 0)
@@ -121,6 +164,18 @@ class CITestShardTests(unittest.TestCase):
         self.assertEqual(report["execution"]["status"], "NOT_RUN")
         self.assertFalse(self.trace.exists())
 
+    def test_collision_between_two_noncore_shards_is_not_disjoint_and_stops_everything(self):
+        (self.test_root / "test_orthogonal_cli_collision.py").write_text(FIXTURE_HEADER + '''class Collision(unittest.TestCase):
+    def id(self): return 'test_orthogonal_bundle.BundleCase.test_primary'
+    def test_collision(self): record('must-not-run')
+''', encoding="utf-8")
+        result, report = self.run_runner("--shard", "core")
+        self.assertEqual(result.returncode, 2)
+        self.assertFalse(report["partition"]["unique"])
+        self.assertFalse(report["partition"]["disjoint"])
+        self.assertEqual(report["execution"]["status"], "NOT_RUN")
+        self.assertFalse(self.trace.exists())
+
     def test_direct_script_preserves_repository_namespace_imports_from_prior_module_runner(self):
         (self.test_root / "test_orthogonal_bundle_imports_root.py").write_text(
             "import scripts.api_smoke\n" + FIXTURE_HEADER + '''class ImportCase(unittest.TestCase):
@@ -132,18 +187,27 @@ class CITestShardTests(unittest.TestCase):
         self.assertIn("repository-import", self.trace.read_text(encoding="utf-8").splitlines())
 
     def test_missing_core_or_bundle_partition_is_a_failure_before_running_any_selected_case(self):
-        for missing in ("core", "draft-bundles"):
+        names = {"core": ("test_a_core.py", "test_z_core.py"),
+                 "draft-bundles": ("test_orthogonal_bundle.py", "test_orthogonal_bundle_future.py"),
+                 "exchange-and-cli": tuple(EXCHANGE_SOURCES)}
+        for missing in names:
             with self.subTest(missing=missing):
-                for path in self.test_root.glob("test*.py"):
-                    path.unlink()
-                name, source = (("test_orthogonal_bundle.py", BUNDLE) if missing == "core" else ("test_a_core.py", CORE))
-                (self.test_root / name).write_text(source, encoding="utf-8")
-                result, report = self.run_runner("--shard", "draft-bundles" if missing == "core" else "core")
-                self.assertNotEqual(result.returncode, 0)
-                self.assertEqual(report["partition"]["counts"][missing], 0)
-                self.assertIn(missing, " ".join(report["issues"]))
-                self.assertEqual(report["execution"]["status"], "NOT_RUN")
-                self.assertFalse(self.trace.exists())
+                if self.trace.exists():
+                    self.trace.unlink()
+                removed = {name: (self.test_root / name).read_text(encoding="utf-8") for name in names[missing]}
+                for name in removed:
+                    (self.test_root / name).unlink()
+                try:
+                    result, report = self.run_runner("--shard", "draft-bundles" if missing == "core" else "core")
+                    self.assertEqual(result.returncode, 2)
+                    self.assertIn(missing, report["partition"]["counts"])
+                    self.assertEqual(report["partition"]["counts"][missing], 0)
+                    self.assertIn(missing, " ".join(report["issues"]))
+                    self.assertEqual(report["execution"]["status"], "NOT_RUN")
+                    self.assertFalse(self.trace.exists())
+                finally:
+                    for name, source in removed.items():
+                        (self.test_root / name).write_text(source, encoding="utf-8")
 
     def test_actual_failures_and_unexpected_successes_keep_nonzero_exit_and_structured_evidence(self):
         for outcome in ("failure", "unexpected_success"):
@@ -167,12 +231,31 @@ class CITestShardTests(unittest.TestCase):
                 self.assertEqual(report["execution"]["unexpected_success_count"], int(outcome == "unexpected_success"))
                 self.assertEqual(self.trace.read_text(encoding="utf-8").splitlines(), ["core-alpha", "core-beta"])
 
+    def test_exchange_failures_errors_and_failed_subtests_are_retained_without_failfast(self):
+        for outcome, body in (("failure", "self.fail('actual exchange failure')"),
+                              ("error", "raise RuntimeError('actual exchange error')"),
+                              ("subtest", "for value in (True, False):\n            with self.subTest(value=value):\n                self.assertTrue(value)")):
+            with self.subTest(outcome=outcome):
+                (self.test_root / "test_packaging.py").write_text(FIXTURE_HEADER +
+                    "class Packaging(unittest.TestCase):\n    def test_packaging(self):\n        record('packaging')\n        " +
+                    body + "\n", encoding="utf-8")
+                if self.trace.exists():
+                    self.trace.unlink()
+                result, report = self.run_runner("--shard", "exchange-and-cli")
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(report["execution"]["tests_run"], 7)
+                self.assertEqual(report["execution"]["error_count"], int(outcome == "error"))
+                self.assertEqual(report["execution"]["failure_count"], int(outcome != "error"))
+                self.assertEqual(report["execution"]["subtests"], 2 if outcome == "subtest" else 0)
+                self.assertEqual(self.trace.read_text(encoding="utf-8").splitlines(), EXCHANGE_TRACE)
+
     def test_full_workflow_matrix_artifacts_and_independent_pharma_preserve_acceptance_gates(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8"))
         jobs = workflow["jobs"]
         tests = jobs["tests"]
         self.assertEqual(tests["strategy"]["matrix"], {
-            "os": ["ubuntu-latest", "windows-latest"], "shard": ["core", "draft-bundles"]})
+            "os": ["ubuntu-latest", "windows-latest"], "shard": ["core", "draft-bundles", "exchange-and-cli"]})
+        self.assertEqual(len(tests["strategy"]["matrix"]["os"]) * len(tests["strategy"]["matrix"]["shard"]), 6)
         self.assertEqual(tests["name"], "tests (${{ matrix.os }}, ${{ matrix.shard }})")
         self.assertIs(tests["strategy"]["fail-fast"], False)
         self.assertEqual(tests["timeout-minutes"], 15)

@@ -97,7 +97,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        shard: [core, draft-bundles]
+        shard: [core, draft-bundles, exchange-and-cli]
     steps:
       - uses: actions/checkout@v7
         with:

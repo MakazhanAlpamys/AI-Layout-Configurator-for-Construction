@@ -669,7 +669,8 @@ existing source/geometry contracts. Full platform/container/pharma acceptance
 remains on manual, pull-request and weekly events. Documentation-only pushes
 are skipped, and cheap pushes cannot cancel a pinned full run.
 
-Full unittest tests now run two shards per operating system. Every invocation
+The first `ci-test-shards/0.1` implementation used two shards per operating
+system. Every invocation
 performs complete `unittest discover` once and rejects loader errors, duplicate
 IDs, empty required shards or a nonexhaustive/disjoint partition before running
 anything. The draft-bundles shard contains exactly modules whose basename starts
@@ -779,3 +780,29 @@ and [compact evidence](acceptance/4604a10.json) preserve the negative result.
 Physical80, general scratch80 and large edits remain open. The next change must
 address another actual family limitation or a certified conflicting relation;
 this unchanged failed run should not be repeated.
+
+### Third complete CI shard
+
+QA.20 changes the runner evidence to `ci-test-shards/0.2` and runs three complete
+module groups per OS: `core`, `draft-bundles` and `exchange-and-cli`. The latter
+contains modules starting with `test_orthogonal_cli`, `test_facility_floors`,
+`test_packaging`, `test_domain_pilots` or `test_plan_import_cli`. The exact draft
+prefix remains; all other present and future modules stay in core. Entire
+modules and their class fixtures remain together and keep discovery order.
+
+Root independently verified complete actual discovery and retained every one
+of the prior 1,113 pinned CI IDs. At this checkpoint the tracked tests plus
+the frozen CI changes contain 1,183 IDs: 1,052 core, 53 draft bundles and 78
+exchange/CLI. Separate in-progress tests are excluded from that checkpoint
+count. Actual fixture runs cover all three groups, future prefixes, class-cache
+reuse, loader errors, duplicates across noncore groups, any missing group,
+failed subtests and nonzero outcomes: ten root tests passed in 3.019 s.
+
+The workflow changes only the shard matrix. API/container, nine pharma
+variants, quick-push contracts, all acceptance assertions, fail-fast=false,
+15-minute limits and unique always-upload artifacts remain unchanged. Six test
+VMs replace four, adding two setup/discovery costs. Historical log attribution
+suggests about 302.7 s of Windows core and 238.1 s of Linux core move into the
+new group; these estimates precede the pilot fixture optimization and do not
+promise new elapsed time or lower aggregate runner minutes. A single full
+milestone CI will measure the final source pin after the next integration.

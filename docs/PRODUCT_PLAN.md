@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.20 separates complete exchange/CLI modules into a third CI shard
+per OS, preserving every test and all independent API/pharma/quick gates.
+Actual exhaustive ID and fixture verification passed; six VMs trade two extra
+setups for a shorter intended critical path, to be measured at a new source pin.
+
 Checkpoint H.3.6.11 records the single changed `4604a10` physical80 run:
 60.536 s overall; all eight appended turns present, but final selected-family
 CP remains INFEASIBLE. Actual 228 shape hashes and eight artifact files verified;

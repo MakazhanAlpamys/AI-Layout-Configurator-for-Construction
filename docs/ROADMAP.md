@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint QA.20 balances current full CI across three complete module shards
+per OS without changing this archive or dropping any acceptance assertion.
+Measured new milestone timing remains separate from pinned `c0eb166` success.
+
 Checkpoint H.3.6.11 retains the actual negative selective-turn physical80
 measurement at `4604a10`. The archived MVP remains complete; this current
 large-scale physical acceptance criterion is still open.
