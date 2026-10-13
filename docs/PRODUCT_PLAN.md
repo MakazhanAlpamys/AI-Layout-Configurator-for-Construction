@@ -146,6 +146,9 @@ source-pinned room/equipment repairs through actual recursive container checks.
 Checkpoint B.5.1 preserves exact integral objectives in canonical polygon candidate pools.
 Checkpoint QA.12 keeps raw research local while retaining canonical CI fixtures,
 compact acceptance summaries and immutable historical evidence links.
+Checkpoint B.11 composes canonical polygon room, equipment and route candidates
+with fresh declared profile predicates and bounded complete-combination retries.
+Locally verified candidates remain DRAFT; complete persisted delivery is a separate gate.
 
 ## 1. Why we are expanding the project
 

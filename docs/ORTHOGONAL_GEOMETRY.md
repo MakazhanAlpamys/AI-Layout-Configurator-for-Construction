@@ -298,3 +298,34 @@ Direct malformed dataclasses, such as a boolean grid or string wall thickness,
 cannot become plausible numeric source values through normalization. Both cases
 reproduced RED before the guard; fresh root profile/schema regression passed
 44 tests and 18 subtests in 2.83 s.
+
+## Canonical facility candidate orchestration
+
+`generate_orthogonal_facility_variants` composes the finite room backend,
+directional equipment packing, actual full-width routes and fresh declared
+facility/profile predicates. It accepts the same canonical BuildingIR and
+profile, optional bounded catalogs and fixed footprints. No competing model or
+implicit rectangular fallback is introduced.
+
+Every candidate is checked against the current source. A downstream rejection
+excludes the complete equipment combination before the next bounded attempt;
+individual placements can be reused. Verified partial room pools can supply an
+accepted candidate, while an incomplete requested accepted set stays UNKNOWN.
+Rejection samples and aggregate counts preserve source IDs, hashes, rule
+provenance and actual stage evidence. Exhaustion does not prove whole-program
+infeasibility.
+
+Wall-clock mode uses the high-resolution monotonic clock, stops launching stages
+at the deadline and rejects a late candidate. Existing bounded route/profile
+stages cannot be preempted mid-call. Deterministic work limits apply per CP
+invocation, without a claim of aggregate consumed work or cross-platform
+repeatability.
+
+Fresh root generation/objective/exclusion verification: 16 tests and 30 subtests
+passed in 22.82 s. The source-generated exact 20+16 m2 counterexample produces an
+actual concave room, equipment and a route without supplied catalogs or fixed
+footprints. Its preserved individual IFC/PDF artifacts match their byte hashes;
+strict IFC EXPRESS has zero violations and both PDF pages were inspected.
+Local candidate status remains DRAFT with full facility validation UNKNOWN and
+engineering acceptance PENDING. Selectable product dispatch and complete
+persisted bundle acceptance remain separate.

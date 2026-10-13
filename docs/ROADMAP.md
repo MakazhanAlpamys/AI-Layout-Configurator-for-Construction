@@ -58,6 +58,8 @@ bridge while retaining independent containers and separate large-scale evidence.
 Checkpoint B.5.1 repairs native floating objective residues in real polygon candidate pools.
 Checkpoint QA.12 stores raw research locally; this archive retains immutable
 historical references while canonical runtime/CI inputs stay tracked.
+Checkpoint B.11 composes bounded canonical polygon candidates through fresh
+local equipment, route and profile checks, retaining separate delivery acceptance.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
