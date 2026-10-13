@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/transfer-program-0.1.json",
+  "title": "Source-bound transfer permissions 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "id", "revision", "units", "building_sha256", "production_program_sha256", "flow_movements", "transfers"],
+  "properties": {
+    "version": {"const": "0.1"},
+    "id": {"$ref": "#/$defs/id"},
+    "revision": {"$ref": "#/$defs/id"},
+    "units": {"const": "mm"},
+    "building_sha256": {"$ref": "#/$defs/digest"},
+    "production_program_sha256": {"$ref": "#/$defs/digest"},
+    "flow_movements": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/classification"}},
+    "transfers": {"type": "array", "maxItems": 128, "items": {"$ref": "#/$defs/transfer"}}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^\\S(?:[^\\r\\n]*\\S)?$"},
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "excerpt": {"type": "string", "minLength": 1, "maxLength": 8192, "pattern": "\\S"},
+    "basis": {"enum": ["declared_fact", "assumption", "supplied_confirmation"]},
+    "movement": {"enum": ["personnel", "material", "product", "waste"]},
+    "classification": {
+      "type": "object", "additionalProperties": false,
+      "required": ["flow_id", "movement_kind", "source_id", "basis", "excerpt"],
+      "properties": {
+        "flow_id": {"$ref": "#/$defs/id"}, "movement_kind": {"$ref": "#/$defs/movement"},
+        "source_id": {"$ref": "#/$defs/id"}, "basis": {"$ref": "#/$defs/basis"}, "excerpt": {"$ref": "#/$defs/excerpt"}
+      }
+    },
+    "permission": {
+      "type": "object", "additionalProperties": false, "required": ["direction", "movement_kinds"],
+      "properties": {
+        "direction": {"enum": ["forward", "reverse"]},
+        "movement_kinds": {"type": "array", "minItems": 1, "maxItems": 4, "uniqueItems": true, "items": {"$ref": "#/$defs/movement"}}
+      }
+    },
+    "transfer": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "opening_id", "room_chain", "minimum_clear_width_mm", "permissions", "source_id", "basis", "excerpt"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "kind": {"enum": ["door", "personnel_airlock", "material_airlock", "pass_box"]},
+        "opening_id": {"$ref": "#/$defs/id"},
+        "room_chain": {"type": "array", "minItems": 2, "maxItems": 2, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+        "minimum_clear_width_mm": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000000},
+        "permissions": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"$ref": "#/$defs/permission"}},
+        "source_id": {"$ref": "#/$defs/id"}, "basis": {"$ref": "#/$defs/basis"}, "excerpt": {"$ref": "#/$defs/excerpt"}
+      }
+    }
+  }
+}

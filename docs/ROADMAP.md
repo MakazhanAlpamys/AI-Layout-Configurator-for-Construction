@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint I.2.1 verifies actual typed transfer permissions in the current
+product, including personnel-passbox denial and UNKNOWN mechanism boundaries.
+This source-bound sidecar leaves archived MVP criteria and engineering
+acceptance unchanged.
+
 Checkpoint C.5.4 retains opted conflict reports and canonical failed source in
 persistent HTTP jobs, with strict budgets and fresh-QA cache reuse. This extends
 current-product delivery without changing finite-family proof scope or the

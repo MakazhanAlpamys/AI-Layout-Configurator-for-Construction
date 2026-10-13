@@ -75,3 +75,8 @@ implementation hashes and both authoritative schema resources were checked;
 offline schema composition and actual PASS/UNKNOWN/stale/contradictory CLI
 cases passed. The reconstruction retained all 18 unresolved evidence items.
 This local installed-wheel evidence does not extend the earlier `c0eb166` CI pin.
+
+I.2.1 now reuses this exact source/program identity for explicit typed transfer
+sidecars and independent actual route permission checks. Original flow labels
+remain unchanged. [TRANSFER_PROGRAM.md](TRANSFER_PROGRAM.md) describes the
+personnel-passbox rejection, bounded admission and unverified mechanisms.

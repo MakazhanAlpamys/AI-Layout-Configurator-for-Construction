@@ -1,0 +1,228 @@
+{
+  "building": {
+    "version": "0.2",
+    "project_name": "Synthetic transfer permission fixture",
+    "layout": {
+      "version": "0.1",
+      "project_name": "Synthetic transfer permission fixture",
+      "tolerance": 0.03,
+      "grid_mm": 100,
+      "wall_thickness_mm": 200.0,
+      "door_width_mm": 900.0,
+      "window_width_mm": 1200.0,
+      "window_height_mm": 1500.0,
+      "window_sill_mm": 900.0,
+      "doors": [
+        {
+          "id": "passbox_portal",
+          "room_a": "source",
+          "room_b": "target",
+          "offset_mm": 1500.0,
+          "width_mm": 900.0
+        }
+      ],
+      "windows": [],
+      "entry_room": "source",
+      "boundary": {
+        "width": 6000.0,
+        "height": 3000.0,
+        "cutouts": []
+      },
+      "rooms": [
+        {
+          "id": "source",
+          "type": "room",
+          "target_area": 9.0,
+          "min_area": 8.73,
+          "max_area": 9.27,
+          "min_width": 1800.0,
+          "min_depth": 1800.0,
+          "required_adjacency": [
+            "target"
+          ],
+          "preferred_adjacency": [],
+          "forbidden_adjacency": [],
+          "needs_daylight": false,
+          "is_heated": false
+        },
+        {
+          "id": "target",
+          "type": "room",
+          "target_area": 9.0,
+          "min_area": 8.73,
+          "max_area": 9.27,
+          "min_width": 1800.0,
+          "min_depth": 1800.0,
+          "required_adjacency": [],
+          "preferred_adjacency": [],
+          "forbidden_adjacency": [],
+          "needs_daylight": false,
+          "is_heated": false
+        }
+      ]
+    },
+    "zones": [],
+    "equipment": [],
+    "flows": [
+      {
+        "id": "movement",
+        "type": "people",
+        "from_ids": [
+          "source"
+        ],
+        "to_ids": [
+          "target"
+        ],
+        "minimum_clear_width_mm": 800.0,
+        "required": true
+      }
+    ]
+  },
+  "production_program": {
+    "version": "0.1",
+    "id": "transfer_process",
+    "revision": "P01",
+    "origin": "supplied_project_program",
+    "building_sha256": "c91169ae5fccb5ebb046ffac1f077611a74bef03300dfba393671caf52b1acc4",
+    "sources": [
+      {
+        "id": "transfer_brief",
+        "kind": "functional_diagram",
+        "title": "Synthetic transfer test declaration",
+        "edition": "1",
+        "uri": "urn:fixture:transfer:1",
+        "locator": "Lines 1-6",
+        "content": "Synthetic software test declaration, not an approved manufacturing design.\r\nThe movement flow is explicitly classified as personnel for the rejection exercise.\r\nThe passbox_portal permits material only, from source to target, with at least 800 mm clear width.\r\nThe paired material exercise uses the same source geometry.\r\nThe paired door exercise permits personnel from source to target.\r\nNo chamber, interlock, HVAC or three-dimensional loading evidence is supplied.\r\n",
+        "sha256": "192183614f3eea49e27e1450da89ac4bd60bd0b0470f68715aae4451007e6ba9",
+        "usage_rights": {
+          "state": "PERMITTED",
+          "note": "Supplied software test declaration."
+        }
+      }
+    ],
+    "materials": [
+      {
+        "id": "parts",
+        "label": "Test parts"
+      }
+    ],
+    "states": [
+      {
+        "id": "raw",
+        "material_id": "parts",
+        "label": "Raw test parts"
+      }
+    ],
+    "operations": [
+      {
+        "id": "handover",
+        "label": "Synthetic handover",
+        "room_id": "source",
+        "equipment_ids": [],
+        "flow_ids": [
+          "movement"
+        ],
+        "inputs": [
+          "raw"
+        ],
+        "outputs": [],
+        "measurements": {
+          "cycle_time": {
+            "status": "KNOWN",
+            "value": 30,
+            "unit": "s",
+            "basis": "declared_fact",
+            "source_id": "transfer_brief",
+            "note": "Declared test value; no capacity simulation."
+          },
+          "target_throughput": {
+            "status": "KNOWN",
+            "value": 120,
+            "unit": "items/hour",
+            "basis": "declared_fact",
+            "source_id": "transfer_brief",
+            "note": "Declared test value; no capacity simulation."
+          },
+          "movement_frequency": {
+            "status": "KNOWN",
+            "value": 12,
+            "unit": "movements/hour",
+            "basis": "declared_fact",
+            "source_id": "transfer_brief",
+            "note": "Declared test value; no capacity simulation."
+          },
+          "operators": {
+            "status": "KNOWN",
+            "value": 1,
+            "unit": "persons",
+            "basis": "declared_fact",
+            "source_id": "transfer_brief",
+            "note": "Declared test value; no capacity simulation."
+          }
+        }
+      }
+    ],
+    "requirements": [],
+    "engineer_confirmation": null
+  },
+  "transfer_program": {
+    "version": "0.1",
+    "id": "transfer_policy",
+    "revision": "T01",
+    "units": "mm",
+    "building_sha256": "c91169ae5fccb5ebb046ffac1f077611a74bef03300dfba393671caf52b1acc4",
+    "production_program_sha256": "db03464c4d86b8921b9fbc72c9b06cb49f1ed5358d2b9b0b270c3e3b0138dc7a",
+    "flow_movements": [
+      {
+        "flow_id": "movement",
+        "movement_kind": "personnel",
+        "source_id": "transfer_brief",
+        "basis": "declared_fact",
+        "excerpt": "explicitly classified as personnel"
+      }
+    ],
+    "transfers": [
+      {
+        "id": "transfer_1",
+        "kind": "pass_box",
+        "opening_id": "passbox_portal",
+        "room_chain": [
+          "source",
+          "target"
+        ],
+        "minimum_clear_width_mm": 800,
+        "permissions": [
+          {
+            "direction": "forward",
+            "movement_kinds": [
+              "material"
+            ]
+          }
+        ],
+        "source_id": "transfer_brief",
+        "basis": "declared_fact",
+        "excerpt": "permits material only"
+      }
+    ]
+  },
+  "layout": {
+    "variant": 1,
+    "objective_value": null,
+    "rooms": {
+      "source": {
+        "x": 0,
+        "y": 0,
+        "width": 3000,
+        "height": 3000,
+        "area_m2": 9.0
+      },
+      "target": {
+        "x": 3000,
+        "y": 0,
+        "width": 3000,
+        "height": 3000,
+        "area_m2": 9.0
+      }
+    }
+  }
+}

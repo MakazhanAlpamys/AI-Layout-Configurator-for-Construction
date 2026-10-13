@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.2.1 adds bounded source-bound typed transfer declarations and
+independent actual route permission checks. Personnel through a material-only
+pass box is rejected even when ordinary geometry passes; missing mechanisms
+stay UNKNOWN. Fresh source tests and an installed regular wheel pass.
+[Contract](TRANSFER_PROGRAM.md). Producer, environment and scenario integration
+remain separate; engineering acceptance is PENDING.
+
 Checkpoint C.5.4 persists opted zone explanations through actual HTTP jobs.
 Strict normalized JSON budgets participate in cache identity; unsupported and
 incremental controls reject before queueing. Durable success/failure, restart,
