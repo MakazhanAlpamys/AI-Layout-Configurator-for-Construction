@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint C.5.2 links checked finite conflict cores to the actual hierarchy
+builder with shared diagnostic budgets. Original-program feasibility and
+engineering acceptance stay outside those proofs; the archived MVP is unchanged.
+
 Checkpoint QA.20 balances current full CI across three complete module shards
 per OS without changing this archive or dropping any acceptance assertion.
 Measured new milestone timing remains separate from pinned `c0eb166` success.

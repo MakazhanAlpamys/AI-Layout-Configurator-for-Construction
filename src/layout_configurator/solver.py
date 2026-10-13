@@ -358,9 +358,9 @@ def _require_boundary_sides(model, room: _RoomVars, boundary_width: int, boundar
     model.Add(sum(sides) >= min(4, max(0, int(count))))
 
 
-def _add_required_adjacency(model, a: _RoomVars, b: _RoomVars, minimum_shared: int, name: str) -> None:
+def _add_required_adjacency(model, a: _RoomVars, b: _RoomVars, minimum_shared: int, name: str):
     indicator = _add_adjacency_indicator(model, a, b, minimum_shared, name)
-    model.Add(indicator == 1)
+    return model.Add(indicator == 1)
 
 
 def _add_adjacency_indicator(model, a: _RoomVars, b: _RoomVars, minimum_shared: int, name: str):
@@ -405,14 +405,15 @@ def _add_overlap(model, orientation, a_start, a_size, b_start, b_size, minimum: 
     model.Add(b_start + b_size >= a_start + minimum).OnlyEnforceIf([orientation, b_first])
 
 
-def _add_forbidden_adjacency(model, a: _RoomVars, b: _RoomVars, name: str) -> None:
+def _add_forbidden_adjacency(model, a: _RoomVars, b: _RoomVars, name: str):
     choices = [model.NewBoolVar(f"{name}_{suffix}") for suffix in ("left", "right", "below", "above")]
     left, right, below, above = choices
-    model.AddBoolOr(choices)
+    terminal = model.AddBoolOr(choices)
     model.Add(a.x + a.width + 1 <= b.x).OnlyEnforceIf(left)
     model.Add(b.x + b.width + 1 <= a.x).OnlyEnforceIf(right)
     model.Add(a.y + a.height + 1 <= b.y).OnlyEnforceIf(below)
     model.Add(b.y + b.height + 1 <= a.y).OnlyEnforceIf(above)
+    return terminal
 
 
 def _normalise_equipment_fit_options(options, known_room_ids: set[str]):

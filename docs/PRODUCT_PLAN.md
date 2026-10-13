@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint C.5.2 registers actual hierarchy terminal constraints and captures
+the source/family/model before derived clauses. Fresh checked contact and
+fixed-axis cores have SAT deletion witnesses; one diagnostic budget spans
+subtree retries. Source-conditioned family proofs never establish original
+BuildingIR infeasibility. Public persistence is the next C.5.3 checkpoint.
+
 Checkpoint QA.20 separates complete exchange/CLI modules into a third CI shard
 per OS, preserving every test and all independent API/pharma/quick gates.
 Actual exhaustive ID and fixture verification passed; six VMs trade two extra
@@ -559,9 +565,9 @@ identities across variants.
 
 ## 12. Future Cycle I — Process-Driven Manufacturing Design
 
-**Status: implementation started with the I.1.1 standalone contract.**
-BuildingIR admission, process computation, scenario enforcement, the agreed
-engineering example and the I.6 benchmark remain open.
+**Status: I.1.1 source contract and I.1.2 explicit BuildingIR admission exist.**
+Process computation, remaining unified source entities, scenario enforcement,
+the agreed engineering example and the I.6 benchmark remain open.
 This section adds the next development stage: Process-driven Facility Design,
 or process-based manufacturing layout. It does not change the order, scope,
 priorities or readiness criteria of the existing sections, does not close their

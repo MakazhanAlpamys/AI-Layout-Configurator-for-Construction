@@ -30,5 +30,40 @@ The actual four-room regression has two incompatible contacts in a reversed
 two-container family. Eight fresh solves certify both contacts and two final
 deletion witnesses; independent coordinate checks confirm envelope nonoverlap
 and each remaining full-width contact. Adding a legal shape yields `NO_CONFLICT`
-with the exact same canonical source. Production hierarchy registration,
-invocation-wide budgets and persisted failure integration are the next C.5 gate.
+with the exact same canonical source.
+
+## Actual hierarchy registration
+
+C.5.2 appends `explain_conflicts=False` and `conflict_budget=None` to
+`solve_zone_layouts`. Explicit true mode registers the actual builder's required
+and forbidden room/zone terminal clauses, each fixed room's four equalities and
+each selected structural-axis table. Semantic pair IDs use canonical JSON pairs;
+all original reverse-declaration pointers are retained, including zone names
+whose display strings would otherwise collide.
+
+The captured clone follows the original objective and precedes contact pruning,
+translation supports, hints and enumeration exclusions. Evidence distinguishes
+the original building, stage projection and diagnostic source-envelope hashes.
+The full effective candidate family and checked registry bind the exact model.
+Generated shapes may already depend on source constraints: requirement deletion
+keeps that family and all unnamed geometry clauses fixed.
+
+Only the initial production model's actual INFEASIBLE outcome triggers conflict
+solves. UNKNOWN and later enumeration exhaustion do not. One wall deadline,
+solve allowance and deterministic work budget cover all subtree retries and
+the final model. The deadline begins at the first snapshot, charges earlier
+source/registry preparation and includes intervening production search. Limits
+are 32 captures and 32 MiB combined captured bytes. Incomplete, unbound, unsafe
+or publicly mutated capture records remain UNKNOWN.
+
+Fresh root verification passed 48 core/registry/delivery/dispatch/stage tests in
+8.684 s. An independent fresh actual-builder proof checked the original proto,
+all original variable domains, literal room coordinates, nonoverlap, containment,
+minima and both final contact-deletion witnesses. Eight fresh solves certify the
+two conflicting contacts; an expanded family of the identical source is feasible.
+Fixed-versus-axis conflicts work in both hierarchy modes. Shared three-solve
+retry budgets stop with incomplete UNKNOWN, and captured hints/no-goods remain
+absent. Pinned `4604a10`, omitted, false and true controls retain all eleven
+actual production model hashes and the same result in the agent's parity probe.
+Public delivery is checkpoint C.5.3; original source infeasibility and external
+engineering acceptance remain separate.

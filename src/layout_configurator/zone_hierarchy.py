@@ -450,7 +450,8 @@ def _local_shapes(building, units, options, groups, minimum, time_limit, seed, d
 
 
 def _recursive_shapes(building, roots, units, children, ancestors, options, groups,
-                      minimum, time_limit, seed, deterministic_units, evidence, fixed_rects=None, *, hints=None, cache=None):
+                      minimum, time_limit, seed, deterministic_units, evidence, fixed_rects=None, *, hints=None, cache=None,
+                      conflict_session=None):
     """Solve leaves once, then pack cached child shapes inside canonical parents."""
     spec = building.layout
     zone_ids = {zone.id for zone in building.zones}
@@ -502,6 +503,7 @@ def _recursive_shapes(building, roots, units, children, ancestors, options, grou
                     container_members=local_members, ancestors=local_ancestors,
                     recursive_zones=True, stage="subtree", stage_unit=unit_id,
                     hints=hints,
+                    **({"conflict_session": conflict_session} if conflict_session is not None else {}),
                 )[0]
             except ZoneHierarchyFailure as failure:
                 attempt["failure"] = failure.to_dict()
@@ -669,6 +671,8 @@ def solve_zone_layouts(
     prune_cross_root_contacts: bool = False,
     cross_root_contact_support: bool = False,
     selective_leaf_turns: bool = False,
+    explain_conflicts: bool = False,
+    conflict_budget=None,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -702,6 +706,11 @@ def solve_zone_layouts(
     Explicit selective leaf turns may append at most four independently checked
     swapped envelopes to eligible automatic root leaves. Explicit size pools,
     parents and source-bound equipment/opening/axis/fixed units are excluded.
+    Opted conflict explanations register actual terminal clauses and capture
+    before derived pruning, support, hints and enumeration. One diagnostic
+    allowance is shared across all subtree retries and the final model. Checked
+    cores concern only the fixed base and source-conditioned finite family;
+    they never prove the original building program infeasible.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -715,6 +724,24 @@ def solve_zone_layouts(
     evidence.pop("cross_root_contact_pruning", None)
     evidence.pop("cross_root_contact_support", None)
     evidence.pop("selective_leaf_turns", None)
+    evidence.pop("conflict_explanations", None)
+    if type(explain_conflicts) is not bool:
+        _fail(evidence, "explain_conflicts must be a boolean", stage="input",
+              code="invalid_conflict_mode", model_status="NOT_BUILT", not_applicable=True)
+    if conflict_budget is not None and not explain_conflicts:
+        _fail(evidence, "conflict_budget requires explain_conflicts=True", stage="input",
+              code="invalid_conflict_budget", model_status="NOT_BUILT", not_applicable=True)
+    conflict_session = None
+    if explain_conflicts:
+        from .finite_conflicts import ConflictBudget
+        from .zone_conflict_registry import ZoneConflictSession
+
+        try:
+            conflict_session = ZoneConflictSession(building, evidence=evidence,
+                budget=ConflictBudget() if conflict_budget is None else conflict_budget)
+        except (ValueError, TypeError, OverflowError) as exc:
+            _fail(evidence, str(exc), stage="input", code="invalid_conflict_budget",
+                  model_status="NOT_BUILT", not_applicable=True)
     if type(selective_leaf_turns) is not bool:
         _fail(evidence, "selective_leaf_turns must be a boolean", stage="input",
               code="invalid_leaf_turn_mode", model_status="NOT_BUILT", not_applicable=True)
@@ -804,7 +831,8 @@ def solve_zone_layouts(
     if recursive_zones:
         shapes = _recursive_shapes(building, units, shape_units, children, ancestors, options, groups,
                                    minimum, time_limit_seconds, seed, deterministic_units, evidence, fixed,
-                                   hints=hints, cache=cache)
+                                   hints=hints, cache=cache,
+                                   **({"conflict_session": conflict_session} if conflict_session is not None else {}))
     else:
         shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units,
                                evidence, fixed, hints=hints, cache=cache)
@@ -825,6 +853,7 @@ def solve_zone_layouts(
         **({"global_diagnostics": True} if global_diagnostics else {}),
         **({"prune_cross_root_contacts": True} if prune_cross_root_contacts else {}),
         **({"cross_root_contact_support": True} if cross_root_contact_support else {}),
+        **({"conflict_session": conflict_session} if conflict_session is not None else {}),
     )
 
 
@@ -834,7 +863,7 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                          stage="global", stage_unit=None, allow_partial=False,
                          fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None,
                          global_validator=None, hints=None, workers=1, global_diagnostics=False,
-                         prune_cross_root_contacts=False, cross_root_contact_support=False):
+                         prune_cross_root_contacts=False, cross_root_contact_support=False, conflict_session=None):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -843,6 +872,7 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
     model = cp_model.CpModel()
     grid = spec.grid_mm
     diagnostic = None
+    registry = conflict_session.registry(building, groups) if conflict_session is not None else None
     if global_diagnostics:
         from .zone_diagnostics import capture_candidate_family, model_counts, record_search
 
@@ -923,13 +953,18 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
     model.AddNoOverlap2D(x_intervals, y_intervals)
     for room_id, rect in (fixed_rects or {}).items():
         room = room_vars[room_id]
+        terminals = []
         for name in ("x", "y", "width", "height"):
-            model.Add(getattr(room, name) == _fixed_grid_value(getattr(rect, name), grid, room_id, name))
+            terminals.append(model.Add(getattr(room, name) == _fixed_grid_value(getattr(rect, name), grid, room_id, name)))
+        if registry is not None:
+            registry.fixed(room_id, terminals)
     for room_id in axis_aligned_room_ids:
         room = room_vars[room_id]
         for name, values in (structural_axes or {}).items():
             coordinate, dimension, boundary = (room.x, room.width, boundary_width) if name == "x" else (room.y, room.height, boundary_height)
-            model.AddAllowedAssignments([coordinate, dimension], _axis_pairs(values, boundary, grid, room_id, name))
+            terminal = model.AddAllowedAssignments([coordinate, dimension], _axis_pairs(values, boundary, grid, room_id, name))
+            if registry is not None:
+                registry.axis(room_id, name, terminal)
     if recursive_zones:
         for unit_id, values in unit_vars.items():
             for room_id in container_members[unit_id]:
@@ -947,20 +982,29 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                     model.Add(values.y + values.height <= parent.y + parent.height)
     minimum_shared = max(1, _ceil_grid(minimum, grid))
     for a, b in spec.relation_pairs("required_adjacency"):
-        _add_required_adjacency(model, room_vars[a], room_vars[b], minimum_shared, f"required_{a}_{b}")
+        terminal = _add_required_adjacency(model, room_vars[a], room_vars[b], minimum_shared, f"required_{a}_{b}")
+        if registry is not None:
+            registry.room("required", (a, b), terminal)
     for a, b in spec.relation_pairs("forbidden_adjacency"):
-        _add_forbidden_adjacency(model, room_vars[a], room_vars[b], f"forbidden_{a}_{b}")
-    for name, left, right in groups["required"]:
+        terminal = _add_forbidden_adjacency(model, room_vars[a], room_vars[b], f"forbidden_{a}_{b}")
+        if registry is not None:
+            registry.room("forbidden", (a, b), terminal)
+    for position, (name, left, right) in enumerate(groups["required"]):
         indicators = [_add_adjacency_indicator(model, room_vars[a], room_vars[b], minimum_shared, f"zone_required_{name}_{a}_{b}")
                       for a in left for b in right if a != b]
         if not indicators:
             _fail(evidence, f"Required zone relation {name} has no distinct room pair", stage=stage, code="empty_required_group")
-        model.AddBoolOr(indicators)
-    for name, left, right in groups["forbidden"]:
+        terminal = model.AddBoolOr(indicators)
+        if registry is not None:
+            registry.zone("required", position, (terminal,))
+    for position, (name, left, right) in enumerate(groups["forbidden"]):
+        terminals = []
         for a in left:
             for b in right:
                 if a != b:
-                    _add_forbidden_adjacency(model, room_vars[a], room_vars[b], f"zone_forbidden_{name}_{a}_{b}")
+                    terminals.append(_add_forbidden_adjacency(model, room_vars[a], room_vars[b], f"zone_forbidden_{name}_{a}_{b}"))
+        if registry is not None:
+            registry.zone("forbidden", position, terminals)
     try:
         explicit_window_rooms = {window.room_id for window in spec.windows}
         for room in spec.rooms:
@@ -982,6 +1026,12 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
         _fail(evidence, f"Cannot construct {stage} zone constraints: {exc}", stage=stage,
               code="invalid_global_constraint", model_status="NOT_BUILT")
     model.Minimize(objective)
+    conflict_snapshot = None
+    if conflict_session is not None:
+        conflict_snapshot = conflict_session.capture(model, registry, building, units, shapes,
+            container_members=container_members, ancestors=ancestors, recursive_zones=recursive_zones,
+            minimum=minimum, fixed_rects=fixed_rects, axis_room_ids=axis_aligned_room_ids,
+            structural_axes=structural_axes, stage=stage, stage_unit=stage_unit)
     if prune_cross_root_contacts:
         from .zone_contact_pruning import plan_pruning
 
@@ -1070,6 +1120,8 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
             solver.parameters.repair_hint = True
         diagnostic_counts = model_counts(model) if diagnostic is not None else None
         status = solver.Solve(model)
+        if attempt == 0 and status == cp_model.INFEASIBLE and conflict_snapshot is not None:
+            conflict_session.explain(conflict_snapshot)
         if diagnostic is not None:
             record_search(diagnostic, attempt=attempt + 1, solver=solver, status=status, counts=diagnostic_counts)
         if stage_hints is not None:
