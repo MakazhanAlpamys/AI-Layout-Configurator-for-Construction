@@ -297,6 +297,10 @@ It leaves the original source constraints and physical80 acceptance gate intact.
 Checkpoint B.15 completes explicit source reference-axis delivery in all three
 formats, atomic bundles and CLI QA. It retains DRAFT/full UNKNOWN/PENDING and
 does not infer structural engineering or room alignment from reference lines.
+Checkpoint QA.15 retains cross-platform, installed-container and nine-case
+pharma acceptance pinned to `7561213`, with independently checked downloaded
+bytes. Its 1,001-test platform runs do not cover later exporter/pruning work or
+establish physical80 or external expert acceptance.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

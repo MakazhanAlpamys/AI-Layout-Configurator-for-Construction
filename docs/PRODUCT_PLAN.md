@@ -204,6 +204,13 @@ atomic bundles and explicit single/set CLI readback. Fresh source identity,
 fractional full-span axes, visible labels and native curves are checked after
 hash recomputation. Default output is preserved; native group semantics and
 structural engineering acceptance remain separate.
+Checkpoint QA.15 records full acceptance pinned to `7561213`: 1,001 collected
+tests on each platform, actual installed-container HTTP QA and nine pharma
+variants. Windows tests took 579.97 s and Linux 537.25 s; changed test coverage
+and uncontrolled runner load prevent a causal performance claim. Downloaded
+pharma bytes, shared manifests and both archives were independently verified.
+Later contact pruning, reference-axis exporters and group continuation require
+their own pinned evidence; physical80 and external expert acceptance remain open.
 
 ## 1. Why we are expanding the project
 
