@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint H.3.6.13 preserves the actual negative physical80 result with exact
+source/artifact/family identities and scoped failure. It does not complete the
+current scaling criterion or prove original-building infeasibility.
+
 Checkpoint I.3.1 delivers current-product finite equipment cards and literal
 local 2D projection with explicit provenance, missing data and scope. The
 archived MVP and external engineering acceptance criteria remain unchanged.

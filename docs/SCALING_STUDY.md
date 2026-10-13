@@ -857,3 +857,34 @@ Fresh support has936 rows/5616 cells, upper bound14784<=16384. Original source
 identity is unchanged. This helper check performs no80-room CP; fresh saved
 small-bundle QA also passes. Full80 placement, bridge, equipment, routing and
 accepted persisted exports remain open until one changed pinned measurement.
+
+### Actual source-pinned leaf-repacking measurement
+
+H.3.6.13 checks the single changed physical80 run at `9632549`,
+[run38425518357](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38425518357).
+All original supplied source bytes, prepared program/hints and eleven stage
+hashes match prior measurements. The captured family has232 shapes,992
+rectangle records and68,460 canonical bytes; its exact SHA-256 is
+`68351aa5c9af17d80a322b1effc6e9d2e6c7b1358a79c4229c3a5f10f297e5e7`.
+All four appended staff stacks are present, along with eight selective turns.
+All previous ordered shape hashes remain except four `B/staff_zone` shapes
+(indices8-11):48 of its52 previous hashes remain. The frozen-source pure
+append-only helper check and a fresh production family are distinct evidence.
+
+Contact pruning adds2,776 clauses; support has936 rows/5,616 cells, with
+14,784 upper-bound rows below the16,384 limit. The final actual model has1,709
+variables/7,989 constraints and returns INFEASIBLE in1.039395 s, with10,426
+branches and12 conflicts. This proves only infeasibility of the captured finite
+family. Original-source infeasibility, equipment, routing, exports and saved80
+bundle acceptance remain unproved/unreached.
+
+Overall elapsed is58.627444 s, with56.877658 s in room search. This run used
+2 s/one worker for the final global model; the previous `4604a10` run used
+10 s/four workers. Fresh candidate drift and changed controls prevent causal
+timing attribution. The same captured family cannot become feasible by merely
+increasing its solve budget after actual INFEASIBLE. A useful next attempt
+requires a justified family/source-preserving change and independent checks.
+
+All eight extracted file bytes and the downloaded archive SHA are independently
+verified. [Compact evidence](acceptance/9632549.json) retains the negative result;
+raw local artifacts remain under `out/checkpoints/9632549-physical80-ci/`.

@@ -1,0 +1,530 @@
+{
+  "implementation_commit": "9632549d28fecb8b4fe5d1d314febdf00fe11b3a",
+  "run_id": 38425518357,
+  "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38425518357",
+  "conclusion": "failure",
+  "status": "ROOM_SEARCH_FAILED",
+  "accepted": false,
+  "total_seconds": 58.62744406999998,
+  "stages": {
+    "source_preparation_seconds": 0.4196193060000013,
+    "preparation_including_imports_seconds": 1.3643867809999932,
+    "room_solve_seconds": 56.877657596000006
+  },
+  "settings": {
+    "max_total_seconds": 120.0,
+    "seed": 7,
+    "variants": 1,
+    "room_solver": "zone_recursive",
+    "room_seconds_per_model": 2,
+    "equipment_seconds_per_model": 5,
+    "cache_cluster_shapes": true,
+    "hint_completion_seconds_per_model": 1,
+    "hint_repair_workers": 1,
+    "deterministic_units": null,
+    "strict_ifc_express": true,
+    "zone_global_seconds_per_model": 2.0,
+    "zone_global_workers": 1,
+    "zone_global_diagnostics": true,
+    "zone_contact_pruning": true,
+    "zone_contact_support": true,
+    "zone_selective_leaf_turns": true,
+    "zone_selective_leaf_repacking": true
+  },
+  "source_files": {
+    "raw40": {
+      "path": "source40.yaml",
+      "sha256": "9b2fb2671a2ec911a53e23b5c14d34af8d56de46e24ab6575d4e56cf00c33877",
+      "actual_sha256": "9b2fb2671a2ec911a53e23b5c14d34af8d56de46e24ab6575d4e56cf00c33877",
+      "bytes": 15680
+    },
+    "accepted40": {
+      "path": "accepted40.json",
+      "sha256": "d0b61615130b7900e5f327528abe9a47d6c9be30319e5d6cb1db80c02f8e1ded",
+      "actual_sha256": "d0b61615130b7900e5f327528abe9a47d6c9be30319e5d6cb1db80c02f8e1ded",
+      "bytes": 77586
+    },
+    "profile": {
+      "path": "profile.yaml",
+      "sha256": "7da00494215758c86634d18749f2c82e71cc80de95cd83dfabd7ce2ddca9c3b5",
+      "actual_sha256": "7da00494215758c86634d18749f2c82e71cc80de95cd83dfabd7ce2ddca9c3b5",
+      "bytes": 6791
+    },
+    "program80": {
+      "path": "program80.json",
+      "sha256": "d064c82e9f419353f4c44b960d28a4cb3bb99e2660cff9cb68e2155b520d55fd",
+      "actual_sha256": "d064c82e9f419353f4c44b960d28a4cb3bb99e2660cff9cb68e2155b520d55fd",
+      "bytes": 71545
+    }
+  },
+  "stage_hashes": {
+    "source40_program": "d486f1dc425940ac83f58fe0ac401a9473f52fe8dcb33b90e03da95f73f31289",
+    "source40_prepared": "1b487a861f68c5ee6ff07ff3b4a05efa46256b34b951c5ba39f935dadb9f10f5",
+    "source40_layout": "87e87fe993f83200d120d4a846efc479365a4a038dcd119af031f782d8350b0e",
+    "source40_equipment": "a498419dcf384c21a040147a33fdd936f5a41a5893179d7c2210cf1e7cda8263",
+    "source40_flows": "9b7379cfb1a9032fdfa2b1980be0dce6e65c6dd859bdfe294a1f0b18e254d16e",
+    "source40_facility": "54c4bce0747be874663db3ae1e6485e07487c454aaaa144d539c2e9b0f08b0d7",
+    "profile": "de07d024589290da918513371ae6773178942687a17680ed93c305e264b9ed09",
+    "program80_raw": "5ac7fd8d10b8eb39f42110c27731b6a99204f6487a96a9359faed89b2603bc30",
+    "program80_prepared": "483a5bc700741ebb9ff582c9dba65cedcb917776e95e52c3750efd3ed3e8da05",
+    "hints80": "d65a951052b9f42d03d40aac85bcb443f16dd8d0e9497c3a9782a2ca1b01ada3",
+    "derivation": "b7c01dacc3f99a18fdd0e50c9ea223968fae1b7b6023b0b1b9ea9b288b210470"
+  },
+  "source_identity_verification": {
+    "350ecee": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    },
+    "1813e19": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    },
+    "9e5e598": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    },
+    "93fdc7c": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    },
+    "4604a10": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    }
+  },
+  "all_source_gates_passed": true,
+  "current_80_gates": {},
+  "global_diagnostics": {
+    "schema_version": 1,
+    "scope": "final_global_cp_selected_zone_shapes",
+    "capture_status": "COMPLETE",
+    "limits": {
+      "source_rooms": 80,
+      "candidate_shapes": 4096,
+      "rectangle_records": 65536,
+      "family_bytes": 8388608
+    },
+    "counts": {
+      "source_rooms": 80,
+      "units": 10,
+      "candidate_shapes": 232,
+      "rectangle_records": 992,
+      "family_bytes": 68460
+    },
+    "original_program_infeasibility_proven": false,
+    "searches": [
+      {
+        "attempt": 1,
+        "model_status": "INFEASIBLE",
+        "model": {
+          "variables": 1709,
+          "constraints": 7989,
+          "constraint_types": {
+            "at_most_one": 316,
+            "bool_and": 948,
+            "bool_or": 3173,
+            "exactly_one": 89,
+            "interval": 20,
+            "linear": 3433,
+            "no_overlap_2d": 1,
+            "table": 9
+          }
+        },
+        "response": {
+          "wall_time": 1.0393950170000001,
+          "user_time": 1.039395048,
+          "deterministic_time": 0.49084942542890353,
+          "num_branches": 10426,
+          "num_conflicts": 12,
+          "num_binary_propagations": 375434,
+          "num_integer_propagations": 209325,
+          "num_booleans": 1178,
+          "num_integers": 242,
+          "objective_value": 0.0,
+          "best_objective_bound": 0.0,
+          "gap_integral": 0.0,
+          "solution_present": false,
+          "unavailable_fields": []
+        },
+        "settings": {
+          "seed": 7,
+          "workers": 1,
+          "time_limit_seconds": 2.0,
+          "deterministic_units": null,
+          "repair_hint": true
+        },
+        "original_program_infeasibility_proven": false
+      }
+    ],
+    "source_sha256": "483a5bc700741ebb9ff582c9dba65cedcb917776e95e52c3750efd3ed3e8da05",
+    "candidate_family_sha256": "68351aa5c9af17d80a322b1effc6e9d2e6c7b1358a79c4229c3a5f10f297e5e7"
+  },
+  "all_232_shape_hashes_and_family_hash_verified": true,
+  "family_comparison_with_4604a10": [
+    {
+      "unit_id": "A/logistics",
+      "previous_shapes": 40,
+      "current_shapes": 40,
+      "retained_ordered_shape_hashes": 40
+    },
+    {
+      "unit_id": "A/cleanroom_core",
+      "previous_shapes": 8,
+      "current_shapes": 8,
+      "retained_ordered_shape_hashes": 8
+    },
+    {
+      "unit_id": "A/waste_zone",
+      "previous_shapes": 10,
+      "current_shapes": 10,
+      "retained_ordered_shape_hashes": 10
+    },
+    {
+      "unit_id": "A/staff_zone",
+      "previous_shapes": 52,
+      "current_shapes": 54,
+      "retained_ordered_shape_hashes": 52
+    },
+    {
+      "unit_id": "A/support_zone",
+      "previous_shapes": 4,
+      "current_shapes": 4,
+      "retained_ordered_shape_hashes": 4
+    },
+    {
+      "unit_id": "B/logistics",
+      "previous_shapes": 40,
+      "current_shapes": 40,
+      "retained_ordered_shape_hashes": 40
+    },
+    {
+      "unit_id": "B/cleanroom_core",
+      "previous_shapes": 8,
+      "current_shapes": 8,
+      "retained_ordered_shape_hashes": 8
+    },
+    {
+      "unit_id": "B/waste_zone",
+      "previous_shapes": 10,
+      "current_shapes": 10,
+      "retained_ordered_shape_hashes": 10
+    },
+    {
+      "unit_id": "B/staff_zone",
+      "previous_shapes": 52,
+      "current_shapes": 54,
+      "retained_ordered_shape_hashes": 48
+    },
+    {
+      "unit_id": "B/support_zone",
+      "previous_shapes": 4,
+      "current_shapes": 4,
+      "retained_ordered_shape_hashes": 4
+    }
+  ],
+  "comparison_scope": "Eight previously appended staff turns and four new source-derived staff stacks are present. B/staff_zone retains 48 of 52 prior ordered hashes; indices 8 through 11 differ. Every other prior ordered hash is retained. Final global controls are 2 seconds/1 worker versus the previous 10 seconds/4 workers, and local candidate generation varies; elapsed/model differences do not isolate a causal optimization effect.",
+  "selective_leaf_turns": {
+    "schema_version": 1,
+    "status": "APPLIED",
+    "scope": "selected_final_automatic_root_leaf_candidate_diversity",
+    "policy": "checked_swapped_leaf_envelopes_v1",
+    "maximum_turns_per_unit": 4,
+    "source_geometry_rotated": false,
+    "positions_are_constraints": false,
+    "original_program_infeasibility_proven": false,
+    "limits": {
+      "source_rooms": 80,
+      "unit_pairs": 64,
+      "candidate_pairs": 65536,
+      "orientation_contact_checks": 1048576,
+      "participating_rectangle_records": 65536,
+      "support_row_upper_bound": 16384,
+      "candidate_shapes": 4096,
+      "rectangle_records": 65536
+    },
+    "counts": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3648,
+      "orientation_contact_checks": 17152,
+      "participating_rectangle_records": 980,
+      "support_row_upper_bound": 14592,
+      "candidate_shapes": 228,
+      "rectangle_records": 980,
+      "added_shapes": 8
+    },
+    "units": [
+      {
+        "unit_id": "A/staff_zone",
+        "interface_room_ids": [
+          "A/staff_corridor"
+        ],
+        "added_shapes": 4,
+        "reason": "validated_swapped_envelope_turns"
+      },
+      {
+        "unit_id": "B/staff_zone",
+        "interface_room_ids": [
+          "B/staff_corridor"
+        ],
+        "added_shapes": 4,
+        "reason": "validated_swapped_envelope_turns"
+      }
+    ],
+    "before": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3552,
+      "orientation_contact_checks": 16768,
+      "participating_rectangle_records": 956,
+      "support_row_upper_bound": 14208,
+      "candidate_shapes": 220,
+      "rectangle_records": 956
+    },
+    "proposed": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3648,
+      "orientation_contact_checks": 17152,
+      "participating_rectangle_records": 980,
+      "support_row_upper_bound": 14592,
+      "candidate_shapes": 228,
+      "rectangle_records": 980
+    }
+  },
+  "selective_leaf_repacking": {
+    "schema_version": 1,
+    "status": "APPLIED",
+    "scope": "selected_final_automatic_root_leaf_candidate_diversity",
+    "policy": "source_bounded_three_room_interface_stack_v1",
+    "size_policy": "explicit_detached_extension_of_automatic_aspect_pool",
+    "maximum_repackings_per_unit": 2,
+    "source_geometry_rotated": false,
+    "positions_are_constraints": false,
+    "original_program_infeasibility_proven": false,
+    "limits": {
+      "source_rooms": 80,
+      "unit_pairs": 64,
+      "candidate_pairs": 65536,
+      "orientation_contact_checks": 1048576,
+      "participating_rectangle_records": 65536,
+      "support_row_upper_bound": 16384,
+      "candidate_shapes": 4096,
+      "rectangle_records": 65536
+    },
+    "counts": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3696,
+      "orientation_contact_checks": 17344,
+      "participating_rectangle_records": 992,
+      "support_row_upper_bound": 14784,
+      "candidate_shapes": 232,
+      "rectangle_records": 992,
+      "added_shapes": 4
+    },
+    "units": [
+      {
+        "unit_id": "A/staff_zone",
+        "interface_room_ids": [
+          "A/staff_corridor"
+        ],
+        "added_shapes": 2,
+        "reason": "validated_source_derived_stacks",
+        "derivation": {
+          "width_mm": 4000,
+          "height_mm": 32800,
+          "room_depth_intervals_mm": {
+            "A/staff_changing": [
+              7500,
+              11200
+            ],
+            "A/staff_corridor": [
+              11300,
+              17500
+            ],
+            "A/office": [
+              6300,
+              10000
+            ]
+          },
+          "room_depths_mm": {
+            "A/office": 6300,
+            "A/staff_corridor": 17500,
+            "A/staff_changing": 9000
+          },
+          "first_end_room_id": "A/office",
+          "interface_room_id": "A/staff_corridor",
+          "last_end_room_id": "A/staff_changing"
+        }
+      },
+      {
+        "unit_id": "B/staff_zone",
+        "interface_room_ids": [
+          "B/staff_corridor"
+        ],
+        "added_shapes": 2,
+        "reason": "validated_source_derived_stacks",
+        "derivation": {
+          "width_mm": 4000,
+          "height_mm": 32800,
+          "room_depth_intervals_mm": {
+            "B/staff_changing": [
+              7500,
+              11200
+            ],
+            "B/staff_corridor": [
+              11300,
+              17500
+            ],
+            "B/office": [
+              6300,
+              10000
+            ]
+          },
+          "room_depths_mm": {
+            "B/office": 6300,
+            "B/staff_corridor": 17500,
+            "B/staff_changing": 9000
+          },
+          "first_end_room_id": "B/office",
+          "interface_room_id": "B/staff_corridor",
+          "last_end_room_id": "B/staff_changing"
+        }
+      }
+    ],
+    "before": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3648,
+      "orientation_contact_checks": 17152,
+      "participating_rectangle_records": 980,
+      "support_row_upper_bound": 14592,
+      "candidate_shapes": 228,
+      "rectangle_records": 980
+    },
+    "proposed": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3696,
+      "orientation_contact_checks": 17344,
+      "participating_rectangle_records": 992,
+      "support_row_upper_bound": 14784,
+      "candidate_shapes": 232,
+      "rectangle_records": 992
+    }
+  },
+  "cross_root_contact_pruning": {
+    "schema_version": 1,
+    "scope": "selected_final_global_candidate_pairs",
+    "required_relations_used": "explicit_cross_root_room_pairs_only",
+    "status": "APPLIED",
+    "limits": {
+      "source_rooms": 80,
+      "unit_pairs": 64,
+      "candidate_pairs": 65536,
+      "orientation_contact_checks": 1048576
+    },
+    "counts": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3696,
+      "orientation_contact_checks": 17344,
+      "examined_pairs": 3696,
+      "skipped_invalid_containment_pairs": 0,
+      "rejected_pairs": 2776,
+      "added_clauses": 2776
+    },
+    "original_program_infeasibility_proven": false
+  },
+  "cross_root_contact_support": {
+    "schema_version": 1,
+    "scope": "selected_final_global_shape_translation_supports",
+    "required_relations_used": "explicit_cross_root_room_pairs_only",
+    "status": "APPLIED",
+    "limits": {
+      "source_rooms": 80,
+      "unit_pairs": 64,
+      "candidate_pairs": 65536,
+      "orientation_contact_checks": 1048576,
+      "participating_rectangle_records": 65536,
+      "support_rows": 16384
+    },
+    "counts": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3696,
+      "orientation_contact_checks": 17344,
+      "participating_rectangle_records": 992,
+      "support_row_upper_bound": 14784,
+      "examined_unit_pairs": 9,
+      "skipped_invalid_containment_unit_pairs": 0,
+      "eligible_unit_pairs": 9,
+      "participating_units": 10,
+      "support_rows": 936,
+      "table_cells": 5616,
+      "added_index_variables": 10,
+      "added_endpoint_variables": 36,
+      "added_linear_constraints": 46,
+      "added_table_constraints": 9
+    },
+    "original_program_infeasibility_proven": false
+  },
+  "failure": {
+    "type": "ZoneHierarchyFailure",
+    "message": "Global zone placement returned INFEASIBLE for the selected shapes",
+    "stage_evidence": {
+      "stage": "global",
+      "code": "no_global_placement",
+      "message": "Global zone placement returned INFEASIBLE for the selected shapes",
+      "unit_ids": [
+        "A/logistics",
+        "A/cleanroom_core",
+        "A/waste_zone",
+        "A/staff_zone",
+        "A/support_zone",
+        "B/logistics",
+        "B/cleanroom_core",
+        "B/waste_zone",
+        "B/staff_zone",
+        "B/support_zone"
+      ],
+      "room_ids": [],
+      "model_status": "INFEASIBLE",
+      "proof_scope": "selected_zone_shapes",
+      "proven_building_infeasible": false,
+      "issues": []
+    }
+  },
+  "final_hint_positions_fixed": false,
+  "runtime": {
+    "python": "3.12.15",
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "package_root": "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/layout_configurator",
+    "distribution_root": "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages",
+    "editable_package": false,
+    "installed_package": true,
+    "sha256": "e9184b05f2cbbc50f32f25c093c9c7ce70e704327444996a40940dbc77b7ab55"
+  },
+  "dependencies": {
+    "layout-configurator": "0.1.0",
+    "ortools": "9.15.6755",
+    "ifcopenshell": "0.9.0",
+    "protobuf": "6.33.6"
+  },
+  "archive": {
+    "artifact_id": 11828443358,
+    "sha256": "5b8eab50f31e267099ff61d5c1b20504f5a60d203b00d7a418c3905213bda7e3",
+    "bytes": 70644,
+    "all_eight_extracted_file_bytes_verified": true
+  },
+  "raw_report_sha256": "02226af61758a3132ccbbb6404c9309d4b89bd381961928cfce47c4cbef4ac50",
+  "proven_building_infeasible": false,
+  "full_engineering_acceptance": "PENDING",
+  "scope": "Actual source-pinned failed final CP search and complete captured finite family. Equipment, routing, exports and persisted80 acceptance were not reached. Original source infeasibility is not proven."
+}

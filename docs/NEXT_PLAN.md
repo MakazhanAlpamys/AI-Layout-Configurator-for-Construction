@@ -10,6 +10,12 @@ The three things that decide whether the tool is taken seriously are **scale**
 accept the output) and **usability** (a planner, not a programmer, can drive
 it). The order below follows that.
 
+H.3.6.13 records the newer changed physical80 run at `9632549`: all four
+appended source-derived stacks are present, but the captured232-shape final CP
+remains INFEASIBLE. [Checked evidence](acceptance/9632549.json) preserves source,
+artifact and family identities, four fresh B/staff candidate drifts and changed
+global2 s/one-worker controls. Complete scaling acceptance remains open.
+
 ## 1. Scale — real objects in seconds
 
 | # | Work | Done when | Status |

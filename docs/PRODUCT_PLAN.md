@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint H.3.6.13 records the single changed `9632549` physical80 run:
+all four new source-derived stacks are present, but final finite-family CP
+remains INFEASIBLE. All232 shapes, source identities and eight artifact files
+are checked. [Evidence](acceptance/9632549.json). Global controls were2 s/one
+worker versus prior10 s/four; elapsed time is not a causal comparison.
+Complete physical80 acceptance remains open; unchanged reruns are not justified.
+
 Checkpoint I.3.1 adds a bounded source-bound finite equipment library and
 literal scenario geometry projection. Exact source values, roles, equipment
 identities, confirmation identities and supplied rights are checked offline;
