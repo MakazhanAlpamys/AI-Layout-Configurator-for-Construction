@@ -43,11 +43,12 @@ jobs:
         run: python -m pytest --collect-only -q
       - name: Verify exhaustive full-test shard partition without executing tests
         run: python scripts/ci_test_shards.py --verify-partition
-      - name: Check source and geometry contracts
-        run: >-
-          python -m pytest -q
-          tests/test_schema.py tests/test_building.py
-          tests/test_result_geometry.py tests/test_orthogonal.py
+      - name: Check source and geometry contracts one file at a time
+        run: |
+          python -m pytest -q tests/test_schema.py
+          python -m pytest -q tests/test_building.py
+          python -m pytest -q tests/test_result_geometry.py
+          python -m pytest -q tests/test_orthogonal.py
 
   api-container:
     if: github.event_name != 'push'

@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.22 runs each quick CI contract file in a separate sequential
+pytest invocation. The same gates and full acceptance configuration remain;
+actionlint and structural verification pass without a new full run.
+[Execution policy](CI.md).
+
 Checkpoint I.3.1.1 prevents literal card projection PASS when a positive
 source reservation collapses at world-coordinate precision. Unrepresentable
 contours return source-bound UNKNOWN; supported projections remain unchanged.

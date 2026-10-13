@@ -1,5 +1,8 @@
 # Original MVP roadmap archive
 
+Checkpoint QA.22 applies sequential single-file execution to quick CI checks.
+Archived MVP scope and full acceptance criteria remain unchanged.
+
 Checkpoint I.3.1.1 repairs source-bound projection precision reporting;
 collapsed contours remain UNKNOWN. Archived MVP scope is unchanged.
 

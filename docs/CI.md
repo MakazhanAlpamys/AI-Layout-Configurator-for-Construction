@@ -5,6 +5,18 @@ test (including import errors), and fast canonical/source/geometry contracts.
 Documentation-only pushes do not start it. This is explicitly a quick check,
 not full facility acceptance. Local affected checks still precede each commit.
 
+QA.22 runs the four quick contract files sequentially, with exactly one file
+per pytest invocation. The file list, complete collection, shard partition,
+workflow triggers, concurrency and full acceptance jobs remain unchanged.
+Actionlint and a structural comparison against `8289365` pass. No test suite
+or full CI was dispatched to verify this shell-only change; its local evidence
+is `out/checkpoints/ci-single-file-qa22/proof.json`. This is an execution-policy
+change, without a new timing or memory measurement.
+
+During the current memory-constrained development session, local checks also
+run one affected test file at a time. Full suites, benchmarks and background
+scripts remain suspended until the user explicitly authorizes them again.
+
 Full Windows/Linux suites, the installed private container and the unchanged
 three-variant/three-seed pharma matrix run on pull requests, manual dispatch
 and weekly on Wednesday at 01:37 UTC. Quick and full runs use separate
@@ -16,8 +28,9 @@ seeds. They run weekly on Sunday at 02:17 UTC or on demand. Solver calibration
 is manual. These schedules avoid launching six scale jobs every night or
 restarting four heavy acceptance jobs after every checkpoint.
 
-Before a release or a completed milestone, dispatch full acceptance and any
-relevant scale/calibration workflow against the checkpoint to be reviewed:
+When full runs are authorized, before a release or completed milestone dispatch
+full acceptance and any relevant scale/calibration workflow against the
+checkpoint to be reviewed:
 
 ```powershell
 gh workflow run ci.yml --ref main
