@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint H.3.6.12 extends current-product finite leaf choices using original
+source minima/areas, without changing this completed MVP archive. Actual tiny
+CP/bundle verification passes; changed full physical80 remains a separate gate.
+
 Checkpoint I.2.1 verifies actual typed transfer permissions in the current
 product, including personnel-passbox denial and UNKNOWN mechanism boundaries.
 This source-bound sidecar leaves archived MVP criteria and engineering

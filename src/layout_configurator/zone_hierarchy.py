@@ -673,6 +673,7 @@ def solve_zone_layouts(
     selective_leaf_turns: bool = False,
     explain_conflicts: bool = False,
     conflict_budget=None,
+    selective_leaf_repacking: bool = False,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -711,6 +712,9 @@ def solve_zone_layouts(
     allowance is shared across all subtree retries and the final model. Checked
     cores concern only the fixed base and source-conditioned finite family;
     they never prove the original building program infeasible.
+    Explicit leaf repacking adds at most two source-derived narrow stacks to
+    eligible automatic three-room root leaves. It extends their automatic
+    aspect pool without changing original room predicates or resource limits.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -725,6 +729,10 @@ def solve_zone_layouts(
     evidence.pop("cross_root_contact_support", None)
     evidence.pop("selective_leaf_turns", None)
     evidence.pop("conflict_explanations", None)
+    evidence.pop("selective_leaf_repacking", None)
+    if type(selective_leaf_repacking) is not bool:
+        _fail(evidence, "selective_leaf_repacking must be a boolean", stage="input",
+              code="invalid_leaf_repacking_mode", model_status="NOT_BUILT", not_applicable=True)
     if type(explain_conflicts) is not bool:
         _fail(evidence, "explain_conflicts must be a boolean", stage="input",
               code="invalid_conflict_mode", model_status="NOT_BUILT", not_applicable=True)
@@ -841,6 +849,13 @@ def solve_zone_layouts(
         shapes, evidence["selective_leaf_turns"] = guide.complete_leaf_turns(
             units, shapes, minimum=minimum, supplied=zone_size_options_mm,
             fixed_rects=fixed, axis_aligned_room_ids=selected)
+    if selective_leaf_repacking:
+        from .zone_leaf_repacking import plan_selective_leaf_repacking
+
+        shapes, evidence["selective_leaf_repacking"] = plan_selective_leaf_repacking(
+            building, units, shapes, minimum_adjacency_mm=minimum,
+            explicit_unit_ids=zone_size_options_mm or {}, fixed_rects=fixed,
+            axis_aligned_room_ids=selected)
     return _solve_shape_layouts(
         building, units, shapes, groups, minimum, variants, final_time, seed,
         attempts_limit, deterministic_units, evidence,

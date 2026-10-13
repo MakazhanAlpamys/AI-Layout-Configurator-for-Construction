@@ -49,6 +49,11 @@ on:
         type: boolean
         required: false
         default: false
+      zone_selective_leaf_repacking:
+        description: Add two source-derived stacks to eligible automatic three-room root leaves
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -83,6 +88,7 @@ jobs:
           ZONE_CONTACT_PRUNING: ${{ inputs.zone_contact_pruning }}
           ZONE_CONTACT_SUPPORT: ${{ inputs.zone_contact_support }}
           ZONE_SELECTIVE_LEAF_TURNS: ${{ inputs.zone_selective_leaf_turns }}
+          ZONE_SELECTIVE_LEAF_REPACKING: ${{ inputs.zone_selective_leaf_repacking }}
         shell: bash
         run: |
           args=(--output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER")
@@ -100,6 +106,9 @@ jobs:
           fi
           if [[ "$ZONE_SELECTIVE_LEAF_TURNS" == "true" ]]; then
             args+=(--zone-selective-leaf-turns)
+          fi
+          if [[ "$ZONE_SELECTIVE_LEAF_REPACKING" == "true" ]]; then
+            args+=(--zone-selective-leaf-repacking)
           fi
           python scripts/scale80_warmstart_acceptance.py "${args[@]}"
       - name: Retain warm-start bundles and evidence, including failures

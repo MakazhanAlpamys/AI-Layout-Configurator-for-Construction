@@ -26,6 +26,12 @@ The original source files, prepared program and hints are unchanged; complete
 equipment/routing/persisted80 acceptance was not reached. Item 1.5 remains open;
 [actual checked evidence](acceptance/4604a10.json) retains the failure scope.
 
+H.3.6.12 now adds default-false source-derived leaf repacking after all old
+choices. Actual tiny four-root CP and persisted QA pass; exact prior80 helper
+retains all228 shapes and adds four, with936 support rows within unchanged
+limits. This pure helper result does not close1.5. A changed pinned full80
+measurement must still pass original equipment/routing/export/QA gates.
+
 ## 2. Trust — output that reviewers and tools accept
 
 The changed-controls physical80 run at `1813e19` also returned global UNKNOWN

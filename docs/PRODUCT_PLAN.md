@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint H.3.6.12 adds explicit default-false source-derived repacking of
+narrowly eligible automatic three-room root leaves. All old choices and source
+constraints remain; a tiny four-root model and complete saved bundle pass.
+Pure exact physical80 family grows 228 to232 shapes, with936 contact support rows.
+[Scope](SCALING_STUDY.md). Complete changed physical80 acceptance remains open.
+
 Checkpoint I.2.1 adds bounded source-bound typed transfer declarations and
 independent actual route permission checks. Personnel through a material-only
 pass box is rejected even when ordinary geometry passes; missing mechanisms

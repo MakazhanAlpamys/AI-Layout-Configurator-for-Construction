@@ -36,7 +36,9 @@ def file_digest(path):
 
 def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=None, zone_global_workers=1,
                zone_global_diagnostics=False, zone_contact_pruning=False, zone_contact_support=False,
-               zone_selective_leaf_turns=False):
+               zone_selective_leaf_turns=False, zone_selective_leaf_repacking=False):
+    if type(zone_selective_leaf_repacking) is not bool:
+        raise ValueError("zone-selective-leaf-repacking must be a boolean")
     if type(zone_selective_leaf_turns) is not bool:
         raise ValueError("zone-selective-leaf-turns must be a boolean")
     if type(zone_global_diagnostics) is not bool:
@@ -62,12 +64,13 @@ def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=N
     _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=2,
                         diagnostics=zone_global_diagnostics, contact_pruning=zone_contact_pruning,
                         **({"contact_support": True} if zone_contact_support else {}),
-                        **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}))
+                        **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}),
+                        **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}))
     return report
 
 
 def _record_zone_search(report, seconds, workers, *, room_seconds, diagnostics=False, contact_pruning=False,
-                        contact_support=False, selective_leaf_turns=False):
+                        contact_support=False, selective_leaf_turns=False, selective_leaf_repacking=False):
     if seconds is not None or workers != 1:
         value = room_seconds if seconds is None else seconds
         if type(value) in (int, float) and not math.isfinite(value):
@@ -81,10 +84,14 @@ def _record_zone_search(report, seconds, workers, *, room_seconds, diagnostics=F
         report["settings"]["zone_contact_support"] = True
     if selective_leaf_turns:
         report["settings"]["zone_selective_leaf_turns"] = True
+    if selective_leaf_repacking:
+        report["settings"]["zone_selective_leaf_repacking"] = True
 
 
 def _zone_search_options(room_solver, seconds, workers, *, diagnostics=False, contact_pruning=False,
-                         contact_support=False, selective_leaf_turns=False):
+                         contact_support=False, selective_leaf_turns=False, selective_leaf_repacking=False):
+    if type(selective_leaf_repacking) is not bool:
+        raise ValueError("zone-selective-leaf-repacking must be a boolean")
     if type(selective_leaf_turns) is not bool:
         raise ValueError("zone-selective-leaf-turns must be a boolean")
     if type(diagnostics) is not bool:
@@ -97,7 +104,7 @@ def _zone_search_options(room_solver, seconds, workers, *, diagnostics=False, co
         raise ValueError("zone-global-workers must be an integer in 1..8")
     if seconds is not None and (type(seconds) not in (int, float) or not 0 < seconds <= 120):
         raise ValueError("zone-global-seconds must be finite and in (0,120]")
-    if room_solver != "zone_recursive" and (seconds is not None or workers != 1 or diagnostics or contact_pruning or contact_support or selective_leaf_turns):
+    if room_solver != "zone_recursive" and (seconds is not None or workers != 1 or diagnostics or contact_pruning or contact_support or selective_leaf_turns or selective_leaf_repacking):
         raise ValueError("Nondefault zone-global controls require room-solver zone_recursive")
     options = {}
     if seconds is not None:
@@ -112,6 +119,8 @@ def _zone_search_options(room_solver, seconds, workers, *, diagnostics=False, co
         options["cross_root_contact_support"] = True
     if selective_leaf_turns:
         options["selective_leaf_turns"] = True
+    if selective_leaf_repacking:
+        options["selective_leaf_repacking"] = True
     return options
 
 
@@ -129,6 +138,8 @@ def _requested_zone_controls(args):
         controls["zone_contact_support"] = True
     if args.zone_selective_leaf_turns:
         controls["zone_selective_leaf_turns"] = True
+    if args.zone_selective_leaf_repacking:
+        controls["zone_selective_leaf_repacking"] = True
     return controls
 
 
@@ -295,7 +306,10 @@ def prepare_fixture(root, report):
 def accept_program(building, hints, profile, report, output, *, room_seconds=2, equipment_seconds=5,
                    seed=7, checkpoint=lambda: None, room_solver="hierarchical",
                    zone_global_seconds=None, zone_global_workers=1, zone_global_diagnostics=False,
-                   zone_contact_pruning=False, zone_contact_support=False, zone_selective_leaf_turns=False):
+                   zone_contact_pruning=False, zone_contact_support=False, zone_selective_leaf_turns=False,
+                   zone_selective_leaf_repacking=False):
+    if type(zone_selective_leaf_repacking) is not bool:
+        raise ValueError("zone-selective-leaf-repacking must be a boolean")
     if type(zone_selective_leaf_turns) is not bool:
         raise ValueError("zone-selective-leaf-turns must be a boolean")
     if type(zone_contact_support) is not bool:
@@ -303,11 +317,13 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
     zone_options = _zone_search_options(room_solver, zone_global_seconds, zone_global_workers,
                                        diagnostics=zone_global_diagnostics, contact_pruning=zone_contact_pruning,
                                        **({"contact_support": True} if zone_contact_support else {}),
-                                       **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}))
+                                       **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}),
+                                       **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}))
     _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=room_seconds,
                         diagnostics=zone_global_diagnostics, contact_pruning=zone_contact_pruning,
                         **({"contact_support": True} if zone_contact_support else {}),
-                        **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}))
+                        **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}),
+                        **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}))
     from layout_configurator.bundle import write_facility_variant
     from layout_configurator.equipment import place_equipment_clear_of_doors, validate_equipment_layout
     from layout_configurator.facility import validate_building
@@ -519,6 +535,8 @@ def main(argv=None):
                         help="Couple final recursive shape choices to exact shared translation intervals")
     parser.add_argument("--zone-selective-leaf-turns", action="store_true",
                         help="Append bounded checked swapped envelopes to eligible automatic recursive root leaves")
+    parser.add_argument("--zone-selective-leaf-repacking", action="store_true",
+                        help="Append two source-derived stacks to eligible automatic three-room root leaves")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--started", type=float, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -532,7 +550,8 @@ def main(argv=None):
         _zone_search_options(args.room_solver, args.zone_global_seconds, args.zone_global_workers,
                              diagnostics=args.zone_global_diagnostics, contact_pruning=args.zone_contact_pruning,
                              **({"contact_support": True} if args.zone_contact_support else {}),
-                             **({"selective_leaf_turns": True} if args.zone_selective_leaf_turns else {}))
+                             **({"selective_leaf_turns": True} if args.zone_selective_leaf_turns else {}),
+                             **({"selective_leaf_repacking": True} if args.zone_selective_leaf_repacking else {}))
     except ValueError as exc:
         report.update(status="INPUT_REJECTED", message=str(exc))
         write_report(args.output, report)
@@ -558,6 +577,8 @@ def main(argv=None):
         command.append("--zone-contact-support")
     if args.zone_selective_leaf_turns:
         command.append("--zone-selective-leaf-turns")
+    if args.zone_selective_leaf_repacking:
+        command.append("--zone-selective-leaf-repacking")
     process = subprocess.Popen(command, cwd=REPO_ROOT, shell=False,
                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     try:

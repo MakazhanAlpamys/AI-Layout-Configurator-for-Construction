@@ -810,3 +810,50 @@ Windows exchange job411 s. Eight archive digests and all86 extracted files
 match. Changed fixtures/source, 89 additional tests and six VMs prevent causal
 attribution or guaranteed aggregate runner savings;
 [evidence](acceptance/70ee96e.json) retains actual individual test/job times.
+
+### Source-derived three-room leaf repacking
+
+H.3.6.12 follows a pure check of the exact failed `4604a10` family. Within each
+half, original two-sided staff contacts and office daylight restrict the staff,
+clean, support and logistics choices: all48 surviving four-root combinations
+force logistics outside the boundary. This is a finite-family geometric check,
+not a deletion-minimal core or original-building infeasibility proof. An original
+40-room A component with a narrow repacked staff leaf passes its source room,
+physical-container and daylight predicates; B/bridge/equipment/routes remain
+outside that component check.
+
+The opted policy accepts only an automatic canonical ROOT leaf with exactly
+three rooms, one interface room serving at least two distinct external units,
+and both required internal interface/end-room contacts. Explicit pools, parent
+containers, equipment, explicit openings, fixed rooms and selected axes remain
+excluded. It derives a shared original-axis width from grid-rounded source
+minima/contact width, each depth interval from source minima and min/max area,
+a minimum daylight-end depth, maximum interface depth and target-area opposite
+end depth. At most two Y-reflected stacks are freshly checked and appended after
+all existing choices. This explicitly extends the automatic aspect heuristic
+only in this narrow opt-in; it does not transpose source minima or loosen any
+hard predicate. Every whole-family shape/rectangle/pair/contact/support limit
+preflights the additions together; overflow retains the original family.
+
+`solve_zone_layouts(selective_leaf_repacking=True)` enables the policy; omitted
+and False preserve result/evidence bytes and actual original model protos.
+The supervised runner uses `--zone-selective-leaf-repacking`; the single manual
+Ubuntu workflow has a default-false boolean, with the unchanged120-second total
+request ceiling. Ordinary/default facility generation does not enable it.
+
+Meaningful RED covers missing controls and malformed original scalars. The
+agent's final159 related tests pass47.585 s; fresh root14 tests pass4.850 s and
+actionlint passes. The actual tiny ten-room/four-root final model remains
+INFEASIBLE with old quarter turns, then accepts the source-derived4000x32800
+stack/reflection with all original constraints and fresh downstream persisted
+QA; strict IFC EXPRESS has zero issues. Original actual three model protos,
+results and evidence match pinned `1e0efad` for omitted/False controls.
+
+Root independently reconstructs and hashes the exact prior80 capture, retains
+all228 old shape identities/order, and recomputes four appended choices:
+232 shapes,992 rectangle records,68460 canonical bytes, family SHA256
+`60407ac7a5dd88106860b6515c206093c4882fcde42948f2671edd19a0d7df61`.
+Fresh support has936 rows/5616 cells, upper bound14784<=16384. Original source
+identity is unchanged. This helper check performs no80-room CP; fresh saved
+small-bundle QA also passes. Full80 placement, bridge, equipment, routing and
+accepted persisted exports remain open until one changed pinned measurement.

@@ -106,3 +106,12 @@ work; supplied nested partitions are rejected before a model. Failure remains
 about the bounded selected shapes. The six-room logistics/production regression
 proves a valid split union that the single-container model excludes; it is not
 a large-scale performance claim.
+
+H.3.6.12 adds strict default-false `selective_leaf_repacking` to direct zone
+solving. It appends at most two source-derived/reflected stacks to narrowly
+eligible automatic three-room ROOT leaves after all ordinary choices/turns.
+Original room axes, source minima/areas and final validators remain intact;
+explicit pools, openings/equipment/fixed/axis-bound/parent units are excluded.
+Whole-family resource overflow rejects all additions. The supervised manual
+runner exposes the same opt-in; [SCALING_STUDY.md](SCALING_STUDY.md) separates
+actual tiny CP/bundle verification and pure80 support from full80 acceptance.
