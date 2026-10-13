@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.4.1 independently checks actual source-bound local equipment
+scenarios: literal contours, service/panel/tool access, named points, original
+walls and conditional action premises. Known conflicts survive incomplete data;
+failed library binding cannot authorize contours. Single-file source tests and
+installed-wheel clear/wall cases pass. [Scope](EQUIPMENT_SCENARIOS.md).
+Full installation paths,3D and complete scenario acceptance remain UNKNOWN.
+
 Checkpoint I.2.2.1 exposes explicit actual environment review through
 `check-environment`, sharing exact bounded transfer input admission. Complete
 region/pressure work is bounded before geometry; original source and embedded

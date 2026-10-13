@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.4.1 delivers independent current-product local equipment
+scenario checks with exact sources and honest incomplete evidence. Complete
+scenario/path and external engineering acceptance remain separate criteria.
+
 Checkpoint I.2.2.1 delivers source-preserving environment review through a
 bounded actual CLI with current routes and connected pressure evidence.
 Archived MVP and external engineering acceptance criteria remain unchanged.

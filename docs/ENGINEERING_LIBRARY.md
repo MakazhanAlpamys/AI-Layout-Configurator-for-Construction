@@ -59,3 +59,7 @@ directory using its packaged offline schema; wheel SHA-256 is
 `8ce8a5e84287c353b2f81f3a01b783c6a4d545555ec21f4632393aefa47b0406`.
 Local detailed evidence is under `out/checkpoints/engineering-library-i31/`.
 Full scenario checks and producer integration remain subsequent I.4 work.
+
+I.4.1 now supplies [independent local scenario checks](EQUIPMENT_SCENARIOS.md)
+for actual supplied placements; this does not complete external installation
+paths,3D or whole-scenario engineering acceptance.
