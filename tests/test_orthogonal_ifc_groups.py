@@ -85,13 +85,20 @@ class OrthogonalIFCGroupTests(unittest.TestCase):
         first = export_orthogonal_draft_ifc(self.path, building, layout, equipment, routing=routing)
         first_data = self.path.read_text(encoding="utf-8").split("DATA;", 1)[1]
         first_report = validate_orthogonal_ifc(self.path, building, layout, equipment, routing=routing)
+        self.assertEqual(first_report["artifact_sha256"], _file_hash(self.path))
+        self.assertEqual(first_report, validate_orthogonal_ifc(self.path, building, layout, equipment,
+            routing=routing, include_groups=False))
         second = export_orthogonal_draft_ifc(self.path, building, layout, equipment,
             routing=routing, include_groups=False)
         self.assertEqual(first_data, self.path.read_text(encoding="utf-8").split("DATA;", 1)[1])
         self.assertEqual({key: value for key, value in first.items() if key != "artifact_sha256"},
                          {key: value for key, value in second.items() if key != "artifact_sha256"})
-        self.assertEqual(first_report, validate_orthogonal_ifc(self.path, building, layout, equipment,
-            routing=routing, include_groups=False))
+        second_report = validate_orthogonal_ifc(self.path, building, layout, equipment,
+            routing=routing, include_groups=False)
+        self.assertEqual(second_report["artifact_sha256"], _file_hash(self.path))
+        # Each physical export has its own volatile STEP header timestamp.
+        self.assertEqual({key: value for key, value in first_report.items() if key != "artifact_sha256"},
+                         {key: value for key, value in second_report.items() if key != "artifact_sha256"})
         self.assertNotIn("group_capability", second)
         self.assertNotIn("zones", second["counts"])
         self.assertFalse(ifcopenshell.open(self.path).by_type("IfcGroup"))
@@ -286,7 +293,8 @@ class OrthogonalIFCGroupTests(unittest.TestCase):
     def test_group_and_existing_product_guids_survive_source_declaration_geometry_and_variant_changes(self):
         building, layout, equipment, routing = _group_source()
         first = self.export(building, layout, equipment, routing)
-        roots = {(item.is_a(), item.Name, item.GlobalId) for item in ifcopenshell.open(self.path).by_type("IfcRoot")}
+        model = ifcopenshell.open(self.path)
+        roots = {(item.is_a(), item.Name, item.GlobalId) for item in model.by_type("IfcRoot")}
         changed_building = replace(building, layout=replace(building.layout,
             boundary=replace(building.layout.boundary, width_mm=6400, height_mm=6400)),
             zones=tuple(reversed((replace(building.zones[0], pressure_pa=20), *building.zones[1:]))),
@@ -297,8 +305,9 @@ class OrthogonalIFCGroupTests(unittest.TestCase):
         changed_routes = FlowRoutingResult((replace(routing.routes[0],
             points=tuple((x + 200, y + 200) for x, y in routing.routes[0].points)),))
         second = self.export(changed_building, changed_layout, changed_equipment, changed_routes)
+        model = ifcopenshell.open(self.path)
         self.assertEqual({(item.is_a(), item.Name, item.GlobalId)
-            for item in ifcopenshell.open(self.path).by_type("IfcRoot")}, roots)
+            for item in model.by_type("IfcRoot")}, roots)
         self.assertNotEqual(first["source"], second["source"])
         self.assertEqual(self.check(changed_building, changed_layout, changed_equipment, changed_routes)["status"], "PASS")
 
@@ -331,7 +340,8 @@ class OrthogonalIFCGroupTests(unittest.TestCase):
     def test_omitted_routes_supplied_equipment_and_absent_declarations_have_exact_native_inventory(self):
         building, layout, equipment, _ = _group_source()
         index = self.export(building, layout, equipment)
-        system = ifcopenshell.open(self.path).by_type("IfcSystem", include_subtypes=False)[0]
+        model = ifcopenshell.open(self.path)
+        system = model.by_type("IfcSystem", include_subtypes=False)[0]
         self.assertEqual(_members(system), [("IfcBuildingElementProxy", "equipment", "machine")])
         self.assertEqual(index["group_capability"]["states"], {"equipment": "SUPPLIED", "routing": "NOT_SUPPLIED"})
         self.assertEqual(self.check(building, layout, equipment)["status"], "PASS")

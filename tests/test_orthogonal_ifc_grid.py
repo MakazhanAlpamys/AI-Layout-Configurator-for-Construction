@@ -108,6 +108,9 @@ class OrthogonalIFCGridTests(unittest.TestCase):
         first = export_orthogonal_draft_ifc(self.path, building, layout, equipment, routing=routing)
         first_data = self.path.read_text(encoding="utf-8").split("DATA;", 1)[1]
         before = validate_orthogonal_ifc(self.path, building, layout, equipment, routing=routing)
+        self.assertEqual(before["artifact_sha256"], _file_hash(self.path))
+        self.assertEqual(before, validate_orthogonal_ifc(self.path, building, layout, equipment,
+            routing=routing, include_grid=False))
         second = export_orthogonal_draft_ifc(self.path, building, layout, equipment,
                                             routing=routing, include_grid=False)
         self.assertEqual(first_data, self.path.read_text(encoding="utf-8").split("DATA;", 1)[1])
@@ -116,7 +119,10 @@ class OrthogonalIFCGridTests(unittest.TestCase):
         self.assertNotIn("grid_capability", second)
         self.assertNotIn("grids", second["counts"])
         after = validate_orthogonal_ifc(self.path, building, layout, equipment, routing=routing, include_grid=False)
-        self.assertEqual(before, after)
+        self.assertEqual(after["artifact_sha256"], _file_hash(self.path))
+        # Each physical export has its own volatile STEP header timestamp.
+        self.assertEqual({key: value for key, value in before.items() if key != "artifact_sha256"},
+                         {key: value for key, value in after.items() if key != "artifact_sha256"})
         self.assertFalse(ifcopenshell.open(self.path).by_type("IfcGrid"))
 
     def test_opted_missing_grid_does_not_invent_axes(self):

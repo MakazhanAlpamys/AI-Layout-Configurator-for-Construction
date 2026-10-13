@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.17 repairs the native IFC fixture lifetime and timestamp-sensitive
+parity exposed by the first complete sharded CI. Actual file hashes, exact IFC
+DATA, same-file option parity, memberships and semantic checks remain verified.
+The changed fixtures pass locally on both installed IFC versions; full remote
+acceptance remains pending. [Negative evidence](acceptance/d4edf62.json).
+
 Implementation checkpoints and remaining requirements are tracked in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). The 2026-10-12 C.4.1
 checkpoint adds bounded alternate room-chain routing after a blocked shortest

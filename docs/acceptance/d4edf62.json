@@ -1,0 +1,90 @@
+{
+  "tested_commit": "d4edf623b9ef40bb6e46ab1fde5e2e0052551377",
+  "run_url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38405553097",
+  "conclusion": "failure",
+  "scope": "First complete parallel-shard acceptance; this is negative CI evidence, not full acceptance.",
+  "jobs": [
+    {
+      "name": "tests (windows-latest, draft-bundles)",
+      "conclusion": "success",
+      "elapsed_seconds_including_setup": 364.0
+    },
+    {
+      "name": "pharma-cleanroom",
+      "conclusion": "success",
+      "elapsed_seconds_including_setup": 176.0
+    },
+    {
+      "name": "tests (ubuntu-latest, draft-bundles)",
+      "conclusion": "success",
+      "elapsed_seconds_including_setup": 249.0
+    },
+    {
+      "name": "tests (windows-latest, core)",
+      "conclusion": "failure",
+      "elapsed_seconds_including_setup": 560.0
+    },
+    {
+      "name": "tests (ubuntu-latest, core)",
+      "conclusion": "failure",
+      "elapsed_seconds_including_setup": 508.0
+    },
+    {
+      "name": "api-container",
+      "conclusion": "success",
+      "elapsed_seconds_including_setup": 75.0
+    },
+    {
+      "name": "Quick contracts and complete test collection",
+      "conclusion": "skipped",
+      "elapsed_seconds_including_setup": 0.0
+    }
+  ],
+  "linux_core": {
+    "tests_completed": 1060,
+    "elapsed_test_seconds": 476.858,
+    "skipped": 4,
+    "errors": 1
+  },
+  "windows_core": {
+    "completion": "Interrupted at native IFC membership fixture",
+    "preceding_failure": "Default group readback compares timestamp-dependent artifact digests",
+    "complete_test_count": null
+  },
+  "confirmed_regressions": [
+    {
+      "case": "test_omitted_routes_supplied_equipment_and_absent_declarations_have_exact_native_inventory",
+      "cause": "Temporary native IFC file owner released before borrowed entity inverse traversal",
+      "linux_error": "RuntimeError: Instance #354 not found",
+      "local_ifcopenshell_0_9_0_before_fix": "Native process exits 1 during the same test"
+    },
+    {
+      "cases": [
+        "test_omitted_and_false_default_ifc_data_evidence_and_readback_are_exact",
+        "test_default_false_evidence_and_ifc_data_are_exactly_unchanged"
+      ],
+      "cause": "Separate exports may have different volatile STEP header timestamps and actual byte SHA",
+      "controlled_before_fix": "Both unchanged tests fail with distinct supplied timestamps"
+    }
+  ],
+  "fresh_local_after_fix": {
+    "ifcopenshell_0_9_0_native_group_and_grid": {
+      "tests": 25,
+      "seconds": 27.299,
+      "status": "PASS"
+    },
+    "ifcopenshell_0_9_0_controlled_distinct_timestamps": {
+      "tests": 2,
+      "status": "PASS"
+    },
+    "ifcopenshell_0_8_5_affected_fixtures": {
+      "tests": 4,
+      "seconds": 0.951,
+      "status": "PASS"
+    },
+    "preserved_checks": "Exact DATA and semantic report equality; exact per-file SHA; exact same-file omitted/False report parity; native members/GUIDs and strict EXPRESS."
+  },
+  "full_acceptance_after_fix": "PENDING_CHANGED_COMMIT_RUN",
+  "engineering_acceptance": "PENDING",
+  "latency_scope": "Job elapsed includes VM setup; failed core does not establish a complete critical-path improvement."
+}

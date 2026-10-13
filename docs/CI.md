@@ -27,3 +27,16 @@ gh workflow run solver-calibration.yml --ref main
 
 Evidence always records its tested commit. A green quick job does not replace
 the full acceptance record or external engineering review.
+
+The first sharded run at `d4edf62` passed both draft-bundle shards, API and
+pharma. Core failed: an IFC fixture released its native file before traversing
+borrowed entities, and the Windows log also recorded timestamp-dependent
+default-report parity. The native failure reproduced locally on IfcOpenShell
+0.9.0; distinct real STEP timestamps deterministically reproduced both group
+and grid parity failures. QA.17 retains each file owner during traversal,
+checks each actual file SHA, and compares separate exports' exact DATA and
+semantic reports while keeping same-file omitted/False report equality.
+Fresh group/grid verification passed all 25 tests on 0.9.0; four affected
+fixtures also passed on 0.8.5. Full acceptance requires a changed-commit run.
+[Negative run evidence](acceptance/d4edf62.json) records completed jobs and
+the interrupted Windows core without inventing a completed test count.

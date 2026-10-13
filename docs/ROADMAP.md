@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint QA.17 repairs IFC test ownership and volatile-header parity found
+by the complete parallel CI without reopening this completed MVP archive.
+The changed local fixtures pass; their full changed-commit CI remains pending.
+
 Checkpoint B.6 adds independently checked equipment placement in actual
 orthogonal room components, without reopening the completed residential MVP.
 Checkpoint D.4 adds explicit source-backed project schematic symbols in DXF/PDF;
