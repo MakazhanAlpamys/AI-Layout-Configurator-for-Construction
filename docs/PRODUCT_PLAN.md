@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.3.1.1 prevents literal card projection PASS when a positive
+source reservation collapses at world-coordinate precision. Unrepresentable
+contours return source-bound UNKNOWN; supported projections remain unchanged.
+Single-file and regular installed-wheel checks pass. [Scope](ENGINEERING_LIBRARY.md).
+
 Checkpoint I.4.1 independently checks actual source-bound local equipment
 scenarios: literal contours, service/panel/tool access, named points, original
 walls and conditional action premises. Known conflicts survive incomplete data;

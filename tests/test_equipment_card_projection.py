@@ -135,6 +135,19 @@ class EquipmentCardProjectionTests(unittest.TestCase):
         self.assertEqual(report.status, "UNKNOWN")
         self.assertIn("visual_reference_not_numeric", {issue.code for issue in report.issues})
 
+    def test_positive_source_reservation_lost_at_world_precision_is_unknown(self):
+        raw = copy.deepcopy(self.raw)
+        row = next(item for item in raw["cards"][0]["envelopes"] if item["role"] == "service")
+        row["evidence"]["value"].update(x=0.0, y=0.0, width=1e-300, depth=100.0)
+        source = json.loads(raw["sources"][0]["content"])
+        source["envelopes"]["service"] = copy.deepcopy(row["evidence"]["value"])
+        source_content(raw, source)
+        self.assertEqual(self.library_api.validate_engineering_library(raw).binding_status, "PASS")
+        with self.assertRaises(self.api.EquipmentCardCapabilityError) as caught:
+            self.project(raw, scenario="maintenance", active_action_ids=("stop",))
+        self.assertEqual(caught.exception.status, "UNKNOWN")
+        self.assertEqual(caught.exception.code, "unrepresentable_geometry")
+
     def test_actual_legacy_packer_and_independent_readback_are_unchanged_by_sidecar(self):
         from layout_configurator.building import BuildingIR
         from layout_configurator.equipment import place_equipment, validate_equipment_layout

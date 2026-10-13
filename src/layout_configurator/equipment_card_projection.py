@@ -6,6 +6,7 @@ maintenance completion and whole 3D installation routes remain UNKNOWN.
 """
 
 from dataclasses import dataclass, fields
+from shapely.geometry import Polygon
 
 from .building import EquipmentSpec
 from .equipment import EquipmentPlacement
@@ -159,9 +160,14 @@ def project_equipment_card(library, card_id, *, equipment, placement, scenario="
         if row["role"] == "body" and (value["kind"] != "rectangle" or value["x"] != 0 or value["y"] != 0 or value["width"] != equipment.width_mm or value["depth"] != equipment.depth_mm):
             raise EquipmentCardCapabilityError("unsupported_body_projection", "Legacy physical footprint requires its exact source rectangle; no bounding-box coercion")
         local = _points(value)
+        world = [transform(point) for point in local]
+        geometry = Polygon(world)
+        if not geometry.is_valid or geometry.area <= 0:
+            raise EquipmentCardCapabilityError("unrepresentable_geometry",
+                "Envelope " + row["id"] + " has no valid positive-area world contour at supported precision", report=report)
         envelopes.append({"id": row["id"], "role": row["role"], "scenario": row["scenario"],
                           "source_evidence": row["evidence"], "required_action_ids": row["required_action_ids"],
-                          "local_points_mm": local, "world_points_mm": [transform(point) for point in local]})
+                          "local_points_mm": local, "world_points_mm": world})
     ports = []
     normal_directions = {"front": "top", "back": "bottom", "left": "left", "right": "right"}
     rotated_directions = {"front": "left", "back": "right", "left": "bottom", "right": "top"}

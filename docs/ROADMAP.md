@@ -1,5 +1,8 @@
 # Original MVP roadmap archive
 
+Checkpoint I.3.1.1 repairs source-bound projection precision reporting;
+collapsed contours remain UNKNOWN. Archived MVP scope is unchanged.
+
 Checkpoint I.4.1 delivers independent current-product local equipment
 scenario checks with exact sources and honest incomplete evidence. Complete
 scenario/path and external engineering acceptance remain separate criteria.

@@ -63,3 +63,16 @@ Full scenario checks and producer integration remain subsequent I.4 work.
 I.4.1 now supplies [independent local scenario checks](EQUIPMENT_SCENARIOS.md)
 for actual supplied placements; this does not complete external installation
 paths,3D or whole-scenario engineering acceptance.
+
+I.3.1.1 freshly checks transformed contours for valid positive area before
+declaring local projection PASS. A positive source extent that cannot survive
+the supported world-coordinate precision returns `unrepresentable_geometry`
+with UNKNOWN and the fresh library binding report. This does not mark valid
+supplied source numbers mathematically inconsistent or prove physical safety.
+On2026-10-14, a real regression first failed and a single-file run then passed
+ten tests/15 subtests in1.42 s. All three ordinary pilot projections remain
+valid; a source-bound numerical negative remains UNKNOWN. A regular wheel
+from `f5a01d5` plus the two reviewed files repeats normal PASS/numerical UNKNOWN
+from a foreign working directory with exact module hashes; wheel SHA-256 is
+`76b374faaf1d4b9b6fec48dab860f844d636b69ad0dabc4014967a1b73f87e33`.
+Local detailed evidence is in `out/checkpoints/equipment-card-precision-i311/`.
