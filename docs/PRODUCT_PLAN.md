@@ -152,6 +152,9 @@ Locally verified candidates remain DRAFT; complete persisted delivery is a separ
 Checkpoint H.3.6.1 adds an explicit recursive backend to the supervised pinned
 80-room runner and independently validates actual containers before equipment/export.
 The small complete pipeline passes; unchanged physical80 timing remains unmeasured.
+Checkpoint H.3.6.2 records the first unchanged installed-wheel Ubuntu physical80
+measurement: 62.009 s, global CP UNKNOWN after local shapes, no accepted bundle.
+This negative result leaves physical80, general scratch80 and large edits open.
 
 ## 1. Why we are expanding the project
 

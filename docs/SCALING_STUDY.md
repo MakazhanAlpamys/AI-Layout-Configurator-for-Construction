@@ -472,3 +472,20 @@ measurement. Fresh root runner verification passed 16 tests and 27 subtests in
 forged container, bounded CP failure and supervised deadline are covered. This
 checkpoint prepares the unchanged physical80 measurement; it does not claim an
 80-room performance result, general scratch generation or large edit acceptance.
+
+### First unchanged physical80 measurement
+
+One manual installed-wheel Ubuntu run at pinned `350ecee` completed in
+62.009 s, including 60.130 s of room solving. Original supplied-source layout,
+equipment, flow and profile gates all passed; all four fixture byte hashes are
+unchanged. Local shape stages completed, but the global CP model returned
+UNKNOWN for the selected canonical zone shapes. The runner published no accepted
+facility bundle and retained structured `global/no_global_placement` evidence.
+This is bounded search failure, without whole-building infeasibility proof.
+
+[Run 38386146920](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38386146920)
+retains the full artifact; [compact evidence](acceptance/350ecee.json) records the
+exact commit, runtime fingerprint, source hashes, timing, 101 stage attempts and
+raw-report SHA256. Raw report copies stay under ignored local research/output.
+The earlier 33.008 s hierarchical warm-start acceptance remains a separate
+measured result. Physical80, scratch80 and large edit acceptance remain open.

@@ -1,0 +1,73 @@
+{
+  "commit": "350ecee6e278066da31261fd8338d391b8c9325f",
+  "ci_run": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38386146920",
+  "status": "ROOM_SEARCH_FAILED",
+  "accepted": false,
+  "room_solver": "zone_recursive",
+  "scope": "Source-pinned synthetic A/B clone of supplied accepted40 with complete persisted bundle acceptance",
+  "timing_scope": "Whole runner request: worker startup/imports, source preparation/validation/derivation, rooms, equipment, routes, exports and independent persisted bundle QA",
+  "total_seconds": 62.00939871700001,
+  "stages": {
+    "source_preparation_seconds": 0.4544755170000201,
+    "preparation_including_imports_seconds": 1.4511770400000046,
+    "room_solve_seconds": 60.12985172900002
+  },
+  "installed_package": true,
+  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "runtime_sha256": "c67f9ae2612cd46f1a50791f2ef31247839364e0c53125588331f45550fbccc1",
+  "source_stage_hashes": {
+    "source40_program": "d486f1dc425940ac83f58fe0ac401a9473f52fe8dcb33b90e03da95f73f31289",
+    "source40_prepared": "1b487a861f68c5ee6ff07ff3b4a05efa46256b34b951c5ba39f935dadb9f10f5",
+    "source40_layout": "87e87fe993f83200d120d4a846efc479365a4a038dcd119af031f782d8350b0e",
+    "source40_equipment": "a498419dcf384c21a040147a33fdd936f5a41a5893179d7c2210cf1e7cda8263",
+    "source40_flows": "9b7379cfb1a9032fdfa2b1980be0dce6e65c6dd859bdfe294a1f0b18e254d16e",
+    "source40_facility": "54c4bce0747be874663db3ae1e6485e07487c454aaaa144d539c2e9b0f08b0d7",
+    "profile": "de07d024589290da918513371ae6773178942687a17680ed93c305e264b9ed09",
+    "program80_raw": "5ac7fd8d10b8eb39f42110c27731b6a99204f6487a96a9359faed89b2603bc30",
+    "program80_prepared": "483a5bc700741ebb9ff582c9dba65cedcb917776e95e52c3750efd3ed3e8da05",
+    "hints80": "d65a951052b9f42d03d40aac85bcb443f16dd8d0e9497c3a9782a2ca1b01ada3",
+    "derivation": "b7c01dacc3f99a18fdd0e50c9ea223968fae1b7b6023b0b1b9ea9b288b210470"
+  },
+  "source_gate_results": {
+    "layout": true,
+    "equipment": true,
+    "flows": true,
+    "facility": true
+  },
+  "failure": {
+    "stage": "global",
+    "code": "no_global_placement",
+    "message": "Global zone placement returned UNKNOWN for the selected shapes",
+    "unit_ids": [
+      "A/logistics",
+      "A/cleanroom_core",
+      "A/waste_zone",
+      "A/staff_zone",
+      "A/support_zone",
+      "B/logistics",
+      "B/cleanroom_core",
+      "B/waste_zone",
+      "B/staff_zone",
+      "B/support_zone"
+    ],
+    "room_ids": [],
+    "model_status": "UNKNOWN",
+    "proof_scope": "selected_zone_shapes",
+    "proven_building_infeasible": false,
+    "issues": []
+  },
+  "stage_attempt_count": 101,
+  "cluster_shape_cache": {
+    "scope": "single_zone_hierarchy_invocation",
+    "hits": 20,
+    "misses": 20,
+    "rejected_hits": 0,
+    "stored_entries": 20
+  },
+  "raw_report_local_path": "research/scale80/2026_10_13/linux_zone_recursive.json",
+  "raw_report_sha256": "851879aa2cae7df382b499c73720c13c3b5736de284ba3bf7daa553c40fc6839",
+  "raw_report_in_ci_artifact": "scale80-warmstart-acceptance/acceptance-report.json",
+  "general_scratch80_acceptance": false,
+  "physical80_acceptance": false,
+  "engineering_acceptance": "PENDING"
+}

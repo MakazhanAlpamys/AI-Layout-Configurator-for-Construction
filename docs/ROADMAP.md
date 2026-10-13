@@ -62,6 +62,8 @@ Checkpoint B.11 composes bounded canonical polygon candidates through fresh
 local equipment, route and profile checks, retaining separate delivery acceptance.
 Checkpoint H.3.6.1 prepares supervised physical-zone acceptance without changing
 the pinned source or default backend; its large-scale measurement remains separate.
+Checkpoint H.3.6.2 records a bounded negative physical80 CI result with immutable
+source and runtime evidence; it does not close the scale acceptance requirement.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
