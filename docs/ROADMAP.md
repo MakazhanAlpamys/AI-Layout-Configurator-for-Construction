@@ -291,6 +291,9 @@ Checkpoint QA.14 reduces duplicate test fixture generation while retaining all
 assertions, real writer failure/publication paths and independent saved-file QA.
 Checkpoint H.3.6.5 exposes opted final-model diagnostics for measured physical
 zone search; capture completeness remains separate from feasibility and acceptance.
+Checkpoint H.3.6.6 adds explicit bounded redundant final cross-root contact
+clauses, with exact small-grid geometry and complete small-bundle evidence.
+It leaves the original source constraints and physical80 acceptance gate intact.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

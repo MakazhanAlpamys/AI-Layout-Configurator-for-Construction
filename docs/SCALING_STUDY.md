@@ -557,3 +557,36 @@ pipeline/deadline cases in 7.14 s. The accepted eight-room fixture retains nativ
 EXPRESS and complete bundle QA. Pre-checkpoint root/recursive default output
 comparisons and actionlint passed. No 80-room measurement is claimed for this
 diagnostic implementation; the two recorded physical80 failures remain open.
+
+### Bounded final cross-root contact pruning
+
+`solve_zone_layouts(..., prune_cross_root_contacts=True)` precomputes necessary
+contact compatibility for the selected final root shapes. It uses the same
+rounded integer rectangles as the existing CP model. For contained positive
+rectangles in nonoverlapping root envelopes, positive required room contacts
+must use a common external side. Four exact side/translation interval
+intersections determine whether all explicit cross-root room contacts can hold
+at one relative placement. An empty intersection adds a redundant pairwise
+Boolean clause; all original hard constraints and candidate geometry remain.
+Existential zone relation groups are not interpreted as all-pairs contacts.
+
+The whole pass is preflighted at 80 source rooms, 64 eligible root pairs,
+65536 candidate pairs and 1048576 orientation/contact checks. Any exceeded bound
+skips the entire pass before posting clauses. A pair whose rounded containment
+cannot be established is conservatively skipped. Evidence distinguishes
+examined, skipped and rejected pairs from the actual number of posted clauses.
+It describes only the selected finite family and never proves the original
+building program infeasible. Omitted/false controls preserve default JSON.
+
+The supervised runner exposes `--zone-contact-pruning` with the explicit
+recursive backend; the existing one-job manual workflow has a default-false
+boolean input. Local/subtree budgets, the 120-second total deadline, all source
+gates, physical-container QA, complete persisted export and EXPRESS remain.
+
+Fresh agent regression passed 72 tests with 190 subtests in 51.76 s; root passed
+five actual CP/finite-failure/limit-skip/complete-bundle/deadline cases in 3.68 s.
+Independent tiny-grid geometry matched the interval kernel across 103 shape
+families. Actual model telemetry confirms unchanged variables and family hashes,
+with exactly one extra Boolean clause per rejected candidate pair. Pre-checkpoint
+root/recursive default comparisons and actionlint passed. This implementation
+does not establish an 80-room improvement; physical80 acceptance remains open.

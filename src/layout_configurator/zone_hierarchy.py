@@ -666,6 +666,7 @@ def solve_zone_layouts(
     global_time_limit_seconds: float | None = None,
     global_workers: int = 1,
     global_diagnostics: bool = False,
+    prune_cross_root_contacts: bool = False,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -692,6 +693,8 @@ def solve_zone_layouts(
     deterministic search always uses one worker and its existing work budget.
     Opted global diagnostics capture bounded effective candidate geometry and
     actual final model/solver counters, without establishing a solver verdict.
+    Optional cross-root contact pruning adds only redundant no-goods for exact
+    incompatible candidate pairs; it retains all original hard constraints.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -702,6 +705,10 @@ def solve_zone_layouts(
     evidence.pop("zone_hierarchy_hints", None)
     evidence.pop("global_search_settings", None)
     evidence.pop("global_diagnostics", None)
+    evidence.pop("cross_root_contact_pruning", None)
+    if not isinstance(prune_cross_root_contacts, bool):
+        _fail(evidence, "prune_cross_root_contacts must be a boolean", stage="input",
+              code="invalid_contact_pruning_mode", model_status="NOT_BUILT", not_applicable=True)
     if not isinstance(global_diagnostics, bool):
         _fail(evidence, "global_diagnostics must be a boolean", stage="input",
               code="invalid_diagnostics_mode", model_status="NOT_BUILT", not_applicable=True)
@@ -796,6 +803,7 @@ def solve_zone_layouts(
         hints=hints,
         workers=final_workers,
         **({"global_diagnostics": True} if global_diagnostics else {}),
+        **({"prune_cross_root_contacts": True} if prune_cross_root_contacts else {}),
     )
 
 
@@ -804,7 +812,8 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                          container_members, ancestors, recursive_zones=False,
                          stage="global", stage_unit=None, allow_partial=False,
                          fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None,
-                         global_validator=None, hints=None, workers=1, global_diagnostics=False):
+                         global_validator=None, hints=None, workers=1, global_diagnostics=False,
+                         prune_cross_root_contacts=False):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -952,6 +961,15 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
         _fail(evidence, f"Cannot construct {stage} zone constraints: {exc}", stage=stage,
               code="invalid_global_constraint", model_status="NOT_BUILT")
     model.Minimize(objective)
+    if prune_cross_root_contacts:
+        from .zone_contact_pruning import plan_pruning
+
+        rejected, pruning = plan_pruning(building, units, shapes, minimum_grid=minimum_shared,
+                                        boundary_grid=(boundary_width, boundary_height))
+        for a, index_a, b, index_b in rejected:
+            model.AddBoolOr([choices_by_unit[a][index_a].Not(), choices_by_unit[b][index_b].Not()])
+        pruning["counts"]["added_clauses"] = len(rejected)
+        evidence["cross_root_contact_pruning"] = pruning
     def validate_candidate(candidate, zone_rects):
         if stage == "global":
             validator = validate_zone_layout if global_validator is None else global_validator

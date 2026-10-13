@@ -34,6 +34,11 @@ on:
         type: boolean
         required: false
         default: false
+      zone_contact_pruning:
+        description: Post bounded redundant final recursive contact no-goods
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -65,6 +70,7 @@ jobs:
           ZONE_GLOBAL_SECONDS: ${{ inputs.zone_global_seconds }}
           ZONE_GLOBAL_WORKERS: ${{ inputs.zone_global_workers }}
           ZONE_GLOBAL_DIAGNOSTICS: ${{ inputs.zone_global_diagnostics }}
+          ZONE_CONTACT_PRUNING: ${{ inputs.zone_contact_pruning }}
         shell: bash
         run: |
           args=(--output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER")
@@ -73,6 +79,9 @@ jobs:
           fi
           if [[ "$ZONE_GLOBAL_DIAGNOSTICS" == "true" ]]; then
             args+=(--zone-global-diagnostics)
+          fi
+          if [[ "$ZONE_CONTACT_PRUNING" == "true" ]]; then
+            args+=(--zone-contact-pruning)
           fi
           python scripts/scale80_warmstart_acceptance.py "${args[@]}"
       - name: Retain warm-start bundles and evidence, including failures

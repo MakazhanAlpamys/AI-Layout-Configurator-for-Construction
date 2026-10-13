@@ -195,6 +195,10 @@ Checkpoint H.3.6.5 adds explicit bounded final-global diagnostics: exact effecti
 candidate families and source hashes, actual CP model counts and per-attempt
 solver response metrics. Complete capture does not imply successful solving;
 default outputs and all original source/acceptance gates remain unchanged.
+Checkpoint H.3.6.6 adds opted bounded cross-root contact pruning to the final
+physical-zone model. Exact rounded-shape compatibility posts only redundant
+candidate-pair clauses; original constraints, family geometry and deadlines
+remain. Small complete bundle QA passes; physical80 acceptance is still open.
 
 ## 1. Why we are expanding the project
 
