@@ -319,6 +319,9 @@ Checkpoint QA.16 parallelizes the complete platform tests without reducing
 coverage and removes an unused pharma dependency. Cheap checkpoint pushes stay
 separate from manual/PR/weekly full acceptance; actual full-run time is measured
 independently of the partition verification.
+Checkpoint H.3.6.9 retains actual selected-family INFEASIBLE at pinned `93fdc7c`
+with complete bounded diagnostics and unchanged source provenance. No complete
+80-room bundle is accepted, and this finite-family proof is not a building proof.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

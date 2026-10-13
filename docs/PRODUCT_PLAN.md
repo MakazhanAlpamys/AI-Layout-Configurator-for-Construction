@@ -242,6 +242,13 @@ fail closed. All skips/assertions and nine pharma/API gates remain. Independent
 pharma no longer waits for tests, and checkpoint pushes keep cheap collection
 and contracts. Four test VMs repeat setup instead of two; actual elapsed CI
 savings require a pinned measurement.
+Checkpoint H.3.6.9 records the changed physical80 run pinned to `93fdc7c`:
+43.515 s total / 42.313 s room solving. Actual support posts 816 rows and nine
+tables; final CP returns selected-family INFEASIBLE in 0.031 s without a solution.
+Every original source/prepared/hint/manifest byte and stage hash matches all
+three earlier measurements. Twelve ordered candidate shapes differ from the
+previous family, so cross-run timing does not isolate a performance effect.
+Physical80 acceptance remains open; the original BuildingIR is not proved infeasible.
 
 ## 1. Why we are expanding the project
 

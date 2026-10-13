@@ -691,3 +691,31 @@ Four test VMs replace two and repeat dependency setup/discovery. The aim is to
 shorten the critical path, not claim lower aggregate runner use. Any elapsed
 benefit requires actual pinned remote timing. Earlier full acceptance at
 `7561213` remains separate evidence for its own source and 1,001-test workload.
+
+### Actual translation-support physical80 measurement
+
+The single changed manual run at pinned `93fdc7c` enabled both pruning and
+translation support with diagnostics, seed 7 and the same 10-second/four-worker
+final limit. It took 43.515 s overall and 42.313 s room solving. Actual final
+CP returned INFEASIBLE in 0.031 s with no solution. Its proof applies only to
+the selected finite shape family. Source program infeasibility remains false;
+equipment, routing, exports and complete persisted80 QA were not reached.
+
+Capture is COMPLETE with ten roots, 220 shapes, 956 rectangle records and
+65,720 canonical family bytes. Actual support has 816 rows / 4,896 cells,
+ten candidate-index and 36 endpoint variables, 46 linears and nine tables.
+Pruning adds 2,760 clauses; no unsafe root pair is skipped. The actual final
+model contains 1,697 variables and 7,973 constraints. These metrics describe
+this actual family, rather than substituting the earlier 792-row helper estimate.
+
+Every original supplied source file, prepared program, hints and manifest is
+byte-equal to all three earlier physical80 measurements; all eleven stage hashes
+match. The current family differs at twelve ordered shapes in three roots despite
+equal per-root candidate counts. Local wall-clock search and runner conditions
+therefore prevent a causal cross-run performance claim. Every shape/family hash,
+the artifact ZIP digest and all eight extracted file bytes were checked afresh.
+[Run 38404321208](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38404321208)
+and [compact evidence](acceptance/93fdc7c.json) retain the complete negative scope
+and installed noneditable runtime. Raw family geometry remains local and in the
+CI artifact. The next source-preserving work must address actual candidate-family
+limitations; repeating the same selected family is not an acceptance strategy.
