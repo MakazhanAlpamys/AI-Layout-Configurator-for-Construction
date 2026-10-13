@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint QA.18 reduces deterministic pilot fixture work and strengthens actual
+acceptance checks while retaining every original dossier/repeatability assertion.
+This test-only change leaves the archived implementation criteria intact.
+
 Checkpoint I.1.1 begins the current product plan's source-bound production
 program with explicit unresolved evidence. The archived MVP remains complete;
 process geometry, engineering agreement and manufacturing acceptance are open.

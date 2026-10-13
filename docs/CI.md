@@ -40,3 +40,12 @@ Fresh group/grid verification passed all 25 tests on 0.9.0; four affected
 fixtures also passed on 0.8.5. Full acceptance requires a changed-commit run.
 [Negative run evidence](acceptance/d4edf62.json) records completed jobs and
 the interrupted Windows core without inventing a completed test count.
+
+QA.18 bounds two pilot test setups with 0.25 deterministic work units. All
+nine dossier/budget tests and their original 32 assertions remain; equipment
+repeatability still performs two real seed-42 packings. The actual width-prepared
+pilot now passes fresh equipment, flow and facility checks before review caching
+and after each repeated packing. The previous raw dossier setup had unresolved
+flows. Fresh root execution took 5.08 s for both modules. Earlier remote log
+spans were 60.106 s and 30.741 s on another runtime; this is a setup/workload
+change, and its full remote timing remains a separate measurement.

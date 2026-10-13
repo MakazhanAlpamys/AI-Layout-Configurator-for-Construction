@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.18 bounds review/repeatability pilot preparation while preserving
+all original test cases/assertions. The actual prepared source and repeated
+equipment now pass fresh full software checks. Remote timing for this changed
+fixture remains separate from the earlier pinned CI.
+
 Checkpoint I.1.1 starts the bounded source-bound production-program contract,
 including operations, measurements and explained original adjacency requirements.
 The labeled pilot reconstruction validates binding with explicit UNKNOWN loads

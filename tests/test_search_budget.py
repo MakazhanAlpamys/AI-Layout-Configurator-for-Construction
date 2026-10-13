@@ -1,6 +1,9 @@
 import unittest
 
-from layout_configurator.equipment import place_equipment
+from layout_configurator.equipment import place_equipment, validate_equipment_layout
+from layout_configurator.facility import load_facility_profile, validate_building
+from layout_configurator.facility_generation import solve_feasible_facility_variants
+from layout_configurator.flows import route_flows, validate_flow_routes
 from layout_configurator.io import load_building, load_spec
 from layout_configurator.solver import solve_layouts
 
@@ -38,17 +41,31 @@ class DeterministicBudgetTests(unittest.TestCase):
         )
 
     def test_equipment_packing_repeats_under_a_deterministic_budget(self):
-        building = load_building(PROGRAM)
-        layout = solve_layouts(
-            building.layout, variants=1, time_limit_seconds=60, seed=1, deterministic_units=40.0
-        )[0]
+        building = load_building(PROGRAM).with_required_flow_opening_width()
+        profile = load_facility_profile("rules/pharma_cleanroom_pilot.yaml")
+        layout = solve_feasible_facility_variants(
+            building, profile, variants=1, max_attempts=1, equipment_retries=1,
+            time_limit_seconds=10, seed=1, deterministic_units=0.25,
+            room_solver="monolithic",
+        ).accepted[0].result
 
         runs = [
-            place_equipment(building, layout, time_limit_seconds=30, seed=42, deterministic_units=12.0)
+            place_equipment(building, layout, time_limit_seconds=10, seed=42, deterministic_units=0.25)
             for _ in range(2)
         ]
 
         self.assertEqual(runs[0].placements, runs[1].placements)
+        for equipment in runs:
+            equipment_report = validate_equipment_layout(building, layout, equipment)
+            routes = route_flows(building, layout, equipment)
+            flow_report = validate_flow_routes(building, layout, routes, equipment)
+            facility_report = validate_building(
+                building, layout, equipment, routes, flow_report,
+                profile=profile, equipment_report=equipment_report,
+            )
+            self.assertTrue(equipment_report.ok, equipment_report.to_dict())
+            self.assertTrue(flow_report.ok, flow_report.to_dict())
+            self.assertTrue(facility_report.ok, facility_report.to_dict())
 
     def test_a_deterministic_budget_replaces_the_wall_clock_cap(self):
         from ortools.sat.python import cp_model

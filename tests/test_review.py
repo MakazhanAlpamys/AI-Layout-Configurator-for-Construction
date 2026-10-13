@@ -4,12 +4,12 @@ import unittest
 from pathlib import Path
 
 from layout_configurator.cli import main
-from layout_configurator.equipment import place_equipment, validate_equipment_layout
+from layout_configurator.equipment import validate_equipment_layout
 from layout_configurator.facility import load_facility_profile, validate_building
+from layout_configurator.facility_generation import solve_feasible_facility_variants
 from layout_configurator.flows import route_flows, validate_flow_routes
 from layout_configurator.io import load_building, write_building_result
 from layout_configurator.review import write_review_dossier
-from layout_configurator.solver import solve_layouts
 
 PROFILE = "rules/pharma_cleanroom_pilot.yaml"
 PROGRAM = "examples/pharma_cleanroom_pilot.yaml"
@@ -19,16 +19,20 @@ _CACHED_PILOT = None
 
 
 def _pilot_result():
-    # Solving the pilot takes tens of seconds, and every test in this module
-    # wants the same accepted result, so solve once per process.
+    # Every test needs the same accepted dossier source, so cache only after
+    # fresh independent gates pass; this fixture does not test search quality.
     global _CACHED_PILOT
     if _CACHED_PILOT is not None:
         return _CACHED_PILOT
-    building = load_building(PROGRAM)
-    result = solve_layouts(building.layout, variants=1, time_limit_seconds=60, seed=1)[0]
-    equipment = place_equipment(building, result, time_limit_seconds=30)
-    routes = route_flows(building, result, equipment)
+    building = load_building(PROGRAM).with_required_flow_opening_width()
     profile = load_facility_profile(PROFILE)
+    candidate = solve_feasible_facility_variants(
+        building, profile, variants=1, max_attempts=1, equipment_retries=1,
+        time_limit_seconds=10, seed=1, deterministic_units=0.25,
+        room_solver="monolithic",
+    ).accepted[0]
+    result, equipment = candidate.result, candidate.equipment
+    routes = route_flows(building, result, equipment)
     equipment_report = validate_equipment_layout(building, result, equipment)
     flow_report = validate_flow_routes(building, result, routes, equipment)
     report = validate_building(
@@ -40,6 +44,12 @@ def _pilot_result():
         profile=profile,
         equipment_report=equipment_report,
     )
+    if not equipment_report.ok or not flow_report.ok or not report.ok:
+        raise AssertionError({
+            "equipment": equipment_report.to_dict(),
+            "flows": flow_report.to_dict(),
+            "facility": report.to_dict(),
+        })
     _CACHED_PILOT = (building, result, equipment, routes, report, profile)
     return _CACHED_PILOT
 
