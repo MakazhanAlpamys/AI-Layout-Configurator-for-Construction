@@ -37,7 +37,7 @@ and grid parity failures. QA.17 retains each file owner during traversal,
 checks each actual file SHA, and compares separate exports' exact DATA and
 semantic reports while keeping same-file omitted/False report equality.
 Fresh group/grid verification passed all 25 tests on 0.9.0; four affected
-fixtures also passed on 0.8.5. Full acceptance requires a changed-commit run.
+fixtures also passed on 0.8.5. Full acceptance subsequently passed at `c0eb166`.
 [Negative run evidence](acceptance/d4edf62.json) records completed jobs and
 the interrupted Windows core without inventing a completed test count.
 
@@ -49,3 +49,13 @@ and after each repeated packing. The previous raw dossier setup had unresolved
 flows. Fresh root execution took 5.08 s for both modules. Earlier remote log
 spans were 60.106 s and 30.741 s on another runtime; this is a setup/workload
 change, and its full remote timing remains a separate measurement.
+
+QA.19 retains the complete successful `c0eb166` run: each OS has 1,113 unique
+cases split exhaustively into 1,060 core and 53 bundle cases. Linux records four
+skips and Windows eight, with all reasons retained. All six active jobs passed;
+API and nine pharma variants remain independently verified. Each of six archive
+SHA/byte identities and all 84 extracted files match; 54 variant files and three
+shared manifests additionally match saved QA inventories. Total workflow elapsed
+was 792 s; slowest Windows core job was 787 s including setup. Parallel test wall
+times are recorded separately. This does not measure the later QA.18 fixture
+optimization or subsequent solver/program changes. [Evidence](acceptance/c0eb166.json).

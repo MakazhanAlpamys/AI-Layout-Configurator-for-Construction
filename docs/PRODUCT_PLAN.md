@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.19 verifies complete pinned `c0eb166` platform, container and
+pharma acceptance, including the native IFC fixture repairs. All 1,113 cases
+per OS and exhaustive shard inventories are retained; downloaded bytes and
+source scopes are independently checked. [Evidence](acceptance/c0eb166.json).
+Later finite-conflict, fixture-budget and production-program checkpoints retain
+their own verification requirements.
+
 Checkpoint QA.18 bounds review/repeatability pilot preparation while preserving
 all original test cases/assertions. The actual prepared source and repeated
 equipment now pass fresh full software checks. Remote timing for this changed
@@ -19,8 +26,8 @@ expanded-family feasibility preserve the original-program proof boundary.
 Checkpoint QA.17 repairs the native IFC fixture lifetime and timestamp-sensitive
 parity exposed by the first complete sharded CI. Actual file hashes, exact IFC
 DATA, same-file option parity, memberships and semantic checks remain verified.
-The changed fixtures pass locally on both installed IFC versions; full remote
-acceptance remains pending. [Negative evidence](acceptance/d4edf62.json).
+The changed fixtures pass locally on both installed IFC versions and in full
+remote acceptance at `c0eb166`. [Prior negative evidence](acceptance/d4edf62.json).
 
 Implementation checkpoints and remaining requirements are tracked in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). The 2026-10-12 C.4.1

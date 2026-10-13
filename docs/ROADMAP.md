@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint QA.19 records successful complete `c0eb166` cross-platform,
+installed-container and nine-variant pharma acceptance after native fixture
+repairs. This evidence is pinned; subsequent current-product steps remain separate.
+
 Checkpoint QA.18 reduces deterministic pilot fixture work and strengthens actual
 acceptance checks while retaining every original dossier/repeatability assertion.
 This test-only change leaves the archived implementation criteria intact.

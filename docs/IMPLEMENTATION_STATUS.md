@@ -121,17 +121,12 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | C.5.1 | Checked finite-model subset-minimal conflict core | Builder-registered original terminals are guarded on a bounded clone before derived pruning/hints/exclusions. Fresh base/full/core/final-core and final deletion solves certify completed UNSAT/SAT evidence. Caller/model equivalence remains the integration's obligation; incomplete work stays UNKNOWN and original-program infeasibility false. | Agent 15 tests / 30 subcases PASS in 1.93 s. Fresh root all 15 PASS in 1.216 s; root independently checked both final witnesses' actual nonoverlap/full-width contacts, eight minimal-core solves, two expanded-family solves with identical source and exact original proto preservation. [Contract](FINITE_CONFLICTS.md). | core complete 2026-10-13; actual hierarchy registry and persisted integration pending |
 | I.1.1 | Bounded standalone production-program contract | Versioned source-bound operations/materials/states, typed supplied/UNKNOWN loads and explained adjacency declarations preserve exact source bytes and original scalar identity. Source/reference/room bindings fail closed; attribution matches each claim's source ID. Geometry is NOT_EVALUATED and actual reviewer approval UNKNOWN. | Real missing-module and flow-room regressions preceded implementation. Root reproduced wrong-source confirmation false PASS, agent fixed with real RED/GREEN. Fresh final related gate: agent 34 tests / 34 subtests PASS in 1.94 s, root 34 / 34 in 1.76 s. Root independently validated unchanged pilot reconstruction binding/18 UNKNOWN items and both wrong-source claim counterexamples; four frozen file hashes confirmed. [Contract](PRODUCTION_PROGRAM.md). | standalone core complete 2026-10-13; embedding, process enforcement and agreed engineering program pending |
 | QA.18 | Bound genuine accepted review/repeatability pilot preparation | Two monolithic pilot setups use existing width/contact/door-clear orchestration and .25 deterministic work units. Fresh equipment/flow/facility PASS is required before review caching and after both actual seed-42 equipment repetitions. Raw unresolved dossier setup is no longer described as accepted. | Agent nine tests PASS in 5.16 s; fresh root nine PASS in 5.08 s. Root independently confirmed all nine method identities and all 32 original assertion ASTs; three additional gate assertions run for each repetition. Old remote consecutive-log spans 60.106/30.741 s describe another runtime/workload, not an isolated speedup. | fixture optimization complete 2026-10-13; changed full-CI timing pending |
+| QA.19 | Complete pinned parallel-shard acceptance after native fixture repair | Both platforms complete all 1,113 unique cases with exactly disjoint/exhaustive 1,060 core and 53 bundle inventories, identical cross-platform discovery and retained skip reasons. All active jobs, installed API and nine saved pharma variants PASS; six archive and 84 extracted-file identities checked. | [Run 38409230704](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38409230704), pinned c0eb166: Linux core523.439/bundle307.299 s, Windows core700.527/bundle356.794 s; four/eight skips. Total792 s; Windows core job787 s including setup. Nine pharma cases/81checks, 54 actual variant hashes/three manifests; API5.113 s/nine checks, expert PENDING. [Evidence](acceptance/c0eb166.json). Parallel wall times and changed workloads prevent causal timing attribution. | complete 2026-10-13 for pinned commit; later C/I/budget/leaf-turn changes outside scope |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
 All six jobs succeeded; detailed downloaded evidence is recorded in QA.5.
 Later changes require their own evidence.
-
-
-
-
-
-
 
 QA.7 follow-up: the tracked-file audit also found original-language identifiers,
 keywords and mapping comments in the KZ rule profile. They now use English
@@ -140,43 +135,7 @@ IDs and numeric checks stay unchanged. Fresh rules/parser verification: 15 tests
 passed. A full tracked UTF-8 text scan, excluding bundled font assets, found no
 Cyrillic text.
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Remaining implementation
-
-
-
-
-
-
-
-
-
-
-
-
 
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
@@ -206,23 +165,7 @@ Cyrillic text.
   engineering library; scenario and pressure-network checks; synchronized
   drawings/schedules; medical-plastics benchmark and change scenario.
 
-
-
-
-
-
-
-
-
 ## External acceptance
-
-
-
-
-
-
-
-
 
 The process/QA, cleanroom/HVAC and architecture/BIM decision blocks remain
 open until the named reviewers actually review the pinned bundles. Receiving
