@@ -127,6 +127,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | H.3.6.11 | Actual changed selective-turn physical80 CI | Single installed-wheel run at `4604a10` preserves all supplied source bytes and eleven stage hashes; actual 228-shape family contains eight staff turns. Final CP remains selected-family INFEASIBLE with no solution; equipment/routing/exports were not reached. | [Pinned run 38412433987](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38412433987): 60.536 s total / 58.863 s rooms / 0.049 s final Solve. Root verified all 228 shape hashes, 980 rectangle records, family hash, ZIP digest and eight file bytes; actual support 888 rows and final model 1,705 variables / 7,989 constraints. [Compact evidence](acceptance/4604a10.json). | measurement complete 2026-10-13; physical80 acceptance open |
 | QA.20 | Shorter full-CI critical path with complete coverage | Schema 0.2 adds an exhaustive exchange/CLI group while keeping whole module/class caches, ordered discovery, pairwise-disjoint/duplicate/import/any-empty guards and all nonzero outcomes. Only the workflow shard matrix changes; API/pharma/quick contracts and uploads stay intact. | Root: ten actual fixture tests in 3.019 s and actionlint PASS; independent complete classifier retains all prior 1,113 IDs. Tracked checkpoint plus frozen CI overlay: 1,183 IDs (1,052 core / 53 bundles / 78 exchange); no full suite run locally. | implementation complete 2026-10-13; new remote timing pending |
 | C.5.2 | Actual hierarchy terminal registry and invocation-wide conflict proof | Registers exact room/zone hard terminals, fixed equalities and axis tables; source/role/projection/family/model hashes bind a pre-pruning/support/hint/enumeration clone. Initial actual INFEASIBLE alone triggers checked core/deletion solves under one shared budget. Unnamed base/source-dependent shapes stay fixed; unsafe/tampered/incomplete evidence remains UNKNOWN. | Root: 48 relevant tests PASS in 8.684 s; fresh independent eight-solve contact proof checks all original variable domains and both literal SAT deletion geometries, unchanged original proto and feasible expanded same-source family. Agent: 106 methods / 300 subtests PASS in 15.39 s; fixed-axis cores both modes, three-solve retry budget, full pinned/default/False/True 11-model parity. | complete 2026-10-13 for fixed-base selected-family explanation; public persisted integration separate |
+| C.5.3 | Public zone conflict evidence in actual generation output | Strict true-only controls reach either zone backend; default/False kwargs and serialized output stay unchanged. Direct CLI retains full captured explanations in accepted manifest or generation-failure JSON; unsupported ordinary/incremental modes reject before source/output mutation. Outer bounded failure/source-infeasibility claims remain unchanged. | Meaningful missing-controls RED: five methods / twelve failures / zero errors. Fresh root: 42 related methods PASS in 4.005 s. Durable actual CLI exits 0 and 2 preserve source bytes; accepted three-format bundle passes nine fresh saved QA checks; actual initial global base INFEASIBLE retains UNKNOWN without subset-minimal blame. | complete 2026-10-13 for public direct generation and CLI; other entry points separate |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -149,7 +150,8 @@ Cyrillic text.
   opted source windows, reference axes and declared native groups are integrated;
   independent complete facility and expert acceptance remain.
 - C: scalable zone-driven placement and containment; checked finite conflict
-  core and actual hierarchy registry exist, with public persisted integration pending.
+  core, actual hierarchy registry and opted direct generation/CLI persistence exist.
+  Further HTTP/editor/scale controls and other-stage core registration remain.
   Preferred-zone singleton participants can increase search cost.
 - D: extended discipline/manufacturer symbol libraries and receiving-tool
   acceptance; editable source dimension chains, named presentation presets, initial project schematic symbols,
@@ -172,6 +174,7 @@ Cyrillic text.
   drawings/schedules; medical-plastics benchmark and change scenario.
 
 ## External acceptance
+
 
 
 

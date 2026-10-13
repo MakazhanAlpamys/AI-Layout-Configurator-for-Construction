@@ -45,6 +45,13 @@ an explicit strategy.
 
 ## Recursive physical descendants
 
+For direct public generation, `generate-building --room-solver zone_recursive
+--explain-zone-conflicts` retains bounded actual terminal/core reports in the
+generation manifest or failure JSON. Both zone modes support the option;
+ordinary backends and incremental CLI requests reject it. These reports concern
+the fixed base and selected source-conditioned family, with one shared
+diagnostic budget. [Conflict scope and contract](FINITE_CONFLICTS.md).
+
 Select `--room-solver zone_recursive`, or call `solve_zone_layouts` with
 `recursive_zones=True`, to place physical containers for every nonempty
 canonical descendant zone. Leaves are solved first; each parent CP-SAT model

@@ -184,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
         help="spend a CP-SAT work budget instead of the wall clock for repeatability within the same runtime; wall time varies by machine and cross-platform output may differ",
     )
     generate_building.add_argument("--room-solver", choices=FACILITY_SOLVER_STRATEGIES, default="auto", help="room stage: auto, room clusters, monolithic, root zone containers (zone_hierarchical), or recursive zone containers (zone_recursive)")
+    generate_building.add_argument("--explain-zone-conflicts", action="store_true", help="retain bounded source-linked conflict checks for a zone room solver; selected-family proofs do not establish original source infeasibility")
     generate_building.add_argument("--seed", type=int, default=42)
     generate_building.add_argument(
         "--max-attempts",
@@ -850,6 +851,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command == "generate-building":
         try:
+            if args.explain_zone_conflicts and (args.room_solver not in {"zone_hierarchical", "zone_recursive"}
+                                               or args.incremental_from is not None):
+                raise ValueError("--explain-zone-conflicts requires a zone room solver and a direct generation request")
             if args.incremental_from is not None:
                 if args.imported_plan or args.confirm_import or args.import_reviewer or args.room_map:
                     raise ValueError("Incremental soft geometry cannot be combined with imported fixed-room constraints")
@@ -871,6 +875,7 @@ def main(argv: list[str] | None = None) -> int:
                 deterministic_units=args.deterministic_units,
                 room_solver=args.room_solver,
                 fixed_rects=fixed_rects,
+                **({"explain_zone_conflicts": True} if args.explain_zone_conflicts else {}),
             )
         except IncrementalSourceError as exc:
             args.output.mkdir(parents=True, exist_ok=True)

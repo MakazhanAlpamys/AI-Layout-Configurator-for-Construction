@@ -166,6 +166,8 @@ def solve_feasible_facility_variants(
     structural_axes_y_mm: Iterable[float] | None = None,
     hint_rects: Mapping[str, Rect] | None = None,
     cache_cluster_shapes: bool = False,
+    explain_zone_conflicts: bool = False,
+    zone_conflict_budget=None,
 ) -> FacilityGenerationResult:
     """Return only candidates that pass every deterministic facility gate.
 
@@ -185,8 +187,25 @@ def solve_feasible_facility_variants(
     backends; ``cache_cluster_shapes`` enables invocation-local reuse of checked
     room cluster shapes. Neither option creates fixed-room constraints. Zone
     modes still solve and independently check physical canonical containers.
+    ``explain_zone_conflicts`` retains bounded actual terminal/core evidence for
+    either zone mode. ``zone_conflict_budget`` selects its separate shared
+    allowance; production search constraints and budgets are unchanged.
     """
 
+    if type(explain_zone_conflicts) is not bool:
+        raise ValueError("explain_zone_conflicts must be a boolean")
+    if zone_conflict_budget is not None and not explain_zone_conflicts:
+        raise ValueError("zone_conflict_budget requires explain_zone_conflicts=True")
+    conflict_options = {}
+    if explain_zone_conflicts:
+        if room_solver not in {"zone_hierarchical", "zone_recursive"}:
+            raise ValueError("Zone conflict explanations require a zone room solver")
+        from .zone_conflict_registry import validate_conflict_budget
+
+        if zone_conflict_budget is not None:
+            validate_conflict_budget(zone_conflict_budget)
+            conflict_options["conflict_budget"] = zone_conflict_budget
+        conflict_options["explain_conflicts"] = True
     if not isinstance(cache_cluster_shapes, bool):
         raise ValueError("cache_cluster_shapes must be a boolean")
     if hint_rects is not None and not isinstance(hint_rects, Mapping):
@@ -244,6 +263,7 @@ def solve_feasible_facility_variants(
                 structural_axes_x_mm=structural_axes_x_mm,
                 structural_axes_y_mm=structural_axes_y_mm,
                 **warm_options,
+                **conflict_options,
             )
         else:
             room_candidates = solve_layouts_auto(

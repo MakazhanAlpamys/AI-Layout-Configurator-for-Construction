@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint C.5.3 retains current-product zone conflict reports in actual CLI
+generation manifests/failures. Fresh accepted saved-bundle QA passed; this
+does not extend selected-family proofs or change the archived MVP criteria.
+
 Checkpoint C.5.2 links checked finite conflict cores to the actual hierarchy
 builder with shared diagnostic budgets. Original-program feasibility and
 engineering acceptance stay outside those proofs; the archived MVP is unchanged.

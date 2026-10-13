@@ -65,5 +65,34 @@ Fixed-versus-axis conflicts work in both hierarchy modes. Shared three-solve
 retry budgets stop with incomplete UNKNOWN, and captured hints/no-goods remain
 absent. Pinned `4604a10`, omitted, false and true controls retain all eleven
 actual production model hashes and the same result in the agent's parity probe.
-Public delivery is checkpoint C.5.3; original source infeasibility and external
-engineering acceptance remain separate.
+Original source infeasibility and external engineering acceptance remain separate.
+
+## Public generation and saved CLI evidence
+
+C.5.3 adds strict default-false `explain_zone_conflicts` and optional
+`zone_conflict_budget` to `solve_feasible_facility_variants`. They require
+`room_solver="zone_hierarchical"` or `"zone_recursive"`. A custom budget requires
+explicit true mode. Omitted/false controls forward no additional solver arguments
+and preserve serialized generation evidence. The production budget is unchanged.
+
+```console
+layout-configurator generate-building program.json --room-solver zone_recursive --explain-zone-conflicts --output out/explained
+```
+
+The flag applies to direct generation. Unsupported ordinary backends and an
+incremental request with this flag are rejected before source/output mutation.
+HTTP, editor and supervised80 conflict controls remain separate integrations.
+
+Actual reports are retained under
+`generation.room_solver_evidence.conflict_explanations`: in `manifest.json` for
+an accepted set, or `generation-failure.json` when generation returns exit 2.
+Each explanation identifies its capture and the initial production status.
+An unnamed base conflict remains UNKNOWN; a checked finite core cannot change
+the outer bounded generation failure into proof of whole-source infeasibility.
+A feasible result can retain a COMPLETE snapshot with zero diagnostic solves.
+
+Meaningful RED exposed the missing public controls and CLI flag. Fresh root
+verification passed 42 related tests in 4.005 s. Durable actual CLI probes
+preserved source bytes, retained an initial global base conflict as UNKNOWN,
+and produced an accepted three-format bundle whose nine saved-file QA checks
+passed independently. Earlier pinned full CI remains separate until a new run.

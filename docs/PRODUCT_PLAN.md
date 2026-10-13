@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint C.5.3 exposes opted conflict evidence through public zone generation
+and the direct CLI. Actual accepted manifests and failed generation JSON retain
+captured reports; default arguments/output remain unchanged. Fresh saved-bundle
+QA passes; unknown base conflicts and whole-source infeasibility stay distinct.
+
 Checkpoint C.5.2 registers actual hierarchy terminal constraints and captures
 the source/family/model before derived clauses. Fresh checked contact and
 fixed-axis cores have SAT deletion witnesses; one diagnostic budget spans
