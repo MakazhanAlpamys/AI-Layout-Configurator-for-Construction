@@ -285,6 +285,8 @@ readback. Coordination eligibility does not establish daylight or engineering
 acceptance; the original MVP boundaries remain unchanged.
 Checkpoint QA.13 records full cross-platform/API/pharma acceptance pinned to
 `0c76aad`; later opted windows and runtime optimization need separate evidence.
+Checkpoint B.15.1 adds strict bounded source reference-axis geometry without
+changing solver constraints or claiming structural engineering acceptance.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

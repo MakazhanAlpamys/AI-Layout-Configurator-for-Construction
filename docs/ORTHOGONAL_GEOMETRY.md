@@ -497,3 +497,27 @@ The complete source-generated example and persisted exchange remain DRAFT.
 Scoped software QA PASS coexists with full facility UNKNOWN and engineering
 acceptance PENDING. Structural grid/native semantic extensions, physical
 daylight calculation and receiving-tool/expert acceptance remain separate.
+
+## Source structural reference axes
+
+`validate_orthogonal_grid(LayoutIR, StructuralGridSpec | None)` returns bounded
+canonical reference lines under `boundary_spanning_axes_v1`. Constant-X axes
+span source Y=0 to boundary height; constant-Y axes span source X=0 to boundary
+width, at elevation zero. They retain fractional coordinates and explicit labels
+or deterministic ordinal labels. Axes are continuous through cutouts. Their
+source model contains no clipped extents or per-room axis binding; this policy
+does not introduce either requirement or change room/equipment/flow constraints.
+
+Original canonical source hashes precede normalization. Strict finite numerical
+types, increasing in-bound axes, two nonempty directions, matching unique visible
+labels and 128 total axes are required. Labels are limited to 128 UTF-8 bytes,
+combined canonical sources to 1 MiB and coordinates/boundary extents to
+1,000,000 mm. No declared grid gives an empty explicit capability. Invalid or
+oversized sources yield FAIL with no partial axes and no building infeasibility
+claim. Full facility validation remains UNKNOWN and engineering acceptance PENDING.
+
+The actual cutout counterexample retains its 28 m2 C-shaped room while an axis
+at X=2050.5 crosses the full 6000 mm reference span; clipping would incorrectly
+produce two disconnected segments. Fresh grid/model/schema verification passed
+21 tests with 13 subtests in 1.85 s. This B.15.1 foundation does not yet enable
+grid delivery: explicit DXF/PDF/IFC, bundle and CLI integration remain open.

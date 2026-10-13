@@ -182,6 +182,10 @@ Checkpoint QA.13 records full pinned `0c76aad` acceptance: 932 tests on both
 platforms, deployed API/container QA and nine pharma variants. This verifies the
 native Linux atomic publication and explicit polygon CLI gates for that commit;
 the later B.14 window checkpoint requires its own CI.
+Checkpoint B.15.1 introduces bounded source reference axes with the explicit
+`boundary_spanning_axes_v1` policy: exact declared coordinates and labels span
+the source boundary, without clipping at cutouts, snapping or aligning rooms.
+Three-format and bundle/CLI integration remains the next B.15 gate.
 
 ## 1. Why we are expanding the project
 
