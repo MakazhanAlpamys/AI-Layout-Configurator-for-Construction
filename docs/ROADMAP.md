@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint H.3.6.11 retains the actual negative selective-turn physical80
+measurement at `4604a10`. The archived MVP remains complete; this current
+large-scale physical acceptance criterion is still open.
+
 Checkpoint I.1.2 adds opt-in production-program source admission and truthful
 validation CLI reports to the current product. Installed-wheel checks passed;
 downstream process enforcement and external agreement remain open.

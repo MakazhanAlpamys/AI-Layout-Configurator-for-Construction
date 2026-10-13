@@ -1,0 +1,402 @@
+{
+  "implementation_commit": "4604a10fa93513b7e7c038063a39e60134ae0bb9",
+  "run_id": 38412433987,
+  "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38412433987",
+  "conclusion": "failure",
+  "status": "ROOM_SEARCH_FAILED",
+  "accepted": false,
+  "total_seconds": 60.536383287999996,
+  "stages": {
+    "source_preparation_seconds": 0.45692974000000675,
+    "preparation_including_imports_seconds": 1.273278708999996,
+    "room_solve_seconds": 58.862811049
+  },
+  "settings": {
+    "max_total_seconds": 120.0,
+    "seed": 7,
+    "variants": 1,
+    "room_solver": "zone_recursive",
+    "room_seconds_per_model": 2,
+    "equipment_seconds_per_model": 5,
+    "cache_cluster_shapes": true,
+    "hint_completion_seconds_per_model": 1,
+    "hint_repair_workers": 1,
+    "deterministic_units": null,
+    "strict_ifc_express": true,
+    "zone_global_seconds_per_model": 10.0,
+    "zone_global_workers": 4,
+    "zone_global_diagnostics": true,
+    "zone_contact_pruning": true,
+    "zone_contact_support": true,
+    "zone_selective_leaf_turns": true
+  },
+  "source_files": {
+    "raw40": {
+      "path": "source40.yaml",
+      "sha256": "9b2fb2671a2ec911a53e23b5c14d34af8d56de46e24ab6575d4e56cf00c33877",
+      "actual_sha256": "9b2fb2671a2ec911a53e23b5c14d34af8d56de46e24ab6575d4e56cf00c33877",
+      "bytes": 15680
+    },
+    "accepted40": {
+      "path": "accepted40.json",
+      "sha256": "d0b61615130b7900e5f327528abe9a47d6c9be30319e5d6cb1db80c02f8e1ded",
+      "actual_sha256": "d0b61615130b7900e5f327528abe9a47d6c9be30319e5d6cb1db80c02f8e1ded",
+      "bytes": 77586
+    },
+    "profile": {
+      "path": "profile.yaml",
+      "sha256": "7da00494215758c86634d18749f2c82e71cc80de95cd83dfabd7ce2ddca9c3b5",
+      "actual_sha256": "7da00494215758c86634d18749f2c82e71cc80de95cd83dfabd7ce2ddca9c3b5",
+      "bytes": 6791
+    },
+    "program80": {
+      "path": "program80.json",
+      "sha256": "d064c82e9f419353f4c44b960d28a4cb3bb99e2660cff9cb68e2155b520d55fd",
+      "actual_sha256": "d064c82e9f419353f4c44b960d28a4cb3bb99e2660cff9cb68e2155b520d55fd",
+      "bytes": 71545
+    }
+  },
+  "stage_hashes": {
+    "source40_program": "d486f1dc425940ac83f58fe0ac401a9473f52fe8dcb33b90e03da95f73f31289",
+    "source40_prepared": "1b487a861f68c5ee6ff07ff3b4a05efa46256b34b951c5ba39f935dadb9f10f5",
+    "source40_layout": "87e87fe993f83200d120d4a846efc479365a4a038dcd119af031f782d8350b0e",
+    "source40_equipment": "a498419dcf384c21a040147a33fdd936f5a41a5893179d7c2210cf1e7cda8263",
+    "source40_flows": "9b7379cfb1a9032fdfa2b1980be0dce6e65c6dd859bdfe294a1f0b18e254d16e",
+    "source40_facility": "54c4bce0747be874663db3ae1e6485e07487c454aaaa144d539c2e9b0f08b0d7",
+    "profile": "de07d024589290da918513371ae6773178942687a17680ed93c305e264b9ed09",
+    "program80_raw": "5ac7fd8d10b8eb39f42110c27731b6a99204f6487a96a9359faed89b2603bc30",
+    "program80_prepared": "483a5bc700741ebb9ff582c9dba65cedcb917776e95e52c3750efd3ed3e8da05",
+    "hints80": "d65a951052b9f42d03d40aac85bcb443f16dd8d0e9497c3a9782a2ca1b01ada3",
+    "derivation": "b7c01dacc3f99a18fdd0e50c9ea223968fae1b7b6023b0b1b9ea9b288b210470"
+  },
+  "source_identity_verification": {
+    "350ecee": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    },
+    "1813e19": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    },
+    "9e5e598": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    },
+    "93fdc7c": {
+      "all_four_supplied_files_byte_equal": true,
+      "prepared_program_hints_manifest_byte_equal": true,
+      "all_eleven_stage_hashes_equal": true
+    }
+  },
+  "all_source_gates_passed": true,
+  "current_80_gates": {},
+  "global_diagnostics": {
+    "schema_version": 1,
+    "scope": "final_global_cp_selected_zone_shapes",
+    "capture_status": "COMPLETE",
+    "limits": {
+      "source_rooms": 80,
+      "candidate_shapes": 4096,
+      "rectangle_records": 65536,
+      "family_bytes": 8388608
+    },
+    "counts": {
+      "source_rooms": 80,
+      "units": 10,
+      "candidate_shapes": 228,
+      "rectangle_records": 980,
+      "family_bytes": 67548
+    },
+    "original_program_infeasibility_proven": false,
+    "searches": [
+      {
+        "attempt": 1,
+        "model_status": "INFEASIBLE",
+        "model": {
+          "variables": 1705,
+          "constraints": 7989,
+          "constraint_types": {
+            "at_most_one": 316,
+            "bool_and": 948,
+            "bool_or": 3173,
+            "exactly_one": 89,
+            "interval": 20,
+            "linear": 3433,
+            "no_overlap_2d": 1,
+            "table": 9
+          }
+        },
+        "response": {
+          "wall_time": 0.049345556000000006,
+          "user_time": 0.049345596000000005,
+          "deterministic_time": 0.002067269999999978,
+          "num_branches": 0,
+          "num_conflicts": 0,
+          "num_binary_propagations": 0,
+          "num_integer_propagations": 0,
+          "num_booleans": 0,
+          "num_integers": 0,
+          "objective_value": 0.0,
+          "best_objective_bound": 0.0,
+          "gap_integral": 0.0,
+          "solution_present": false,
+          "unavailable_fields": []
+        },
+        "settings": {
+          "seed": 7,
+          "workers": 4,
+          "time_limit_seconds": 10.0,
+          "deterministic_units": null,
+          "repair_hint": true
+        },
+        "original_program_infeasibility_proven": false
+      }
+    ],
+    "source_sha256": "483a5bc700741ebb9ff582c9dba65cedcb917776e95e52c3750efd3ed3e8da05",
+    "candidate_family_sha256": "ae54d4a80d7eaec153503d50db39218915bb1fb2a9a58f720439906cc5c53c47"
+  },
+  "all_228_shape_hashes_and_family_hash_verified": true,
+  "family_comparison_with_93fdc7c": [
+    {
+      "unit_id": "A/logistics",
+      "previous_shapes": 40,
+      "current_shapes": 40,
+      "retained_ordered_shape_hashes": 40
+    },
+    {
+      "unit_id": "A/cleanroom_core",
+      "previous_shapes": 8,
+      "current_shapes": 8,
+      "retained_ordered_shape_hashes": 8
+    },
+    {
+      "unit_id": "A/waste_zone",
+      "previous_shapes": 10,
+      "current_shapes": 10,
+      "retained_ordered_shape_hashes": 10
+    },
+    {
+      "unit_id": "A/staff_zone",
+      "previous_shapes": 48,
+      "current_shapes": 52,
+      "retained_ordered_shape_hashes": 48
+    },
+    {
+      "unit_id": "A/support_zone",
+      "previous_shapes": 4,
+      "current_shapes": 4,
+      "retained_ordered_shape_hashes": 4
+    },
+    {
+      "unit_id": "B/logistics",
+      "previous_shapes": 40,
+      "current_shapes": 40,
+      "retained_ordered_shape_hashes": 36
+    },
+    {
+      "unit_id": "B/cleanroom_core",
+      "previous_shapes": 8,
+      "current_shapes": 8,
+      "retained_ordered_shape_hashes": 8
+    },
+    {
+      "unit_id": "B/waste_zone",
+      "previous_shapes": 10,
+      "current_shapes": 10,
+      "retained_ordered_shape_hashes": 10
+    },
+    {
+      "unit_id": "B/staff_zone",
+      "previous_shapes": 48,
+      "current_shapes": 52,
+      "retained_ordered_shape_hashes": 44
+    },
+    {
+      "unit_id": "B/support_zone",
+      "previous_shapes": 4,
+      "current_shapes": 4,
+      "retained_ordered_shape_hashes": 4
+    }
+  ],
+  "comparison_scope": "Eight appended staff turns are present. Eight earlier ordered shape hashes also differ in B/logistics and B/staff_zone due to local wall-clock generation. Elapsed/model differences do not isolate a causal optimization effect.",
+  "selective_leaf_turns": {
+    "schema_version": 1,
+    "status": "APPLIED",
+    "scope": "selected_final_automatic_root_leaf_candidate_diversity",
+    "policy": "checked_swapped_leaf_envelopes_v1",
+    "maximum_turns_per_unit": 4,
+    "source_geometry_rotated": false,
+    "positions_are_constraints": false,
+    "original_program_infeasibility_proven": false,
+    "limits": {
+      "source_rooms": 80,
+      "unit_pairs": 64,
+      "candidate_pairs": 65536,
+      "orientation_contact_checks": 1048576,
+      "participating_rectangle_records": 65536,
+      "support_row_upper_bound": 16384,
+      "candidate_shapes": 4096,
+      "rectangle_records": 65536
+    },
+    "counts": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3648,
+      "orientation_contact_checks": 17152,
+      "participating_rectangle_records": 980,
+      "support_row_upper_bound": 14592,
+      "candidate_shapes": 228,
+      "rectangle_records": 980,
+      "added_shapes": 8
+    },
+    "units": [
+      {
+        "unit_id": "A/staff_zone",
+        "interface_room_ids": [
+          "A/staff_corridor"
+        ],
+        "added_shapes": 4,
+        "reason": "validated_swapped_envelope_turns"
+      },
+      {
+        "unit_id": "B/staff_zone",
+        "interface_room_ids": [
+          "B/staff_corridor"
+        ],
+        "added_shapes": 4,
+        "reason": "validated_swapped_envelope_turns"
+      }
+    ],
+    "before": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3552,
+      "orientation_contact_checks": 16768,
+      "participating_rectangle_records": 956,
+      "support_row_upper_bound": 14208,
+      "candidate_shapes": 220,
+      "rectangle_records": 956
+    },
+    "proposed": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3648,
+      "orientation_contact_checks": 17152,
+      "participating_rectangle_records": 980,
+      "support_row_upper_bound": 14592,
+      "candidate_shapes": 228,
+      "rectangle_records": 980
+    }
+  },
+  "cross_root_contact_pruning": {
+    "schema_version": 1,
+    "scope": "selected_final_global_candidate_pairs",
+    "required_relations_used": "explicit_cross_root_room_pairs_only",
+    "status": "APPLIED",
+    "limits": {
+      "source_rooms": 80,
+      "unit_pairs": 64,
+      "candidate_pairs": 65536,
+      "orientation_contact_checks": 1048576
+    },
+    "counts": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3648,
+      "orientation_contact_checks": 17152,
+      "examined_pairs": 3648,
+      "skipped_invalid_containment_pairs": 0,
+      "rejected_pairs": 2776,
+      "added_clauses": 2776
+    },
+    "original_program_infeasibility_proven": false
+  },
+  "cross_root_contact_support": {
+    "schema_version": 1,
+    "scope": "selected_final_global_shape_translation_supports",
+    "required_relations_used": "explicit_cross_root_room_pairs_only",
+    "status": "APPLIED",
+    "limits": {
+      "source_rooms": 80,
+      "unit_pairs": 64,
+      "candidate_pairs": 65536,
+      "orientation_contact_checks": 1048576,
+      "participating_rectangle_records": 65536,
+      "support_rows": 16384
+    },
+    "counts": {
+      "source_rooms": 80,
+      "unit_pairs": 9,
+      "candidate_pairs": 3648,
+      "orientation_contact_checks": 17152,
+      "participating_rectangle_records": 980,
+      "support_row_upper_bound": 14592,
+      "examined_unit_pairs": 9,
+      "skipped_invalid_containment_unit_pairs": 0,
+      "eligible_unit_pairs": 9,
+      "participating_units": 10,
+      "support_rows": 888,
+      "table_cells": 5328,
+      "added_index_variables": 10,
+      "added_endpoint_variables": 36,
+      "added_linear_constraints": 46,
+      "added_table_constraints": 9
+    },
+    "original_program_infeasibility_proven": false
+  },
+  "failure": {
+    "type": "ZoneHierarchyFailure",
+    "message": "Global zone placement returned INFEASIBLE for the selected shapes",
+    "stage_evidence": {
+      "stage": "global",
+      "code": "no_global_placement",
+      "message": "Global zone placement returned INFEASIBLE for the selected shapes",
+      "unit_ids": [
+        "A/logistics",
+        "A/cleanroom_core",
+        "A/waste_zone",
+        "A/staff_zone",
+        "A/support_zone",
+        "B/logistics",
+        "B/cleanroom_core",
+        "B/waste_zone",
+        "B/staff_zone",
+        "B/support_zone"
+      ],
+      "room_ids": [],
+      "model_status": "INFEASIBLE",
+      "proof_scope": "selected_zone_shapes",
+      "proven_building_infeasible": false,
+      "issues": []
+    }
+  },
+  "final_hint_positions_fixed": false,
+  "runtime": {
+    "python": "3.12.15",
+    "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+    "package_root": "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages/layout_configurator",
+    "distribution_root": "/opt/hostedtoolcache/Python/3.12.15/x64/lib/python3.12/site-packages",
+    "editable_package": false,
+    "installed_package": true,
+    "sha256": "161fd9a3ff47bd4834c060c7924c611a0125156c8de66027088cd5614abc916b"
+  },
+  "dependencies": {
+    "layout-configurator": "0.1.0",
+    "ortools": "9.15.6755",
+    "ifcopenshell": "0.9.0",
+    "protobuf": "6.33.6"
+  },
+  "archive": {
+    "artifact_id": 11821303804,
+    "sha256": "8f8e989f9e654daae0db4ff330e7718fff1727d45ba263b986da91fc630f9afe",
+    "bytes": 69602,
+    "all_eight_extracted_file_bytes_verified": true
+  },
+  "raw_report_sha256": "d09ba2fbed1ffbd093730d23160f126304bf28bf73dd4e7cb03daf13d23a69fc",
+  "proven_building_infeasible": false,
+  "full_engineering_acceptance": "PENDING",
+  "scope": "Actual source-pinned failed final CP search and complete captured finite family. Equipment, routing, exports and persisted80 acceptance were not reached. Original source infeasibility is not proven."
+}

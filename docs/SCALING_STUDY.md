@@ -753,3 +753,29 @@ saved family and support counts, and checked all seven frozen source hashes.
 Actual old/current omitted/False tiny result/evidence and default runner JSON
 are byte-equal; actionlint passed. The next changed pinned manual80 measurement
 must establish actual equipment, routing, exports and complete persisted gates.
+
+### Actual selective-turn physical80 measurement
+
+The single changed run at pinned `4604a10` enabled selective leaf turns alongside
+diagnostics, pruning and translation support. The original seed 7, ten-second
+four-worker final solve and 120-second parent limit were retained. Overall time
+was 60.536 s, including 58.863 s room solving. Final CP returned INFEASIBLE in
+0.049 s without a solution; it still describes only the selected finite family.
+Equipment, routing, exports and complete persisted80 gates were not reached.
+
+The COMPLETE actual capture contains ten roots, 228 shapes, 980 rectangle
+records and 67,548 canonical bytes. Four appended choices are present in each
+staff root. Actual support has 888 rows / 5,328 cells, within the 14,592-row
+upper bound; pruning posts 2,776 clauses. The final model has 1,705 variables
+and 7,989 constraints. These actual counts differ from the pure saved-family
+helper estimate. Eight earlier ordered shape hashes also differ in B/logistics
+and B/staff_zone, so cross-run times do not isolate the turns' causal effect.
+
+Root independently checked every shape/family hash, the archive SHA256 and all
+eight extracted file bytes. All four supplied files, prepared source, hints and
+manifest are byte-equal to the four prior physical80 runs; all eleven stage
+hashes match. [Run 38412433987](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38412433987)
+and [compact evidence](acceptance/4604a10.json) preserve the negative result.
+Physical80, general scratch80 and large edits remain open. The next change must
+address another actual family limitation or a certified conflicting relation;
+this unchanged failed run should not be repeated.

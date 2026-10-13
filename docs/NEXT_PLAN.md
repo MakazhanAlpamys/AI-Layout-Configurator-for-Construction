@@ -20,6 +20,12 @@ it). The order below follows that.
 | 1.4 | Multi-storey facility programs: floors, shared structural grid, stairs, lifts and shafts through `generate-facility-floors` for `BuildingIR` | a two-floor 40-room program passes the same gates per floor plus vertical-core checks | **software criterion met** 2026-10-12: synthetic 20+20 program, seeds 1/7/42, all per-floor/vertical/native-IFC checks PASS locally and in [pinned `35eff27` CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413) at 40 s per solve; [contract and timing](FACILITY_FLOORS.md). Engineering review remains pending. |
 | 1.5 | 60–100 rooms: a third level (zones → clusters → rooms) and incremental re-solve after an edit | 80 rooms in under two minutes on CI hardware | open overall; supplied synthetic hierarchical warm-start passes complete installed-wheel Ubuntu acceptance in 33.008 s at pinned `ac0408b`. The small physical-zone bridge passes; first unchanged physical80 CI at `350ecee` returns global UNKNOWN in 62.009 s with no accepted bundle. Physical80, general scratch80 and large edits remain open; [scope and evidence](SCALING_STUDY.md). |
 
+The latest changed physical80 run at `4604a10` includes all eight bounded legal
+staff turns but still returns selected-family INFEASIBLE in 60.536 s overall.
+The original source files, prepared program and hints are unchanged; complete
+equipment/routing/persisted80 acceptance was not reached. Item 1.5 remains open;
+[actual checked evidence](acceptance/4604a10.json) retains the failure scope.
+
 ## 2. Trust — output that reviewers and tools accept
 
 The changed-controls physical80 run at `1813e19` also returned global UNKNOWN

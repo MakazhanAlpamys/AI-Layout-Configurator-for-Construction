@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint H.3.6.11 records the single changed `4604a10` physical80 run:
+60.536 s overall; all eight appended turns present, but final selected-family
+CP remains INFEASIBLE. Actual 228 shape hashes and eight artifact files verified;
+source geometry is unchanged and complete physical80 acceptance remains open.
+
 Checkpoint I.1.2 retains a production program in an explicitly admitted canonical
 source and supplies a source-only validation CLI. Actual regular-wheel checks
 cover offline schemas and PASS/UNKNOWN/FAIL exits. Unsupported process semantics
