@@ -440,8 +440,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "check-transfers":
         from .transfer_review import load_transfer_review
 
-        if args.output and args.output.resolve() == args.input.resolve():
-            print("ERROR: Transfer report output must differ from its source", file=sys.stderr)
+        def output_is_source():
+            return args.output is not None and (args.output.resolve() == args.input.resolve() or
+                args.output.exists() and args.input.samefile(args.output))
+
+        try:
+            if output_is_source():
+                raise ValueError("Transfer report output must differ from its source")
+        except (OSError, ValueError) as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
             return 2
         try:
             report = load_transfer_review(args.input, include_windows=args.include_windows)
@@ -454,11 +461,13 @@ def main(argv: list[str] | None = None) -> int:
         payload = json.dumps(report, ensure_ascii=False, allow_nan=False, indent=2) + "\n"
         try:
             if args.output:
+                if output_is_source():
+                    raise ValueError("Transfer report output must differ from its source")
                 args.output.parent.mkdir(parents=True, exist_ok=True)
                 args.output.write_text(payload, encoding="utf-8")
             else:
                 print(payload, end="")
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             print(f"ERROR: {exc}", file=sys.stderr)
             return 2
         return {"PASS": 0, "UNKNOWN": 4, "FAIL": 2}[report["status"]]

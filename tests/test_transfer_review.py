@@ -128,6 +128,37 @@ class TransferReviewTests(unittest.TestCase):
             self.assertEqual(report["status"], "UNKNOWN")
             self.assertFalse(report["ok"])
 
+    def test_hardlinked_output_rejects_without_rewriting_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "review.json"
+            target = Path(directory) / "different-name.json"
+            source.write_text(json.dumps(review_input()))
+            target.hardlink_to(source)
+            before = source.read_bytes()
+            self.assertNotEqual(source.resolve(), target.resolve())
+            self.assertTrue(source.samefile(target))
+            with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["check-transfers", str(source), "--output", str(target)]), 2)
+            self.assertEqual(source.read_bytes(), before)
+            self.assertEqual(target.read_bytes(), before)
+
+    def test_output_becoming_source_alias_during_review_is_rechecked_before_write(self):
+        import layout_configurator.transfer_review as api
+        original = api.load_transfer_review
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "review.json"
+            target = Path(directory) / "late-alias.json"
+            source.write_text(json.dumps(review_input()))
+            before = source.read_bytes()
+            def reviewed(*args, **kwargs):
+                result = original(*args, **kwargs)
+                target.hardlink_to(source)
+                return result
+            with patch.object(api, "load_transfer_review", side_effect=reviewed), redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+                self.assertEqual(main(["check-transfers", str(source), "--output", str(target)]), 2)
+            self.assertEqual(source.read_bytes(), before)
+            self.assertEqual(target.read_bytes(), before)
+
     def test_result_room_budget_precedes_any_geometry_construction(self):
         api = importlib.import_module("layout_configurator.transfer_review")
         from layout_configurator.transfer_program import TransferProgramLimits

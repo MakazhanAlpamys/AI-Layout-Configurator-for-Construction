@@ -108,3 +108,12 @@ distinct0/2/4 exits. A regular wheel from pinned `9632549` plus the three frozen
 files reproduces all three actual command cases from a foreign directory,
 with exact implementation hashes; wheel SHA256
 `1c54559ec8b7f0a0b8cf3030bf5f2ba62fc88c1fd85219ce6f544afcc7dca492`.
+
+Checkpoint I.2.1.2 checks actual filesystem identity as well as resolved paths
+before review and immediately before writing an optional report. A different
+filename hard-linked to the input rejects with exit2 and preserves both files;
+the same holds when the alias is created during review. Identity lookup errors
+reject before writing. This is a source-preservation check, not a claim about
+arbitrary concurrent filesystem modifications after the final check. Two actual
+hard-link regressions first failed without errors;44 related transfer tests
+then passed in1.564 s on2026-10-13.

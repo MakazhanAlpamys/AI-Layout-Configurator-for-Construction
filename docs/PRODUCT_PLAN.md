@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.2.1.2 preserves transfer review source bytes when a differently
+named output is a hard link to the input. File identity is checked before
+review and again before writing; identity errors reject. Actual hard-link
+regressions and44 related tests pass. [Contract](TRANSFER_PROGRAM.md).
+
 Checkpoint C.5.5 adds explicit default-false bounded conflict diagnostics to
 the supervised recursive runner and manual workflow. Strict small JSON budgets
 retain one shared diagnostic deadline, leaving production/source budgets intact.

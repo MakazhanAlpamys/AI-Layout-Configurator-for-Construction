@@ -1,5 +1,8 @@
 # Original MVP roadmap archive
 
+Checkpoint I.2.1.2 repairs actual CLI source preservation for hard-linked
+report paths, with fresh regression verification. Archived MVP scope is unchanged.
+
 Checkpoint C.5.5 supplies supervised current-product finite conflict evidence
 with explicit bounded opt-in controls and actual small-model verification.
 Archived MVP status and complete physical80/engineering acceptance are unchanged.
