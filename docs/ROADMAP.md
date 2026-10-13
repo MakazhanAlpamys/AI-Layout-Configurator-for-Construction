@@ -268,6 +268,10 @@ vertical cores, structural grid lines, a stair check and a shared IFC were added
 
 ## Fixed project boundaries
 
+Checkpoint B.11.1 adds an atomic canonical polygon DXF/PDF/IFC draft bundle and
+independent saved-source/readback QA. This extends cycle B without changing the
+archived residential MVP or claiming engineering acceptance.
+
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal
   code check.

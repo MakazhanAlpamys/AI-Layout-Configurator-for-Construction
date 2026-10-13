@@ -158,6 +158,9 @@ This negative result leaves physical80, general scratch80 and large edits open.
 Checkpoint B.13 resolves bounded canonical windows on actual outward polygon
 facades, with independent source-line predicates and explicit ambiguity evidence.
 This two-dimensional component retains existing exporter capability guards.
+Checkpoint B.11.1 persists canonical orthogonal drafts in one atomic DXF/PDF/IFC
+bundle, with independent actual-byte readback, current profile predicates and
+strict IFC EXPRESS. Exchange PASS remains separate from full facility acceptance.
 
 ## 1. Why we are expanding the project
 

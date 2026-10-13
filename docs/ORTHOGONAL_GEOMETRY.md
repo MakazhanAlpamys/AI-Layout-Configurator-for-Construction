@@ -358,3 +358,37 @@ The existing IFC/PDF/window capability guards remain active. This standalone
 component covers two-dimensional facade lines only; coordinated wall/three-format
 window delivery, window elevations, engineering daylight and complete facility
 acceptance remain separate.
+
+## Atomic canonical draft bundle
+
+`write_orthogonal_bundle` persists five canonical source snapshots, three actual
+DXF/PDF/IFC artifacts and their indices, current facility predicates, a manifest
+and independently recomputed QA. The fixed 14-file inventory retains source,
+profile, variant and revision identities. Equipment service envelopes and full
+route widths retain their actual geometry in every format.
+
+`validate_orthogonal_bundle` reads bounded snapshots of the actual saved bytes.
+It recomputes the declared current-profile predicates, compares saved provenance
+with that fresh report, independently reads physical geometry in all three
+formats and runs strict IFC4 EXPRESS. Rehashing a substituted contour, wall hole,
+door, service envelope, corridor or current profile cannot preserve acceptance.
+The saved QA also binds the manifest and artifact-index bytes.
+
+Publication uses a sibling staging directory and a native no-replacement rename;
+existing or raced-in destinations remain protected. JSON structure, artifact,
+total-byte and DXF entity limits are enforced before publication and on readback.
+Declared structural grids and windows are rejected before creating output until
+their exporter capability is integrated. Unsupported native zones and systems
+remain explicitly UNKNOWN; absent optional evidence is null and UNKNOWN.
+
+Fresh root verification passed five targeted tests in 62.44 s, covering the
+actual source-generated concave candidate, complete saved-source QA, rehashed
+PDF/IFC substitution, changed profile and a raced-in output directory. The agent
+passed all 23 bundle tests and 34 subtests in 263.77 s. Both retained actual and
+source-generated bundles pass every scoped check with zero EXPRESS statements;
+their two-page PDFs were rendered and inspected. Windows publication is tested
+locally; the native Linux publication branch awaits pinned CI.
+
+The manifest stays DRAFT with `ok: false`; full facility validation remains
+UNKNOWN and engineering acceptance PENDING. Scoped exchange QA PASS verifies
+the documented software predicates and does not promote either acceptance.
