@@ -20,7 +20,44 @@ from layout_configurator.facility import FacilityProfile
 from test_orthogonal_pdf import _fixture
 
 
+def _restore_bundle_files(path, snapshot):
+    """Restore independent files from immutable actual writer bytes."""
+    contents = dict(snapshot)
+    for child in path.iterdir():
+        if child.name not in contents:
+            child.unlink()
+    for name, data in contents.items():
+        (path / name).write_bytes(data)
+
+
+def _copy_pristine_bundle(cache, path, writer, building, layout, equipment, *, routing, profile, **options):
+    """Generate each exact canonical fixture once; never cache QA execution."""
+    key = json.dumps({"building": building.to_dict(), "layout": layout.to_dict(),
+        "equipment": equipment.to_dict(building) if equipment is not None else None,
+        "routing": routing.to_dict() if routing is not None else None,
+        "profile": profile.to_dict(), "options": options},
+        sort_keys=True, ensure_ascii=False, allow_nan=False, separators=(",", ":")).encode("utf-8")
+    if key not in cache:
+        with tempfile.TemporaryDirectory() as temporary:
+            pristine = Path(temporary) / "bundle"
+            writer(pristine, building, layout, equipment, routing=routing, profile=profile, **options)
+            # Tuples and bytes have no mutable aliases to source models or
+            # test files. Each negative edits only its own filesystem copy.
+            cache[key] = tuple((child.name, child.read_bytes()) for child in sorted(pristine.iterdir()))
+    path.mkdir()
+    _restore_bundle_files(path, cache[key])
+    return json.loads(next(data for name, data in cache[key] if name == "manifest.json"))
+
+
 class OrthogonalBundleTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._pristine_bundles = {}
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._pristine_bundles.clear()
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -39,11 +76,20 @@ class OrthogonalBundleTests(unittest.TestCase):
         from layout_configurator import orthogonal_bundle
         return orthogonal_bundle
 
-    def write(self, **kwargs):
+    def write(self, *, fresh=False, **kwargs):
         self.path = self.root / "bundle"
-        self.manifest = self.api().write_orthogonal_bundle(self.path, self.building, self.layout,
-            self.equipment, routing=self.routing, profile=self.profile, **kwargs)
+        writer = self.api().write_orthogonal_bundle
+        if fresh or kwargs:
+            self.manifest = writer(self.path, self.building, self.layout,
+                self.equipment, routing=self.routing, profile=self.profile, **kwargs)
+        else:
+            self.manifest = _copy_pristine_bundle(self._pristine_bundles, self.path, writer,
+                self.building, self.layout, self.equipment, routing=self.routing, profile=self.profile)
+        self._pristine_files = tuple((child.name, child.read_bytes()) for child in sorted(self.path.iterdir()))
         return self.manifest
+
+    def restore_pristine(self):
+        _restore_bundle_files(self.path, self._pristine_files)
 
     def check(self, **kwargs):
         from layout_configurator.orthogonal_bundle_qa import validate_orthogonal_bundle
@@ -99,7 +145,7 @@ class OrthogonalBundleTests(unittest.TestCase):
 
     def test_snapshot_and_returned_manifest_do_not_alias_caller_policy_or_geometry(self):
         before = copy.deepcopy(self.profile.to_dict())
-        manifest = self.write()
+        manifest = self.write(fresh=True)
         self.profile.rules[0].parameters["flow_types"].append("unrelated")
         self.profile.provenance["source"] = "Changed caller source"
         self.layout.placements.clear()
@@ -161,19 +207,15 @@ class OrthogonalBundleTests(unittest.TestCase):
 
     def test_missing_artifact_hash_mismatch_malformed_index_and_traversal_fail(self):
         self.write()
-        original = {p.name: p.read_bytes() for p in self.path.iterdir()}
         for branch in ("missing", "hash", "index", "path", "extra", "false_status"):
             with self.subTest(branch=branch):
-                for p in self.path.iterdir():
-                    if p.name not in original:
-                        p.unlink()
-                for name, data in original.items():
-                    (self.path / name).write_bytes(data)
+                self.restore_pristine()
                 manifest = self.read("manifest.json")
                 if branch == "missing":
                     (self.path / "geometry.pdf").unlink()
                 elif branch == "hash":
-                    (self.path / "geometry.dxf").write_bytes(original["geometry.dxf"] + b"\n")
+                    artifact = self.path / "geometry.dxf"
+                    artifact.write_bytes(artifact.read_bytes() + b"\n")
                 elif branch == "index":
                     self.save("pdf-index.json", [])
                     manifest["artifacts"]["pdf"]["index_sha256"] = hashlib.sha256((self.path / "pdf-index.json").read_bytes()).hexdigest()
@@ -190,10 +232,9 @@ class OrthogonalBundleTests(unittest.TestCase):
 
     def test_rehashed_dxf_bbox_ring_door_service_corridor_and_physical_frame_tamper_fail_actual_readback(self):
         self.write()
-        original = (self.path / "geometry.dxf").read_bytes()
         for branch in ("bbox", "wall_ring", "door", "service", "corridor", "ocs", "hidden"):
             with self.subTest(branch=branch):
-                (self.path / "geometry.dxf").write_bytes(original)
+                self.restore_pristine()
                 document = ezdxf.readfile(self.path / "geometry.dxf")
                 model = document.modelspace()
                 if branch in ("bbox", "ocs", "hidden"):
@@ -236,6 +277,7 @@ class OrthogonalBundleTests(unittest.TestCase):
             writer.write(target)
         self.rehash("pdf")
         self.assert_failed(self.check(), "PDF_READBACK")
+        self.restore_pristine()
         import ifcopenshell
         model = ifcopenshell.open(str(self.path / "geometry.ifc"))
         room = next(item for item in model.by_type("IfcSpace") if item.Name == "main")
@@ -258,10 +300,9 @@ class OrthogonalBundleTests(unittest.TestCase):
 
     def test_source_duplicate_keys_nonnumeric_rotations_and_forged_clearance_fail_after_rehash(self):
         self.write()
-        original = (self.path / "equipment.json").read_bytes()
         for branch in ("duplicate", "rotation", "clearance"):
             with self.subTest(branch=branch):
-                (self.path / "equipment.json").write_bytes(original)
+                self.restore_pristine()
                 raw = self.read("equipment.json")
                 if branch == "duplicate":
                     (self.path / "equipment.json").write_bytes(b'{"equipment":[],"equipment":[]}')
@@ -328,10 +369,9 @@ class OrthogonalBundleTests(unittest.TestCase):
 
     def test_rehashed_ifc_index_false_local_evidence_or_scope_is_rejected(self):
         self.write()
-        original = (self.path / "ifc-index.json").read_bytes()
         for branch in ("status", "evidence", "scope"):
             with self.subTest(branch=branch):
-                (self.path / "ifc-index.json").write_bytes(original)
+                self.restore_pristine()
                 index = self.read("ifc-index.json")
                 if branch == "status":
                     index["local_validation"]["rooms"]["status"] = "UNKNOWN"
@@ -369,6 +409,7 @@ class OrthogonalBundleTests(unittest.TestCase):
         import ifcopenshell
         for branch, identifier in (("frame", "IFC_READBACK"), ("revision", "IFC_READBACK"), ("express", "IFC_EXPRESS")):
             with self.subTest(branch=branch):
+                self.restore_pristine()
                 model = ifcopenshell.file.from_string(original.decode("utf-8"))
                 room = next(item for item in model.by_type("IfcSpace") if item.Name == "main")
                 if branch == "frame":
@@ -422,10 +463,9 @@ class OrthogonalBundleTests(unittest.TestCase):
 
     def test_rehashed_manifest_cannot_claim_smaller_bounds_than_actual_saved_resources(self):
         self.write()
-        original = (self.path / "manifest.json").read_bytes()
         for field, value in (("max_json_bytes", 128), ("max_artifact_bytes", 128), ("max_total_bytes", 1024), ("max_dxf_entities", 1)):
             with self.subTest(field=field):
-                (self.path / "manifest.json").write_bytes(original)
+                self.restore_pristine()
                 manifest = self.read("manifest.json")
                 manifest["limits"][field] = value
                 self.save("manifest.json", manifest)

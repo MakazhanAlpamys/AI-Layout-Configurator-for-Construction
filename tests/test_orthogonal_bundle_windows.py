@@ -17,10 +17,19 @@ from layout_configurator.models import WindowSpec
 from layout_configurator.orthogonal_bundle import INVENTORY, write_orthogonal_bundle
 from layout_configurator.orthogonal_bundle_qa import validate_orthogonal_bundle
 from layout_configurator.orthogonal_window_capability import validate_orthogonal_window_capability
+from test_orthogonal_bundle import _copy_pristine_bundle, _restore_bundle_files
 from test_orthogonal_pdf import _fixture
 
 
 class OrthogonalWindowBundleTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls._pristine_bundles = {}
+
+    @classmethod
+    def tearDownClass(cls):
+        cls._pristine_bundles.clear()
+
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
@@ -40,6 +49,9 @@ class OrthogonalWindowBundleTests(unittest.TestCase):
                 "parameters": {"flow_types": ["people"]}}]})
 
     def write(self, **kwargs):
+        if set(kwargs) == {"include_windows"} and kwargs["include_windows"] is True:
+            return _copy_pristine_bundle(self._pristine_bundles, self.path, write_orthogonal_bundle,
+                self.building, self.layout, self.equipment, routing=self.routing, profile=self.profile, **kwargs)
         return write_orthogonal_bundle(self.path, self.building, self.layout, self.equipment,
             routing=self.routing, profile=self.profile, **kwargs)
 
@@ -66,8 +78,7 @@ class OrthogonalWindowBundleTests(unittest.TestCase):
         return {path.name: path.read_bytes() for path in self.path.iterdir()}
 
     def restore(self, snapshot):
-        for name, data in snapshot.items():
-            (self.path / name).write_bytes(data)
+        _restore_bundle_files(self.path, snapshot.items())
 
     def assert_failed(self, report, identifier=None):
         self.assertEqual(report["status"], "FAIL", report)

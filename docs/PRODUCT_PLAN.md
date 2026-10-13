@@ -186,6 +186,11 @@ Checkpoint B.15.1 introduces bounded source reference axes with the explicit
 `boundary_spanning_axes_v1` policy: exact declared coordinates and labels span
 the source boundary, without clipping at cutouts, snapping or aligning rooms.
 Three-format and bundle/CLI integration remains the next B.15 gate.
+Checkpoint QA.14 reduces repeated actual test fixture creation from 28 to eight
+full pipelines. All 34 tests, 68 subtests and 126 assertion expressions remain;
+independent file readback and native EXPRESS still execute freshly. The observed
+local Windows duration decreased from 440.26 s across two earlier runs to
+293.88 s in one combined run; changed invocation/load limits the comparison.
 
 ## 1. Why we are expanding the project
 

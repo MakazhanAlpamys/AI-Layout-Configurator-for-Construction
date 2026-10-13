@@ -287,6 +287,8 @@ Checkpoint QA.13 records full cross-platform/API/pharma acceptance pinned to
 `0c76aad`; later opted windows and runtime optimization need separate evidence.
 Checkpoint B.15.1 adds strict bounded source reference-axis geometry without
 changing solver constraints or claiming structural engineering acceptance.
+Checkpoint QA.14 reduces duplicate test fixture generation while retaining all
+assertions, real writer failure/publication paths and independent saved-file QA.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal
