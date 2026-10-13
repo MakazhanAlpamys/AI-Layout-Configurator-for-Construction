@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/engineering-library-0.1.json",
+  "title": "Source-bound finite equipment library 0.1",
+  "type": "object", "additionalProperties": false,
+  "required": ["version", "id", "revision", "sources", "cards", "templates"],
+  "properties": {
+    "version": {"const": "0.1"}, "id": {"$ref": "#/$defs/id"}, "revision": {"$ref": "#/$defs/id"},
+    "sources": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"$ref": "https://layout-configurator.local/schema/production-program-0.1.json#/$defs/source"}},
+    "cards": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/card"}},
+    "templates": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/template"}}
+  },
+  "$defs": {
+    "id": {"$ref": "https://layout-configurator.local/schema/production-program-0.1.json#/$defs/id"},
+    "text": {"$ref": "https://layout-configurator.local/schema/production-program-0.1.json#/$defs/text"},
+    "digest": {"$ref": "https://layout-configurator.local/schema/production-program-0.1.json#/$defs/digest"},
+    "basis": {"$ref": "https://layout-configurator.local/schema/production-program-0.1.json#/$defs/basis"},
+    "pointer": {"type": "string", "maxLength": 1024, "pattern": "^(?:/[^\\r\\n]*)?$"},
+    "scenario": {"enum": ["production", "maintenance", "installation_replacement"]},
+    "ids": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "quantity": {
+      "type": "object", "additionalProperties": false, "required": ["measurement", "source_pointer"],
+      "properties": {
+        "measurement": {"allOf": [{"$ref": "https://layout-configurator.local/schema/production-program-0.1.json#/$defs/measurement"}, {"properties": {"unit": {"const": "mm"}}}]},
+        "source_pointer": {"anyOf": [{"$ref": "#/$defs/pointer"}, {"type": "null"}]}
+      }
+    },
+    "coordinate": {"type": "number", "minimum": -1000000, "maximum": 1000000},
+    "positive": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000},
+    "xy": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/coordinate"}},
+    "rectangle": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "unit", "x", "y", "width", "depth", "id", "role", "scenario", "required_action_ids"],
+      "properties": {"kind": {"const": "rectangle"}, "unit": {"const": "mm"}, "x": {"$ref": "#/$defs/coordinate"},
+        "y": {"$ref": "#/$defs/coordinate"}, "width": {"$ref": "#/$defs/positive"}, "depth": {"$ref": "#/$defs/positive"},
+        "id": {"$ref": "#/$defs/id"}, "role": {"enum": ["body", "operating", "service", "panel", "tool_removal", "installation"]},
+        "scenario": {"enum": ["all", "production", "maintenance", "installation_replacement"]}, "required_action_ids": {"$ref": "#/$defs/ids"}}
+    },
+    "polygon": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "unit", "points", "id", "role", "scenario", "required_action_ids"],
+      "properties": {"kind": {"const": "orthogonal_polygon"}, "unit": {"const": "mm"},
+        "points": {"type": "array", "minItems": 5, "maxItems": 64, "items": {"$ref": "#/$defs/xy"}},
+        "id": {"$ref": "#/$defs/id"}, "role": {"enum": ["body", "operating", "service", "panel", "tool_removal", "installation"]},
+        "scenario": {"enum": ["all", "production", "maintenance", "installation_replacement"]}, "required_action_ids": {"$ref": "#/$defs/ids"}}
+    },
+    "point": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "unit", "x", "y", "direction", "id", "role", "scenario"],
+      "properties": {"kind": {"const": "point"}, "unit": {"const": "mm"}, "x": {"$ref": "#/$defs/coordinate"},
+        "y": {"$ref": "#/$defs/coordinate"}, "direction": {"enum": ["front", "back", "left", "right"]},
+        "id": {"$ref": "#/$defs/id"}, "role": {"enum": ["loading", "unloading", "operator", "service", "connection"]}, "scenario": {"$ref": "#/$defs/scenario"}}
+    },
+    "action": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "description", "id", "scenario"],
+      "properties": {"kind": {"enum": ["production_stopped", "temporary_action"]}, "description": {"$ref": "#/$defs/text"},
+        "id": {"$ref": "#/$defs/id"}, "scenario": {"$ref": "#/$defs/scenario"}}
+    },
+    "unsupported": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "description", "id", "role", "scenario", "required_action_ids"],
+      "properties": {"kind": {"enum": ["curve", "geometry_3d"]}, "description": {"$ref": "#/$defs/text"},
+        "id": {"$ref": "#/$defs/id"}, "role": {"enum": ["body", "operating", "service", "panel", "tool_removal", "installation"]},
+        "scenario": {"enum": ["all", "production", "maintenance", "installation_replacement"]}, "required_action_ids": {"$ref": "#/$defs/ids"}}
+    },
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "basis", "source_id", "source_pointer", "value", "note"],
+      "properties": {"status": {"enum": ["KNOWN", "UNKNOWN"]}, "basis": {"$ref": "#/$defs/basis"},
+        "source_id": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+        "source_pointer": {"anyOf": [{"$ref": "#/$defs/pointer"}, {"type": "null"}]},
+        "value": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/rectangle"}, {"$ref": "#/$defs/polygon"},
+          {"$ref": "#/$defs/point"}, {"$ref": "#/$defs/action"}, {"$ref": "#/$defs/unsupported"}]}, "note": {"$ref": "#/$defs/text"}},
+      "allOf": [{"if": {"properties": {"status": {"const": "KNOWN"}}}, "then": {"properties": {
+          "source_id": {"$ref": "#/$defs/id"}, "source_pointer": {"$ref": "#/$defs/pointer"}, "value": {"type": "object"}}}},
+        {"if": {"properties": {"status": {"const": "UNKNOWN"}}}, "then": {"properties": {"value": {"type": "null"}}}}]
+    },
+    "envelope": {
+      "type": "object", "additionalProperties": false, "required": ["id", "role", "scenario", "evidence", "required_action_ids"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "role": {"enum": ["body", "operating", "service", "panel", "tool_removal", "installation"]},
+        "scenario": {"enum": ["all", "production", "maintenance", "installation_replacement"]},
+        "evidence": {"$ref": "#/$defs/evidence"}, "required_action_ids": {"$ref": "#/$defs/ids"}}
+    },
+    "port": {
+      "type": "object", "additionalProperties": false, "required": ["id", "role", "scenario", "evidence"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "role": {"enum": ["loading", "unloading", "operator", "service", "connection"]},
+        "scenario": {"$ref": "#/$defs/scenario"}, "evidence": {"$ref": "#/$defs/evidence"}}
+    },
+    "scenario_action": {
+      "type": "object", "additionalProperties": false, "required": ["id", "scenario", "evidence"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "scenario": {"$ref": "#/$defs/scenario"}, "evidence": {"$ref": "#/$defs/evidence"}}
+    },
+    "card": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "revision", "label", "equipment_type", "origin", "equipment_binding", "dimensions", "envelopes", "interaction_points", "scenario_actions", "applicability", "engineer_confirmation"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "revision": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"},
+        "equipment_type": {"$ref": "#/$defs/id"}, "origin": {"enum": ["reconstruction", "supplied_source_card"]},
+        "equipment_binding": {"type": "object", "additionalProperties": false, "required": ["id", "sha256", "source_id", "source_pointer"],
+          "properties": {"id": {"$ref": "#/$defs/id"}, "sha256": {"$ref": "#/$defs/digest"}, "source_id": {"$ref": "#/$defs/id"}, "source_pointer": {"$ref": "#/$defs/pointer"}}},
+        "dimensions": {"type": "object", "additionalProperties": false,
+          "required": ["width_mm", "depth_mm", "height_mm", "clearance_front_mm", "clearance_back_mm", "clearance_left_mm", "clearance_right_mm"],
+          "properties": {"width_mm": {"$ref": "#/$defs/quantity"}, "depth_mm": {"$ref": "#/$defs/quantity"}, "height_mm": {"$ref": "#/$defs/quantity"},
+            "clearance_front_mm": {"$ref": "#/$defs/quantity"}, "clearance_back_mm": {"$ref": "#/$defs/quantity"}, "clearance_left_mm": {"$ref": "#/$defs/quantity"}, "clearance_right_mm": {"$ref": "#/$defs/quantity"}}},
+        "envelopes": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "#/$defs/envelope"}},
+        "interaction_points": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/port"}},
+        "scenario_actions": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/scenario_action"}},
+        "applicability": {"type": "object", "additionalProperties": false, "required": ["equipment_ids", "equipment_types", "scenarios", "conditions"],
+          "properties": {"equipment_ids": {"$ref": "#/$defs/ids"}, "equipment_types": {"$ref": "#/$defs/ids"},
+            "scenarios": {"type": "array", "minItems": 1, "maxItems": 3, "uniqueItems": true, "items": {"$ref": "#/$defs/scenario"}},
+            "conditions": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/text"}}}},
+        "engineer_confirmation": {"anyOf": [{"type": "null"}, {"$ref": "https://layout-configurator.local/schema/production-program-0.1.json#/$defs/confirmation"}]}
+      }
+    },
+    "parameter": {
+      "type": "object", "additionalProperties": false, "required": ["id", "dimension", "unit", "minimum", "maximum"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "dimension": {"enum": ["width_mm", "depth_mm", "height_mm", "clearance_front_mm", "clearance_back_mm", "clearance_left_mm", "clearance_right_mm"]},
+        "unit": {"const": "mm"}, "minimum": {"$ref": "#/$defs/quantity"}, "maximum": {"$ref": "#/$defs/quantity"}}
+    },
+    "variant": {
+      "type": "object", "additionalProperties": false, "required": ["id", "parameters", "card_id"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "card_id": {"$ref": "#/$defs/id"},
+        "parameters": {"type": "object", "minProperties": 1, "maxProperties": 16, "additionalProperties": {"type": "number", "minimum": 0, "maximum": 1000000000000}}}
+    },
+    "template": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "revision", "capability", "source_id", "source_pointer", "parameters", "variants"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "revision": {"$ref": "#/$defs/id"}, "capability": {"const": "finite_variant_selection_v1"},
+        "source_id": {"$ref": "#/$defs/id"}, "source_pointer": {"$ref": "#/$defs/pointer"},
+        "parameters": {"type": "array", "minItems": 1, "maxItems": 16, "items": {"$ref": "#/$defs/parameter"}},
+        "variants": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/variant"}}}
+    }
+  }
+}

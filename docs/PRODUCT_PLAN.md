@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.3.1 adds a bounded source-bound finite equipment library and
+literal scenario geometry projection. Exact source values, roles, equipment
+identities, confirmation identities and supplied rights are checked offline;
+concave rings and explicit action premises survive translation/rotation.
+Independent pilot and installed-wheel checks pass. [Contract](ENGINEERING_LIBRARY.md).
+Complete scenario feasibility and producer integration remain I.4 work.
+
 Checkpoint I.2.1.1 exposes independent actual transfer review through
 `check-transfers`: strict canonical JSON, supplied route coordinates, exact
 file/source hashes and distinct PASS/UNKNOWN/FAIL exits. Installed-wheel command

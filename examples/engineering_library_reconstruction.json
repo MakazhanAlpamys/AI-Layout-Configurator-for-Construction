@@ -1,0 +1,511 @@
+{
+  "version": "0.1",
+  "id": "pharma_project_equipment_reconstruction",
+  "revision": "R01",
+  "sources": [
+    {
+      "id": "project",
+      "kind": "cad_geometry",
+      "title": "Project-authored equipment reconstruction example",
+      "edition": "Example R01",
+      "uri": "urn:layout-configurator:example:equipment:R01",
+      "locator": "Structured equipment, dimensions, envelopes, points, actions and finite template",
+      "content": "{\n  \"equipment\": {\n    \"id\": \"production_line_01\",\n    \"type\": \"production_line\",\n    \"width_mm\": 9000.0,\n    \"depth_mm\": 2200.0,\n    \"clearance_front_mm\": 1800.0,\n    \"clearance_back_mm\": 1200.0,\n    \"clearance_left_mm\": 900.0,\n    \"clearance_right_mm\": 900.0,\n    \"rotation_allowed\": false,\n    \"fixed\": true,\n    \"anchor_offset_mm\": 1000.0,\n    \"room_id\": \"production\",\n    \"anchor_side\": \"top\"\n  },\n  \"dimensions\": {\n    \"width_mm\": {\n      \"value\": 9000.0,\n      \"unit\": \"mm\"\n    },\n    \"depth_mm\": {\n      \"value\": 2200.0,\n      \"unit\": \"mm\"\n    },\n    \"clearance_front_mm\": {\n      \"value\": 1800.0,\n      \"unit\": \"mm\"\n    },\n    \"clearance_back_mm\": {\n      \"value\": 1200.0,\n      \"unit\": \"mm\"\n    },\n    \"clearance_left_mm\": {\n      \"value\": 900.0,\n      \"unit\": \"mm\"\n    },\n    \"clearance_right_mm\": {\n      \"value\": 900.0,\n      \"unit\": \"mm\"\n    }\n  },\n  \"envelopes\": {\n    \"body\": {\n      \"kind\": \"rectangle\",\n      \"unit\": \"mm\",\n      \"x\": 0.0,\n      \"y\": 0.0,\n      \"width\": 9000.0,\n      \"depth\": 2200.0,\n      \"id\": \"body\",\n      \"scenario\": \"all\",\n      \"role\": \"body\",\n      \"required_action_ids\": []\n    },\n    \"operating\": {\n      \"kind\": \"rectangle\",\n      \"unit\": \"mm\",\n      \"x\": -150.0,\n      \"y\": -100.0,\n      \"width\": 9350.0,\n      \"depth\": 2600.0,\n      \"id\": \"operating\",\n      \"scenario\": \"production\",\n      \"role\": \"operating\",\n      \"required_action_ids\": []\n    },\n    \"service\": {\n      \"kind\": \"rectangle\",\n      \"unit\": \"mm\",\n      \"x\": -400.0,\n      \"y\": -200.0,\n      \"width\": 9800.0,\n      \"depth\": 2900.0,\n      \"id\": \"service\",\n      \"scenario\": \"maintenance\",\n      \"role\": \"service\",\n      \"required_action_ids\": []\n    },\n    \"panel\": {\n      \"kind\": \"orthogonal_polygon\",\n      \"unit\": \"mm\",\n      \"points\": [\n        [\n          -400,\n          0\n        ],\n        [\n          -100,\n          0\n        ],\n        [\n          -100,\n          300\n        ],\n        [\n          0,\n          300\n        ],\n        [\n          0,\n          600\n        ],\n        [\n          -400,\n          600\n        ],\n        [\n          -400,\n          0\n        ]\n      ],\n      \"id\": \"panel\",\n      \"scenario\": \"maintenance\",\n      \"role\": \"panel\",\n      \"required_action_ids\": [\n        \"stop\"\n      ]\n    },\n    \"tool_removal\": {\n      \"kind\": \"rectangle\",\n      \"unit\": \"mm\",\n      \"x\": 0,\n      \"y\": -500,\n      \"width\": 9000.0,\n      \"depth\": 500,\n      \"id\": \"tool_removal\",\n      \"scenario\": \"maintenance\",\n      \"role\": \"tool_removal\",\n      \"required_action_ids\": []\n    },\n    \"installation\": {\n      \"kind\": \"rectangle\",\n      \"unit\": \"mm\",\n      \"x\": -1000,\n      \"y\": -1000,\n      \"width\": 11000.0,\n      \"depth\": 4200.0,\n      \"id\": \"installation\",\n      \"scenario\": \"installation_replacement\",\n      \"role\": \"installation\",\n      \"required_action_ids\": [\n        \"temporary\"\n      ]\n    }\n  },\n  \"points\": {\n    \"loading\": {\n      \"kind\": \"point\",\n      \"unit\": \"mm\",\n      \"x\": 4500.0,\n      \"y\": 2200.0,\n      \"direction\": \"front\",\n      \"id\": \"loading\",\n      \"scenario\": \"production\",\n      \"role\": \"loading\"\n    },\n    \"unloading\": {\n      \"kind\": \"point\",\n      \"unit\": \"mm\",\n      \"x\": 4500.0,\n      \"y\": 2200.0,\n      \"direction\": \"front\",\n      \"id\": \"unloading\",\n      \"scenario\": \"production\",\n      \"role\": \"unloading\"\n    },\n    \"operator\": {\n      \"kind\": \"point\",\n      \"unit\": \"mm\",\n      \"x\": 4500.0,\n      \"y\": 2200.0,\n      \"direction\": \"front\",\n      \"id\": \"operator\",\n      \"scenario\": \"production\",\n      \"role\": \"operator\"\n    },\n    \"service\": {\n      \"kind\": \"point\",\n      \"unit\": \"mm\",\n      \"x\": 4500.0,\n      \"y\": 2200.0,\n      \"direction\": \"front\",\n      \"id\": \"service\",\n      \"scenario\": \"maintenance\",\n      \"role\": \"service\"\n    },\n    \"connection\": {\n      \"kind\": \"point\",\n      \"unit\": \"mm\",\n      \"x\": 4500.0,\n      \"y\": 2200.0,\n      \"direction\": \"front\",\n      \"id\": \"connection\",\n      \"scenario\": \"production\",\n      \"role\": \"connection\"\n    }\n  },\n  \"actions\": {\n    \"stop\": {\n      \"kind\": \"production_stopped\",\n      \"description\": \"Declared stop for panel access.\",\n      \"id\": \"stop\",\n      \"scenario\": \"maintenance\"\n    },\n    \"temporary\": {\n      \"kind\": \"temporary_action\",\n      \"description\": \"Declared temporary lifting area.\",\n      \"id\": \"temporary\",\n      \"scenario\": \"installation_replacement\"\n    }\n  },\n  \"templates\": {\n    \"press_template\": {\n      \"capability\": \"finite_variant_selection_v1\",\n      \"parameters\": {\n        \"width\": {\n          \"minimum\": {\n            \"value\": 9000.0,\n            \"unit\": \"mm\"\n          },\n          \"maximum\": {\n            \"value\": 10000.0,\n            \"unit\": \"mm\"\n          },\n          \"dimension\": \"width_mm\"\n        }\n      },\n      \"variants\": [\n        {\n          \"id\": \"original\",\n          \"parameters\": {\n            \"width\": 9000.0\n          },\n          \"card_id\": \"press_card\"\n        }\n      ]\n    }\n  },\n  \"classification\": \"Reconstruction from canonical pharma_cleanroom_pilot.yaml production_line_01. Equipment dimensions reproduce that project program. Extra envelopes, named points and scenario actions are authored solely for this example; they are not manufacturer specifications or legal clearance requirements. Height, physical scenario feasibility, safety and 3D installation routes remain UNKNOWN.\"\n}\r\n",
+      "sha256": "1907026d4ab8f4331cb6c6e02158b4e751ab6fd1cc4476048bfa8d87bfb5853e",
+      "usage_rights": {
+        "state": "PERMITTED",
+        "note": "Project-authored example data; permission declaration does not authenticate external manufacturer rights."
+      }
+    }
+  ],
+  "cards": [
+    {
+      "id": "press_card",
+      "revision": "R01",
+      "label": "Production line project reconstruction",
+      "equipment_type": "production_line",
+      "origin": "reconstruction",
+      "equipment_binding": {
+        "id": "production_line_01",
+        "sha256": "cea0b2ee2c2a950768dcb356e3eec72a4b62a42c77280168d67b83dcca195a71",
+        "source_id": "project",
+        "source_pointer": "/equipment"
+      },
+      "dimensions": {
+        "width_mm": {
+          "measurement": {
+            "status": "KNOWN",
+            "value": 9000.0,
+            "unit": "mm",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "note": "Supplied project dimension."
+          },
+          "source_pointer": "/dimensions/width_mm"
+        },
+        "depth_mm": {
+          "measurement": {
+            "status": "KNOWN",
+            "value": 2200.0,
+            "unit": "mm",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "note": "Supplied project dimension."
+          },
+          "source_pointer": "/dimensions/depth_mm"
+        },
+        "clearance_front_mm": {
+          "measurement": {
+            "status": "KNOWN",
+            "value": 1800.0,
+            "unit": "mm",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "note": "Supplied project dimension."
+          },
+          "source_pointer": "/dimensions/clearance_front_mm"
+        },
+        "clearance_back_mm": {
+          "measurement": {
+            "status": "KNOWN",
+            "value": 1200.0,
+            "unit": "mm",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "note": "Supplied project dimension."
+          },
+          "source_pointer": "/dimensions/clearance_back_mm"
+        },
+        "clearance_left_mm": {
+          "measurement": {
+            "status": "KNOWN",
+            "value": 900.0,
+            "unit": "mm",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "note": "Supplied project dimension."
+          },
+          "source_pointer": "/dimensions/clearance_left_mm"
+        },
+        "clearance_right_mm": {
+          "measurement": {
+            "status": "KNOWN",
+            "value": 900.0,
+            "unit": "mm",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "note": "Supplied project dimension."
+          },
+          "source_pointer": "/dimensions/clearance_right_mm"
+        },
+        "height_mm": {
+          "measurement": {
+            "status": "UNKNOWN",
+            "value": null,
+            "unit": "mm",
+            "basis": "declared_fact",
+            "source_id": null,
+            "note": "No height supplied."
+          },
+          "source_pointer": null
+        }
+      },
+      "envelopes": [
+        {
+          "id": "body",
+          "role": "body",
+          "scenario": "all",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/envelopes/body",
+            "value": {
+              "kind": "rectangle",
+              "unit": "mm",
+              "x": 0.0,
+              "y": 0.0,
+              "width": 9000.0,
+              "depth": 2200.0,
+              "id": "body",
+              "scenario": "all",
+              "role": "body",
+              "required_action_ids": []
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          },
+          "required_action_ids": []
+        },
+        {
+          "id": "operating",
+          "role": "operating",
+          "scenario": "production",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/envelopes/operating",
+            "value": {
+              "kind": "rectangle",
+              "unit": "mm",
+              "x": -150.0,
+              "y": -100.0,
+              "width": 9350.0,
+              "depth": 2600.0,
+              "id": "operating",
+              "scenario": "production",
+              "role": "operating",
+              "required_action_ids": []
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          },
+          "required_action_ids": []
+        },
+        {
+          "id": "service",
+          "role": "service",
+          "scenario": "maintenance",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/envelopes/service",
+            "value": {
+              "kind": "rectangle",
+              "unit": "mm",
+              "x": -400.0,
+              "y": -200.0,
+              "width": 9800.0,
+              "depth": 2900.0,
+              "id": "service",
+              "scenario": "maintenance",
+              "role": "service",
+              "required_action_ids": []
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          },
+          "required_action_ids": []
+        },
+        {
+          "id": "panel",
+          "role": "panel",
+          "scenario": "maintenance",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/envelopes/panel",
+            "value": {
+              "kind": "orthogonal_polygon",
+              "unit": "mm",
+              "points": [
+                [
+                  -400,
+                  0
+                ],
+                [
+                  -100,
+                  0
+                ],
+                [
+                  -100,
+                  300
+                ],
+                [
+                  0,
+                  300
+                ],
+                [
+                  0,
+                  600
+                ],
+                [
+                  -400,
+                  600
+                ],
+                [
+                  -400,
+                  0
+                ]
+              ],
+              "id": "panel",
+              "scenario": "maintenance",
+              "role": "panel",
+              "required_action_ids": [
+                "stop"
+              ]
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          },
+          "required_action_ids": [
+            "stop"
+          ]
+        },
+        {
+          "id": "tool_removal",
+          "role": "tool_removal",
+          "scenario": "maintenance",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/envelopes/tool_removal",
+            "value": {
+              "kind": "rectangle",
+              "unit": "mm",
+              "x": 0,
+              "y": -500,
+              "width": 9000.0,
+              "depth": 500,
+              "id": "tool_removal",
+              "scenario": "maintenance",
+              "role": "tool_removal",
+              "required_action_ids": []
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          },
+          "required_action_ids": []
+        },
+        {
+          "id": "installation",
+          "role": "installation",
+          "scenario": "installation_replacement",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/envelopes/installation",
+            "value": {
+              "kind": "rectangle",
+              "unit": "mm",
+              "x": -1000,
+              "y": -1000,
+              "width": 11000.0,
+              "depth": 4200.0,
+              "id": "installation",
+              "scenario": "installation_replacement",
+              "role": "installation",
+              "required_action_ids": [
+                "temporary"
+              ]
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          },
+          "required_action_ids": [
+            "temporary"
+          ]
+        }
+      ],
+      "interaction_points": [
+        {
+          "id": "loading",
+          "role": "loading",
+          "scenario": "production",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/points/loading",
+            "value": {
+              "kind": "point",
+              "unit": "mm",
+              "x": 4500.0,
+              "y": 2200.0,
+              "direction": "front",
+              "id": "loading",
+              "scenario": "production",
+              "role": "loading"
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          }
+        },
+        {
+          "id": "unloading",
+          "role": "unloading",
+          "scenario": "production",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/points/unloading",
+            "value": {
+              "kind": "point",
+              "unit": "mm",
+              "x": 4500.0,
+              "y": 2200.0,
+              "direction": "front",
+              "id": "unloading",
+              "scenario": "production",
+              "role": "unloading"
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          }
+        },
+        {
+          "id": "operator",
+          "role": "operator",
+          "scenario": "production",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/points/operator",
+            "value": {
+              "kind": "point",
+              "unit": "mm",
+              "x": 4500.0,
+              "y": 2200.0,
+              "direction": "front",
+              "id": "operator",
+              "scenario": "production",
+              "role": "operator"
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          }
+        },
+        {
+          "id": "service",
+          "role": "service",
+          "scenario": "maintenance",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/points/service",
+            "value": {
+              "kind": "point",
+              "unit": "mm",
+              "x": 4500.0,
+              "y": 2200.0,
+              "direction": "front",
+              "id": "service",
+              "scenario": "maintenance",
+              "role": "service"
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          }
+        },
+        {
+          "id": "connection",
+          "role": "connection",
+          "scenario": "production",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/points/connection",
+            "value": {
+              "kind": "point",
+              "unit": "mm",
+              "x": 4500.0,
+              "y": 2200.0,
+              "direction": "front",
+              "id": "connection",
+              "scenario": "production",
+              "role": "connection"
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          }
+        }
+      ],
+      "scenario_actions": [
+        {
+          "id": "stop",
+          "scenario": "maintenance",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/actions/stop",
+            "value": {
+              "kind": "production_stopped",
+              "description": "Declared stop for panel access.",
+              "id": "stop",
+              "scenario": "maintenance"
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          }
+        },
+        {
+          "id": "temporary",
+          "scenario": "installation_replacement",
+          "evidence": {
+            "status": "KNOWN",
+            "basis": "declared_fact",
+            "source_id": "project",
+            "source_pointer": "/actions/temporary",
+            "value": {
+              "kind": "temporary_action",
+              "description": "Declared temporary lifting area.",
+              "id": "temporary",
+              "scenario": "installation_replacement"
+            },
+            "note": "Project-authored example declaration only; no manufacturer, legal clearance or engineering approval claim."
+          }
+        }
+      ],
+      "applicability": {
+        "equipment_ids": [
+          "production_line_01"
+        ],
+        "equipment_types": [
+          "production_line"
+        ],
+        "scenarios": [
+          "production",
+          "maintenance",
+          "installation_replacement"
+        ],
+        "conditions": []
+      },
+      "engineer_confirmation": null
+    }
+  ],
+  "templates": [
+    {
+      "id": "press_template",
+      "revision": "R01",
+      "capability": "finite_variant_selection_v1",
+      "source_id": "project",
+      "source_pointer": "/templates/press_template",
+      "parameters": [
+        {
+          "id": "width",
+          "unit": "mm",
+          "minimum": {
+            "measurement": {
+              "status": "KNOWN",
+              "value": 9000.0,
+              "unit": "mm",
+              "basis": "declared_fact",
+              "source_id": "project",
+              "note": "Supplied project dimension."
+            },
+            "source_pointer": "/templates/press_template/parameters/width/minimum"
+          },
+          "maximum": {
+            "measurement": {
+              "status": "KNOWN",
+              "value": 10000.0,
+              "unit": "mm",
+              "basis": "declared_fact",
+              "source_id": "project",
+              "note": "Supplied project dimension."
+            },
+            "source_pointer": "/templates/press_template/parameters/width/maximum"
+          },
+          "dimension": "width_mm"
+        }
+      ],
+      "variants": [
+        {
+          "id": "original",
+          "parameters": {
+            "width": 9000.0
+          },
+          "card_id": "press_card"
+        }
+      ]
+    }
+  ]
+}

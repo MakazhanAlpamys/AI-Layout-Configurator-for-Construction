@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.3.1 delivers current-product finite equipment cards and literal
+local 2D projection with explicit provenance, missing data and scope. The
+archived MVP and external engineering acceptance criteria remain unchanged.
+
 Checkpoint I.2.1.1 delivers current-product typed transfer review through a
 bounded actual CLI, preserving source bytes and scoped verdicts. The archived
 MVP and full engineering acceptance criteria remain unchanged.
