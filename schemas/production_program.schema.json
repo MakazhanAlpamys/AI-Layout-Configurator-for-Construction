@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/production-program-0.1.json",
+  "title": "Source-bound production program 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "id", "revision", "building_sha256", "origin", "sources", "materials", "states", "operations", "requirements", "engineer_confirmation"],
+  "properties": {
+    "version": {"const": "0.1"},
+    "id": {"$ref": "#/$defs/id"},
+    "revision": {"$ref": "#/$defs/id"},
+    "building_sha256": {"$ref": "#/$defs/digest"},
+    "origin": {"enum": ["supplied_project_program", "reconstruction"]},
+    "sources": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/source"}},
+    "materials": {"type": "array", "minItems": 1, "maxItems": 256, "items": {"$ref": "#/$defs/material"}},
+    "states": {"type": "array", "minItems": 1, "maxItems": 1024, "items": {"$ref": "#/$defs/state"}},
+    "operations": {"type": "array", "minItems": 1, "maxItems": 256, "items": {"$ref": "#/$defs/operation"}},
+    "requirements": {"type": "array", "maxItems": 1024, "items": {"$ref": "#/$defs/requirement"}},
+    "engineer_confirmation": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/confirmation"}]}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^\\S(?:[^\\r\\n]*\\S)?$"},
+    "text": {"type": "string", "minLength": 1, "maxLength": 8192, "pattern": "\\S"},
+    "digest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "ids": {"type": "array", "uniqueItems": true, "maxItems": 1024, "items": {"$ref": "#/$defs/id"}},
+    "basis": {"enum": ["declared_fact", "assumption", "supplied_confirmation"]},
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "kind", "title", "edition", "uri", "locator", "content", "sha256", "usage_rights"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["real_case_study", "functional_diagram", "engineering_rule", "visual_reference", "cad_geometry", "manufacturer_spec"]},
+        "title": {"$ref": "#/$defs/text"}, "edition": {"$ref": "#/$defs/text"},
+        "uri": {"$ref": "#/$defs/text"}, "locator": {"$ref": "#/$defs/text"},
+        "content": {"type": "string", "minLength": 1, "maxLength": 262144, "pattern": "\\S"},
+        "sha256": {"$ref": "#/$defs/digest"},
+        "usage_rights": {
+          "type": "object", "additionalProperties": false, "required": ["state", "note"],
+          "properties": {"state": {"enum": ["PERMITTED", "RESTRICTED", "UNKNOWN"]}, "note": {"$ref": "#/$defs/text"}}
+        }
+      }
+    },
+    "material": {
+      "type": "object", "additionalProperties": false, "required": ["id", "label"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}}
+    },
+    "state": {
+      "type": "object", "additionalProperties": false, "required": ["id", "material_id", "label"],
+      "properties": {"id": {"$ref": "#/$defs/id"}, "material_id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}}
+    },
+    "measurement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "value", "unit", "basis", "source_id", "note"],
+      "properties": {
+        "status": {"enum": ["KNOWN", "UNKNOWN"]},
+        "value": {"anyOf": [{"type": "number", "minimum": 0, "maximum": 1000000000000}, {"type": "null"}]},
+        "unit": {"type": "string"}, "basis": {"$ref": "#/$defs/basis"},
+        "source_id": {"anyOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]}, "note": {"$ref": "#/$defs/text"}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "KNOWN"}}}, "then": {"properties": {"value": {"type": "number"}, "source_id": {"$ref": "#/$defs/id"}}}},
+        {"if": {"properties": {"status": {"const": "UNKNOWN"}}}, "then": {"properties": {"value": {"type": "null"}}}}
+      ]
+    },
+    "operation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "room_id", "equipment_ids", "flow_ids", "inputs", "outputs", "measurements"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "label": {"$ref": "#/$defs/text"}, "room_id": {"$ref": "#/$defs/id"},
+        "equipment_ids": {"$ref": "#/$defs/ids"}, "flow_ids": {"$ref": "#/$defs/ids"},
+        "inputs": {"$ref": "#/$defs/ids"}, "outputs": {"$ref": "#/$defs/ids"},
+        "measurements": {
+          "type": "object", "additionalProperties": false,
+          "required": ["cycle_time", "target_throughput", "movement_frequency", "operators"],
+          "properties": {
+            "cycle_time": {"allOf": [{"$ref": "#/$defs/measurement"}, {"properties": {"unit": {"enum": ["s", "min"]}, "value": {"anyOf": [{"type": "number", "exclusiveMinimum": 0}, {"type": "null"}]}}}]},
+            "target_throughput": {"allOf": [{"$ref": "#/$defs/measurement"}, {"properties": {"unit": {"enum": ["items/hour", "kg/hour"]}, "value": {"anyOf": [{"type": "number", "exclusiveMinimum": 0}, {"type": "null"}]}}}]},
+            "movement_frequency": {"allOf": [{"$ref": "#/$defs/measurement"}, {"properties": {"unit": {"const": "movements/hour"}}}]},
+            "operators": {"allOf": [{"$ref": "#/$defs/measurement"}, {"properties": {"unit": {"const": "persons"}, "value": {"anyOf": [{"type": "integer", "minimum": 0}, {"type": "null"}]}}}]}
+          }
+        }
+      }
+    },
+    "requirement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "operation_id", "kind", "room_a", "room_b", "reason", "source_id", "basis", "excerpt"],
+      "properties": {
+        "id": {"$ref": "#/$defs/id"}, "operation_id": {"$ref": "#/$defs/id"},
+        "kind": {"enum": ["required_room_adjacency", "forbidden_room_adjacency"]},
+        "room_a": {"$ref": "#/$defs/id"}, "room_b": {"$ref": "#/$defs/id"}, "reason": {"$ref": "#/$defs/text"},
+        "source_id": {"$ref": "#/$defs/id"}, "basis": {"$ref": "#/$defs/basis"}, "excerpt": {"$ref": "#/$defs/text"}
+      }
+    },
+    "confirmation": {
+      "type": "object", "additionalProperties": false,
+      "required": ["author", "date", "revision", "source_id", "source_sha256", "statement"],
+      "properties": {
+        "author": {"$ref": "#/$defs/text"}, "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
+        "revision": {"$ref": "#/$defs/id"}, "source_id": {"$ref": "#/$defs/id"},
+        "source_sha256": {"$ref": "#/$defs/digest"}, "statement": {"$ref": "#/$defs/text"}
+      }
+    }
+  }
+}

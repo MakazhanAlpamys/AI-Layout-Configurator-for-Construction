@@ -1,0 +1,58 @@
+{
+  "version": "0.1",
+  "id": "pilot_process_reconstruction",
+  "revision": "P01",
+  "building_sha256": "aedca95d5c3288724790ade6ce2ab5b5fbda58a23cce99108c380cac9c60d459",
+  "origin": "reconstruction",
+  "sources": [
+    {
+      "id": "reconstruction_brief",
+      "kind": "functional_diagram",
+      "title": "Explicit pilot process reconstruction, not an approved production program",
+      "edition": "Reconstruction 1",
+      "uri": "urn:layout-configurator:examples:pharma_cleanroom_pilot.yaml",
+      "locator": "Complete supplied reconstruction text, lines 1-4",
+      "content": "Explicit reconstruction for examples/pharma_cleanroom_pilot.yaml.\nProduction and packaging are adjacent in the canonical source.\nNo operator, throughput, cycle-time or movement-frequency study is supplied.\nThis reconstruction has no process-engineer approval.\n",
+      "sha256": "9f07cfe7e656b240f28a78ed22943a84a4b6ac477a0b22b017cef5814aed8c95",
+      "usage_rights": {"state": "UNKNOWN", "note": "Synthetic reconstruction; project source rights and engineering applicability require review."}
+    }
+  ],
+  "materials": [{"id": "pilot_product", "label": "Generic pilot product; composition unspecified"}],
+  "states": [
+    {"id": "prepared", "material_id": "pilot_product", "label": "Prepared input, reconstructed"},
+    {"id": "produced", "material_id": "pilot_product", "label": "Produced output, reconstructed"},
+    {"id": "packaged", "material_id": "pilot_product", "label": "Packaged output, reconstructed"}
+  ],
+  "operations": [
+    {
+      "id": "produce", "label": "Production, reconstructed", "room_id": "production",
+      "equipment_ids": ["production_line_01"], "flow_ids": ["packaging_transfer"],
+      "inputs": ["prepared"], "outputs": ["produced"],
+      "measurements": {
+        "cycle_time": {"status": "UNKNOWN", "value": null, "unit": "s", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed cycle study supplied."},
+        "target_throughput": {"status": "UNKNOWN", "value": null, "unit": "items/hour", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed target throughput supplied."},
+        "movement_frequency": {"status": "UNKNOWN", "value": null, "unit": "movements/hour", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed movement-frequency study supplied."},
+        "operators": {"status": "UNKNOWN", "value": null, "unit": "persons", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed staffing program supplied."}
+      }
+    },
+    {
+      "id": "pack", "label": "Packaging, reconstructed", "room_id": "packaging",
+      "equipment_ids": ["packaging_line_01"], "flow_ids": ["packaging_transfer"],
+      "inputs": ["produced"], "outputs": ["packaged"],
+      "measurements": {
+        "cycle_time": {"status": "UNKNOWN", "value": null, "unit": "s", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed cycle study supplied."},
+        "target_throughput": {"status": "UNKNOWN", "value": null, "unit": "items/hour", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed target throughput supplied."},
+        "movement_frequency": {"status": "UNKNOWN", "value": null, "unit": "movements/hour", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed movement-frequency study supplied."},
+        "operators": {"status": "UNKNOWN", "value": null, "unit": "persons", "basis": "assumption", "source_id": "reconstruction_brief", "note": "No confirmed staffing program supplied."}
+      }
+    }
+  ],
+  "requirements": [
+    {
+      "id": "production_packaging_adjacency", "operation_id": "produce", "kind": "required_room_adjacency",
+      "room_a": "production", "room_b": "packaging", "reason": "Reconcile the original declared handover relationship; no process design inferred.",
+      "source_id": "reconstruction_brief", "basis": "assumption", "excerpt": "Production and packaging are adjacent in the canonical source."
+    }
+  ],
+  "engineer_confirmation": null
+}

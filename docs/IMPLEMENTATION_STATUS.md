@@ -119,6 +119,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | H.3.6.9 | Measure final translation-support propagation on unchanged physical80 source | Pinned `93fdc7c` captures 220 actual shapes and posts 816 support rows / nine tables, then proves only that selected family INFEASIBLE. All original raw files, prepared program, hints, manifest and eleven stage hashes match three prior runs. Every shape/family SHA and eight ZIP file bytes independently verified; twelve ordered candidate shapes differ from the prior wall-clock family. | [Run 38404321208](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38404321208): 43.515 s total / 42.313 s rooms; final Solve 0.031 s, 1,697 variables / 7,973 constraints, no solution. [Compact evidence](acceptance/93fdc7c.json). No equipment, routes, exports or persisted80 gates reached; cross-run times do not isolate an optimization effect. | measurement complete 2026-10-13; physical80 acceptance open, original source infeasibility unproven |
 | QA.17 | Repair real native IFC fixture failures exposed by full parallel CI | Hold the native file owner while reading borrowed members/GUIDs. Separate-export parity keeps exact DATA and semantic equality; each actual file SHA is checked and same-file omitted/False report equality retained. Production exports and assertions about membership/geometry remain. | Pinned d4edf62 full CI passed both bundle shards, pharma and API but failed core. Native exit reproduced on installed IFC 0.9.0; both controlled distinct-header cases failed before repair. Fresh 25 group/grid tests PASS in 27.299 s on 0.9.0, two controlled timestamp cases PASS; four affected cases PASS in 0.951 s on 0.8.5. [Negative evidence](acceptance/d4edf62.json). | fixture repair complete 2026-10-13; changed full CI pending |
 | C.5.1 | Checked finite-model subset-minimal conflict core | Builder-registered original terminals are guarded on a bounded clone before derived pruning/hints/exclusions. Fresh base/full/core/final-core and final deletion solves certify completed UNSAT/SAT evidence. Caller/model equivalence remains the integration's obligation; incomplete work stays UNKNOWN and original-program infeasibility false. | Agent 15 tests / 30 subcases PASS in 1.93 s. Fresh root all 15 PASS in 1.216 s; root independently checked both final witnesses' actual nonoverlap/full-width contacts, eight minimal-core solves, two expanded-family solves with identical source and exact original proto preservation. [Contract](FINITE_CONFLICTS.md). | core complete 2026-10-13; actual hierarchy registry and persisted integration pending |
+| I.1.1 | Bounded standalone production-program contract | Versioned source-bound operations/materials/states, typed supplied/UNKNOWN loads and explained adjacency declarations preserve exact source bytes and original scalar identity. Source/reference/room bindings fail closed; attribution matches each claim's source ID. Geometry is NOT_EVALUATED and actual reviewer approval UNKNOWN. | Real missing-module and flow-room regressions preceded implementation. Root reproduced wrong-source confirmation false PASS, agent fixed with real RED/GREEN. Fresh final related gate: agent 34 tests / 34 subtests PASS in 1.94 s, root 34 / 34 in 1.76 s. Root independently validated unchanged pilot reconstruction binding/18 UNKNOWN items and both wrong-source claim counterexamples; four frozen file hashes confirmed. [Contract](PRODUCTION_PROGRAM.md). | standalone core complete 2026-10-13; embedding, process enforcement and agreed engineering program pending |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -174,6 +175,7 @@ Cyrillic text.
 
 
 
+
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
   scoped current predicates and three-format persisted draft QA are implemented;
@@ -197,7 +199,8 @@ Cyrillic text.
   source-pinned API and editor launch controls exist; measured large edits remain separate.
   pinned two-floor 40-room CI, shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
-- I.1–I.6: production program; unified BuildingIR extensions; source-backed
+- I.1–I.6: standalone production-program core exists; opt-in embedding and
+  agreed engineering program remain; unified BuildingIR extensions; source-backed
   engineering library; scenario and pressure-network checks; synchronized
   drawings/schedules; medical-plastics benchmark and change scenario.
 

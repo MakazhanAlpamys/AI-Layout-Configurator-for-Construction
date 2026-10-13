@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.1.1 begins the current product plan's source-bound production
+program with explicit unresolved evidence. The archived MVP remains complete;
+process geometry, engineering agreement and manufacturing acceptance are open.
+
 Checkpoint C.5.1 establishes checked conflict explanations relative to a fixed
 captured model/family. Production registration and persisted integration remain
 in the current product plan; archived MVP completion is unchanged.

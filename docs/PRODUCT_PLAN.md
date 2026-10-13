@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.1.1 starts the bounded source-bound production-program contract,
+including operations, measurements and explained original adjacency requirements.
+The labeled pilot reconstruction validates binding with explicit UNKNOWN loads
+and rights. [Contract](PRODUCTION_PROGRAM.md); embedding, process computation
+and the agreed engineering example remain pending.
+
 Checkpoint C.5.1 adds bounded, independently re-solved subset-minimal conflicts
 for a captured finite model. Actual final deletion witnesses and same-source
 expanded-family feasibility preserve the original-program proof boundary.
@@ -521,7 +527,9 @@ identities across variants.
 
 ## 12. Future Cycle I — Process-Driven Manufacturing Design
 
-**Status: planned after the current cycles A–H; implementation has not started.**
+**Status: implementation started with the I.1.1 standalone contract.**
+BuildingIR admission, process computation, scenario enforcement, the agreed
+engineering example and the I.6 benchmark remain open.
 This section adds the next development stage: Process-driven Facility Design,
 or process-based manufacturing layout. It does not change the order, scope,
 priorities or readiness criteria of the existing sections, does not close their
