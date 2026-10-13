@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint C.5.5 supplies supervised current-product finite conflict evidence
+with explicit bounded opt-in controls and actual small-model verification.
+Archived MVP status and complete physical80/engineering acceptance are unchanged.
+
 Checkpoint H.3.6.13 preserves the actual negative physical80 result with exact
 source/artifact/family identities and scoped failure. It does not complete the
 current scaling criterion or prove original-building infeasibility.

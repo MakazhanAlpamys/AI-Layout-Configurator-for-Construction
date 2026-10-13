@@ -888,3 +888,13 @@ requires a justified family/source-preserving change and independent checks.
 All eight extracted file bytes and the downloaded archive SHA are independently
 verified. [Compact evidence](acceptance/9632549.json) retains the negative result;
 raw local artifacts remain under `out/checkpoints/9632549-physical80-ci/`.
+
+### Optional supervised finite-conflict evidence
+
+C.5.5 adds default-false manual runner/workflow diagnostics with a separate
+bounded JSON budget. [Contract](FINITE_CONFLICTS.md). Small actual core,
+deletion-witness, exhaustion, accepted saved-QA and default-parity checks pass.
+No full80 run was dispatched. The single diagnostic deadline includes original
+candidate preparation; expiry yields UNKNOWN rather than a new deadline or
+an unsupported whole-building infeasibility claim. Production limits and
+automatic CI load remain unchanged.

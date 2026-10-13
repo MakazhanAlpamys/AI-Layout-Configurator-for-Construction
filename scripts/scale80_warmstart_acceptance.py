@@ -34,9 +34,63 @@ def file_digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def _zone_conflict_options(enabled, budget):
+    """Keep diagnostic types and limits separate from production solve controls."""
+    if type(enabled) is not bool:
+        raise ValueError("zone-explain-conflicts must be a boolean")
+    if budget is not None and not enabled:
+        raise ValueError("zone-conflict-budget requires zone-explain-conflicts")
+    if not enabled:
+        return {}
+    from layout_configurator.finite_conflicts import ConflictBudget
+    from layout_configurator.zone_conflict_registry import validate_conflict_budget
+
+    effective = ConflictBudget() if budget is None else budget
+    validate_conflict_budget(effective)
+    return {"explain_conflicts": True, "conflict_budget": effective}
+
+
+def _conflict_budget_frame(budget):
+    return {"wall_seconds": budget.wall_seconds, "max_solves": budget.max_solves,
+            "deterministic_units": budget.deterministic_units}
+
+
+def _decode_zone_conflict_budget(raw):
+    """Admit a small nonempty JSON object without numeric coercion or duplicates."""
+    if type(raw) is not str or not raw or len(raw) > 1024 or len(raw.encode("utf-8")) > 1024:
+        raise ValueError("zone-conflict-budget-json must be at most 1024 UTF-8 bytes")
+    def object_pairs(values):
+        result = {}
+        for key, value in values:
+            if key in result:
+                raise ValueError("zone-conflict-budget-json has duplicate keys")
+            result[key] = value
+        return result
+    def constant(_):
+        raise ValueError("zone-conflict-budget-json requires finite JSON numbers")
+    def integer(value):
+        result = int(value)
+        if result.bit_length() > 512:
+            raise ValueError("zone-conflict-budget-json has an unsafe integer")
+        return result
+    try:
+        values = json.loads(raw, object_pairs_hook=object_pairs, parse_constant=constant, parse_int=integer)
+    except (json.JSONDecodeError, UnicodeError, RecursionError) as exc:
+        raise ValueError("zone-conflict-budget-json must be a valid bounded JSON object") from exc
+    if type(values) is not dict or not values or set(values) - {"wall_seconds", "max_solves", "deterministic_units"}:
+        raise ValueError("zone-conflict-budget-json requires supported nonempty budget settings")
+    from layout_configurator.finite_conflicts import ConflictBudget
+
+    budget = ConflictBudget(**values)
+    _zone_conflict_options(True, budget)
+    return budget
+
+
 def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=None, zone_global_workers=1,
                zone_global_diagnostics=False, zone_contact_pruning=False, zone_contact_support=False,
-               zone_selective_leaf_turns=False, zone_selective_leaf_repacking=False):
+               zone_selective_leaf_turns=False, zone_selective_leaf_repacking=False,
+               zone_explain_conflicts=False, zone_conflict_budget=None):
+    conflict_options = _zone_conflict_options(zone_explain_conflicts, zone_conflict_budget)
     if type(zone_selective_leaf_repacking) is not bool:
         raise ValueError("zone-selective-leaf-repacking must be a boolean")
     if type(zone_selective_leaf_turns) is not bool:
@@ -65,12 +119,14 @@ def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=N
                         diagnostics=zone_global_diagnostics, contact_pruning=zone_contact_pruning,
                         **({"contact_support": True} if zone_contact_support else {}),
                         **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}),
-                        **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}))
+                        **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}),
+                        **conflict_options)
     return report
 
 
 def _record_zone_search(report, seconds, workers, *, room_seconds, diagnostics=False, contact_pruning=False,
-                        contact_support=False, selective_leaf_turns=False, selective_leaf_repacking=False):
+                        contact_support=False, selective_leaf_turns=False, selective_leaf_repacking=False,
+                        explain_conflicts=False, conflict_budget=None):
     if seconds is not None or workers != 1:
         value = room_seconds if seconds is None else seconds
         if type(value) in (int, float) and not math.isfinite(value):
@@ -86,10 +142,16 @@ def _record_zone_search(report, seconds, workers, *, room_seconds, diagnostics=F
         report["settings"]["zone_selective_leaf_turns"] = True
     if selective_leaf_repacking:
         report["settings"]["zone_selective_leaf_repacking"] = True
+    if explain_conflicts:
+        options = _zone_conflict_options(explain_conflicts, conflict_budget)
+        report["settings"]["zone_explain_conflicts"] = True
+        report["settings"]["zone_conflict_budget"] = _conflict_budget_frame(options["conflict_budget"])
 
 
 def _zone_search_options(room_solver, seconds, workers, *, diagnostics=False, contact_pruning=False,
-                         contact_support=False, selective_leaf_turns=False, selective_leaf_repacking=False):
+                         contact_support=False, selective_leaf_turns=False, selective_leaf_repacking=False,
+                         explain_conflicts=False, conflict_budget=None):
+    conflict_options = _zone_conflict_options(explain_conflicts, conflict_budget)
     if type(selective_leaf_repacking) is not bool:
         raise ValueError("zone-selective-leaf-repacking must be a boolean")
     if type(selective_leaf_turns) is not bool:
@@ -104,7 +166,7 @@ def _zone_search_options(room_solver, seconds, workers, *, diagnostics=False, co
         raise ValueError("zone-global-workers must be an integer in 1..8")
     if seconds is not None and (type(seconds) not in (int, float) or not 0 < seconds <= 120):
         raise ValueError("zone-global-seconds must be finite and in (0,120]")
-    if room_solver != "zone_recursive" and (seconds is not None or workers != 1 or diagnostics or contact_pruning or contact_support or selective_leaf_turns or selective_leaf_repacking):
+    if room_solver != "zone_recursive" and (seconds is not None or workers != 1 or diagnostics or contact_pruning or contact_support or selective_leaf_turns or selective_leaf_repacking or explain_conflicts):
         raise ValueError("Nondefault zone-global controls require room-solver zone_recursive")
     options = {}
     if seconds is not None:
@@ -121,6 +183,7 @@ def _zone_search_options(room_solver, seconds, workers, *, diagnostics=False, co
         options["selective_leaf_turns"] = True
     if selective_leaf_repacking:
         options["selective_leaf_repacking"] = True
+    options.update(conflict_options)
     return options
 
 
@@ -140,6 +203,12 @@ def _requested_zone_controls(args):
         controls["zone_selective_leaf_turns"] = True
     if args.zone_selective_leaf_repacking:
         controls["zone_selective_leaf_repacking"] = True
+    if args.zone_explain_conflicts:
+        controls["zone_explain_conflicts"] = True
+    if args.zone_conflict_budget_json is not None:
+        if not args.zone_explain_conflicts:
+            raise ValueError("zone-conflict-budget-json requires zone-explain-conflicts")
+        controls["zone_conflict_budget"] = _decode_zone_conflict_budget(args.zone_conflict_budget_json)
     return controls
 
 
@@ -307,7 +376,8 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
                    seed=7, checkpoint=lambda: None, room_solver="hierarchical",
                    zone_global_seconds=None, zone_global_workers=1, zone_global_diagnostics=False,
                    zone_contact_pruning=False, zone_contact_support=False, zone_selective_leaf_turns=False,
-                   zone_selective_leaf_repacking=False):
+                   zone_selective_leaf_repacking=False, zone_explain_conflicts=False, zone_conflict_budget=None):
+    conflict_options = _zone_conflict_options(zone_explain_conflicts, zone_conflict_budget)
     if type(zone_selective_leaf_repacking) is not bool:
         raise ValueError("zone-selective-leaf-repacking must be a boolean")
     if type(zone_selective_leaf_turns) is not bool:
@@ -318,12 +388,14 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
                                        diagnostics=zone_global_diagnostics, contact_pruning=zone_contact_pruning,
                                        **({"contact_support": True} if zone_contact_support else {}),
                                        **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}),
-                                       **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}))
+                                       **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}),
+                                       **conflict_options)
     _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=room_seconds,
                         diagnostics=zone_global_diagnostics, contact_pruning=zone_contact_pruning,
                         **({"contact_support": True} if zone_contact_support else {}),
                         **({"selective_leaf_turns": True} if zone_selective_leaf_turns else {}),
-                        **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}))
+                        **({"selective_leaf_repacking": True} if zone_selective_leaf_repacking else {}),
+                        **conflict_options)
     from layout_configurator.bundle import write_facility_variant
     from layout_configurator.equipment import place_equipment_clear_of_doors, validate_equipment_layout
     from layout_configurator.facility import validate_building
@@ -537,11 +609,25 @@ def main(argv=None):
                         help="Append bounded checked swapped envelopes to eligible automatic recursive root leaves")
     parser.add_argument("--zone-selective-leaf-repacking", action="store_true",
                         help="Append two source-derived stacks to eligible automatic three-room root leaves")
+    parser.add_argument("--zone-explain-conflicts", action="store_true",
+                        help="Retain actual initial recursive finite-model conflicts; no whole-source infeasibility claim")
+    parser.add_argument("--zone-conflict-budget-json", default=None,
+                        help="Opted shared diagnostic budget JSON: wall_seconds, max_solves, deterministic_units; at most 1024 bytes")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--started", type=float, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    report = new_report(args.max_seconds if math.isfinite(args.max_seconds) else str(args.max_seconds),
-                        room_solver=args.room_solver, **_requested_zone_controls(args))
+    try:
+        controls = _requested_zone_controls(args)
+        report = new_report(args.max_seconds if math.isfinite(args.max_seconds) else str(args.max_seconds),
+                            room_solver=args.room_solver, **controls)
+    except (ValueError, UnicodeError, OverflowError) as exc:
+        report = new_report(args.max_seconds if math.isfinite(args.max_seconds) else str(args.max_seconds),
+                            room_solver=args.room_solver)
+        if args.zone_explain_conflicts:
+            report["settings"]["zone_explain_conflicts"] = True
+        report.update(status="INPUT_REJECTED", message=str(exc))
+        write_report(args.output, report)
+        return 2
     if not math.isfinite(args.max_seconds) or not 0 < args.max_seconds <= 120:
         report.update(status="INPUT_REJECTED", message="max-seconds must be finite and in (0,120]")
         write_report(args.output, report)
@@ -551,7 +637,8 @@ def main(argv=None):
                              diagnostics=args.zone_global_diagnostics, contact_pruning=args.zone_contact_pruning,
                              **({"contact_support": True} if args.zone_contact_support else {}),
                              **({"selective_leaf_turns": True} if args.zone_selective_leaf_turns else {}),
-                             **({"selective_leaf_repacking": True} if args.zone_selective_leaf_repacking else {}))
+                             **({"selective_leaf_repacking": True} if args.zone_selective_leaf_repacking else {}),
+                             **(_zone_conflict_options(True, controls.get("zone_conflict_budget")) if args.zone_explain_conflicts else {}))
     except ValueError as exc:
         report.update(status="INPUT_REJECTED", message=str(exc))
         write_report(args.output, report)
@@ -579,6 +666,10 @@ def main(argv=None):
         command.append("--zone-selective-leaf-turns")
     if args.zone_selective_leaf_repacking:
         command.append("--zone-selective-leaf-repacking")
+    if args.zone_explain_conflicts:
+        command.append("--zone-explain-conflicts")
+        command.extend(["--zone-conflict-budget-json", json.dumps(report["settings"]["zone_conflict_budget"],
+            sort_keys=True, separators=(",", ":"), allow_nan=False)])
     process = subprocess.Popen(command, cwd=REPO_ROOT, shell=False,
                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     try:

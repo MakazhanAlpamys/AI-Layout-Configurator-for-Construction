@@ -81,8 +81,8 @@ layout-configurator generate-building program.json --room-solver zone_recursive 
 
 The flag applies to direct generation. Unsupported ordinary backends and an
 incremental request with this flag are rejected before source/output mutation.
-HTTP controls are supplied by C.5.4 below; editor and supervised80 controls
-remain separate integrations.
+HTTP controls are supplied by C.5.4 below; supervised controls by C.5.5.
+Editor integration remains separate.
 
 Actual reports are retained under
 `generation.room_solver_evidence.conflict_explanations`: in `manifest.json` for
@@ -122,3 +122,38 @@ restart; the accepted bundle passes all nine fresh saved QA checks before a
 real cache hit. Its COMPLETE capture uses zero diagnostic solves. The actual
 unnamed base conflict remains UNKNOWN, without subset-minimal or original-source
 infeasibility claims. See [API.md](API.md) for the request contract.
+
+## Supervised recursive runner controls
+
+C.5.5 exposes `--zone-explain-conflicts` and optional
+`--zone-conflict-budget-json` in `scripts/scale80_warmstart_acceptance.py` and
+the existing single manual `warmstart80.yml` job. Defaults are false/empty;
+omitted or explicit false adds no diagnostic kwargs/settings or solver imports.
+The budget needs explicit true mode and the recursive backend. Nonempty JSON
+is bounded to1,024 UTF-8 bytes and accepts only `wall_seconds`, `max_solves`
+and `deterministic_units`, with existing limits of10 seconds,512 solves and
+10 deterministic units (or null). Actual numeric types are preserved;
+duplicates, booleans, unknown keys, empty objects, nonfinite and unsafe values
+reject as INPUT_REJECTED before starting a worker. The parent forwards the
+effective budget as quoted canonical JSON without shell evaluation.
+
+One diagnostic allowance spans the invocation from its first pre-pruning
+snapshot, including intervening production. Its deadline is never reset to
+force an explanation. Only actual initial INFEASIBLE snapshots trigger
+diagnostic search; accepted snapshots, UNKNOWN, MODEL_INVALID and enumeration
+results do not. An invocation that eventually succeeds may retain explanations
+for earlier failed subtree snapshots. Exhaustion remains UNKNOWN. The outer
+generation result and original-source proof boundary are unchanged.
+
+Fresh root verification passed10 tests in18.238 s and actionlint. A real
+three-room triangle yields a checked three-requirement subset-minimal core
+and three native SAT final-deletion witnesses. Actual budget exhaustion
+preserves ROOM_SEARCH_FAILED with UNKNOWN diagnostic evidence. A complete
+accepted four-room bundle passes fresh independent saved QA and EXPRESS with
+zero diagnostic solves. Actual omitted/false reports and controls match pinned
+`9632549`; production proto/result parity remains checked. Detailed local
+evidence is in `out/checkpoints/supervised-conflicts-c55/`.
+
+No automatic job, full80 run or new acceptance claim accompanies these controls.
+A long physical80 preparation may consume the entire shared deadline before
+the final global failure; bounded UNKNOWN is the correct result in that case.

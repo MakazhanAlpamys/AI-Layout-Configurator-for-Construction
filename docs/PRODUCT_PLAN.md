@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint C.5.5 adds explicit default-false bounded conflict diagnostics to
+the supervised recursive runner and manual workflow. Strict small JSON budgets
+retain one shared diagnostic deadline, leaving production/source budgets intact.
+Actual small checked core/deletion witnesses, accepted saved QA and default
+parity pass. [Contract](FINITE_CONFLICTS.md). No new automatic job or full80
+acceptance is claimed; editor and other-stage registration remain separate.
+
 Checkpoint H.3.6.13 records the single changed `9632549` physical80 run:
 all four new source-derived stacks are present, but final finite-family CP
 remains INFEASIBLE. All232 shapes, source identities and eight artifact files

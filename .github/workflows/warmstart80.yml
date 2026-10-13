@@ -54,6 +54,16 @@ on:
         type: boolean
         required: false
         default: false
+      zone_explain_conflicts:
+        description: Retain bounded actual initial recursive finite-model conflict checks
+        type: boolean
+        required: false
+        default: false
+      zone_conflict_budget_json:
+        description: Optional opted shared diagnostic budget JSON; production and total limits stay unchanged
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -89,6 +99,8 @@ jobs:
           ZONE_CONTACT_SUPPORT: ${{ inputs.zone_contact_support }}
           ZONE_SELECTIVE_LEAF_TURNS: ${{ inputs.zone_selective_leaf_turns }}
           ZONE_SELECTIVE_LEAF_REPACKING: ${{ inputs.zone_selective_leaf_repacking }}
+          ZONE_EXPLAIN_CONFLICTS: ${{ inputs.zone_explain_conflicts }}
+          ZONE_CONFLICT_BUDGET_JSON: ${{ inputs.zone_conflict_budget_json }}
         shell: bash
         run: |
           args=(--output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER")
@@ -109,6 +121,12 @@ jobs:
           fi
           if [[ "$ZONE_SELECTIVE_LEAF_REPACKING" == "true" ]]; then
             args+=(--zone-selective-leaf-repacking)
+          fi
+          if [[ "$ZONE_EXPLAIN_CONFLICTS" == "true" ]]; then
+            args+=(--zone-explain-conflicts)
+          fi
+          if [[ -n "$ZONE_CONFLICT_BUDGET_JSON" ]]; then
+            args+=(--zone-conflict-budget-json "$ZONE_CONFLICT_BUDGET_JSON")
           fi
           python scripts/scale80_warmstart_acceptance.py "${args[@]}"
       - name: Retain warm-start bundles and evidence, including failures
