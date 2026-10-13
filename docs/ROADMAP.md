@@ -294,6 +294,9 @@ zone search; capture completeness remains separate from feasibility and acceptan
 Checkpoint H.3.6.6 adds explicit bounded redundant final cross-root contact
 clauses, with exact small-grid geometry and complete small-bundle evidence.
 It leaves the original source constraints and physical80 acceptance gate intact.
+Checkpoint B.15 completes explicit source reference-axis delivery in all three
+formats, atomic bundles and CLI QA. It retains DRAFT/full UNKNOWN/PENDING and
+does not infer structural engineering or room alignment from reference lines.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

@@ -495,7 +495,7 @@ these fixtures on this Windows runtime, not general performance guarantees.
 
 The complete source-generated example and persisted exchange remain DRAFT.
 Scoped software QA PASS coexists with full facility UNKNOWN and engineering
-acceptance PENDING. Structural grid/native semantic extensions, physical
+acceptance PENDING. Native semantic extensions, physical
 daylight calculation and receiving-tool/expert acceptance remain separate.
 
 ## Source structural reference axes
@@ -519,5 +519,51 @@ claim. Full facility validation remains UNKNOWN and engineering acceptance PENDI
 The actual cutout counterexample retains its 28 m2 C-shaped room while an axis
 at X=2050.5 crosses the full 6000 mm reference span; clipping would incorrectly
 produce two disconnected segments. Fresh grid/model/schema verification passed
-21 tests with 13 subtests in 1.85 s. This B.15.1 foundation does not yet enable
-grid delivery: explicit DXF/PDF/IFC, bundle and CLI integration remain open.
+21 tests with 13 subtests in 1.85 s. B.15.1 established the shared geometry;
+B.15 integrates the explicitly enabled delivery described below.
+
+### Opted axis delivery and independent readback
+
+DXF, PDF, IFC, atomic single bundles and generated-set QA accept strict boolean
+`include_grid=False`; both explicit CLI commands expose `--include-grid`.
+Saved metadata cannot enable the reader. Windows still require their independent
+option. The existing bounded 14-file inventory and protected publication remain.
+Every opted manifest, artifact index and fresh QA report binds the same current
+source reference-axis capability. Unsupported native zone/system semantics and
+full facility acceptance remain separate.
+
+DXF contains native `A-GRID` lines, exact source XDATA and visible labels placed
+after the window inventory. PDF contains actual dashed source lines and exact
+inventory coordinates/labels. Independent readback rejects extra, missing,
+shortened, moved, renamed or hidden axes after artifact hashes are recomputed.
+The PDF reader checks actual stroke/dash dimensions and uniform transforms, exact
+plan claims and inventory word boundaries; contradictory engineering/acceptance
+claims cannot pass. Native IFC uses one `IfcGrid` with ordered `IfcGridAxis`
+references, exact shared footprint curves, source labels, stable grid GUID and
+storey containment. Current native geometry, properties and source hashes are
+read back independently, including continuous axes across cutouts.
+
+Direct typed source frames retain original integer/fractional coordinates and
+labels before constructor normalization. The CLI validates raw axis types first,
+then retains the existing canonical BuildingIR numerical normalization used by
+generation. Original input-file digests are recorded separately in opted
+generation evidence. Saved-set QA binds those declared digests to generation
+bytes; it cannot reconstruct or independently verify an absent external raw file
+from its digest. Canonical persisted source frames are independently checked.
+
+The English source-only example is
+[`orthogonal_source_grid.yaml`](../examples/orthogonal_source_grid.yaml). Its
+actual module command produced a complete concave 20+16 m2 draft, source and
+automatic windows, equipment/service clearance, a checked route and six axes
+including X=2050.5 and Y=3100.25. Independent set QA passed in 4.22 s and its two
+actual PDF pages were rendered and visually inspected. A separate combined
+14-file fixture passed root readback in 2.91 s with every retained hash unchanged;
+native EXPRESS has zero statements. Both standalone PDF pages were inspected.
+
+Fresh root PDF/projection/window/grid regression passed 49 tests in 16.71 s.
+Agent IFC regression passed 130 tests / 254 subtests in 79.20 s; bundle/CLI
+integration passed 21 / 58 in 246.13 s. Five independently reproduced rehashed
+PDF attacks now fail. Three older durable bundles retain exact default QA JSON
+and all 42 artifact hashes; the retained window bundle passes the stricter
+current reader with its 14 files unchanged. These results verify scoped software
+delivery on this runtime, without a general performance or engineering claim.

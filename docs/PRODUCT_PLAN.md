@@ -199,6 +199,11 @@ Checkpoint H.3.6.6 adds opted bounded cross-root contact pruning to the final
 physical-zone model. Exact rounded-shape compatibility posts only redundant
 candidate-pair clauses; original constraints, family geometry and deadlines
 remain. Small complete bundle QA passes; physical80 acceptance is still open.
+Checkpoint B.15 completes opted source reference axes in native DXF/PDF/IFC,
+atomic bundles and explicit single/set CLI readback. Fresh source identity,
+fractional full-span axes, visible labels and native curves are checked after
+hash recomputation. Default output is preserved; native group semantics and
+structural engineering acceptance remain separate.
 
 ## 1. Why we are expanding the project
 

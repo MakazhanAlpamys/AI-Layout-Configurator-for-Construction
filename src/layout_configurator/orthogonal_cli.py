@@ -14,7 +14,8 @@ import tempfile
 
 from .facility import DEFAULT_FACILITY_PROFILE_SCHEMA_PATH, FacilityProfile, default_facility_profile
 from .orthogonal_bundle import (FORMAT as BUNDLE_FORMAT, FULL_UNKNOWN, OrthogonalBundleLimits,
-                               _hash, _json, _keys, _publish_directory, _read_json, write_orthogonal_bundle)
+                               _grid_capability, _grid_options, _hash, _json, _keys, _publish_directory,
+                               _read_json, _source_grid, write_orthogonal_bundle)
 from .orthogonal_bundle_qa import validate_orthogonal_bundle
 from .orthogonal_generation import OrthogonalGenerationBudget, generate_orthogonal_facility_variants
 from .orthogonal_validation import _window_options
@@ -121,14 +122,21 @@ def generate_draft_set(args):
     input_evidence = {}
     try:
         include_windows = getattr(args, "include_windows", False)
+        include_grid = getattr(args, "include_grid", False)
         window_options = _window_options(include_windows)
+        projection_options = {**window_options, **_grid_options(include_grid)}
         _fresh(target)
         raw, source_bytes = _input(args.spec)
         input_evidence["source_file_sha256"] = hashlib.sha256(source_bytes).hexdigest()
         # BuildingIR's schema leaves nested LayoutIR as an object. Validate raw
         # types here before constructors can coerce boolean/string dimensions.
         normalize_mapping(raw.get("layout"))
+        if include_grid:
+            # Validate raw axes before retaining the existing canonical float
+            # normalization used by BuildingIR and the unchanged generator.
+            _source_grid(raw)
         building = normalize_building_mapping(raw)
+        _grid_capability(building, include_grid)
         profile, profile_bytes = _profile(args.profile)
         if profile_bytes is not None:
             input_evidence["profile_file_sha256"] = hashlib.sha256(profile_bytes).hexdigest()
@@ -139,6 +147,8 @@ def generate_draft_set(args):
             building, profile=profile, variants=args.variants, seed=args.seed,
             time_limit_seconds=args.time_limit, deterministic_units=args.deterministic_units, budget=budget, **window_options)
         generation_evidence = generated.to_dict(building)
+        if include_grid:
+            generation_evidence["input_evidence"] = dict(input_evidence)
         if not generated.accepted:
             _publish_failure(target, _failure("generation", "UNKNOWN", "No verified draft within configured search",
                                              generation=generation_evidence, input_evidence=input_evidence))
@@ -152,14 +162,17 @@ def generate_draft_set(args):
             generation_hash = _save(stage / "generation.json", generation_evidence)
             entries = []
             capabilities = []
+            grid_capabilities = []
             for candidate in generated.accepted:
                 variant = candidate.result.variant
                 name = f"variant_{variant:02d}"
                 write_orthogonal_bundle(stage / name, building, candidate.result, candidate.equipment,
-                                        routing=candidate.flow_routes, profile=profile, **window_options)
+                                        routing=candidate.flow_routes, profile=profile, **projection_options)
                 if include_windows:
                     capabilities.append({"variant": variant,
                         "report": validate_orthogonal_window_capability(building.layout, candidate.result).to_dict()})
+                if include_grid:
+                    grid_capabilities.append({"variant": variant, "report": _grid_capability(building, True)})
                 entries.append({"variant": variant, "bundle": name,
                                 "manifest_sha256": hashlib.sha256((stage / name / "manifest.json").read_bytes()).hexdigest()})
             index = {"format": SET_FORMAT, "version": "0.1", "status": generated.status, "ok": False,
@@ -170,8 +183,10 @@ def generate_draft_set(args):
                      "full_facility_validation": dict(FULL_UNKNOWN), "engineering_acceptance": "PENDING"}
             if include_windows:
                 index["window_capability"] = {"policy": ORTHOGONAL_WINDOW_CAPABILITY, "variants": capabilities}
+            if include_grid:
+                index["grid_capability"] = {"policy": "boundary_spanning_axes_v1", "variants": grid_capabilities}
             _save(stage / "manifest.json", index)
-            delivery = validate_draft_input(stage, expected_profile=profile, **window_options)
+            delivery = validate_draft_input(stage, expected_profile=profile, **projection_options)
             if delivery["status"] == "FAIL" or any(not row["report"]["ok"] for row in delivery["variants"]):
                 raise ValueError("Fresh persisted draft-set delivery checks failed")
             if _bytes(args.spec, INPUT_LIMITS.max_json_bytes) != source_bytes or (
@@ -216,7 +231,7 @@ def _finish(report):
     return report
 
 
-def validate_draft_input(path, *, expected_profile=None, include_windows=False):
+def validate_draft_input(path, *, expected_profile=None, include_windows=False, include_grid=False):
     """Check every child independently; a partial set remains UNKNOWN."""
     report = {"format": "FLC-orthogonal-draft-set-qa", "version": "0.1", "status": "FAIL", "ok": False,
               "scope": "Persisted exchange delivery, source-set consistency and declared software predicates only",
@@ -225,6 +240,7 @@ def validate_draft_input(path, *, expected_profile=None, include_windows=False):
     path = Path(path).absolute()
     try:
         window_options = _window_options(include_windows)
+        projection_options = {**window_options, **_grid_options(include_grid)}
         if not path.is_dir() or path.is_symlink():
             raise ValueError("Draft input must be an actual directory without a symlink")
         index_path = path / "manifest.json"
@@ -234,11 +250,11 @@ def validate_draft_input(path, *, expected_profile=None, include_windows=False):
         if not isinstance(index, dict):
             raise ValueError("Draft manifest requires an object")
         if index.get("format") == BUNDLE_FORMAT:
-            return validate_orthogonal_bundle(path, expected_profile=expected_profile, **window_options)
+            return validate_orthogonal_bundle(path, expected_profile=expected_profile, **projection_options)
         _keys(index, ("format", "version", "status", "ok", "project_name", "revision", "source",
                       "requested_variants", "published_variants", "variants", "generation",
                       "full_facility_validation", "engineering_acceptance",
-                      *(("window_capability",) if include_windows else ())))
+                      *(("window_capability",) if include_windows else ()), *(("grid_capability",) if include_grid else ())))
         if (index["format"] != SET_FORMAT or index["version"] != "0.1" or index["ok"] is not False or
                 _json(index["full_facility_validation"]) != _json(FULL_UNKNOWN) or index["engineering_acceptance"] != "PENDING"):
             raise ValueError("Set index cannot promote draft/full acceptance or change its format")
@@ -266,6 +282,16 @@ def validate_draft_input(path, *, expected_profile=None, include_windows=False):
                 _keys(row, ("variant", "report"))
                 if type(row["variant"]) is not int or row["variant"] != position:
                     raise ValueError("Window capability variant identities must agree with the ordered set")
+        if include_grid:
+            capability = index["grid_capability"]
+            _keys(capability, ("policy", "variants"))
+            if (capability["policy"] != "boundary_spanning_axes_v1" or not isinstance(capability["variants"], list)
+                    or len(capability["variants"]) != published):
+                raise ValueError("Draft set grid capability must identify every actual published variant")
+            for position, row in enumerate(capability["variants"], 1):
+                _keys(row, ("variant", "report"))
+                if type(row["variant"]) is not int or row["variant"] != position:
+                    raise ValueError("Grid capability variant identities must agree with the ordered set")
         names = []
         for position, entry in enumerate(index["variants"], 1):
             _keys(entry, ("variant", "bundle", "manifest_sha256"))
@@ -286,6 +312,16 @@ def validate_draft_input(path, *, expected_profile=None, include_windows=False):
         if hashlib.sha256(data).hexdigest() != _digest(index["generation"]["sha256"]):
             raise ValueError("Generation evidence actual byte hash differs")
         generation = _read_json(data, SET_LIMITS)
+        if include_grid:
+            declared_input = generation.get("input_evidence")
+            if (not isinstance(declared_input, dict) or "source_file_sha256" not in declared_input
+                    or set(declared_input) - {"source_file_sha256", "profile_file_sha256"}):
+                raise ValueError("Declared input provenance requires bounded source and optional profile SHA256 fields")
+            for value in declared_input.values():
+                _digest(value)
+            report["input_evidence"] = dict(declared_input)
+            report["input_evidence_scope"] = ("Declared input-file digests bound by generation bytes; "
+                "external raw input cannot be reconstructed or independently verified from digests alone")
         if (generation["source"] != index["source"] or generation["status"] != index["status"] or
                 any(type(generation[name]) is not int for name in ("requested_variants", "accepted_candidates")) or
                 generation["requested_variants"] != requested or generation["accepted_candidates"] != published or
@@ -296,7 +332,7 @@ def validate_draft_input(path, *, expected_profile=None, include_windows=False):
         _check(report, "SET_INDEX", "PASS", "Closed metadata, actual generation hash and ordered relative variant IDs agree")
         for entry, accepted in zip(index["variants"], generation["accepted"]):
             child = path / entry["bundle"]
-            qa = validate_orthogonal_bundle(child, expected_profile=expected_profile, **window_options)
+            qa = validate_orthogonal_bundle(child, expected_profile=expected_profile, **projection_options)
             report["variants"].append({"variant": entry["variant"], "bundle": entry["bundle"], "report": qa})
             _check(report, f"VARIANT_{entry['variant']:02d}_DELIVERY", qa["status"], "Fresh independent persisted child QA")
             try:
@@ -327,6 +363,15 @@ def validate_draft_input(path, *, expected_profile=None, include_windows=False):
                     if (_json(claimed) != _json(fresh) or _json(raw["window_capability"]) != _json(fresh) or
                             _json(qa.get("window_capability")) != _json(fresh)):
                         raise ValueError("Draft set window capability differs from fresh actual canonical child source")
+                if include_grid:
+                    source_building = _read_json(_bytes(child / "building.json", SET_LIMITS.max_json_bytes), SET_LIMITS)
+                    _source_grid(source_building)
+                    building = normalize_building_mapping(source_building)
+                    fresh = _grid_capability(building, True)
+                    claimed = index["grid_capability"]["variants"][entry["variant"] - 1]["report"]
+                    if (_json(claimed) != _json(fresh) or _json(raw["grid_capability"]) != _json(fresh)
+                            or _json(qa.get("grid_capability")) != _json(fresh)):
+                        raise ValueError("Draft set grid capability differs from fresh actual canonical child source")
                 _check(report, f"VARIANT_{entry['variant']:02d}_IDENTITY", "PASS", "Actual canonical source snapshots and revision agree")
             except (ValueError, OSError, TypeError, KeyError) as exc:
                 _check(report, f"VARIANT_{entry['variant']:02d}_IDENTITY", "FAIL", exc)
@@ -341,7 +386,7 @@ def check_draft_command(args):
     try:
         profile = _profile(args.profile)[0] if args.profile is not None else None
         report = validate_draft_input(args.input, expected_profile=profile,
-                                      **_window_options(getattr(args, "include_windows", False)))
+            **_window_options(getattr(args, "include_windows", False)), **_grid_options(getattr(args, "include_grid", False)))
     except (ValueError, OSError, TypeError, KeyError, RuntimeError, OverflowError, RecursionError) as exc:
         report = _failure("input", "FAIL", exc)
     if args.json_output:

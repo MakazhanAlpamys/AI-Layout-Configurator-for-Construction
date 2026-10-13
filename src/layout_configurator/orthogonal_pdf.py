@@ -37,6 +37,7 @@ STYLES = {
     "wall": {"fill": (.16, .22, .27), "stroke": INK, "paint": "f*"},
     "door": {"fill": INK, "stroke": (.69, .35, .15), "paint": "S"},
     "window": {"fill": INK, "stroke": (.15, .60, .85), "paint": "S"},
+    "grid": {"fill": INK, "stroke": (.38, .44, .55), "paint": "S"},
     "equipment": {"fill": (.80, .88, .95), "stroke": (.20, .40, .61), "paint": "B*"},
     "service": {"fill": INK, "stroke": (.20, .40, .61), "paint": "S"},
     "corridor": {"fill": (.84, .94, .86), "stroke": INK, "paint": "f*"},
@@ -76,22 +77,30 @@ def _hash(raw):
     return hashlib.sha256(_json(raw)).hexdigest()
 
 
-def _prepare(building, layout, equipment, routing, limits, *, include_windows=False):
+def _prepare(building, layout, equipment, routing, limits, *, include_windows=False, include_grid=False):
     """Validate canonical inputs and bounded local predicates before any output."""
     if type(include_windows) is not bool:
         raise ValueError("include_windows requires a boolean")
+    if type(include_grid) is not bool:
+        raise ValueError("include_grid requires a boolean")
     window_options = {"include_windows": True} if include_windows else {}
     if not isinstance(limits, OrthogonalPDFLimits):
         raise ValueError("limits requires OrthogonalPDFLimits")
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Orthogonal PDF requires canonical BuildingIR and LayoutResult")
     capability = None
+    grid_capability = None
     try:
         if len(building.layout.rooms) > limits.max_rooms or len(building.equipment) > limits.max_equipment:
             raise ValueError("Orthogonal PDF source room/equipment budget exhausted")
         raw, result_data = building.to_dict(), layout.to_dict()
         if len(_json(raw)) + len(_json(result_data)) > limits.max_source_bytes:
             raise ValueError("Orthogonal PDF source byte budget exhausted")
+        if include_grid:
+            from .orthogonal_grid import OrthogonalGridCapabilityError, validate_orthogonal_grid
+            grid_capability = validate_orthogonal_grid(building.layout, building.structural_grid)
+            if not grid_capability.ok:
+                raise OrthogonalGridCapabilityError(grid_capability)
         if include_windows:
             from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
             capability = validate_orthogonal_window_capability(building.layout, layout)
@@ -116,6 +125,8 @@ def _prepare(building, layout, equipment, routing, limits, *, include_windows=Fa
              "door_approaches": "UNKNOWN", "routes": "UNKNOWN"}
     if include_windows:
         local["window_capability"] = capability.to_dict()
+    if include_grid:
+        local["grid_capability"] = grid_capability.to_dict()
     if equipment is not None:
         if (not isinstance(equipment, EquipmentLayoutResult) or
                 not isinstance(equipment.placements, (tuple, list)) or len(equipment.placements) > limits.max_equipment):
@@ -173,7 +184,7 @@ def _rings(geometry):
     return [ring for child in geometry.geoms for ring in _rings(child)]
 
 
-def _rows(building, layout, walls, equipment, routing):
+def _rows(building, layout, walls, equipment, routing, *, grid_capability=None):
     rows = ["Source inventory: room labels and embedded vector tags identify canonical sources."]
     for i, (identifier, shape) in enumerate(sorted(layout.placements.items()), 1):
         rows.append(f"R{i:02d} | room {identifier} | type {building.layout.room_by_id[identifier].type} | actual area {shape.area_m2:.3f} m2")
@@ -183,6 +194,9 @@ def _rows(building, layout, walls, equipment, routing):
         rows.append(f"Window {window.id} | host {window.room_id} | orientation {window.orientation} | "
                     f"source width {window.width:g} mm | source sill {building.layout.window_sill_mm:g} mm | "
                     f"height {building.layout.window_height_mm:g} mm | closed facade barrier")
+    for axis in grid_capability["axes"] if grid_capability is not None else ():
+        rows.append(f"Grid {axis['id']} | label {axis['label']} | direction {axis['direction']} | "
+                    f"coordinate {axis['coordinate_mm']:g} mm | boundary reference")
     specs = {item.id: item for item in building.equipment}
     for i, placement in enumerate(equipment.placements if equipment else (), 1):
         item = specs[placement.equipment_id]
@@ -198,14 +212,34 @@ def _pdf_string(value):
     return output.getvalue().decode("ascii")
 
 
+def _footer(*, include_windows=False, include_grid=False):
+    if include_windows and include_grid:
+        return "Source facade windows, boundary reference axes and local predicates only; daylight and structural engineering review remain open."
+    if include_grid:
+        return "Source boundary reference axes and local predicates only; structural engineering and review remain open."
+    if include_windows:
+        return "Source facade windows and local predicates only; daylight calculation and engineering review remain open."
+    return "Source projection and local predicates only; complete profiles, windows and engineering review remain open."
+
+
+def _legend(local, *, include_windows=False, include_grid=False):
+    return ["ACTUAL VECTOR GEOMETRY", "Room contour: pale blue", "Wall material: dark fill", "Door: actual opening line",
+            "Equipment: blue footprint", "Service: directional dashed line", "Corridor: checked full-width fill", "Centerline: supplied route",
+            *(["Window: source facade line; closed barrier"] if include_windows else []),
+            *(["Grid: source boundary reference axes"] if include_grid else []),
+            "LOCAL PREDICATES", *[f"{name}: {status}" for name, status in local.items()
+                                   if name not in ("window_capability", "grid_capability")],
+            "FULL FACILITY: UNKNOWN"]
+
+
 def _paint(document, kind, identifier, rings, *, closed=True, scale):
     document.saveState()
     document._code.append(f"/FLC << /Kind /{kind} /Id {_pdf_string(identifier)} >> BDC")
     style = STYLES[kind]
     document.setFillColorRGB(*style["fill"])
     document.setStrokeColorRGB(*style["stroke"])
-    document.setLineWidth((1.4 if kind in ("door", "window") else .7) / scale)
-    if kind == "service":
+    document.setLineWidth((1.4 if kind in ("door", "window") else .8 if kind == "grid" else .7) / scale)
+    if kind in ("service", "grid"):
         document.setDash(4 / scale, 2 / scale)
     for ring in rings:
         if not ring:
@@ -219,12 +253,13 @@ def _paint(document, kind, identifier, rings, *, closed=True, scale):
 
 
 def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routing=None,
-                                revision="P01", font_path=None, limits=OrthogonalPDFLimits(), include_windows=False):
+                                revision="P01", font_path=None, limits=OrthogonalPDFLimits(), include_windows=False, include_grid=False):
     """Export actual contours and only independently checked optional components."""
-    building, layout, walls, local, source = _prepare(building, layout, equipment, routing, limits, include_windows=include_windows)
+    building, layout, walls, local, source = _prepare(building, layout, equipment, routing, limits,
+        include_windows=include_windows, include_grid=include_grid)
     if not isinstance(revision, str) or not revision.strip() or len(revision) > 64:
         raise ValueError("Orthogonal PDF revision requires 1..64 nonempty characters")
-    rows = _rows(building, layout, walls, equipment, routing)
+    rows = _rows(building, layout, walls, equipment, routing, grid_capability=local.get("grid_capability"))
     text = [building.layout.project_name, revision, *rows]
     if sum(map(len, text)) > limits.max_text_chars or len(building.layout.project_name) > 256:
         raise ValueError("Orthogonal PDF text budget exhausted")
@@ -257,9 +292,7 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
         document.setFont(regular, 8)
         for i, (name, digest) in enumerate(source.items()):
             document.drawString(50, 76 - i * 13, f"{name}: {digest}")
-        footer = "Source projection and local predicates only; complete profiles, windows and engineering review remain open."
-        if include_windows:
-            footer = "Source facade windows and local predicates only; daylight calculation and engineering review remain open."
+        footer = _footer(include_windows=include_windows, include_grid=include_grid)
         document.drawString(50, 18, footer)
 
     header(1)
@@ -284,6 +317,8 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
         _paint(document, "door", opening.id, [list(opening.centerline.coords)], closed=False, scale=scale)
     for window in walls.windows:
         _paint(document, "window", window.id, [list(window.centerline.coords)], closed=False, scale=scale)
+    for axis in local["grid_capability"]["axes"] if include_grid else ():
+        _paint(document, "grid", axis["id"], [[axis["start"], axis["end"]]], closed=False, scale=scale)
     document.setFillColorRGB(*INK)
     document.setFont(bold, 8 / scale)
     for i, (_, shape) in enumerate(sorted(layout.placements.items()), 1):
@@ -291,11 +326,7 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
         document.drawCentredString(*anchor.center, f"R{i:02d}")
     document.restoreState()
     document.setFont(regular, 10)
-    legend = ["ACTUAL VECTOR GEOMETRY", "Room contour: pale blue", "Wall material: dark fill", "Door: actual opening line",
-              "Equipment: blue footprint", "Service: directional dashed line", "Corridor: checked full-width fill", "Centerline: supplied route",
-              *(["Window: source facade line; closed barrier"] if include_windows else []),
-              "LOCAL PREDICATES", *[f"{name}: {status}" for name, status in local.items() if name != "window_capability"],
-              "FULL FACILITY: UNKNOWN"]
+    legend = _legend(local, include_windows=include_windows, include_grid=include_grid)
     for i, line in enumerate(legend):
         document.drawString(875, 670 - i * 22, line)
     document.showPage()
@@ -330,4 +361,6 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
                    "status": "DRAFT"} for i in range(1, pages + 1)], "limits": asdict(limits)}
     if include_windows:
         index["window_capability"] = local["window_capability"]
+    if include_grid:
+        index["grid_capability"] = local["grid_capability"]
     return index

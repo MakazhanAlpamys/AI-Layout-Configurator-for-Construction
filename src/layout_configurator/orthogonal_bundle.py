@@ -1,6 +1,6 @@
 """Atomic persisted drafts from existing canonical orthogonal source models."""
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 import hashlib
 import json
 import math
@@ -12,7 +12,7 @@ import tempfile
 from shapely.geometry import box
 from shapely.ops import unary_union
 
-from .building import BuildingIR
+from .building import BuildingIR, StructuralGridSpec
 from .equipment import EquipmentLayoutResult, EquipmentPlacement, clearance_rect
 from .facility import DEFAULT_FACILITY_PROFILE_SCHEMA_PATH, FacilityProfile
 from .flows import FlowRoute, FlowRoutingResult
@@ -122,13 +122,56 @@ def _window_capability(building, layout, include_windows):
     return capability.to_dict()
 
 
-def _source_frames(raw, *, include_windows=False):
+def _grid_options(include_grid):
+    if type(include_grid) is not bool:
+        raise ValueError("include_grid requires a boolean")
+    return {"include_grid": True} if include_grid else {}
+
+
+def _grid_capability(building, include_grid):
+    _grid_options(include_grid)
+    if not include_grid:
+        return None
+    from .orthogonal_grid import OrthogonalGridCapabilityError, validate_orthogonal_grid
+    capability = validate_orthogonal_grid(building.layout, building.structural_grid)
+    if not capability.ok:
+        raise OrthogonalGridCapabilityError(capability)
+    return capability.to_dict()
+
+
+def _source_grid(raw_building):
+    """Check raw source axes before constructors can coerce their values."""
+    from .orthogonal_grid import OrthogonalGridCapabilityError, validate_orthogonal_grid
+    spec = normalize_mapping(raw_building["layout"])
+    raw = raw_building.get("structural_grid")
+    grid = None
+    if raw is not None:
+        required = {"axes_x_mm", "axes_y_mm"}
+        if (not isinstance(raw, dict) or not required <= set(raw)
+                or set(raw) - (required | {"labels_x", "labels_y"})):
+            raise ValueError("Grid source has missing or unknown fields")
+        if any(type(raw.get(name, [])) is not list for name in ("axes_x_mm", "axes_y_mm", "labels_x", "labels_y")):
+            raise ValueError("Grid source axes and labels require canonical lists")
+        grid = StructuralGridSpec(tuple(raw["axes_x_mm"]), tuple(raw["axes_y_mm"]),
+                                  tuple(raw.get("labels_x", ())), tuple(raw.get("labels_y", ())))
+    capability = validate_orthogonal_grid(spec, grid)
+    if not capability.ok:
+        raise OrthogonalGridCapabilityError(capability)
+    return grid
+
+
+def _source_frames(raw, *, include_windows=False, include_grid=False):
     """Materialize strict canonical serializations using existing source classes."""
     _window_options(include_windows)
+    _grid_options(include_grid)
     _keys(raw, SOURCE_FILES)
     normalize_mapping(raw["building"]["layout"])
+    grid = _source_grid(raw["building"]) if include_grid else None
     building = normalize_building_mapping(raw["building"])
-    if building.structural_grid is not None:
+    if include_grid:
+        # Retain exact already-validated integer/fractional axes and labels.
+        building = replace(building, structural_grid=grid)
+    elif building.structural_grid is not None:
         raise ValueError("Orthogonal draft export does not support structural_grid projection")
     if not include_windows and (building.layout.windows or any(room.needs_daylight for room in building.layout.rooms)):
         raise ValueError("Orthogonal draft export does not support explicit windows or daylight windows")
@@ -183,8 +226,9 @@ def _source_frames(raw, *, include_windows=False):
     return building, layout, equipment, routing, profile
 
 
-def _projection_scope(building, *, include_windows=False):
+def _projection_scope(building, *, include_windows=False, include_grid=False):
     _window_options(include_windows)
+    _grid_options(include_grid)
     scope = {"geometry_components": ["room_contours", "wall_material", "door_openings", "equipment_footprints",
         "directional_service_envelopes", "full_width_route_corridors", "route_centerlines"],
         "zones": {"declared": len(building.zones), "source_preserved": True,
@@ -198,6 +242,12 @@ def _projection_scope(building, *, include_windows=False):
         scope["unsupported_components"] = ["structural_grid"]
         scope["height_policy"] = ("coordination_proxy_v1; rooms/walls=2800; doors/door-openings=2100; "
             "windows/window-openings=source sill+height; equipment=1000; service/routes=20 mm")
+    if include_grid:
+        scope["geometry_components"].append("source_reference_axes")
+        scope["unsupported_components"].remove("structural_grid")
+        scope["reference_grid"] = {"policy": "boundary_spanning_axes_v1", "elevation_mm": 0,
+            "structural_engineering": "UNKNOWN", "room_alignment_enforced": False,
+            "cutout_clipping": False, "axes_are_circulation_barriers": False}
     return scope
 
 
@@ -221,8 +271,11 @@ def _corridor(route):
                         for a, b in zip(route.points, route.points[1:])])
 
 
-def _dxf(path, building, layout, equipment, routing, identity, *, include_windows=False):
-    export_orthogonal_draft_dxf(path, building.layout, layout, **_window_options(include_windows))
+def _dxf(path, building, layout, equipment, routing, identity, *, include_windows=False, include_grid=False):
+    grid_options = _grid_options(include_grid)
+    if include_grid:
+        grid_options["structural_grid"] = building.structural_grid
+    export_orthogonal_draft_dxf(path, building.layout, layout, **_window_options(include_windows), **grid_options)
     import ezdxf
     document = ezdxf.readfile(path)
     document.appids.add("FLC_ORTH_BUNDLE")
@@ -253,11 +306,14 @@ def _dxf(path, building, layout, equipment, routing, identity, *, include_window
             "full_facility_validation": dict(FULL_UNKNOWN), "engineering_acceptance": "PENDING"}
     if include_windows:
         index["window_capability"] = _window_capability(building, layout, True)
+    if include_grid:
+        index["grid_capability"] = _grid_capability(building, True)
     return index
 
 
-def _ifc(path, building, layout, equipment, routing, identity, *, include_windows=False):
-    index = export_orthogonal_draft_ifc(path, building, layout, equipment, routing=routing, **_window_options(include_windows))
+def _ifc(path, building, layout, equipment, routing, identity, *, include_windows=False, include_grid=False):
+    index = export_orthogonal_draft_ifc(path, building, layout, equipment, routing=routing,
+        **_window_options(include_windows), **_grid_options(include_grid))
     import ifcopenshell
     from .ifc import _add_properties
     document = ifcopenshell.open(str(path))
@@ -297,7 +353,8 @@ def _publish_directory(stage, target):
 
 
 def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing=None,
-                            profile, revision=None, font_path=None, limits=OrthogonalBundleLimits(), include_windows=False):
+                            profile, revision=None, font_path=None, limits=OrthogonalBundleLimits(), include_windows=False,
+                            include_grid=False):
     """Publish a new source-bound DRAFT directory after independent readback.
 
     Local FAIL or an unsupported render component rejects publication. Missing
@@ -305,6 +362,8 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
     Source facade windows require an explicit boolean capability opt-in.
     """
     window_options = _window_options(include_windows)
+    grid_options = _grid_options(include_grid)
+    projection_options = {**window_options, **grid_options}
     if not isinstance(limits, OrthogonalBundleLimits):
         raise ValueError("limits requires OrthogonalBundleLimits")
     target = Path(output).absolute()
@@ -317,12 +376,15 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
             raise ValueError("Draft bundle requires canonical equipment or None")
         if routing is not None and not isinstance(routing, FlowRoutingResult):
             raise ValueError("Draft bundle requires canonical routing or None")
+        # Reject malformed original typed axes before JSON or IR normalization.
+        _grid_capability(building, include_grid)
         raw = {"building": building.to_dict(), "layout": layout.to_dict(), "profile": profile.to_dict(),
                "equipment": equipment.to_dict(building) if equipment is not None else None,
                "routing": routing.to_dict() if routing is not None else None}
         raw = {name: _read_json(_json(value), limits) for name, value in raw.items()}
-        building, layout, equipment, routing, profile = _source_frames(raw, **window_options)
+        building, layout, equipment, routing, profile = _source_frames(raw, **projection_options)
         capability = _window_capability(building, layout, include_windows)
+        grid_capability = _grid_capability(building, include_grid)
         revision = profile.drawing.revision if revision is None else revision
         if not isinstance(revision, str) or not revision.strip() or revision != profile.drawing.revision:
             raise ValueError("Bundle revision must match its actual source drawing profile")
@@ -338,7 +400,7 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
                     "variant": str(layout.variant), "revision": revision, **source}
         # Preflight the PDF's stricter canonical/local budgets before staging.
         from .orthogonal_pdf import _prepare
-        _prepare(building, layout, equipment, routing, OrthogonalPDFLimits(), **window_options)
+        _prepare(building, layout, equipment, routing, OrthogonalPDFLimits(), **projection_options)
     except (TypeError, KeyError, AttributeError, OverflowError, UnicodeError) as exc:
         raise ValueError("Malformed canonical draft source") from exc
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -353,30 +415,32 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
         sources = {name: {"file": SOURCE_FILES[name], "sha256": save(SOURCE_FILES[name], value),
                           "canonical_sha256": _hash(value)} for name, value in raw.items()}
         indices = {
-            "dxf": _dxf(stage / ARTIFACT_FILES["dxf"], building, layout, equipment, routing, identity, **window_options),
+            "dxf": _dxf(stage / ARTIFACT_FILES["dxf"], building, layout, equipment, routing, identity, **projection_options),
             "pdf": export_orthogonal_draft_pdf(stage / ARTIFACT_FILES["pdf"], building, layout, equipment,
-                routing=routing, revision=revision, font_path=font_path, **window_options),
-            "ifc": _ifc(stage / ARTIFACT_FILES["ifc"], building, layout, equipment, routing, identity, **window_options),
+                routing=routing, revision=revision, font_path=font_path, **projection_options),
+            "ifc": _ifc(stage / ARTIFACT_FILES["ifc"], building, layout, equipment, routing, identity, **projection_options),
         }
         artifacts = {name: {"file": ARTIFACT_FILES[name], "sha256": _sha((stage / ARTIFACT_FILES[name]).read_bytes()),
             "index": INDEX_FILES[name], "index_sha256": save(INDEX_FILES[name], index)} for name, index in indices.items()}
         manifest = {"format": FORMAT, "version": "0.1", "status": "DRAFT", "ok": False,
             "project_name": building.layout.project_name, "variant": layout.variant, "revision": revision,
             "full_facility_validation": dict(FULL_UNKNOWN), "engineering_acceptance": "PENDING",
-            "projection_scope": _projection_scope(building, **window_options),
+            "projection_scope": _projection_scope(building, **projection_options),
             "sources": sources, "artifacts": artifacts, "facility_predicates": {
                 "file": "facility-predicates.json", "sha256": save("facility-predicates.json", facility)},
             "limits": asdict(limits)}
         if include_windows:
             manifest["window_capability"] = capability
+        if include_grid:
+            manifest["grid_capability"] = grid_capability
         save("manifest.json", manifest)
         from .orthogonal_bundle_qa import _validate
-        qa = _validate(stage, limits=limits, verify_saved=False, **window_options)
+        qa = _validate(stage, limits=limits, verify_saved=False, **projection_options)
         if qa["status"] == "FAIL":
             failures = [row["id"] + ": " + "; ".join(row["evidence"]) for row in qa["checks"] if row["status"] == "FAIL"]
             raise ValueError("Persisted orthogonal draft failed independent delivery QA: " + "; ".join(failures))
         save("qa.json", qa)
-        final = _validate(stage, limits=limits, verify_saved=True, **window_options)
+        final = _validate(stage, limits=limits, verify_saved=True, **projection_options)
         if final["status"] == "FAIL":
             raise ValueError("Persisted orthogonal draft saved QA is inconsistent")
         if target.exists() or target.is_symlink():

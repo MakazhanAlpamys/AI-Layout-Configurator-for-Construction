@@ -16,6 +16,7 @@ from pathlib import Path
 from shapely.geometry import LineString, box
 from shapely.ops import unary_union
 
+from .building import StructuralGridSpec
 from .models import LayoutIR, LayoutResult, Rect
 from .orthogonal import OrthogonalPolygon
 from .result_geometry import GeometryEvidence, parse_layout_result, validate_result_geometry
@@ -43,6 +44,7 @@ class DraftProjectionEvidence:
     geometry: GeometryEvidence
     opening_ids: tuple[str, ...]
     window_capability: dict | None = None
+    grid_capability: dict | None = None
 
     @property
     def status(self):
@@ -62,6 +64,8 @@ class DraftProjectionEvidence:
                             "equipment clearance", "complete opening acceptance"]}
         if self.window_capability is not None:
             result["window_capability"] = json.loads(json.dumps(self.window_capability))
+        if self.grid_capability is not None:
+            result["grid_capability"] = json.loads(json.dumps(self.grid_capability))
         return result
 
 
@@ -134,7 +138,8 @@ def build_orthogonal_wall_plan(spec: LayoutIR, result: LayoutResult, *, include_
 
 
 def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult, *,
-                                include_windows: bool = False) -> DraftProjectionEvidence:
+                                include_windows: bool = False, structural_grid: StructuralGridSpec | None = None,
+                                include_grid: bool = False) -> DraftProjectionEvidence:
     """Write semantic room contours, exact wall bands and DRAFT provenance.
 
     All geometry and capability checks happen before opening the destination.
@@ -146,6 +151,17 @@ def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: Layout
 
     if type(include_windows) is not bool:
         raise ValueError("include_windows requires a boolean")
+    if type(include_grid) is not bool:
+        raise ValueError("include_grid requires a boolean")
+    if structural_grid is not None and not include_grid:
+        raise ProjectionCapabilityError("structural_grid", "Source reference axes require explicit include_grid=True")
+    grid_capability = None
+    if include_grid:
+        from .orthogonal_grid import OrthogonalGridCapabilityError, validate_orthogonal_grid
+        fresh = validate_orthogonal_grid(spec, structural_grid)
+        if not fresh.ok:
+            raise OrthogonalGridCapabilityError(fresh)
+        grid_capability = fresh.to_dict()
     capability = None
     if include_windows:
         from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
@@ -164,6 +180,9 @@ def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: Layout
     if include_windows:
         document.layers.add("A-WINDOW", dxfattribs={"color": 4})
         document.layers.add("A-WINDOW-TEXT", dxfattribs={"color": 7})
+    if include_grid:
+        document.layers.add("A-GRID", dxfattribs={"color": 9})
+        document.layers.add("A-GRID-TEXT", dxfattribs={"color": 7})
     document.appids.add("LAYOUT_IR")
     modelspace = document.modelspace()
     for ring in wall_plan.rings():
@@ -192,6 +211,16 @@ def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: Layout
                  f"sill {spec.window_sill_mm:g} mm | height {spec.window_height_mm:g} mm")
         modelspace.add_text(label, dxfattribs={"height": 100, "layer": "A-WINDOW-TEXT"}).set_placement(
             (spec.boundary.width_mm + 500, spec.boundary.height_mm - 200 * position))
+    if grid_capability is not None:
+        for position, axis in enumerate(grid_capability["axes"]):
+            line = modelspace.add_line(axis["start"], axis["end"], dxfattribs={"layer": "A-GRID"})
+            line.set_xdata("LAYOUT_IR", [(1000, "kind=grid-axis"), (1000, "id=" + axis["id"]),
+                (1000, "direction=" + axis["direction"]), (1000, "label=" + axis["label"]),
+                (1040, axis["coordinate_mm"])])
+            label = (f"Grid {axis['id']} | label {axis['label']} | direction {axis['direction']} | "
+                     f"coordinate {axis['coordinate_mm']:g} mm | boundary reference")
+            modelspace.add_text(label, dxfattribs={"height": 100, "layer": "A-GRID-TEXT"}).set_placement(
+                (spec.boundary.width_mm + 500, spec.boundary.height_mm - 200 * (len(wall_plan.windows) + position)))
     metadata = modelspace.add_point((0, 0), dxfattribs={"layer": "A-TITLE"})
     tags = [(1000, "schema=orthogonal-draft/0.1"), (1000, "status=DRAFT"),
                                     (1000, "units=mm"), (1000, f"spec_sha256={spec_sha256}"),
@@ -199,12 +228,15 @@ def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: Layout
     if capability is not None:
         tags.extend(((1000, "window_capability=source_facade_v1"),
                      (1000, "window_capability_sha256=" + _hash_json(capability))))
+    if grid_capability is not None:
+        tags.extend(((1000, "grid_capability=boundary_spanning_axes_v1"),
+                     (1000, "grid_capability_sha256=" + _hash_json(grid_capability))))
     metadata.set_xdata("LAYOUT_IR", tags)
     modelspace.add_text(f"DRAFT | {spec.project_name} | Variant {result.variant}", dxfattribs={"height": 180, "layer": "A-TITLE"}).set_placement((0, spec.boundary.height_mm + 500))
     modelspace.add_text("Room dimensions, circulation and equipment clearance require further checks", dxfattribs={"height": 100, "layer": "A-TITLE"}).set_placement((0, spec.boundary.height_mm + 250))
     document.saveas(path)
     return DraftProjectionEvidence(spec_sha256, layout_sha256, hashlib.sha256(Path(path).read_bytes()).hexdigest(),
-                                   geometry, tuple(opening.id for opening in wall_plan.openings), capability)
+                                   geometry, tuple(opening.id for opening in wall_plan.openings), capability, grid_capability)
 
 
 def _prepare(spec, result):

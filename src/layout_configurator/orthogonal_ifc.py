@@ -21,6 +21,7 @@ from .ifc import _add_properties, _axis_placement, _direction, _guid_value, _mod
 from .models import LayoutResult, Rect
 from .orthogonal_equipment import validate_orthogonal_door_approaches
 from .orthogonal_flows import validate_orthogonal_flow_routes
+from .orthogonal_grid import OrthogonalGridCapabilityError, validate_orthogonal_grid
 from .orthogonal_projection import build_orthogonal_wall_plan
 from .orthogonal_validation import validate_orthogonal_equipment, validate_orthogonal_layout
 from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
@@ -30,7 +31,8 @@ from .result_geometry import parse_layout_result
 def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: LayoutResult,
                                 equipment: EquipmentLayoutResult | None = None, *,
                                 routing: FlowRoutingResult | None = None,
-                                include_windows: bool = False) -> dict:
+                                include_windows: bool = False,
+                                include_grid: bool = False) -> dict:
     """Export source-backed rooms, actual walls/openings and optional geometry.
 
     Supplied equipment must pass independent directional service and complete
@@ -40,12 +42,18 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
     Only include_windows=True enables fresh source_facade_v1 eligibility and
     native voids/fills at the source global sill and height. The underlying
     two-dimensional wall band remains closed across windows.
+    Only include_grid=True enables declared continuous boundary-spanning
+    reference axes. Axes do not constrain rooms or create structural material.
     All input and capability checks precede opening the destination file.
     """
     if not isinstance(include_windows, bool):
         raise ValueError("include_windows requires a boolean")
+    if not isinstance(include_grid, bool):
+        raise ValueError("include_grid requires a boolean")
     options = {"include_windows": True} if include_windows else {}
-    building, layout, reports = _inputs(building, layout, equipment, routing, **options)
+    grid_options = {"include_grid": True} if include_grid else {}
+    building, layout, reports = _inputs(building, layout, equipment, routing, **options, **grid_options)
+    grid_capability = validate_orthogonal_grid(building.layout, building.structural_grid) if include_grid else None
     walls = build_orthogonal_wall_plan(building.layout, layout, **options)
     source = {"building_sha256": _hash(building.to_dict()), "layout_sha256": _hash(layout.to_dict()),
               "equipment_sha256": _hash(equipment.to_dict(building) if equipment is not None else None),
@@ -88,6 +96,10 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
         metadata.update(WindowCapability="source_facade_v1", WindowSillMM=building.layout.window_sill_mm,
                         WindowHeightMM=building.layout.window_height_mm,
                         HeightPolicy="coordination_proxy_v1; rooms/walls=2800; doors/door-openings=2100; windows/window-openings=source sill+height; equipment=1000; service/routes=20 mm")
+    if include_grid:
+        metadata.update(GridCapability="boundary_spanning_axes_v1",
+                        GridSpecSHA256=grid_capability.spec_sha256,
+                        StructuralGridSHA256=grid_capability.structural_grid_sha256)
     _add_properties(document, owner, [project], "Pset_OrthogonalDraft", metadata)
 
     spaces, contained = [], []
@@ -174,6 +186,27 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
                 RepresentationIdentifier="Axis", RepresentationType="Curve3D", Items=[axis])
             element.Representation.Representations = (*element.Representation.Representations, representation)
             contained.append(element)
+    if include_grid and grid_capability.axes:
+        native_axes = []
+        for axis in grid_capability.axes:
+            curve = document.create_entity("IfcPolyline", Points=[_point(document, point)
+                                            for point in (axis.start, axis.end)])
+            native_axes.append((axis.direction, document.create_entity("IfcGridAxis",
+                AxisTag=axis.label, AxisCurve=curve, SameSense=True)))
+        curves = document.create_entity("IfcGeometricCurveSet",
+                                       Elements=[axis.AxisCurve for _, axis in native_axes])
+        footprint = document.create_entity("IfcShapeRepresentation", ContextOfItems=context,
+            RepresentationIdentifier="FootPrint", RepresentationType="GeometricCurveSet", Items=[curves])
+        grid = document.create_entity("IfcGrid", GlobalId=guid("grid:structural-grid"), OwnerHistory=owner,
+            Name="structural-grid", PredefinedType="RECTANGULAR",
+            ObjectPlacement=document.create_entity("IfcLocalPlacement", PlacementRelTo=storey.ObjectPlacement,
+                                                    RelativePlacement=_axis_placement(document, (0, 0, 0))),
+            Representation=document.create_entity("IfcProductDefinitionShape", Representations=[footprint]),
+            UAxes=[axis for direction, axis in native_axes if direction == "x"],
+            VAxes=[axis for direction, axis in native_axes if direction == "y"])
+        _add_properties(document, owner, [grid], "Pset_OrthogonalIdentity",
+                        {"Kind": "grid", "SourceId": "structural-grid", "Policy": "boundary_spanning_axes_v1"})
+        contained.append(grid)
     document.create_entity("IfcRelAggregates", GlobalId=guid("aggregate-spaces"), OwnerHistory=owner,
         RelatingObject=storey, RelatedObjects=spaces)
     document.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid("containment"), OwnerHistory=owner,
@@ -193,13 +226,21 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
         evidence["window_capability"] = reports["window_capability"]
         evidence["counts"].update(windows=len(walls.windows), window_openings=len(walls.windows),
                                   openings=len(walls.openings) + len(walls.windows))
+    if include_grid:
+        evidence["grid_capability"] = reports["grid_capability"]
+        evidence["counts"].update(grids=int(bool(grid_capability.axes)), grid_axes=len(grid_capability.axes))
     return evidence
 
 
-def _inputs(building, layout, equipment, routing, *, include_windows=False):
+def _inputs(building, layout, equipment, routing, *, include_windows=False, include_grid=False):
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Orthogonal IFC requires canonical BuildingIR and LayoutResult")
     options = {"include_windows": True} if include_windows else {}
+    grid_capability = None
+    if include_grid:
+        grid_capability = validate_orthogonal_grid(building.layout, building.structural_grid)
+        if not grid_capability.ok:
+            raise OrthogonalGridCapabilityError(grid_capability)
     capability = None
     if include_windows:
         # Guard exact supplied source types and numeric bounds before any
@@ -210,7 +251,7 @@ def _inputs(building, layout, equipment, routing, *, include_windows=False):
             raise OrthogonalWindowCapabilityError(capability)
     canonical_building = BuildingIR.from_mapping(building.to_dict())
     canonical_layout = parse_layout_result(layout.to_dict())
-    if not include_windows:
+    if not include_windows and not include_grid:
         building, layout = canonical_building, canonical_layout
     if len(building.layout.rooms) > 64 or len(building.equipment) > 64:
         raise ValueError("Orthogonal IFC source limit is 64 rooms and 64 equipment items")
@@ -223,6 +264,8 @@ def _inputs(building, layout, equipment, routing, *, include_windows=False):
                "door_approaches": {"status": "NOT_SUPPLIED"}, "routes": {"status": "NOT_SUPPLIED"}}
     if capability is not None:
         reports["window_capability"] = capability.to_dict()
+    if grid_capability is not None:
+        reports["grid_capability"] = grid_capability.to_dict()
     if equipment is not None:
         if not isinstance(equipment, EquipmentLayoutResult):
             raise ValueError("Orthogonal IFC equipment requires EquipmentLayoutResult")

@@ -174,6 +174,19 @@ proxy. Windows remain closed circulation barriers; daylight calculation and
 engineering review remain pending. Readback requires the explicit option even
 when saved metadata declares the capability.
 
+Source structural reference axes are also explicit in generation and readback:
+
+```powershell
+.venv/Scripts/python.exe -m layout_configurator.cli generate-orthogonal-building examples/orthogonal_source_grid.yaml --output out/orthogonal-grid-drafts --include-windows --include-grid --seed 1 --deterministic-budget .05 --max-room-candidates 4 --equipment-retries 2
+.venv/Scripts/python.exe -m layout_configurator.cli qa-orthogonal-building out/orthogonal-grid-drafts --include-windows --include-grid --json
+```
+
+Declared coordinates and labels become continuous boundary reference lines in
+DXF/PDF and native IFC grid axes at elevation zero. Fractional axes are retained;
+cutouts do not clip the reference span. These references do not align rooms or
+establish structural engineering acceptance. The example combines both opted
+capabilities; each requires its own flag.
+
 `generate-building` already solves rooms with CP-SAT, then places equipment
 with a second CP-SAT pass that accounts for clearance, and produces `building_01.json`. For dense
 facility programs, the default time limit of this command is 60 seconds:

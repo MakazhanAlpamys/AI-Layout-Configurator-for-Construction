@@ -23,6 +23,7 @@ from .flows import FlowRoutingResult
 from .models import LayoutResult, Rect
 from .orthogonal_equipment import validate_orthogonal_door_approaches
 from .orthogonal_flows import validate_orthogonal_flow_routes
+from .orthogonal_grid import OrthogonalGridCapabilityError, validate_orthogonal_grid
 from .orthogonal_projection import build_orthogonal_wall_plan
 from .orthogonal_validation import validate_orthogonal_equipment, validate_orthogonal_layout
 from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
@@ -34,7 +35,8 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                             routing: FlowRoutingResult | None = None,
                             expected_sha256: str | None = None,
                             max_file_bytes: int = 16 * 1024 * 1024,
-                            include_windows: bool = False) -> dict:
+                            include_windows: bool = False,
+                            include_grid: bool = False) -> dict:
     """Read actual IFC4 geometry with bounded native input and strict identity.
 
     Supported representations are closed polyline area-profile extrusions
@@ -45,6 +47,8 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
     Opted-in windows require fresh source_facade_v1 eligibility, native
     relationships, actual world sill/head geometry and every wall material
     interval. The checker does not trust exporter indexes or generated reports.
+    Explicit source grids require actual native ordered axes and the same
+    curves in a visible FootPrint, with independent world-coordinate readback.
     """
     report = {"status": "FAIL", "ok": False, "scope": "Independent exact orthogonal IFC exchange geometry only",
               "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
@@ -54,7 +58,10 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
     try:
         if not isinstance(include_windows, bool):
             raise ValueError("include_windows requires a boolean")
+        if not isinstance(include_grid, bool):
+            raise ValueError("include_grid requires a boolean")
         options = {"include_windows": True} if include_windows else {}
+        grid_options = {"include_grid": True} if include_grid else {}
         if not isinstance(max_file_bytes, int) or isinstance(max_file_bytes, bool) or not 1 <= max_file_bytes <= 16 * 1024 * 1024:
             raise ValueError("max_file_bytes requires an integer between 1 and 16777216")
         target = Path(path)
@@ -67,9 +74,13 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
         report["artifact_sha256"] = digest
         if expected_sha256 is not None and (not isinstance(expected_sha256, str) or expected_sha256 != digest):
             raise ValueError("IFC artifact SHA256 does not match the supplied expected bytes")
-        building, layout, expected, wall_plan, capability = _expected(building, layout, equipment, routing, **options)
+        building, layout, expected, wall_plan, capability, grid_capability = _expected(
+            building, layout, equipment, routing, **options, **grid_options)
         if include_windows:
             report["window_capability"] = capability.to_dict()
+        if include_grid:
+            report["grid_capability"] = grid_capability.to_dict()
+            report["grid_axes"] = []
         source = {"building_sha256": _hash(building.to_dict()), "layout_sha256": _hash(layout.to_dict()),
                   "equipment_sha256": _hash(equipment.to_dict(building) if equipment is not None else None),
                   "routing_sha256": _hash(routing.to_dict() if routing is not None else None)}
@@ -104,6 +115,10 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
             contract.update(WindowCapability="source_facade_v1", WindowSillMM=building.layout.window_sill_mm,
                             WindowHeightMM=building.layout.window_height_mm,
                             HeightPolicy="coordination_proxy_v1; rooms/walls=2800; doors/door-openings=2100; windows/window-openings=source sill+height; equipment=1000; service/routes=20 mm")
+        if include_grid:
+            contract.update(GridCapability="boundary_spanning_axes_v1",
+                            GridSpecSHA256=grid_capability.spec_sha256,
+                            StructuralGridSHA256=grid_capability.structural_grid_sha256)
         if not _same_properties(metadata, contract):
             issues.append("IFC source hash, variant, optional state or DRAFT acceptance metadata does not match the canonical source")
         length_units = [unit for unit in project.UnitsInContext.Units if unit.UnitType == "LENGTHUNIT"]
@@ -137,6 +152,10 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                 issues.append(f"IFC {key} object type mismatch")
             if key[0] == "room" and element.LongName != record["identity"]["RoomType"]:
                 issues.append(f"IFC {key} room type mismatch")
+            if key[0] == "grid":
+                report["grid_axes"] = _grid_axes(element, grid_capability, context, world, placement, np)
+                actual[key] = element
+                continue
             material, matrix, representations, vertical_range = _material(element, context, world, placement, np,
                 record["height"], record["base_elevation"])
             materials[key] = (material, vertical_range)
@@ -160,6 +179,11 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
         if set(actual) != set(expected):
             issues.append(f"IFC missing source geometry identities: {sorted(set(expected) - set(actual))}")
         _relations(model, actual, wall_plan, issues, building=building if include_windows else None)
+        if include_grid:
+            native_axes = [axis for key, element in actual.items() if key[0] == "grid"
+                           for axis in (*element.UAxes, *element.VAxes)]
+            if {axis.id() for axis in model.by_type("IfcGridAxis")} != {axis.id() for axis in native_axes}:
+                issues.append("IFC unexpected or missing native grid axis inventory")
         roots = model.by_type("IfcRoot")
         if len({item.GlobalId for item in roots}) != len(roots):
             issues.append("IFC duplicate GlobalId")
@@ -171,6 +195,9 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                 window_openings=sum(key[0] == "window-opening" for key in actual))
             report["counts"]["openings"] += report["counts"]["window_openings"]
             report["window_material"] = _window_material(materials, expected, wall_plan, issues)
+        if include_grid:
+            report["counts"].update(grids=sum(key[0] == "grid" for key in actual),
+                                    grid_axes=len(report["grid_axes"]))
     except Exception as exc:
         issues.append(f"IFC independent readback failed: {exc}")
     if not issues:
@@ -178,10 +205,15 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
     return report
 
 
-def _expected(building, layout, equipment, routing, *, include_windows=False):
+def _expected(building, layout, equipment, routing, *, include_windows=False, include_grid=False):
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Canonical BuildingIR and LayoutResult required")
     options = {"include_windows": True} if include_windows else {}
+    grid_capability = None
+    if include_grid:
+        grid_capability = validate_orthogonal_grid(building.layout, building.structural_grid)
+        if not grid_capability.ok:
+            raise OrthogonalGridCapabilityError(grid_capability)
     capability = None
     if include_windows:
         capability = validate_orthogonal_window_capability(building.layout, layout)
@@ -189,7 +221,7 @@ def _expected(building, layout, equipment, routing, *, include_windows=False):
             raise OrthogonalWindowCapabilityError(capability)
     canonical_building = BuildingIR.from_mapping(building.to_dict())
     canonical_layout = parse_layout_result(layout.to_dict())
-    if not include_windows:
+    if not include_windows and not include_grid:
         building, layout = canonical_building, canonical_layout
     if len(building.layout.rooms) > 64 or len(building.equipment) > 64:
         raise ValueError("Source room/equipment limit of 64 exceeded")
@@ -252,7 +284,56 @@ def _expected(building, layout, equipment, routing, *, include_windows=False):
             record("route", identifier, "IfcBuildingElementProxy",
                 LineString(route.points).buffer(route.minimum_clear_width_mm / 2, cap_style=3, join_style=2),
                 20, identity, "OrthogonalFlowCorridor", tuple((x, y, 0.) for x, y in route.points))
-    return building, layout, expected, walls, capability
+    if include_grid and grid_capability.axes:
+        expected[("grid", "structural-grid")] = {"class": "IfcGrid",
+            "identity": {"Kind": "grid", "SourceId": "structural-grid", "Policy": "boundary_spanning_axes_v1"}}
+    return building, layout, expected, walls, capability, grid_capability
+
+
+def _grid_axes(element, capability, context, world, placement, np):
+    """Read native axes and visible curve membership from the parsed IFC."""
+    if not element.is_a("IfcGrid") or element.PredefinedType != "RECTANGULAR" or element.WAxes is not None:
+        raise ValueError("IFC source grid requires one rectangular native grid without W axes")
+    native = tuple(element.UAxes or ()) + tuple(element.VAxes or ())
+    x_count = sum(axis.direction == "x" for axis in capability.axes)
+    if len(element.UAxes or ()) != x_count or len(element.VAxes or ()) != len(capability.axes) - x_count:
+        raise ValueError("IFC actual native grid direction/count differs from source")
+    if len({axis.id() for axis in native}) != len(native):
+        raise ValueError("IFC native grid axes have duplicate membership")
+    if element.Representation is None or not element.Representation.is_a("IfcProductDefinitionShape"):
+        raise ValueError("IFC source grid is missing actual FootPrint geometry")
+    representations = tuple(element.Representation.Representations or ())
+    if len(representations) != 1:
+        raise ValueError("IFC source grid requires exactly one actual FootPrint representation")
+    representation = representations[0]
+    if (representation.ContextOfItems != context or representation.RepresentationIdentifier != "FootPrint"
+            or representation.RepresentationType != "GeometricCurveSet" or len(representation.Items) != 1
+            or not representation.Items[0].is_a("IfcGeometricCurveSet")):
+        raise ValueError("IFC source grid FootPrint context/type/curve-set contract failed")
+    curves = tuple(representation.Items[0].Elements)
+    if len(curves) != len(native) or {curve.id() for curve in curves} != {axis.AxisCurve.id() for axis in native}:
+        raise ValueError("IFC source grid visible FootPrint must contain exactly its native axis curves")
+    matrix = _matrix(element, world, placement, np)
+    records = []
+    for actual, expected in zip(native, capability.axes):
+        if actual.AxisTag != expected.label or actual.SameSense is not True:
+            raise ValueError("IFC native grid source labels/order/SameSense differs from source")
+        curve = actual.AxisCurve
+        if not curve.is_a("IfcPolyline") or len(curve.Points) != 2:
+            raise ValueError("IFC source grid axes require actual continuous two-point polylines")
+        points = []
+        for point, source_point in zip(curve.Points, (expected.start, expected.end)):
+            coords = tuple(point.Coordinates)
+            if len(coords) != 2 or not all(math.isfinite(value) for value in coords):
+                raise ValueError("IFC native grid coordinates require finite 2D source points")
+            transformed = matrix @ np.asarray((*coords, 0., 1.))
+            target = np.asarray((*source_point, 0.))
+            if not np.isfinite(transformed).all() or not np.allclose(transformed[:3], target, atol=0.00001, rtol=0):
+                raise ValueError("IFC actual grid world geometry differs from continuous source axes")
+            points.append([float(value) for value in transformed[:3]])
+        records.append({"id": expected.id, "direction": expected.direction, "label": actual.AxisTag,
+                        "world_points_mm": points})
+    return records
 
 
 def _properties(element, name):

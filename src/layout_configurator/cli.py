@@ -221,6 +221,8 @@ def main(argv: list[str] | None = None) -> int:
     orthogonal.add_argument("--equipment-retries", type=int, default=8)
     orthogonal.add_argument("--include-windows", action="store_true",
                             help="opt in to source_facade_v1 windows; full facility validation remains UNKNOWN")
+    orthogonal.add_argument("--include-grid", action="store_true",
+                            help="export boundary-spanning source reference axes; no structural engineering or room alignment claim")
     orthogonal_qa = subparsers.add_parser(
         "qa-orthogonal-building",
         help="independently check one orthogonal draft bundle or set; full validation stays UNKNOWN",
@@ -230,6 +232,8 @@ def main(argv: list[str] | None = None) -> int:
     orthogonal_qa.add_argument("--json", action="store_true", dest="json_output")
     orthogonal_qa.add_argument("--include-windows", action="store_true",
                                help="explicitly check source_facade_v1 window delivery; metadata never grants this opt-in")
+    orthogonal_qa.add_argument("--include-grid", action="store_true",
+                               help="explicitly check source reference axes; metadata never grants this opt-in")
     check_building = subparsers.add_parser(
         "check-building",
         help="recompute and validate a generated BuildingIR result",

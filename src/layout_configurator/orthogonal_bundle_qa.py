@@ -14,7 +14,7 @@ from .equipment import clearance_rect
 from .models import Rect
 from .orthogonal_bundle import (ARTIFACT_FILES, FORMAT, FULL_UNKNOWN, INDEX_FILES, INVENTORY,
     SOURCE_FILES, OrthogonalBundleLimits, _hash, _json, _keys, _projection_scope, _read_json, _route_key, _sha, _source_frames,
-    _window_capability, _window_options)
+    _grid_capability, _grid_options, _window_capability, _window_options)
 from .orthogonal_facility import validate_orthogonal_building
 from .orthogonal_ifc_qa import validate_orthogonal_ifc
 from .orthogonal_pdf_qa import validate_orthogonal_pdf
@@ -124,7 +124,7 @@ def _route_material(route):
         max(a[0], b[0]) + half, max(a[1], b[1]) + half) for a, b in pairs])
 
 
-def _dxf_readback(data, building, layout, equipment, routing, identity, limits, *, include_windows=False):
+def _dxf_readback(data, building, layout, equipment, routing, identity, limits, *, include_windows=False, include_grid=False):
     report = {"status": "FAIL", "ok": False, "scope": "Independent actual WCS orthogonal DXF geometry",
               "issues": [], "counts": {}, "tolerance": {"coordinates_mm": 0.00001, "material_area_mm2": 0.0001}}
     try:
@@ -139,6 +139,13 @@ def _dxf_readback(data, building, layout, equipment, routing, identity, limits, 
         room_shapes = {name: _rect(shape) if isinstance(shape, Rect) else shape.geometry for name, shape in layout.placements.items()}
         walls = build_orthogonal_wall_plan(building.layout, layout, **_window_options(include_windows))
         capability = _window_capability(building, layout, include_windows)
+        grid_capability = _grid_capability(building, include_grid)
+        grid_axes = {axis["id"]: axis for axis in grid_capability["axes"]} if include_grid else {}
+        grid_labels = {(f"Grid {axis['id']} | label {axis['label']} | direction {axis['direction']} | "
+            f"coordinate {axis['coordinate_mm']:g} mm | boundary reference"):
+            (building.layout.boundary.width_mm + 500,
+             building.layout.boundary.height_mm - 200 * ((len(walls.windows) if include_windows else 0) + position))
+            for position, axis in enumerate(grid_axes.values())}
         openings = {item.id: item for item in walls.openings}
         windows = {item.id: item for item in walls.windows}
         window_labels = {(f"Window {window.id} | host {window.room_id} | width {window.width:g} mm | "
@@ -151,12 +158,16 @@ def _dxf_readback(data, building, layout, equipment, routing, identity, limits, 
         rooms, doors, physical, service, corridors, axes, wall_rings, markers, titles = {}, {}, {}, {}, {}, {}, [], [], []
         actual_windows = {}
         actual_window_labels = set()
+        actual_grid_axes, actual_grid_labels = {}, set()
         allowed = {"A-ROOM": "LWPOLYLINE", "A-WALL": "LWPOLYLINE", "A-DOOR": "LINE", "A-TEXT": "TEXT",
             "A-TITLE": ("POINT", "TEXT"), "A-EQUIP": "LWPOLYLINE", "A-EQUIP-CLEAR": "LWPOLYLINE",
             "A-FLOW-WIDTH": "LWPOLYLINE", "A-FLOW": "LWPOLYLINE"}
         if include_windows:
             allowed["A-WINDOW"] = "LINE"
             allowed["A-WINDOW-TEXT"] = "TEXT"
+        if include_grid:
+            allowed["A-GRID"] = "LINE"
+            allowed["A-GRID-TEXT"] = "TEXT"
         for entity in entities:
             layer = entity.dxf.layer
             types = allowed.get(layer, ())
@@ -216,6 +227,31 @@ def _dxf_readback(data, building, layout, equipment, routing, identity, limits, 
                         _point(entity.dxf.insert) != window_labels[text]):
                     raise ValueError("DXF actual visible window inventory, source sill/height or placement differs")
                 actual_window_labels.add(text)
+            elif layer == "A-GRID":
+                tags, numeric = _tags(entity, "LAYOUT_IR")
+                name = tags.get("id")
+                if name not in grid_axes or name in actual_grid_axes:
+                    raise ValueError("DXF unexpected/duplicate source reference axis")
+                axis = grid_axes[name]
+                if (tags != {"kind": "grid-axis", "id": name, "direction": axis["direction"], "label": axis["label"]}
+                        or len(numeric) != 1 or not math.isfinite(numeric[0])
+                        or abs(numeric[0] - axis["coordinate_mm"]) > 0.00001):
+                    raise ValueError("DXF reference axis identity, label or source coordinate differs")
+                points = (_point(entity.dxf.start), _point(entity.dxf.end))
+                if any(abs(actual - expected) > 0.00001
+                       for point, source in zip(points, (axis["start"], axis["end"]))
+                       for actual, expected in zip(point, source)):
+                    raise ValueError("DXF actual reference axis must span the complete source boundary at elevation zero")
+                actual_grid_axes[name] = points
+            elif layer == "A-GRID-TEXT":
+                text = entity.dxf.text
+                if (text not in grid_labels or text in actual_grid_labels or entity.dxf.height != 100
+                        or entity.dxf.get("rotation", 0) != 0 or entity.dxf.get("width", 1) != 1
+                        or entity.dxf.get("oblique", 0) != 0 or entity.dxf.get("text_generation_flag", 0) != 0
+                        or tuple(entity.dxf.get("extrusion", (0, 0, 1))) != (0, 0, 1)
+                        or _point(entity.dxf.insert) != grid_labels[text]):
+                    raise ValueError("DXF visible source reference axis inventory or placement differs")
+                actual_grid_labels.add(text)
             elif layer in ("A-EQUIP", "A-EQUIP-CLEAR"):
                 tags, numeric = _tags(entity, "FLC_ORTH_BUNDLE")
                 name = tags.get("equipment_id")
@@ -249,6 +285,8 @@ def _dxf_readback(data, building, layout, equipment, routing, identity, limits, 
                     "spec_sha256": _hash(building.layout.to_dict()), "layout_sha256": identity["layout_sha256"]}
                 if include_windows:
                     expected.update(window_capability=capability["policy"]["name"], window_capability_sha256=_hash(capability))
+                if include_grid:
+                    expected.update(grid_capability=grid_capability["policy"]["name"], grid_capability_sha256=_hash(grid_capability))
                 if tags != identity or numeric or original != expected or old_numbers or _point(entity.dxf.location) != (0, 0):
                     raise ValueError("DXF source/status/revision identity marker differs")
                 markers.append(entity)
@@ -264,6 +302,8 @@ def _dxf_readback(data, building, layout, equipment, routing, identity, limits, 
             raise ValueError("DXF is missing actual canonical source window lines")
         if actual_window_labels != set(window_labels):
             raise ValueError("DXF is missing visible canonical source window inventory")
+        if set(actual_grid_axes) != set(grid_axes) or actual_grid_labels != set(grid_labels):
+            raise ValueError("DXF is missing actual source reference axes or visible inventory")
         _geometry(_parity(wall_rings), walls.geometry, "DXF wall material")
         if set(corridors) != set(routes) or set(axes) != {key for key, route in routes.items() if len(route.points) > 1}:
             raise ValueError("DXF missing canonical route corridor or centerline")
@@ -278,6 +318,9 @@ def _dxf_readback(data, building, layout, equipment, routing, identity, limits, 
         if include_windows:
             report["window_capability"] = capability
             report["counts"]["windows"] = len(actual_windows)
+        if include_grid:
+            report["grid_capability"] = grid_capability
+            report["counts"]["grid_axes"] = len(actual_grid_axes)
     except Exception as exc:
         report["issues"].append("DXF independent readback failed: " + str(exc)[:2000])
     return report
@@ -304,13 +347,15 @@ def _express(raw):
     return report
 
 
-def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None, verify_saved=True, include_windows=False):
+def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None, verify_saved=True, include_windows=False,
+              include_grid=False):
     report = {"format": "FLC-orthogonal-bundle-qa", "version": "0.1", "status": "FAIL", "ok": False,
         "scope": "Persisted exchange delivery and declared software predicates only",
         "full_facility_validation": dict(FULL_UNKNOWN), "engineering_acceptance": "PENDING",
         "checks": [], "readbacks": {}}
     try:
         window_options = _window_options(include_windows)
+        projection_options = {**window_options, **_grid_options(include_grid)}
         if not isinstance(limits, OrthogonalBundleLimits):
             raise ValueError("limits requires OrthogonalBundleLimits")
         root = Path(output)
@@ -340,17 +385,20 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
         manifest = _read_json(data["manifest.json"], limits)
         _keys(manifest, ("format", "version", "status", "ok", "project_name", "variant", "revision",
             "full_facility_validation", "engineering_acceptance", "projection_scope", "sources", "artifacts", "facility_predicates", "limits",
-            *(("window_capability",) if include_windows else ())))
+            *(("window_capability",) if include_windows else ()), *(("grid_capability",) if include_grid else ())))
         raw = {name: _read_json(data[filename], limits) for name, filename in SOURCE_FILES.items()}
-        building, layout, equipment, routing, profile = _source_frames(raw, **window_options)
+        building, layout, equipment, routing, profile = _source_frames(raw, **projection_options)
         capability = _window_capability(building, layout, include_windows)
+        grid_capability = _grid_capability(building, include_grid)
         identity = _identity(building, layout, profile, raw)
         expected = {"format": FORMAT, "version": "0.1", "status": "DRAFT", "ok": False,
             "project_name": building.layout.project_name, "variant": layout.variant, "revision": profile.drawing.revision,
             "full_facility_validation": FULL_UNKNOWN, "engineering_acceptance": "PENDING",
-            "projection_scope": _projection_scope(building, **window_options)}
+            "projection_scope": _projection_scope(building, **projection_options)}
         if include_windows:
             expected["window_capability"] = capability
+        if include_grid:
+            expected["grid_capability"] = grid_capability
         if not _same({key: manifest[key] for key in expected}, expected):
             raise ValueError("Manifest canonical source/revision/variant or DRAFT status is false")
         _keys(manifest["limits"], vars(limits))
@@ -376,9 +424,11 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
                 raise ValueError("Source filename, actual bytes or canonical hash differs: " + name)
         report["identity"] = identity
         report["manifest_sha256"] = _sha(data["manifest.json"])
-        report["projection_scope"] = _projection_scope(building, **window_options)
+        report["projection_scope"] = _projection_scope(building, **projection_options)
         if include_windows:
             report["window_capability"] = capability
+        if include_grid:
+            report["grid_capability"] = grid_capability
         facility = validate_orthogonal_building(building, layout, equipment, routing, profile=profile, **window_options).to_dict()
         _check(report, "SOURCE_CONTRACT", "PASS", ["Five strict canonical source snapshots, source hashes and current profile/revision agree"])
     except Exception as exc:
@@ -402,12 +452,14 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
             "full_facility_validation": FULL_UNKNOWN, "engineering_acceptance": "PENDING"}
         if include_windows:
             expected_dxf["window_capability"] = capability
+        if include_grid:
+            expected_dxf["grid_capability"] = grid_capability
         if not _same(indices["dxf"], expected_dxf):
             raise ValueError("DXF index identity or DRAFT scope differs")
         ifc = indices["ifc"]
         _keys(ifc, ("schema", "status", "ok", "units", "source", "variant", "artifact_sha256",
             "full_facility_validation", "engineering_acceptance", "scope", "local_validation", "counts", "bundle_identity",
-            *(("window_capability",) if include_windows else ())))
+            *(("window_capability",) if include_windows else ()), *(("grid_capability",) if include_grid else ())))
         expected_ifc = {"schema": "orthogonal-ifc-draft/0.1", "status": "DRAFT", "ok": False, "units": "mm",
             "source": {key: value for key, value in identity.items() if key.endswith("_sha256") and key != "profile_sha256"},
             "variant": layout.variant, "artifact_sha256": _sha(data[ARTIFACT_FILES["ifc"]]),
@@ -420,6 +472,9 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
         if include_windows:
             expected_ifc["window_capability"] = capability
             expected_ifc["local_validation"]["window_capability"] = capability
+        if include_grid:
+            expected_ifc["grid_capability"] = grid_capability
+            expected_ifc["local_validation"]["grid_capability"] = grid_capability
         if not _same({key: ifc[key] for key in expected_ifc}, expected_ifc):
             raise ValueError("IFC index source, revision or DRAFT scope differs")
         _check(report, "ARTIFACT_INDEX", "PASS", ["Three actual artifact and index byte hashes agree with the closed manifest"])
@@ -446,11 +501,11 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
         snapshot = Path(temporary)
         for filename in ARTIFACT_FILES.values():
             (snapshot / filename).write_bytes(data[filename])
-        dxf = _dxf_readback(data["geometry.dxf"], building, layout, equipment, routing, identity, limits, **window_options)
+        dxf = _dxf_readback(data["geometry.dxf"], building, layout, equipment, routing, identity, limits, **projection_options)
         pdf = validate_orthogonal_pdf(snapshot / "geometry.pdf", building, layout, equipment,
-            routing=routing, revision=profile.drawing.revision, index=indices.get("pdf"), **window_options)
+            routing=routing, revision=profile.drawing.revision, index=indices.get("pdf"), **projection_options)
         ifc = validate_orthogonal_ifc(snapshot / "geometry.ifc", building, layout, equipment,
-            routing=routing, expected_sha256=_sha(data["geometry.ifc"]), max_file_bytes=min(limits.max_artifact_bytes, 16_777_216), **window_options)
+            routing=routing, expected_sha256=_sha(data["geometry.ifc"]), max_file_bytes=min(limits.max_artifact_bytes, 16_777_216), **projection_options)
         try:
             import ifcopenshell
             from .orthogonal_ifc_qa import _properties, _same_properties
@@ -479,7 +534,8 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
     return _finish(report)
 
 
-def validate_orthogonal_bundle(output, *, expected_profile=None, limits=OrthogonalBundleLimits(), include_windows=False):
+def validate_orthogonal_bundle(output, *, expected_profile=None, limits=OrthogonalBundleLimits(), include_windows=False,
+                               include_grid=False):
     """Reload bounded persisted sources and independently check all three files.
 
     PASS is limited to exchange delivery and declared software predicates.
@@ -487,7 +543,8 @@ def validate_orthogonal_bundle(output, *, expected_profile=None, limits=Orthogon
     A caller-supplied expected profile is an additional independent anchor.
     """
     try:
-        return _validate(output, limits=limits, expected_profile=expected_profile, **_window_options(include_windows))
+        return _validate(output, limits=limits, expected_profile=expected_profile,
+            **_window_options(include_windows), **_grid_options(include_grid))
     except Exception as exc:
         return {"format": "FLC-orthogonal-bundle-qa", "version": "0.1", "status": "FAIL", "ok": False,
             "scope": "Persisted exchange delivery and declared software predicates only",

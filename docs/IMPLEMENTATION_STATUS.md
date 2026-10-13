@@ -109,6 +109,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.14 | Reduce duplicate actual bundle test fixture builds | Immutable snapshots of each exact canonical fixture are copied into isolated test directories; no QA verdict or execution is cached. Real alias/preflight/bounds/race/generation paths remain. Every tamper branch restores the complete pristine inventory before its own physical edit. | One fresh Windows run: 34 tests / 68 subtests in 293.88 s; root verified exact parity of all 126 assertion expressions against B.14. Full fixture pipelines 28 to 8; 80 public readbacks, 92 fresh QA calls and 62 native EXPRESS executions. Earlier separate suites summed to 440.26 s; observed 146.38 s decrease is not a general CI guarantee. | test optimization complete 2026-10-13; remote duration awaits pinned CI |
 | H.3.6.5 | Bounded final physical-zone model diagnostics | Explicit true-only capture binds the exact effective finite candidate family, canonical source and fixed/axis constraints. Actual proto counts are taken before each Solve, including enumeration no-goods; ResponseProto timing/search metrics retain actual solver status. COMPLETE/INCOMPLETE capture never proves original infeasibility or physical acceptance. Default evidence and runner arguments remain exact. | Fresh agent recursive/runner/controls: 56 tests / 68 subtests in 45.36 s; root independently passed four actual accepted/UNKNOWN/model-response/complete persisted pipeline/deadline checks in 7.14 s. Pre-checkpoint default JSON compared exactly for four actual root/recursive solves and both runner backends. Actionlint passed; no 80-room run or original fixture change. | diagnostics complete 2026-10-13; physical80 improvement and acceptance remain open |
 | H.3.6.6 | Bounded redundant final cross-root contact pruning | Exact rounded-shape side/translation intersections reject only selected candidate pairs that cannot realize all explicit required cross-root room contacts together. All original constraints and family geometry remain. Whole-pass bounds skip before posting; unsafe containment skips that pair. Default JSON and runner controls remain exact. | Fresh agent: 72 tests / 190 subtests in 51.76 s; root: five actual CP/finite-failure/limit-skip/complete-bundle/deadline cases in 3.68 s. Independent tiny-grid geometry covers 103 families; telemetry confirms unchanged variables/family hashes and exact extra Boolean clause counts. Actionlint passed. | pruning complete 2026-10-13; physical80 measurement and acceptance remain open |
+| B.15 | Opted source reference axes through three-format drafts and CLI | Strict explicit capability binds exact source full-span lines/labels in actual DXF/PDF and native IfcGrid/IfcGridAxis. Independent persisted readback rejects rehashed axis and visible-claim substitutions; window options remain independent. Default source/artifact/report contracts, 14-file inventory and protected publication remain. Raw CLI input digests are declared provenance separate from canonical frames. | Fresh root: 49 PDF/projection/window/grid tests in 16.71 s, actual combined 14-file QA PASS in 2.91 s, source-only YAML set QA PASS in 4.22 s. Agent IFC: 130 / 254 in 79.20 s; bundle/CLI: 21 / 58 in 246.13 s. Strict EXPRESS zero, all actual PDF pages inspected, five peer adversarial replays reject; older default reports and 42 artifact hashes exact. | scoped source-axis delivery complete 2026-10-13; native group semantics and full engineering acceptance remain open |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -154,11 +155,12 @@ Cyrillic text.
 
 
 
+
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
   scoped current predicates and three-format persisted draft QA are implemented;
-  opted source windows are integrated; grid/native semantic consumers and
-  expert acceptance remain.
+  opted source windows and reference axes are integrated; native semantic
+  consumers and expert acceptance remain.
 - C: scalable zone-driven placement and containment; minimal conflicting
   constraint sets remain separate from implemented structured stage evidence.
   Preferred-zone singleton participants can increase search cost.
