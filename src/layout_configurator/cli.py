@@ -152,6 +152,10 @@ def main(argv: list[str] | None = None) -> int:
         "validate-production-program", help="validate embedded source-bound process declarations; engineering acceptance stays PENDING")
     production_program.add_argument("input", type=Path, help="strict canonical JSON/YAML BuildingIR with production_program")
     production_program.add_argument("--output", "-o", type=Path, default=None, help="scoped validation report JSON")
+    transfer_review = subparsers.add_parser("check-transfers", help="check supplied actual routes against typed source permissions; engineering acceptance stays PENDING")
+    transfer_review.add_argument("input", type=Path, help="bounded JSON with canonical building, production/transfer programs, layout and actual flow_routes")
+    transfer_review.add_argument("--output", "-o", type=Path, default=None, help="scoped transfer review JSON")
+    transfer_review.add_argument("--include-windows", action="store_true", help="explicitly admit source facade windows; windows never become portals")
     generate = subparsers.add_parser("generate", help="solve a JSON/YAML specification and export DXF/PDF")
     generate.add_argument("spec", type=Path)
     generate.add_argument("--output", "-o", type=Path, default=Path("out"))
@@ -432,6 +436,32 @@ def main(argv: list[str] | None = None) -> int:
     propose_llm.add_argument("--output", "-o", type=Path, required=True)
     propose_llm.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args(argv)
+
+    if args.command == "check-transfers":
+        from .transfer_review import load_transfer_review
+
+        if args.output and args.output.resolve() == args.input.resolve():
+            print("ERROR: Transfer report output must differ from its source", file=sys.stderr)
+            return 2
+        try:
+            report = load_transfer_review(args.input, include_windows=args.include_windows)
+        except (OSError, UnicodeError, ValueError, TypeError, KeyError, OverflowError, RecursionError) as exc:
+            report = {"status": "FAIL", "ok": False, "scope": "supplied_transfer_review_input",
+                "engineering_acceptance": "PENDING", "authenticated_approval": "UNKNOWN",
+                "full_facility_validation": {"status": "UNKNOWN", "ok": False},
+                "proven_building_infeasible": False,
+                "issues": [{"status": "FAIL", "code": "invalid_review_input", "path": "$", "message": str(exc)[:2048]}]}
+        payload = json.dumps(report, ensure_ascii=False, allow_nan=False, indent=2) + "\n"
+        try:
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(payload, encoding="utf-8")
+            else:
+                print(payload, end="")
+        except OSError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        return {"PASS": 0, "UNKNOWN": 4, "FAIL": 2}[report["status"]]
 
     if args.command == "validate-production-program":
         from .production_program import (EmbeddedProductionProgramError, ProductionProgramIssue,

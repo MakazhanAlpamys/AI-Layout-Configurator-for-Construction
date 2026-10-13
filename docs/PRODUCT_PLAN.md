@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.2.1.1 exposes independent actual transfer review through
+`check-transfers`: strict canonical JSON, supplied route coordinates, exact
+file/source hashes and distinct PASS/UNKNOWN/FAIL exits. Installed-wheel command
+checks passed. [Contract](TRANSFER_PROGRAM.md). Unsupported embedded semantics
+remain UNKNOWN and default facility generation retains its input guard.
+
 Checkpoint H.3.6.12 adds explicit default-false source-derived repacking of
 narrowly eligible automatic three-room root leaves. All old choices and source
 constraints remain; a tiny four-root model and complete saved bundle pass.

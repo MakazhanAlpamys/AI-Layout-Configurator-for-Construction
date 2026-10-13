@@ -70,5 +70,41 @@ and forged room-path FAIL all retain exact source identities. A regular wheel
 from pinned `a175b19` plus the six frozen files passes the same actual denial
 and offline schema/hash checks from a foreign directory. Its SHA256 is
 `16dd5ff6372dc2a6b223ccdfbb2f96546266b9bb6a04d791bce99b44df817e2d`.
-Producer enforcement, CLI/HTTP admission, pressure/scenarios and installed full
-CI for later source remain separate checkpoints.
+Producer enforcement, ordinary generation/HTTP admission, pressure/scenarios
+and installed full CI for later source remain separate checkpoints.
+
+## Actual JSON review command
+
+I.2.1.1 adds an explicit bounded review boundary:
+
+```console
+layout-configurator check-transfers supplied-review.json --output transfer-report.json
+```
+
+The JSON contains complete canonical `building`, standalone `production_program`
+and `transfer_program`, actual `layout` and `flow_routes`, plus optional canonical
+`equipment` placements. Routes use their original serialized `routes` array with
+literal point objects; the command never generates replacement routes or solves
+a facility. Equipment retains strict original numeric/rotation types and any
+saved clearance must match freshly derived source geometry. Unknown fields,
+duplicate keys, scalar coercions and stale bindings cannot gain acceptance.
+`--include-windows` explicitly enables source facade-window geometry, with no
+permission to cross a window. Omit `--output` to print JSON.
+
+Exit codes are scoped PASS0, UNKNOWN4 and FAIL2. Reports retain exact review-file
+SHA256, canonical source identities, actual crossings and the original proof
+boundaries. The source file is preserved; output cannot resolve to the input
+path. File bytes, raw JSON nodes/depth and total route/geometry workload are
+bounded before parsing or constructing geometry. Overflow prevents partial
+acceptance. Embedded production programs are explicitly preserved during review;
+unsupported fresh geometry remains UNKNOWN and ordinary generation still stops
+before CP search. A local permission result never closes full facility QA.
+
+Meaningful missing-command RED produced ten failures in six methods without
+errors; two additional RED checks require room/point limits before geometry.
+Fresh root verification passes75 related tests in6.083 s and final eight review
+tests in0.538 s. Durable actual command outputs preserve source bytes and
+distinct0/2/4 exits. A regular wheel from pinned `9632549` plus the three frozen
+files reproduces all three actual command cases from a foreign directory,
+with exact implementation hashes; wheel SHA256
+`1c54559ec8b7f0a0b8cf3030bf5f2ba62fc88c1fd85219ce6f544afcc7dca492`.

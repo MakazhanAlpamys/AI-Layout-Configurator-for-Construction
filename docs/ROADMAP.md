@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.2.1.1 delivers current-product typed transfer review through a
+bounded actual CLI, preserving source bytes and scoped verdicts. The archived
+MVP and full engineering acceptance criteria remain unchanged.
+
 Checkpoint H.3.6.12 extends current-product finite leaf choices using original
 source minima/areas, without changing this completed MVP archive. Actual tiny
 CP/bundle verification passes; changed full physical80 remains a separate gate.
