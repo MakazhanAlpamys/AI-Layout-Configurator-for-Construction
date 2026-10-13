@@ -170,6 +170,9 @@ and complete generation propagation remain pending parts of B.14.
 Checkpoint B.12 adds explicit orthogonal generation and independent single/set
 QA commands. Partial requested sets stay UNKNOWN; complete exchange delivery
 does not change DRAFT/full UNKNOWN/PENDING acceptance.
+Checkpoint H.3.6.4 records one changed-controls physical80 CI run: 69.776 s,
+global UNKNOWN with 10 seconds/four workers, no accepted bundle. Physical80
+acceptance remains open; unchanged-source constraints are preserved.
 
 ## 1. Why we are expanding the project
 

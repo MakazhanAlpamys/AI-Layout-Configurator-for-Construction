@@ -22,6 +22,10 @@ it). The order below follows that.
 
 ## 2. Trust — output that reviewers and tools accept
 
+The changed-controls physical80 run at `1813e19` also returned global UNKNOWN
+in 69.776 s, with no accepted bundle. Ten seconds/four global workers alone
+did not close item 1.5; [actual pinned evidence](acceptance/1813e19.json) is retained.
+
 | # | Work | Done when | Owner |
 | --- | --- | --- | --- |
 | 2.1 | The three external pilot reviews (process/QA, cleanroom/HVAC, architecture/BIM) on the generated dossiers | three signed decision blocks, findings turned into issues | people (not code) |

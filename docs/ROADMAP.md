@@ -277,6 +277,8 @@ Checkpoint B.14.1 attaches source-backed polygon windows to the opted wall plan;
 it preserves existing circulation barriers and keeps exporter integration open.
 Checkpoint B.12 exposes bounded canonical polygon generation and independent
 draft-set QA through explicit CLI commands, with protected prior output.
+Checkpoint H.3.6.4 retains the second source-pinned physical80 negative result;
+larger final search settings alone did not establish the scale criterion.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

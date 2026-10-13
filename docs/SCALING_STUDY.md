@@ -511,3 +511,19 @@ parallel controls. Invalid/inapplicable settings start no worker, a native
 timeout preserves the total deadline and ordinary serialized reports/arguments
 remain unchanged. These tests establish the controls; they do not establish an
 80-room runtime or acceptance result.
+
+### Changed-controls physical80 measurement
+
+One installed-wheel Ubuntu run at pinned `1813e19` used 10 seconds and four
+workers for the final global CP model. It completed in 69.776 s, including
+68.117 s of room solving. All original supplied-source gates passed and the
+four raw fixture hashes remained unchanged. All local shape stages completed,
+but the final model again returned UNKNOWN for the selected shapes; no complete
+bundle was accepted. Longer final-model settings alone did not establish
+physical80 acceptance. The result does not prove whole-building infeasibility.
+
+[Run 38389399324](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38389399324)
+retains the actual artifact; [compact evidence](acceptance/1813e19.json) binds
+the source, installed runtime, requested/effective global settings, 101 stage
+attempts and raw report hash. Raw research copies stay local. Further work must
+address a measured search limitation rather than repeat the unchanged request.
