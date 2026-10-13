@@ -567,3 +567,35 @@ PDF attacks now fail. Three older durable bundles retain exact default QA JSON
 and all 42 artifact hashes; the retained window bundle passes the stricter
 current reader with its 14 files unchanged. These results verify scoped software
 delivery on this runtime, without a general performance or engineering claim.
+
+## Declared semantic group capability
+
+`validate_orthogonal_groups(building, layout, equipment=None, routing=None)`
+derives exact source declarations under `declared_semantic_groups_v1`. A zone
+contains its directly declared rooms and immediate child-zone references. It
+does not flatten descendant rooms into a parent's membership. A declared process
+system contains only supplied routes and supplied equipment explicitly named as
+source endpoints. Room/zone references, service volumes and undeclared endpoint
+machines do not become system members. Zone and flow identities use separate
+namespaces. Route identities use canonical JSON lists, so commas remain exact.
+
+The capability retains original zone/flow properties and hashes of the original
+BuildingIR, room result, equipment result and routing result. Missing optional
+product inputs remain NOT_SUPPLIED with explicit unprojected equipment identities;
+empty declared groups remain declarations. Original actual boolean/numeric types,
+unique known references, direct hierarchy and source direction are checked before
+constructors can normalize them. Source count and byte budgets precede hashing;
+oversized or malformed inputs yield FAIL with no partial groups.
+
+Limits are 64 rooms/zones/flows, 32 equipment declarations, 256 routes, 8,192
+total route points, 16,384 derived references and 1 MiB total canonical source
+bytes. Ordinary labels/IDs are bounded to 128 UTF-8 bytes, headers to 4 KiB,
+optional opening/cutout collections and total grid axes to 128, and numerical
+coordinates/declarations to an absolute 1,000,000. These are software bounds,
+not regulatory limits. Fresh group/BuildingIR/schema tests passed 25 cases in
+0.63 s, including actual malformed typed sources and pre-serialization bounds.
+
+PASS establishes declared semantic memberships only. Geometry is NOT_EVALUATED,
+physical-container and network checks remain UNKNOWN, full facility validation
+remains UNKNOWN and engineering acceptance PENDING. Existing room, equipment,
+route and profile authorities still govern actual native draft delivery.

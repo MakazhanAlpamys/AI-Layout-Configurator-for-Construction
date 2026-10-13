@@ -304,6 +304,9 @@ establish physical80 or external expert acceptance.
 Checkpoint H.3.6.7 records a third source-pinned physical80 failure with complete
 final diagnostics and 2,776 actual redundant clauses. The final model remains
 UNKNOWN; no 80-room export or complete facility QA was reached.
+Checkpoint B.16.1 establishes bounded exact source group identities and direct
+memberships. This extends canonical draft exchange without establishing physical
+zone containers, engineered networks or approval of the residential MVP archive.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

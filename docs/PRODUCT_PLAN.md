@@ -216,6 +216,12 @@ Checkpoint H.3.6.7 retains the changed physical80 run pinned to `9e5e598`:
 All raw source, prepared-program, hint and manifest bytes match both earlier
 measurements. The actual 220-shape family and 2,776 posted contact clauses are
 verified; complete diagnostics and faster observed timing do not close physical80.
+Checkpoint B.16.1 adds a strict bounded shared declared-group capability.
+Zones retain direct source spaces and immediate child zones; process systems
+reference only supplied routes and explicitly named supplied equipment endpoints.
+Original declarations and four source hashes remain exact. Missing products are
+explicitly NOT_SUPPLIED; this semantic check does not evaluate geometry,
+physical containers or network engineering. Native delivery is the next B.16 gate.
 
 ## 1. Why we are expanding the project
 
