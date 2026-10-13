@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.21 verifies complete pinned `70ee96e` acceptance: 1,202 tests
+per OS across three exhaustive shards, installed-container API and nine pharma
+variants. Eight downloaded archive identities and 86 extracted files match.
+Workflow elapsed is 416 s versus 792 s previously; changed fixtures/source and
+six VMs prevent causal timing attribution. [Evidence](acceptance/70ee96e.json).
+This pin covers C.5.1-C.5.3 and I.1.1-I.1.2, not later HTTP/I.2/I.3/repacking work.
+
 Checkpoint C.5.3 exposes opted conflict evidence through public zone generation
 and the direct CLI. Actual accepted manifests and failed generation JSON retain
 captured reports; default arguments/output remain unchanged. Fresh saved-bundle

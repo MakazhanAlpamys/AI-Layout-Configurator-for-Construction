@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint QA.21 retains successful pinned `70ee96e` full current-product CI:
+all 1,202 cases per OS remain covered, with container and nine pharma variants.
+Actual elapsed falls from 792 s to 416 s across changed source and six test VMs.
+The original MVP archive and external acceptance boundaries remain unchanged.
+
 Checkpoint C.5.3 retains current-product zone conflict reports in actual CLI
 generation manifests/failures. Fresh accepted saved-bundle QA passed; this
 does not extend selected-family proofs or change the archived MVP criteria.

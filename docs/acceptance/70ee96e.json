@@ -1,0 +1,318 @@
+{
+  "implementation_commit": "70ee96e646392de26e6957bef82a4c3ec71a4c46",
+  "run_id": 38421993213,
+  "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213",
+  "event": "workflow_dispatch",
+  "conclusion": "success",
+  "run_wall_seconds": 416.0,
+  "actual_jobs": 9,
+  "successful_jobs": 8,
+  "skipped_jobs": 1,
+  "unit_tests": {
+    "linux": {
+      "count": 1202,
+      "executed": 1198,
+      "skipped": 4,
+      "seconds": 787.5110380000001,
+      "seconds_scope": "Sum of shard test wall times on separate VMs; not workflow elapsed time",
+      "shards": {
+        "core": {
+          "count": 1071,
+          "seconds": 229.404287,
+          "subtests": 1500,
+          "skipped": 4,
+          "skip_reasons": {
+            "Set FLC_PLAYWRIGHT_CLI for real browser acceptance": 3,
+            "Opt-in real local OCR executable integration": 1
+          },
+          "raw_evidence_sha256": "ec846fa7a71f63911d2c6ef8f3c37eac20b57b6df3423d01dad89eae4ef63c15"
+        },
+        "draft-bundles": {
+          "count": 53,
+          "seconds": 268.398275,
+          "subtests": 133,
+          "skipped": 0,
+          "skip_reasons": {},
+          "raw_evidence_sha256": "efd1e2f610a7d29e87795a185d06ea0fe09d9951adddeb208b316fdbe76355af"
+        },
+        "exchange-and-cli": {
+          "count": 78,
+          "seconds": 289.708476,
+          "subtests": 162,
+          "skipped": 0,
+          "skip_reasons": {},
+          "raw_evidence_sha256": "ea1adbea0989e6e44943b5d9be336633f86600c36fdf638e719c2b3d34ae06f0"
+        }
+      },
+      "skip_reasons": {
+        "Set FLC_PLAYWRIGHT_CLI for real browser acceptance": 3,
+        "Opt-in real local OCR executable integration": 1
+      },
+      "partition_verified": "PASS",
+      "invocation": "python scripts/ci_test_shards.py --shard <core|draft-bundles|exchange-and-cli>"
+    },
+    "windows": {
+      "count": 1202,
+      "executed": 1194,
+      "skipped": 8,
+      "seconds": 929.99252,
+      "seconds_scope": "Sum of shard test wall times on separate VMs; not workflow elapsed time",
+      "shards": {
+        "core": {
+          "count": 1071,
+          "seconds": 287.666602,
+          "subtests": 1494,
+          "skipped": 8,
+          "skip_reasons": {
+            "Set FLC_PLAYWRIGHT_CLI for real browser acceptance": 3,
+            "Opt-in real local OCR executable integration": 1,
+            "POSIX executable fixtures; real Tesseract verified separately in Linux": 4
+          },
+          "raw_evidence_sha256": "e063129e2a2ef53beef7e777d04dfbbd72fffda476c2e20840e312150c75d658"
+        },
+        "draft-bundles": {
+          "count": 53,
+          "seconds": 320.880417,
+          "subtests": 133,
+          "skipped": 0,
+          "skip_reasons": {},
+          "raw_evidence_sha256": "86512eb78469644676dbce885ab01f1bb6dc6bec9b45162ebf5db68f40be85e5"
+        },
+        "exchange-and-cli": {
+          "count": 78,
+          "seconds": 321.445501,
+          "subtests": 162,
+          "skipped": 0,
+          "skip_reasons": {},
+          "raw_evidence_sha256": "f820ecd95025840b252eefd2f27aa4f40383e7949b90e16f0f7e70d98f01cb81"
+        }
+      },
+      "skip_reasons": {
+        "Set FLC_PLAYWRIGHT_CLI for real browser acceptance": 3,
+        "Opt-in real local OCR executable integration": 1,
+        "POSIX executable fixtures; real Tesseract verified separately in Linux": 4
+      },
+      "partition_verified": "PASS",
+      "invocation": "python scripts/ci_test_shards.py --shard <core|draft-bundles|exchange-and-cli>"
+    }
+  },
+  "pharma": {
+    "seeds": [
+      1,
+      7,
+      42
+    ],
+    "variants_per_seed": 3,
+    "accepted_cases": 9,
+    "cross_seed_semantic_ids": "PASS",
+    "complete_saved_QA": "PASS",
+    "saved_variant_checks": 81,
+    "check_ids": [
+      "BCF_READBACK",
+      "CLIENT_REPORT_READBACK",
+      "COORDINATION_JSON",
+      "DXF_READBACK",
+      "FACILITY_VALIDATION",
+      "IFC_READBACK",
+      "MANIFEST",
+      "PDF_READBACK",
+      "SHEET_SET_READBACK"
+    ],
+    "downloaded_artifact_files_sha256_checked": 54,
+    "downloaded_shared_manifest_sha256_checked": 3,
+    "raw_matrix_sha256": "a4b22aad3057094611dab0ecab706bd8b502ce2054aa9409708198abbf2b0b75",
+    "search": {
+      "time_limit_seconds": 30.0,
+      "deterministic_units": null,
+      "repeatable": false,
+      "max_attempts": 9,
+      "equipment_retries": 2,
+      "room_solver": "auto"
+    }
+  },
+  "installed_container_HTTP": {
+    "status": "SUCCEEDED",
+    "qa_ok": true,
+    "elapsed_seconds": 4.324539657999992,
+    "elapsed_scope": "POST /jobs to successful job polling; later fresh QA, artifact listing, PDF download and review requests are outside this timer",
+    "job_id": "0a111b1737584daaa52ea1b42098c721",
+    "runtime_sha256": "a6f306ff8d1bb60404936bfeabd6ce14818de540a5700eeae1aa712f269c7e41",
+    "cache_hit": false,
+    "settings": {
+      "deterministic_units": null,
+      "equipment_retries": 2,
+      "max_attempts": 3,
+      "room_solver": "auto",
+      "seed": 1,
+      "time_limit_seconds": 30,
+      "variants": 1
+    },
+    "fresh_saved_QA_checks": 9,
+    "listed_artifacts": 10,
+    "downloaded_PDF_signature": "PASS in pinned smoke script",
+    "expert_acceptance": "PENDING",
+    "unsigned_expert_markdown_dossiers": 3,
+    "raw_report_sha256": "080ce8960ce31238b6ec48616f1afe1e8145408ccf409d722a53ef103df60e0d",
+    "scope": "Docker production package installed with pip install .; real authenticated HTTP generation, fresh server-side saved QA, artifact listing, PDF signature and unsigned expert dossiers. The retained API artifact contains report/log, not all generated bundle bytes."
+  },
+  "jobs": {
+    "pharma-cleanroom": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:28:56Z",
+      "duration_seconds": 180.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381447550"
+    },
+    "tests (ubuntu-latest, core)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:30:15Z",
+      "duration_seconds": 259.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381447974"
+    },
+    "tests (windows-latest, draft-bundles)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:32:34Z",
+      "duration_seconds": 398.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381447994"
+    },
+    "tests (windows-latest, core)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:31:59Z",
+      "duration_seconds": 363.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381448066"
+    },
+    "tests (windows-latest, exchange-and-cli)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:32:47Z",
+      "duration_seconds": 411.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381448177"
+    },
+    "api-container": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:27:19Z",
+      "duration_seconds": 83.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381448189"
+    },
+    "tests (ubuntu-latest, exchange-and-cli)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:31:25Z",
+      "duration_seconds": 329.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381448291"
+    },
+    "tests (ubuntu-latest, draft-bundles)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T15:25:56Z",
+      "completed_at": "2026-10-13T15:30:53Z",
+      "duration_seconds": 297.0,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381448292"
+    },
+    "Quick contracts and complete test collection": {
+      "conclusion": "skipped",
+      "started_at": "2026-10-13T15:25:54Z",
+      "completed_at": "2026-10-13T15:25:54Z",
+      "duration_seconds": null,
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38421993213/job/115381449741"
+    }
+  },
+  "downloaded_archives": {
+    "test-shard-windows-latest-exchange-and-cli": {
+      "artifact_id": 11827960515,
+      "archive_sha256_checked": "9395bb266688396d54ac7a911aa238e56f58647fd6bbdcd5e86f800f21094ce1",
+      "extracted_files_checked": 1,
+      "expires_at": "2026-10-27T15:32:41Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827960515",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827960515/zip"
+    },
+    "test-shard-windows-latest-core": {
+      "artifact_id": 11827331419,
+      "archive_sha256_checked": "031bc9ca534cd551ae5f48182500c5a1452c3db67b2490b8acfb9bd0e26c513b",
+      "extracted_files_checked": 1,
+      "expires_at": "2026-10-27T15:31:55Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827331419",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827331419/zip"
+    },
+    "test-shard-ubuntu-latest-exchange-and-cli": {
+      "artifact_id": 11827231576,
+      "archive_sha256_checked": "a77596e4c7eb336bedd06af4c364adbceb31271108873253e90a1de6ff225947",
+      "extracted_files_checked": 1,
+      "expires_at": "2026-10-27T15:31:22Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827231576",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827231576/zip"
+    },
+    "test-shard-windows-latest-draft-bundles": {
+      "artifact_id": 11827071965,
+      "archive_sha256_checked": "6450e2d91d9751451c2eb4054d0b691e126b6f7325ad27fff8780de526dc5f06",
+      "extracted_files_checked": 1,
+      "expires_at": "2026-10-27T15:32:29Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827071965",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827071965/zip"
+    },
+    "test-shard-ubuntu-latest-core": {
+      "artifact_id": 11827026728,
+      "archive_sha256_checked": "de168d0acb6b14603fa96b083aab3538a75b6b6e3c2d3433416d6e3d80cdcd18",
+      "extracted_files_checked": 1,
+      "expires_at": "2026-10-27T15:30:13Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827026728",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11827026728/zip"
+    },
+    "test-shard-ubuntu-latest-draft-bundles": {
+      "artifact_id": 11826749492,
+      "archive_sha256_checked": "ae8a5f481c6cc9b90bd99904dfe123be098a9fed97378680baa619065d424141",
+      "extracted_files_checked": 1,
+      "expires_at": "2026-10-27T15:30:48Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11826749492",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11826749492/zip"
+    },
+    "pharma-cleanroom-acceptance": {
+      "artifact_id": 11826429609,
+      "archive_sha256_checked": "4bbf3c5e14b7d3abef42a731edd6efa0944d571b01cbcce0eaab60b808671195",
+      "extracted_files_checked": 78,
+      "expires_at": "2026-10-27T15:28:49Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11826429609",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11826429609/zip"
+    },
+    "api-container-acceptance": {
+      "artifact_id": 11826119395,
+      "archive_sha256_checked": "f53c9ac738fe016e417da3097c197268cb2ad59eec5fbe56581b5e4f9cce5868",
+      "extracted_files_checked": 2,
+      "expires_at": "2026-10-27T15:27:12Z",
+      "url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11826119395",
+      "archive_url": "https://api.github.com/repos/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/artifacts/11826119395/zip"
+    }
+  },
+  "comparison_with_c0eb166": {
+    "run_id": 38409230704,
+    "implementation_commit": "c0eb16640de423dbf7c6ca612ef7329fdb8998e6",
+    "test_count_delta_per_platform": 89,
+    "previous_workflow_wall_seconds": 792.0,
+    "previous_job_durations": {
+      "api-container": 86.0,
+      "pharma-cleanroom": 220.0,
+      "tests (windows-latest, draft-bundles)": 477.0,
+      "tests (ubuntu-latest, core)": 559.0,
+      "tests (ubuntu-latest, draft-bundles)": 345.0,
+      "tests (windows-latest, core)": 787.0,
+      "Quick contracts and complete test collection": null
+    },
+    "previous_unit_tests": {
+      "linux": {
+        "count": 1113,
+        "seconds": 830.737709,
+        "skipped": 4
+      },
+      "windows": {
+        "count": 1113,
+        "seconds": 1057.32089,
+        "skipped": 8
+      }
+    },
+    "caveat": "Both retain complete unittest discovery and sum parallel shard times, but this run uses six test VMs rather than four. Added tests, changed source/fixture setup, separate VMs and uncontrolled runner load prevent a causal performance comparison."
+  },
+  "scope": "C.5.1-C.5.3, I.1.1-I.1.2, H.3.6.10-H.3.6.11, QA.18-QA.20; later HTTP diagnostics, typed transfers, engineering library and leaf repacking are excluded."
+}

@@ -59,3 +59,20 @@ shared manifests additionally match saved QA inventories. Total workflow elapsed
 was 792 s; slowest Windows core job was 787 s including setup. Parallel test wall
 times are recorded separately. This does not measure the later QA.18 fixture
 optimization or subsequent solver/program changes. [Evidence](acceptance/c0eb166.json).
+
+QA.21 measures the changed complete milestone at `70ee96e`: workflow elapsed
+416 s (6 min 56 s), compared with 792 s (13 min 12 s) at `c0eb166`, a measured
+47.5% decrease. All 1,202 unique cases per OS are retained, including all earlier
+1,113 IDs. The exact partition is 1,071 core, 53 bundles and 78 exchange/CLI;
+skip reasons remain four on Linux and eight on Windows. All eight active jobs
+pass, including installed Docker/API and nine pharma variants. Eight downloaded
+archive digests and 86 extracted file bytes match. [Evidence](acceptance/70ee96e.json).
+
+The slowest job is Windows exchange/CLI at 411 s including setup. Actual test
+walls are Linux229.404/268.398/289.708 s and Windows287.667/320.880/321.446 s
+for core/bundles/exchange. Summing these separate VMs is not workflow elapsed.
+The change uses six test VMs instead of four and includes different source,
+89 added tests and bounded pilot fixtures; runner load is uncontrolled. This
+measurement establishes the observed shorter wait, not causal attribution or
+a guaranteed reduction in aggregate billed runner minutes. Later source edits
+are outside this pinned acceptance.

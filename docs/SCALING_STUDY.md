@@ -804,5 +804,9 @@ variants, quick-push contracts, all acceptance assertions, fail-fast=false,
 VMs replace four, adding two setup/discovery costs. Historical log attribution
 suggests about 302.7 s of Windows core and 238.1 s of Linux core move into the
 new group; these estimates precede the pilot fixture optimization and do not
-promise new elapsed time or lower aggregate runner minutes. A single full
-milestone CI will measure the final source pin after the next integration.
+promise new elapsed time or lower aggregate runner minutes. QA.21 subsequently measures one complete milestone at `70ee96e`: 1,202 cases
+per OS and all active gates PASS, workflow416 s versus prior792 s, slowest
+Windows exchange job411 s. Eight archive digests and all86 extracted files
+match. Changed fixtures/source, 89 additional tests and six VMs prevent causal
+attribution or guaranteed aggregate runner savings;
+[evidence](acceptance/70ee96e.json) retains actual individual test/job times.
