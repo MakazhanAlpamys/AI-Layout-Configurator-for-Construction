@@ -60,6 +60,8 @@ Checkpoint QA.12 stores raw research locally; this archive retains immutable
 historical references while canonical runtime/CI inputs stay tracked.
 Checkpoint B.11 composes bounded canonical polygon candidates through fresh
 local equipment, route and profile checks, retaining separate delivery acceptance.
+Checkpoint H.3.6.1 prepares supervised physical-zone acceptance without changing
+the pinned source or default backend; its large-scale measurement remains separate.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow

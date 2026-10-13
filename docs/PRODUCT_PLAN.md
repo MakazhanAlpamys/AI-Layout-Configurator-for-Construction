@@ -149,6 +149,9 @@ compact acceptance summaries and immutable historical evidence links.
 Checkpoint B.11 composes canonical polygon room, equipment and route candidates
 with fresh declared profile predicates and bounded complete-combination retries.
 Locally verified candidates remain DRAFT; complete persisted delivery is a separate gate.
+Checkpoint H.3.6.1 adds an explicit recursive backend to the supervised pinned
+80-room runner and independently validates actual containers before equipment/export.
+The small complete pipeline passes; unchanged physical80 timing remains unmeasured.
 
 ## 1. Why we are expanding the project
 

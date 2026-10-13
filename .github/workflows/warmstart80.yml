@@ -2,6 +2,15 @@ name: Synthetic 80-room warm-start acceptance
 
 on:
   workflow_dispatch:
+    inputs:
+      room_solver:
+        description: Supplied warm-start room backend
+        type: choice
+        required: true
+        default: hierarchical
+        options:
+          - hierarchical
+          - zone_recursive
 
 permissions:
   contents: read
@@ -28,9 +37,11 @@ jobs:
           cache-dependency-path: pyproject.toml
       - run: python -m pip install .
       - name: Generate and independently verify the source-pinned synthetic 80-room warm start
+        env:
+          ROOM_SOLVER: ${{ inputs.room_solver }}
         run: >-
           python scripts/scale80_warmstart_acceptance.py
-          --output out/scale80-warmstart --max-seconds 120
+          --output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER"
       - name: Retain warm-start bundles and evidence, including failures
         if: always()
         uses: actions/upload-artifact@v7

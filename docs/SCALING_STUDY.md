@@ -446,3 +446,29 @@ projection or model construction.
 This proves the small physical zones-to-clusters-to-rooms bridge. The unchanged
 supplied 80-room benchmark, scratch generation and large edit acceptance still
 require their own supervised measurements.
+
+## Supervised recursive acceptance option
+
+The pinned runner now accepts `--room-solver zone_recursive`; its default remains
+`hierarchical`. Recursive mode consumes actual solver containers, independently
+checks containment, exclusion and canonical zone relations before equipment or
+exports, and records a separate `zones80` hash and geometry artifact. Old room
+bounding boxes cannot establish a physical-zone PASS.
+
+The parent deadline still covers startup, preparation, rooms, physical zones,
+equipment, routes, profile checks, complete persisted bundle QA and strict IFC
+EXPRESS. Structured bounded local/global failures retain their actual CP status
+and scope. The pinned source and original warm-start report behavior are unchanged.
+The manual workflow remains one installed-wheel Ubuntu job with an explicit
+backend choice; no heavy job is added to push CI.
+
+```powershell
+.venv/Scripts/python.exe scripts/scale80_warmstart_acceptance.py --fixture tests/fixtures/warmstart80 --output out/scale80-zone-recursive --max-seconds 120 --room-solver zone_recursive
+```
+
+Use a fresh output directory and hold executable sources unchanged during the
+measurement. Fresh root runner verification passed 16 tests and 27 subtests in
+22.46 s; actionlint passed. The actual eight-room complete recursive bundle,
+forged container, bounded CP failure and supervised deadline are covered. This
+checkpoint prepares the unchanged physical80 measurement; it does not claim an
+80-room performance result, general scratch generation or large edit acceptance.

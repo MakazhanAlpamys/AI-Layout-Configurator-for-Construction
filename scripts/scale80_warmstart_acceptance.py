@@ -34,7 +34,7 @@ def file_digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def new_report(max_seconds):
+def new_report(max_seconds, *, room_solver="hierarchical"):
     return {
         "status": "RUNNING", "accepted": False, "source_commit": SOURCE_COMMIT,
         "scope": "Source-pinned synthetic A/B clone of supplied accepted40 with complete persisted bundle acceptance",
@@ -42,7 +42,7 @@ def new_report(max_seconds):
         "generating_supplied40_from_scratch_included": False,
         "timing_scope": "Whole runner request: worker startup/imports, source preparation/validation/derivation, rooms, equipment, routes, exports and independent persisted bundle QA",
         "settings": {"max_total_seconds": max_seconds, "seed": 7, "variants": 1,
-                     "room_solver": "hierarchical", "room_seconds_per_model": 2,
+                     "room_solver": room_solver, "room_seconds_per_model": 2,
                      "equipment_seconds_per_model": 5, "cache_cluster_shapes": True,
                      "hint_completion_seconds_per_model": 1, "hint_repair_workers": 1,
                      "deterministic_units": None, "strict_ifc_express": True},
@@ -212,7 +212,7 @@ def prepare_fixture(root, report):
 
 
 def accept_program(building, hints, profile, report, output, *, room_seconds=2, equipment_seconds=5,
-                   seed=7, checkpoint=lambda: None):
+                   seed=7, checkpoint=lambda: None, room_solver="hierarchical"):
     from layout_configurator.bundle import write_facility_variant
     from layout_configurator.equipment import place_equipment_clear_of_doors, validate_equipment_layout
     from layout_configurator.facility import validate_building
@@ -234,21 +234,63 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
             fits.setdefault(item.room_id, []).append((item.id, item.room_fit_dimensions(building.layout.wall_thickness_mm)))
     started = time.monotonic()
     try:
-        result = solve_layouts_auto(building.layout, 1, room_seconds, seed, strategy="hierarchical",
-                                   cache_cluster_shapes=True, hint_rects=hints, evidence=report["room_solver"],
-                                   equipment_fit_options=fits,
-                                   minimum_adjacency_mm=building.layout.door_width_mm + 2 * building.layout.wall_thickness_mm,
-                                   required_adjacency_groups=building.zone_relation_groups("required_adjacency"),
-                                   forbidden_adjacency_groups=building.zone_relation_groups("forbidden_adjacency"),
-                                   preferred_adjacency_groups=building.zone_relation_groups("preferred_adjacency"))[0]
+        if room_solver == "zone_recursive":
+            from layout_configurator.zone_hierarchy import solve_zone_layouts
+
+            result = solve_zone_layouts(
+                building, 1, room_seconds, seed, recursive_zones=True,
+                cache_cluster_shapes=True, hint_rects=hints, evidence=report["room_solver"],
+                minimum_adjacency_mm=building.layout.door_width_mm + 2 * building.layout.wall_thickness_mm,
+            )[0]
+        elif room_solver == "hierarchical":
+            result = solve_layouts_auto(building.layout, 1, room_seconds, seed, strategy="hierarchical",
+                                       cache_cluster_shapes=True, hint_rects=hints, evidence=report["room_solver"],
+                                       equipment_fit_options=fits,
+                                       minimum_adjacency_mm=building.layout.door_width_mm + 2 * building.layout.wall_thickness_mm,
+                                       required_adjacency_groups=building.zone_relation_groups("required_adjacency"),
+                                       forbidden_adjacency_groups=building.zone_relation_groups("forbidden_adjacency"),
+                                       preferred_adjacency_groups=building.zone_relation_groups("preferred_adjacency"))[0]
+        else:
+            raise ValueError("Unsupported supplied warm-start room solver")
     except InfeasibleLayout as exc:
-        report.update(status="ROOM_SEARCH_FAILED", error={"type": type(exc).__name__, "message": str(exc)})
+        error = {"type": type(exc).__name__, "message": str(exc)}
+        if room_solver == "zone_recursive":
+            from layout_configurator.zone_hierarchy import ZoneHierarchyFailure
+
+            if isinstance(exc, ZoneHierarchyFailure):
+                error["stage_evidence"] = exc.to_dict()
+        report.update(status="ROOM_SEARCH_FAILED", error=error)
         return False
     finally:
         report["stages"]["room_solve_seconds"] = time.monotonic() - started
         checkpoint()
     report["cp_sat_final_result"] = True
     report["stage_hashes"]["rooms80"] = digest(result.to_dict())
+    if room_solver == "zone_recursive":
+        from layout_configurator.models import Rect
+        from layout_configurator.zone_hierarchy import validate_zone_layout
+
+        report["active_stage"] = "independent_physical_zones80"
+        checkpoint()
+        started = time.monotonic()
+        raw_containers = report["room_solver"]["variants"][0]["zone_rects"]
+        containers = {unit_id: Rect(**raw) for unit_id, raw in raw_containers.items()}
+        zone_report = validate_zone_layout(
+            building, result, containers, recursive_zones=True,
+            minimum_adjacency_mm=building.layout.door_width_mm + 2 * building.layout.wall_thickness_mm,
+        )
+        report["gates"]["physical_zones"] = {
+            "ok": zone_report.ok,
+            "issues": [{"code": issue.code, "message": issue.message} for issue in zone_report.issues],
+        }
+        report["stage_hashes"]["zones80"] = digest(raw_containers)
+        report["stages"]["physical_zone_validation_seconds"] = time.monotonic() - started
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "zones80.json").write_text(json.dumps(raw_containers, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+        checkpoint()
+        if not zone_report.ok:
+            report["status"] = "ZONE_GEOMETRY_REJECTED"
+            return False
     report["active_stage"] = "equipment_routes_and_facility80"
     checkpoint()
     started = time.monotonic()
@@ -278,7 +320,7 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
     entry = write_facility_variant(bundle, building, profile, result, layout_report=layout_report,
                                   equipment=packed, equipment_report=equipment_report, flow_routes=routes,
                                   flow_report=flow_report, facility_report=facility,
-                                  generation_evidence={"seed": seed, "room_solver_used": "hierarchical",
+                                  generation_evidence={"seed": seed, "room_solver_used": room_solver,
                                                        "room_solver_evidence": report["room_solver"],
                                                        "final_hint_positions_fixed": False})
     manifest = {"project": building.layout.project_name, "facility_profile": profile.to_dict(),
@@ -312,7 +354,7 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
 def worker(args):
     from layout_configurator.models import LayoutResult
 
-    report = new_report(args.max_seconds)
+    report = new_report(args.max_seconds, room_solver=args.room_solver)
     report.update(ci_commit=os.environ.get("GITHUB_SHA"), python=platform.python_version(),
                   platform=platform.platform(), logical_cpus=os.cpu_count(), active_stage="preparation")
     def checkpoint():
@@ -339,7 +381,8 @@ def worker(args):
         (args.output / "hints80.json").write_text(json.dumps(LayoutResult(1, hints).to_dict(), indent=2) + "\n", encoding="utf-8")
         report["stages"]["preparation_including_imports_seconds"] = time.monotonic() - args.started
         checkpoint()
-        ok = accept_program(building, hints, profile, report, args.output, checkpoint=checkpoint)
+        ok = accept_program(building, hints, profile, report, args.output, checkpoint=checkpoint,
+                            room_solver=args.room_solver)
         report["active_stage"] = "source_and_implementation_recheck"
         checkpoint()
         if fixture_state(args.fixture) != sources or runtime_state() != fingerprint:
@@ -365,12 +408,15 @@ def main(argv=None):
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--max-seconds", type=float, default=120)
+    parser.add_argument("--room-solver", choices=("hierarchical", "zone_recursive"), default="hierarchical",
+                        help="Explicit supplied warm-start backend; recursive mode checks physical canonical containers")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--started", type=float, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
     if args.worker:
         return worker(args)
-    report = new_report(args.max_seconds if math.isfinite(args.max_seconds) else str(args.max_seconds))
+    report = new_report(args.max_seconds if math.isfinite(args.max_seconds) else str(args.max_seconds),
+                        room_solver=args.room_solver)
     if not math.isfinite(args.max_seconds) or not 0 < args.max_seconds <= 120:
         report.update(status="INPUT_REJECTED", message="max-seconds must be finite and in (0,120]")
         write_report(args.output, report)
@@ -380,6 +426,8 @@ def main(argv=None):
     command = [sys.executable, str(Path(__file__).resolve()), "--worker", "--started", str(started),
                "--fixture", str(args.fixture.resolve()), "--output", str(args.output.resolve()),
                "--max-seconds", str(args.max_seconds)]
+    if args.room_solver != "hierarchical":
+        command.extend(["--room-solver", args.room_solver])
     process = subprocess.Popen(command, cwd=REPO_ROOT, shell=False,
                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     try:
