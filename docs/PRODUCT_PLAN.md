@@ -155,6 +155,9 @@ The small complete pipeline passes; unchanged physical80 timing remains unmeasur
 Checkpoint H.3.6.2 records the first unchanged installed-wheel Ubuntu physical80
 measurement: 62.009 s, global CP UNKNOWN after local shapes, no accepted bundle.
 This negative result leaves physical80, general scratch80 and large edits open.
+Checkpoint B.13 resolves bounded canonical windows on actual outward polygon
+facades, with independent source-line predicates and explicit ambiguity evidence.
+This two-dimensional component retains existing exporter capability guards.
 
 ## 1. Why we are expanding the project
 

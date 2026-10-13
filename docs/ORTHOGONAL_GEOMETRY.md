@@ -329,3 +329,32 @@ strict IFC EXPRESS has zero violations and both PDF pages were inspected.
 Local candidate status remains DRAFT with full facility validation UNKNOWN and
 engineering acceptance PENDING. Selectable product dispatch and complete
 persisted bundle acceptance remain separate.
+
+## Actual exterior window lines
+
+`project_orthogonal_windows` resolves explicit openings on a single actual
+outward facade segment, including real cutout facades. Source IDs, side, center
+offset and width are retained. A manual side with multiple possible segments
+remains UNKNOWN until the canonical source has a segment selector.
+
+Rooms declaring daylight can receive deterministic openings under the existing
+project policy: a 600 mm minimum width and 200 mm end margins. Candidate spans
+use actual exterior edges and exclude the declared exterior entry. Explicit
+windows satisfy the declared opening request without an extra automatic window.
+These dimensions are project opening policy, not a physical daylight or
+regulatory calculation.
+
+Independent supplied-line validation checks source identity, host, full exterior
+facade coverage and exact position/width/orientation. Duplicate automatic/source
+IDs and overlaps fail. Before expensive geometry, canonical spec/result sources
+are limited together to 1 MiB UTF-8, 4096 boundary/cutout/result vertices, 64 room
+records, 128 combined explicit/required automatic openings and finite geometry
+scalars/endpoints within 1,000,000 mm. Rectangle scalars are checked before
+endpoint arithmetic so huge integers cannot escape as OverflowError.
+
+Fresh root window/projection/daylight regression passed 41 tests and 31 subtests
+in 1.49 s, including meaningful malformed-input and source-bound negatives.
+The existing IFC/PDF/window capability guards remain active. This standalone
+component covers two-dimensional facade lines only; coordinated wall/three-format
+window delivery, window elevations, engineering daylight and complete facility
+acceptance remain separate.

@@ -64,6 +64,8 @@ Checkpoint H.3.6.1 prepares supervised physical-zone acceptance without changing
 the pinned source or default backend; its large-scale measurement remains separate.
 Checkpoint H.3.6.2 records a bounded negative physical80 CI result with immutable
 source and runtime evidence; it does not close the scale acceptance requirement.
+Checkpoint B.13 checks actual polygon window lines and declared opening policy;
+coherent three-format window export and engineering daylight calculation remain separate.
 
 Current product implementation checkpoints are recorded in
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md). C.4.1 (alternate flow
