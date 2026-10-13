@@ -271,6 +271,8 @@ vertical cores, structural grid lines, a stair check and a shared IFC were added
 Checkpoint B.11.1 adds an atomic canonical polygon DXF/PDF/IFC draft bundle and
 independent saved-source/readback QA. This extends cycle B without changing the
 archived residential MVP or claiming engineering acceptance.
+Checkpoint H.3.6.3 adds explicit bounded final global CP controls for the
+physical-zone runner; a changed setting requires a separate pinned measurement.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

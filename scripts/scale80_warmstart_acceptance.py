@@ -34,8 +34,8 @@ def file_digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def new_report(max_seconds, *, room_solver="hierarchical"):
-    return {
+def new_report(max_seconds, *, room_solver="hierarchical", zone_global_seconds=None, zone_global_workers=1):
+    report = {
         "status": "RUNNING", "accepted": False, "source_commit": SOURCE_COMMIT,
         "scope": "Source-pinned synthetic A/B clone of supplied accepted40 with complete persisted bundle acceptance",
         "general_scratch80_acceptance": False, "recursive_zone_decomposition_complete": False,
@@ -49,6 +49,40 @@ def new_report(max_seconds, *, room_solver="hierarchical"):
         "stages": {}, "stage_hashes": {}, "source_gates": {}, "gates": {},
         "final_hint_positions_fixed": False,
     }
+    _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=2)
+    return report
+
+
+def _record_zone_search(report, seconds, workers, *, room_seconds):
+    if seconds is not None or workers != 1:
+        value = room_seconds if seconds is None else seconds
+        if type(value) in (int, float) and not math.isfinite(value):
+            value = str(value)
+        report["settings"].update(zone_global_seconds_per_model=value, zone_global_workers=workers)
+
+
+def _zone_search_options(room_solver, seconds, workers):
+    if type(workers) is not int or not 1 <= workers <= 8:
+        raise ValueError("zone-global-workers must be an integer in 1..8")
+    if seconds is not None and (type(seconds) not in (int, float) or not 0 < seconds <= 120):
+        raise ValueError("zone-global-seconds must be finite and in (0,120]")
+    if room_solver != "zone_recursive" and (seconds is not None or workers != 1):
+        raise ValueError("Nondefault zone-global controls require room-solver zone_recursive")
+    options = {}
+    if seconds is not None:
+        options["global_time_limit_seconds"] = seconds
+    if workers != 1:
+        options["global_workers"] = workers
+    return options
+
+
+def _requested_zone_controls(args):
+    controls = {}
+    if args.zone_global_seconds is not None:
+        controls["zone_global_seconds"] = args.zone_global_seconds
+    if args.zone_global_workers != 1:
+        controls["zone_global_workers"] = args.zone_global_workers
+    return controls
 
 
 def write_report(output, report):
@@ -212,7 +246,10 @@ def prepare_fixture(root, report):
 
 
 def accept_program(building, hints, profile, report, output, *, room_seconds=2, equipment_seconds=5,
-                   seed=7, checkpoint=lambda: None, room_solver="hierarchical"):
+                   seed=7, checkpoint=lambda: None, room_solver="hierarchical",
+                   zone_global_seconds=None, zone_global_workers=1):
+    zone_options = _zone_search_options(room_solver, zone_global_seconds, zone_global_workers)
+    _record_zone_search(report, zone_global_seconds, zone_global_workers, room_seconds=room_seconds)
     from layout_configurator.bundle import write_facility_variant
     from layout_configurator.equipment import place_equipment_clear_of_doors, validate_equipment_layout
     from layout_configurator.facility import validate_building
@@ -241,6 +278,7 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
                 building, 1, room_seconds, seed, recursive_zones=True,
                 cache_cluster_shapes=True, hint_rects=hints, evidence=report["room_solver"],
                 minimum_adjacency_mm=building.layout.door_width_mm + 2 * building.layout.wall_thickness_mm,
+                **zone_options,
             )[0]
         elif room_solver == "hierarchical":
             result = solve_layouts_auto(building.layout, 1, room_seconds, seed, strategy="hierarchical",
@@ -354,7 +392,8 @@ def accept_program(building, hints, profile, report, output, *, room_seconds=2, 
 def worker(args):
     from layout_configurator.models import LayoutResult
 
-    report = new_report(args.max_seconds, room_solver=args.room_solver)
+    controls = _requested_zone_controls(args)
+    report = new_report(args.max_seconds, room_solver=args.room_solver, **controls)
     report.update(ci_commit=os.environ.get("GITHUB_SHA"), python=platform.python_version(),
                   platform=platform.platform(), logical_cpus=os.cpu_count(), active_stage="preparation")
     def checkpoint():
@@ -382,7 +421,7 @@ def worker(args):
         report["stages"]["preparation_including_imports_seconds"] = time.monotonic() - args.started
         checkpoint()
         ok = accept_program(building, hints, profile, report, args.output, checkpoint=checkpoint,
-                            room_solver=args.room_solver)
+                            room_solver=args.room_solver, **controls)
         report["active_stage"] = "source_and_implementation_recheck"
         checkpoint()
         if fixture_state(args.fixture) != sources or runtime_state() != fingerprint:
@@ -410,17 +449,27 @@ def main(argv=None):
     parser.add_argument("--max-seconds", type=float, default=120)
     parser.add_argument("--room-solver", choices=("hierarchical", "zone_recursive"), default="hierarchical",
                         help="Explicit supplied warm-start backend; recursive mode checks physical canonical containers")
+    parser.add_argument("--zone-global-seconds", type=float, default=None,
+                        help="Recursive final global CP seconds per model in (0,120]; local/subtree budgets remain unchanged")
+    parser.add_argument("--zone-global-workers", type=int, default=1,
+                        help="Recursive final global CP workers in 1..8; the whole request remains bounded by max-seconds")
     parser.add_argument("--worker", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--started", type=float, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
-    if args.worker:
-        return worker(args)
     report = new_report(args.max_seconds if math.isfinite(args.max_seconds) else str(args.max_seconds),
-                        room_solver=args.room_solver)
+                        room_solver=args.room_solver, **_requested_zone_controls(args))
     if not math.isfinite(args.max_seconds) or not 0 < args.max_seconds <= 120:
         report.update(status="INPUT_REJECTED", message="max-seconds must be finite and in (0,120]")
         write_report(args.output, report)
         return 2
+    try:
+        _zone_search_options(args.room_solver, args.zone_global_seconds, args.zone_global_workers)
+    except ValueError as exc:
+        report.update(status="INPUT_REJECTED", message=str(exc))
+        write_report(args.output, report)
+        return 2
+    if args.worker:
+        return worker(args)
     report.update(active_stage="worker_startup", total_seconds=time.monotonic() - started)
     write_report(args.output, report)
     command = [sys.executable, str(Path(__file__).resolve()), "--worker", "--started", str(started),
@@ -428,6 +477,10 @@ def main(argv=None):
                "--max-seconds", str(args.max_seconds)]
     if args.room_solver != "hierarchical":
         command.extend(["--room-solver", args.room_solver])
+    if args.zone_global_seconds is not None:
+        command.extend(["--zone-global-seconds", str(args.zone_global_seconds)])
+    if args.zone_global_workers != 1:
+        command.extend(["--zone-global-workers", str(args.zone_global_workers)])
     process = subprocess.Popen(command, cwd=REPO_ROOT, shell=False,
                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0)
     try:

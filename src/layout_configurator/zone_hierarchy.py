@@ -663,6 +663,8 @@ def solve_zone_layouts(
     structural_axes_y_mm: Iterable[float] | None = None,
     hint_rects: Mapping[str, Rect] | None = None,
     cache_cluster_shapes: bool = False,
+    global_time_limit_seconds: float | None = None,
+    global_workers: int = 1,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -684,6 +686,9 @@ def solve_zone_layouts(
     leaf orientations; explicit size options are preserved. An enabled cluster
     cache is shared across leaf solves for this invocation only. Prior room
     extents never establish that descendant containers are physically valid.
+    Final global search can explicitly use a separate per-attempt wall-clock
+    limit and up to eight workers. Local/subtree budgets stay unchanged;
+    deterministic search always uses one worker and its existing work budget.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -692,6 +697,24 @@ def solve_zone_layouts(
     evidence.pop("candidate_pool", None)
     evidence.pop("cluster_shape_cache", None)
     evidence.pop("zone_hierarchy_hints", None)
+    evidence.pop("global_search_settings", None)
+    if (not isinstance(global_workers, int) or isinstance(global_workers, bool)
+            or not 1 <= global_workers <= 8):
+        _fail(evidence, "global_workers requires an integer in 1..8", stage="input",
+              code="invalid_global_budget", model_status="NOT_BUILT", not_applicable=True)
+    if global_time_limit_seconds is not None and (
+            not isinstance(global_time_limit_seconds, (int, float)) or isinstance(global_time_limit_seconds, bool)
+            or not 0 < global_time_limit_seconds <= 120):
+        _fail(evidence, "global_time_limit_seconds requires finite seconds in (0,120]", stage="input",
+              code="invalid_global_budget", model_status="NOT_BUILT", not_applicable=True)
+    final_time = time_limit_seconds if global_time_limit_seconds is None else global_time_limit_seconds
+    final_workers = 1 if deterministic_units is not None else global_workers
+    if global_time_limit_seconds is not None or global_workers != 1:
+        evidence["global_search_settings"] = {
+            "time_limit_seconds": final_time, "requested_workers": global_workers, "workers": final_workers,
+            "deterministic_units": deterministic_units,
+            "scope": "Final global CP model per attempt; local/subtree budgets unchanged",
+        }
     if not isinstance(cache_cluster_shapes, bool):
         _fail(evidence, "cache_cluster_shapes must be a boolean", stage="input",
               code="invalid_cache_mode", model_status="NOT_BUILT", not_applicable=True)
@@ -757,13 +780,14 @@ def solve_zone_layouts(
         shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units,
                                evidence, fixed, hints=hints, cache=cache)
     return _solve_shape_layouts(
-        building, units, shapes, groups, minimum, variants, time_limit_seconds, seed,
+        building, units, shapes, groups, minimum, variants, final_time, seed,
         attempts_limit, deterministic_units, evidence,
         container_members={unit_id: members for unit_id, members in shape_units.items()
                            if unit_id in units or unit_id in {zone.id for zone in building.zones}},
         ancestors=ancestors, recursive_zones=recursive_zones, allow_partial=allow_partial,
         fixed_rects=fixed, axis_aligned_room_ids=selected, structural_axes=axes,
         hints=hints,
+        workers=final_workers,
     )
 
 
@@ -772,7 +796,7 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                          container_members, ancestors, recursive_zones=False,
                          stage="global", stage_unit=None, allow_partial=False,
                          fixed_rects=None, axis_aligned_room_ids=(), structural_axes=None,
-                         global_validator=None, hints=None):
+                         global_validator=None, hints=None, workers=1):
     from ortools.sat.python import cp_model
 
     spec = building.layout
@@ -927,6 +951,8 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
     if hints is not None:
         stage_hints = hints.apply(model, spec, units, shapes, unit_vars, choices_by_unit, room_vars,
                                  stage=stage, unit_id=stage_unit)
+        if workers != 1:
+            stage_hints.evidence["repair_worker_policy"] = "bounded_parallel_wall_clock"
         stage_hints.complete(
             model, room_vars, seed=seed, time_limit_seconds=time_limit_seconds, deterministic_units=deterministic_units,
             independent_validator=lambda result, values: validate_candidate(result, {
@@ -949,7 +975,8 @@ def _solve_shape_layouts(building, units, shapes, groups, minimum, variants, tim
                  (room_vars[room.id].x, room_vars[room.id].y, room_vars[room.id].width, room_vars[room.id].height)]
     for attempt in range(attempts_limit):
         solver = cp_model.CpSolver()
-        configure_solver(solver, seed=seed + attempt, time_limit_seconds=time_limit_seconds, deterministic_units=deterministic_units)
+        configure_solver(solver, seed=seed + attempt, time_limit_seconds=time_limit_seconds,
+                         deterministic_units=deterministic_units, workers=workers)
         if stage_hints is not None and stage_hints.evidence["repair_hint"]:
             solver.parameters.repair_hint = True
         status = solver.Solve(model)

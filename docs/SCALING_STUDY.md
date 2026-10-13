@@ -489,3 +489,25 @@ exact commit, runtime fingerprint, source hashes, timing, 101 stage attempts and
 raw-report SHA256. Raw report copies stay under ignored local research/output.
 The earlier 33.008 s hierarchical warm-start acceptance remains a separate
 measured result. Physical80, scratch80 and large edit acceptance remain open.
+
+### Explicit final global search controls
+
+`solve_zone_layouts` accepts optional `global_time_limit_seconds` in (0,120] and
+`global_workers` in 1..8. These affect only each final global-model attempt;
+local shape and recursive subtree budgets retain their existing settings.
+Deterministic mode always uses one worker and its existing per-model work
+allowance. Omitted controls preserve the previous output and evidence.
+
+The supervised runner exposes `--zone-global-seconds` and
+`--zone-global-workers` only with `--room-solver zone_recursive`. Input is
+validated before starting a worker. The entire request still has its 120-second
+deadline, source checks, actual physical-container QA and complete export gates.
+The same one-job manual Ubuntu workflow offers 2/5/10 seconds and 1/2/4 workers;
+checkpoint pushes acquire no heavy measurement job.
+
+Fresh root runner/core verification passed 23 tests and 42 subtests in 26.12 s;
+actionlint passed. The real small physical-zone bundle confirms final-only
+parallel controls. Invalid/inapplicable settings start no worker, a native
+timeout preserves the total deadline and ordinary serialized reports/arguments
+remain unchanged. These tests establish the controls; they do not establish an
+80-room runtime or acceptance result.

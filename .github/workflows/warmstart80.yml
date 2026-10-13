@@ -11,6 +11,24 @@ on:
         options:
           - hierarchical
           - zone_recursive
+      zone_global_seconds:
+        description: Recursive final global CP seconds per model
+        type: choice
+        required: true
+        default: "2"
+        options:
+          - "2"
+          - "5"
+          - "10"
+      zone_global_workers:
+        description: Recursive final global CP workers
+        type: choice
+        required: true
+        default: "1"
+        options:
+          - "1"
+          - "2"
+          - "4"
 
 permissions:
   contents: read
@@ -39,9 +57,15 @@ jobs:
       - name: Generate and independently verify the source-pinned synthetic 80-room warm start
         env:
           ROOM_SOLVER: ${{ inputs.room_solver }}
-        run: >-
-          python scripts/scale80_warmstart_acceptance.py
-          --output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER"
+          ZONE_GLOBAL_SECONDS: ${{ inputs.zone_global_seconds }}
+          ZONE_GLOBAL_WORKERS: ${{ inputs.zone_global_workers }}
+        shell: bash
+        run: |
+          args=(--output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER")
+          if [[ "$ROOM_SOLVER" == "zone_recursive" ]]; then
+            args+=(--zone-global-seconds "$ZONE_GLOBAL_SECONDS" --zone-global-workers "$ZONE_GLOBAL_WORKERS")
+          fi
+          python scripts/scale80_warmstart_acceptance.py "${args[@]}"
       - name: Retain warm-start bundles and evidence, including failures
         if: always()
         uses: actions/upload-artifact@v7

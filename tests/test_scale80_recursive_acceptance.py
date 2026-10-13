@@ -18,6 +18,65 @@ class Scale80RecursiveAcceptanceTests(unittest.TestCase):
     def runner(self):
         return existing_runner.Scale80WarmstartAcceptanceTests().runner()
 
+    def test_real_parallel_global_controls_reach_complete_small_bundle(self):
+        runner = self.runner()
+        report = runner.new_report(120, room_solver="zone_recursive", zone_global_seconds=.75, zone_global_workers=2)
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertTrue(runner.accept_program(
+                recursive_fixture.program().with_required_flow_opening_width(), recursive_fixture.source_rects(),
+                default_facility_profile(), report, Path(directory), room_solver="zone_recursive",
+                room_seconds=1, equipment_seconds=.5, seed=1, zone_global_seconds=.75, zone_global_workers=2,
+            ), report)
+            self.assertTrue(all(gate["ok"] for gate in report["gates"].values()))
+            self.assertTrue(report["ifc_express"]["ok"])
+            self.assertEqual(report["room_solver"]["global_search_settings"]["workers"], 2)
+            self.assertEqual(report["settings"]["zone_global_seconds_per_model"], .75)
+            self.assertEqual(report["settings"]["zone_global_workers"], 2)
+
+    def test_supervised_parent_forwards_global_controls_with_unchanged_total_deadline(self):
+        runner = self.runner()
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(runner.subprocess, "Popen", wraps=subprocess.Popen) as process:
+                code = runner.main(["--output", directory, "--max-seconds", ".01", "--room-solver", "zone_recursive",
+                                    "--zone-global-seconds", "10", "--zone-global-workers", "4"])
+            self.assertEqual(code, 124)
+            command = process.call_args.args[0]
+            self.assertEqual(command[command.index("--zone-global-seconds") + 1], "10.0")
+            self.assertEqual(command[command.index("--zone-global-workers") + 1], "4")
+            report = json.loads((Path(directory) / "acceptance-report.json").read_text(encoding="utf-8"))
+            self.assertEqual(report["settings"]["zone_global_seconds_per_model"], 10)
+            self.assertEqual(report["status"], "BUDGET_EXCEEDED")
+
+    def test_default_controls_leave_report_fields_and_child_arguments_unchanged(self):
+        runner = self.runner()
+        for room_solver in ("hierarchical", "zone_recursive"):
+            with self.subTest(room_solver=room_solver), tempfile.TemporaryDirectory() as directory:
+                report = runner.new_report(120, room_solver=room_solver)
+                self.assertNotIn("zone_global_seconds_per_model", report["settings"])
+                self.assertNotIn("zone_global_workers", report["settings"])
+                with patch.object(runner.subprocess, "Popen", wraps=subprocess.Popen) as process:
+                    self.assertEqual(runner.main(["--output", directory, "--max-seconds", ".01",
+                        "--room-solver", room_solver, "--zone-global-workers", "1"]), 124)
+                command = process.call_args.args[0]
+                self.assertNotIn("--zone-global-seconds", command)
+                self.assertNotIn("--zone-global-workers", command)
+                saved = json.loads((Path(directory) / "acceptance-report.json").read_text(encoding="utf-8"))
+                self.assertEqual(saved["settings"], {**report["settings"], "max_total_seconds": .01})
+
+    def test_invalid_or_inapplicable_global_controls_never_start_worker(self):
+        runner = self.runner()
+        for values in (["--room-solver", "zone_recursive", "--zone-global-seconds", "nan"],
+                       ["--room-solver", "zone_recursive", "--zone-global-seconds", "121"],
+                       ["--room-solver", "zone_recursive", "--zone-global-workers", "9"],
+                       ["--zone-global-seconds", "10"]):
+            with self.subTest(values=values), tempfile.TemporaryDirectory() as directory:
+                with patch.object(runner.subprocess, "Popen") as process:
+                    self.assertEqual(runner.main(["--output", directory, *values]), 2)
+                process.assert_not_called()
+                report = json.loads((Path(directory) / "acceptance-report.json").read_text(encoding="utf-8"))
+                self.assertEqual(report["status"], "INPUT_REJECTED")
+                self.assertFalse(report["accepted"])
+
     def test_actual_eight_room_recursive_pipeline_checks_physical_zones_and_complete_bundle(self):
         runner = self.runner()
         building = recursive_fixture.program().with_required_flow_opening_width()
@@ -148,6 +207,9 @@ class Scale80RecursiveAcceptanceTests(unittest.TestCase):
         self.assertEqual(choice["type"], "choice")
         self.assertEqual(choice["default"], "hierarchical")
         self.assertEqual(choice["options"], ["hierarchical", "zone_recursive"])
+        settings = workflow["on"]["workflow_dispatch"]["inputs"]
+        self.assertEqual(settings["zone_global_seconds"]["default"], "2")
+        self.assertEqual(settings["zone_global_workers"]["default"], "1")
         self.assertEqual(len(workflow["jobs"]), 1)
         job = next(iter(workflow["jobs"].values()))
         self.assertEqual(job["runs-on"], "ubuntu-latest")

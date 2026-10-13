@@ -161,6 +161,9 @@ This two-dimensional component retains existing exporter capability guards.
 Checkpoint B.11.1 persists canonical orthogonal drafts in one atomic DXF/PDF/IFC
 bundle, with independent actual-byte readback, current profile predicates and
 strict IFC EXPRESS. Exchange PASS remains separate from full facility acceptance.
+Checkpoint H.3.6.3 exposes bounded final-global-model seconds and worker counts
+for explicit physical-zone solving and its supervised runner. Local/subtree
+limits and the 120-second whole-request deadline remain unchanged.
 
 ## 1. Why we are expanding the project
 
