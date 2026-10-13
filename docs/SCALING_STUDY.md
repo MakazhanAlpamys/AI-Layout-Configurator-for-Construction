@@ -590,3 +590,36 @@ families. Actual model telemetry confirms unchanged variables and family hashes,
 with exactly one extra Boolean clause per rejected candidate pair. Pre-checkpoint
 root/recursive default comparisons and actionlint passed. This implementation
 does not establish an 80-room improvement; physical80 acceptance remains open.
+
+### Source-pinned physical80 diagnostic measurement
+
+One changed manual Ubuntu run pinned to `9e5e598` enabled diagnostics and contact
+pruning with the same seed, original source and 10-second/four-worker final
+settings. It took 61.146 s total, including 59.843 s room solving. The final
+model returned UNKNOWN without a solution; no equipment, routing, export or
+persisted 80-room QA was reached. Its ResponseProto objective is not an accepted
+incumbent. Failure of the separate fixed-hint clone also proves nothing about
+the unfixed source program.
+
+Capture is COMPLETE: ten roots, 220 candidate shapes, 956 rectangle records and
+65,720 canonical family bytes. Every individual shape hash and the family SHA
+were independently recomputed. Actual pruning examined 3,552 pairs across nine
+root pairs and posted 2,776 redundant Boolean clauses, with no unsafe-containment
+skips. The actual final CP model contains 1,651 variables and 7,934 constraints;
+its 10.004-second search records 85,255 branches and 15,501 conflicts.
+
+All four supplied raw files, prepared program, hints and manifest are byte-equal
+to both prior measurements, and all eleven stage hashes match. The artifact ZIP
+SHA and all eight extracted files were checked against their actual bytes.
+[Run 38398872773](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38398872773)
+and [compact evidence](acceptance/9e5e598.json) retain the immutable source pin,
+installed noneditable runtime, complete model metrics and explicit negative
+scope. Raw candidate geometry stays local and in the bounded CI artifact.
+
+Pair compatibility leaves a finite relative-translation family; pruning alone
+did not make the original CP formulation find a solution. The next implementation
+can couple shape choices to those exact translation intervals while retaining
+all original constraints and source gates. Repeating this unchanged request
+would not establish the remaining physical80 criterion. Durations across these
+single runs are observations under differing solver controls and runner load,
+without a general performance guarantee.

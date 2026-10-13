@@ -301,6 +301,9 @@ Checkpoint QA.15 retains cross-platform, installed-container and nine-case
 pharma acceptance pinned to `7561213`, with independently checked downloaded
 bytes. Its 1,001-test platform runs do not cover later exporter/pruning work or
 establish physical80 or external expert acceptance.
+Checkpoint H.3.6.7 records a third source-pinned physical80 failure with complete
+final diagnostics and 2,776 actual redundant clauses. The final model remains
+UNKNOWN; no 80-room export or complete facility QA was reached.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

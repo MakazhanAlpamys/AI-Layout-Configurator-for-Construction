@@ -211,6 +211,11 @@ and uncontrolled runner load prevent a causal performance claim. Downloaded
 pharma bytes, shared manifests and both archives were independently verified.
 Later contact pruning, reference-axis exporters and group continuation require
 their own pinned evidence; physical80 and external expert acceptance remain open.
+Checkpoint H.3.6.7 retains the changed physical80 run pinned to `9e5e598`:
+61.146 s total, 59.843 s room solving and final UNKNOWN without a solution.
+All raw source, prepared-program, hint and manifest bytes match both earlier
+measurements. The actual 220-shape family and 2,776 posted contact clauses are
+verified; complete diagnostics and faster observed timing do not close physical80.
 
 ## 1. Why we are expanding the project
 
