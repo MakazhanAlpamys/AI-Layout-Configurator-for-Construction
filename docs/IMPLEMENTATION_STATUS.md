@@ -137,6 +137,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | H.3.6.13 | Checked changed physical80 leaf-repacking measurement | Actual pinned9632549 run retains original source identities and all four new stacks;232 shapes/992 records/68,460 bytes,936 support rows, final1,709-variable CP INFEASIBLE1.039395 s. Four fresh B/staff shapes drift from4604a10; global2 s/one worker differs from prior10 s/four. No whole-building infeasibility or causal elapsed claim. | Run38425518357 complete failure; all eight ZIP member bytes/archive digest, every shape/family SHA, four supplied sources, prepared program/hints/manifest and eleven stage hashes independently verified. [Evidence](acceptance/9632549.json). No unchanged retry. | complete 2026-10-13 for negative measurement; physical80 saved acceptance remains open |
 | C.5.5 | Explicit supervised finite-conflict controls | Default-false recursive runner/manual workflow controls admit strict bounded nonempty1024-byte JSON, preserve numeric types and forward canonical effective budget before worker launch. Actual initial-INFEASIBLE snapshots use one original shared deadline including preparation; production/source budgets/default evidence remain unchanged. | Fresh root10 tests PASS18.238 s, actionlint/diff check PASS. Actual triangle checked three-member minimal core plus three native SAT deletions; exhausted allowance UNKNOWN retains failure. Complete four-room accepted bundle passes fresh saved QA/EXPRESS with zero diagnostics; default control/report and real proto/result parity verified. [Scope](FINITE_CONFLICTS.md). | complete 2026-10-13 for supervised controls; full80/editor/engineering criteria separate |
 | I.2.1.2 | Preserve CLI review sources across hard-link aliases | Optional output is checked by resolved path and actual filesystem identity before review and before writing. Existing or during-review hard links reject without changing source/report bytes; identity errors reject. | Two actual hard-link RED methods/two failures/zero errors; fresh44 review/transfer tests PASS1.564 s. [Scope](TRANSFER_PROGRAM.md). | complete 2026-10-13 for alias guard; arbitrary concurrent filesystem changes not claimed |
+| I.2.2 | Separate regions, explicit scenarios and connected pressure checks | Exact original building/I1/I2/layout binding; independent clean/ventilation contours and ISO/GMP/state/applicability; typed scenarios/action premises; exact rational declared pressure cycles and fresh whole-opening resolved boundaries, common-datum supplied design/measured comparisons. Known conflicts survive unrelated missing evidence; raw aggregate bounds precede parsing/GEOS. No legal/HVAC/parent-hierarchy inference or producer change. | Fresh root79 related tests PASS3.887 s; scoped agent163 tests/165 subtests PASS21.15 s. Actual three-door segments independently checked; source cycle sum-30 Pa FAIL and distant local-boundary FAIL; source objects unchanged. Clean regular installed wheel with six exact hashes/offline schema repeats UNKNOWN/FAIL from foreign cwd. [Scope](ENVIRONMENT_PROGRAM.md). | complete 2026-10-13 for independent environment review; producer/complete scenario/engineering acceptance separate |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -176,11 +177,12 @@ Cyrillic text.
   source-pinned API and editor launch controls exist; measured large edits remain separate.
   pinned two-floor 40-room CI, shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
-- I.1–I.6: source-bound production-program core, opt-in embedding and validation
-  CLI and independent typed transfer sidecars/checks exist; agreed engineering program remains;
-+  remaining unified BuildingIR extensions and producer enforcement; source-backed
-  engineering library; scenario and pressure-network checks; synchronized
-  drawings/schedules; medical-plastics benchmark and change scenario.
+- I.1–I.6: source-bound production-program core, opt-in embedding/validation
+  CLI, typed transfer sidecars/actual checks, sourced finite equipment cards/local
+  projection, independent environment/scenario declarations and pressure checks
+  exist. Agreed engineering program, unified producer enforcement, complete
+  scenario/installation paths, synchronized drawings/schedules, medical-plastics
+  benchmark and change scenario remain.
 
 ## External acceptance
 

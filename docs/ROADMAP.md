@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.2.2 delivers current-product planar environment declarations
+and exact declared/resolved pressure checks with source-bound scope. Archived
+MVP status and external engineering acceptance remain unchanged.
+
 Checkpoint I.2.1.2 repairs actual CLI source preservation for hard-linked
 report paths, with fresh regression verification. Archived MVP scope is unchanged.
 

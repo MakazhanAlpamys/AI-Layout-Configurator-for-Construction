@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.2.2 adds separate source-bound clean/ventilation regions,
+three explicit scenarios and exact pressure inequalities. Fresh current doors
+resolve actual boundary connectivity; declared/resolved graphs and design/
+measured claims remain distinct. Independent source tests and an installed
+wheel pass. [Contract](ENVIRONMENT_PROGRAM.md). Missing HVAC/action/measurement
+authentication remains UNKNOWN; complete producer integration remains separate.
+
 Checkpoint I.2.1.2 preserves transfer review source bytes when a differently
 named output is a hard link to the input. File identity is checked before
 review and again before writing; identity errors reject. Actual hard-link

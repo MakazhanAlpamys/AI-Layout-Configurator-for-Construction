@@ -1,0 +1,901 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/environment-program-0.1.json",
+  "title": "Source-bound environment declarations 0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "id",
+    "revision",
+    "units",
+    "building_sha256",
+    "layout_sha256",
+    "production_program_sha256",
+    "transfer_program_sha256",
+    "clean_zones",
+    "ventilation_zones",
+    "scenarios",
+    "pressure_datums",
+    "pressure_nodes",
+    "pressure_edges"
+  ],
+  "properties": {
+    "version": {
+      "const": "0.1"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "revision": {
+      "$ref": "#/$defs/id"
+    },
+    "units": {
+      "const": "mm"
+    },
+    "building_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "layout_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "production_program_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "transfer_program_sha256": {
+      "$ref": "#/$defs/digest"
+    },
+    "clean_zones": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/clean"
+      }
+    },
+    "ventilation_zones": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "$ref": "#/$defs/ventilation"
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "$ref": "#/$defs/scenario"
+      }
+    },
+    "pressure_datums": {
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/datum"
+      }
+    },
+    "pressure_nodes": {
+      "type": "array",
+      "maxItems": 128,
+      "items": {
+        "$ref": "#/$defs/node"
+      }
+    },
+    "pressure_edges": {
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "$ref": "#/$defs/edge"
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^\\S(?:[^\\r\\n]*\\S)?$"
+    },
+    "digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "region": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "units",
+        "vertices"
+      ],
+      "properties": {
+        "kind": {
+          "const": "orthogonal"
+        },
+        "units": {
+          "const": "mm"
+        },
+        "vertices": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 256,
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number",
+              "minimum": -1000000000,
+              "maximum": 1000000000
+            }
+          }
+        }
+      }
+    },
+    "clean": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "boundary",
+        "host_room_ids",
+        "equipment_ids",
+        "operation_ids",
+        "source_id",
+        "basis",
+        "excerpt",
+        "iso_class",
+        "gmp_grade",
+        "state",
+        "applicability"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "boundary": {
+          "$ref": "#/$defs/region"
+        },
+        "host_room_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "minItems": 1
+        },
+        "equipment_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "operation_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        },
+        "iso_class": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "value"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "KNOWN",
+                "UNKNOWN"
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 9
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "KNOWN"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "value": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 9
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "UNKNOWN"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "gmp_grade": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "value"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "KNOWN",
+                "UNKNOWN"
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "A",
+                    "B",
+                    "C",
+                    "D"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "KNOWN"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "value": {
+                    "enum": [
+                      "A",
+                      "B",
+                      "C",
+                      "D"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "UNKNOWN"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "state": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "value"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "KNOWN",
+                "UNKNOWN"
+              ]
+            },
+            "value": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "at_rest",
+                    "in_operation"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "KNOWN"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "value": {
+                    "enum": [
+                      "at_rest",
+                      "in_operation"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "status": {
+                    "const": "UNKNOWN"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "value": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "applicability": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        }
+      }
+    },
+    "ventilation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "boundary",
+        "host_room_ids",
+        "equipment_ids",
+        "operation_ids",
+        "source_id",
+        "basis",
+        "excerpt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "boundary": {
+          "$ref": "#/$defs/region"
+        },
+        "host_room_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          },
+          "minItems": 1
+        },
+        "equipment_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "operation_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "operation_ids",
+        "equipment_ids",
+        "transfer_ids",
+        "required_stopped_operation_ids",
+        "source_id",
+        "basis",
+        "excerpt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "production_stopped",
+            "temporary_action"
+          ]
+        },
+        "operation_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "equipment_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "transfer_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "required_stopped_operation_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "active_operation_ids",
+        "stopped_operation_ids",
+        "actions",
+        "source_id",
+        "basis",
+        "excerpt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "production",
+            "maintenance",
+            "installation_replacement"
+          ]
+        },
+        "active_operation_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "stopped_operation_ids": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/id"
+          }
+        },
+        "actions": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/action"
+          }
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "datum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "label",
+        "source_id",
+        "basis",
+        "excerpt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "measurement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "unit",
+        "source_id",
+        "basis",
+        "excerpt"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "KNOWN",
+            "UNKNOWN"
+          ]
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "unit": {
+          "const": "Pa"
+        },
+        "source_id": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/id"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 8192,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "KNOWN"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "number"
+              },
+              "source_id": {
+                "$ref": "#/$defs/id"
+              },
+              "excerpt": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192,
+                "pattern": "\\S"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "UNKNOWN"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "space",
+        "datum_id",
+        "values",
+        "source_id",
+        "basis",
+        "excerpt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "space": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "namespace",
+            "id"
+          ],
+          "properties": {
+            "namespace": {
+              "enum": [
+                "room",
+                "clean_zone",
+                "ventilation_zone"
+              ]
+            },
+            "id": {
+              "$ref": "#/$defs/id"
+            }
+          }
+        },
+        "datum_id": {
+          "$ref": "#/$defs/id"
+        },
+        "values": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scenario_id",
+              "design",
+              "measured"
+            ],
+            "properties": {
+              "scenario_id": {
+                "$ref": "#/$defs/id"
+              },
+              "design": {
+                "$ref": "#/$defs/measurement"
+              },
+              "measured": {
+                "$ref": "#/$defs/measurement"
+              }
+            }
+          }
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "scenario_id",
+        "high_node_id",
+        "low_node_id",
+        "transfer_id",
+        "minimum_delta_pa",
+        "maximum_delta_pa",
+        "source_id",
+        "basis",
+        "excerpt"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "scenario_id": {
+          "$ref": "#/$defs/id"
+        },
+        "high_node_id": {
+          "$ref": "#/$defs/id"
+        },
+        "low_node_id": {
+          "$ref": "#/$defs/id"
+        },
+        "transfer_id": {
+          "$ref": "#/$defs/id"
+        },
+        "minimum_delta_pa": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1000000
+        },
+        "maximum_delta_pa": {
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000000
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "source_id": {
+          "$ref": "#/$defs/id"
+        },
+        "basis": {
+          "enum": [
+            "declared_fact",
+            "assumption",
+            "supplied_confirmation"
+          ]
+        },
+        "excerpt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192,
+          "pattern": "\\S"
+        }
+      }
+    }
+  }
+}
