@@ -668,6 +668,7 @@ def solve_zone_layouts(
     global_diagnostics: bool = False,
     prune_cross_root_contacts: bool = False,
     cross_root_contact_support: bool = False,
+    selective_leaf_turns: bool = False,
 ) -> list[LayoutResult]:
     """Solve rooms inside disjoint root-zone containers with bounded retries.
 
@@ -698,6 +699,9 @@ def solve_zone_layouts(
     incompatible candidate pairs; it retains all original hard constraints.
     Optional contact support also couples finite shape choices to the actual
     shared translation intervals. All original clauses and the objective remain.
+    Explicit selective leaf turns may append at most four independently checked
+    swapped envelopes to eligible automatic root leaves. Explicit size pools,
+    parents and source-bound equipment/opening/axis/fixed units are excluded.
     """
     evidence = evidence if evidence is not None else {}
     evidence.update(room_solver_used="zone_hierarchical", scope="root_zone_containers",
@@ -710,6 +714,10 @@ def solve_zone_layouts(
     evidence.pop("global_diagnostics", None)
     evidence.pop("cross_root_contact_pruning", None)
     evidence.pop("cross_root_contact_support", None)
+    evidence.pop("selective_leaf_turns", None)
+    if type(selective_leaf_turns) is not bool:
+        _fail(evidence, "selective_leaf_turns must be a boolean", stage="input",
+              code="invalid_leaf_turn_mode", model_status="NOT_BUILT", not_applicable=True)
     if type(cross_root_contact_support) is not bool:
         _fail(evidence, "cross_root_contact_support must be a boolean", stage="input",
               code="invalid_contact_support_mode", model_status="NOT_BUILT", not_applicable=True)
@@ -800,6 +808,11 @@ def solve_zone_layouts(
     else:
         shapes = _local_shapes(building, units, options, groups, minimum, time_limit_seconds, seed, deterministic_units,
                                evidence, fixed, hints=hints, cache=cache)
+    if selective_leaf_turns:
+        guide = hints if hints is not None else ZoneHints(building, {})
+        shapes, evidence["selective_leaf_turns"] = guide.complete_leaf_turns(
+            units, shapes, minimum=minimum, supplied=zone_size_options_mm,
+            fixed_rects=fixed, axis_aligned_room_ids=selected)
     return _solve_shape_layouts(
         building, units, shapes, groups, minimum, variants, final_time, seed,
         attempts_limit, deterministic_units, evidence,

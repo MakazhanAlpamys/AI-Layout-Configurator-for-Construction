@@ -146,3 +146,12 @@ class ZoneHints:
                         hints._add_hint(model, getattr(values, field), round(value / spec.grid_mm), child_id, field)
                 break
         return hints
+
+    def complete_leaf_turns(self, units, shapes, *, minimum, supplied=None, fixed_rects=None,
+                            axis_aligned_room_ids=()):
+        """Plan explicit checked diversity without modifying source hints."""
+        from .zone_leaf_turns import plan_selective_leaf_turns
+
+        return plan_selective_leaf_turns(self.building, units, shapes,
+            minimum_adjacency_mm=minimum, explicit_unit_ids=tuple(supplied or {}),
+            fixed_rects=fixed_rects, axis_aligned_room_ids=axis_aligned_room_ids)

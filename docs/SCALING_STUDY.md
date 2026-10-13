@@ -719,3 +719,37 @@ and [compact evidence](acceptance/93fdc7c.json) retain the complete negative sco
 and installed noneditable runtime. Raw family geometry remains local and in the
 CI artifact. The next source-preserving work must address actual candidate-family
 limitations; repeating the same selected family is not an acceptance strategy.
+
+### Selective legal automatic-leaf turns
+
+H.3.6.10 adds explicit `selective_leaf_turns=False` and the supervised runner
+flag `--zone-selective-leaf-turns`. An automatic root leaf qualifies only when
+one original interface room serves at least two distinct neighboring units.
+At most four deduplicated transposed/reflected choices append after every old
+choice. Original per-axis minima, areas, internal contacts and source group
+constraints are checked against the actual swapped envelope. Explicit size
+pools, canonical parents, fixed/axis-bound units and units with supplied
+openings or equipment are conservatively excluded. Canonical source geometry,
+axes, openings, IDs and existing candidate order remain intact.
+
+The saved 93fdc7c family demonstrates the omitted pattern: a legal staff turn
+needs an 11,000 by 11,100 mm envelope, while the original local 11,100 by
+11,000 filter excluded it. A real small final CP counterexample changes from
+INFEASIBLE to accepted geometry with the additional four choices; independent
+original room/zone/daylight checks pass. The complete small supervised producer
+also passes fresh persisted bundle QA and strict IFC EXPRESS.
+
+On the independently reloaded saved physical80 family, pure geometry helpers
+preserve original source/family hashes and all 220 ordered choices, then append
+four choices for each A/staff_zone and B/staff_zone. The resulting 228-shape
+family has 980 rectangle records and 67,548 bytes. Contact support remains
+APPLIED with 912 rows and upper bound 14,592 within the unchanged 16,384 limit.
+Every addition is rejected if the full proposed family exceeds existing bounds.
+These helper counts establish candidate availability; no full80 solve ran here.
+
+Agent regression passed 103 methods/218 subtests in 30.815 s. Fresh root passed
+all 14 new methods/20 subtests in 4.63 s, independently reconstructed the exact
+saved family and support counts, and checked all seven frozen source hashes.
+Actual old/current omitted/False tiny result/evidence and default runner JSON
+are byte-equal; actionlint passed. The next changed pinned manual80 measurement
+must establish actual equipment, routing, exports and complete persisted gates.

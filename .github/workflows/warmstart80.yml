@@ -44,6 +44,11 @@ on:
         type: boolean
         required: false
         default: false
+      zone_selective_leaf_turns:
+        description: Add bounded checked turns to eligible automatic recursive root leaves
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -77,6 +82,7 @@ jobs:
           ZONE_GLOBAL_DIAGNOSTICS: ${{ inputs.zone_global_diagnostics }}
           ZONE_CONTACT_PRUNING: ${{ inputs.zone_contact_pruning }}
           ZONE_CONTACT_SUPPORT: ${{ inputs.zone_contact_support }}
+          ZONE_SELECTIVE_LEAF_TURNS: ${{ inputs.zone_selective_leaf_turns }}
         shell: bash
         run: |
           args=(--output out/scale80-warmstart --max-seconds 120 --room-solver "$ROOM_SOLVER")
@@ -91,6 +97,9 @@ jobs:
           fi
           if [[ "$ZONE_CONTACT_SUPPORT" == "true" ]]; then
             args+=(--zone-contact-support)
+          fi
+          if [[ "$ZONE_SELECTIVE_LEAF_TURNS" == "true" ]]; then
+            args+=(--zone-selective-leaf-turns)
           fi
           python scripts/scale80_warmstart_acceptance.py "${args[@]}"
       - name: Retain warm-start bundles and evidence, including failures

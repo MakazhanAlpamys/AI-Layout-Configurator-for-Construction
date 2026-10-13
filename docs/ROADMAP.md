@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint H.3.6.10 supplies source-preserving legal leaf choices with actual
+small CP/bundle verification. The current product's physical80 gate remains
+open until the changed complete measurement; this MVP archive is unchanged.
+
 Checkpoint QA.19 records successful complete `c0eb166` cross-platform,
 installed-container and nine-variant pharma acceptance after native fixture
 repairs. This evidence is pinned; subsequent current-product steps remain separate.

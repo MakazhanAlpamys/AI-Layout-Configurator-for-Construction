@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint H.3.6.10 adds bounded, independently checked automatic leaf turns
+that preserve the canonical source and old candidates. A real small final CP
+counterexample and complete small bundle pass; saved physical80 helper budgets
+remain valid. [Scope](SCALING_STUDY.md). Full80 acceptance remains a separate gate.
+
 Checkpoint QA.19 verifies complete pinned `c0eb166` platform, container and
 pharma acceptance, including the native IFC fixture repairs. All 1,113 cases
 per OS and exhaustive shard inventories are retained; downloaded bytes and
