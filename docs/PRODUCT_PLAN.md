@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.2.2.1 exposes explicit actual environment review through
+`check-environment`, sharing exact bounded transfer input admission. Complete
+region/pressure work is bounded before geometry; original source and embedded
+program identities remain present. Single-file tests and installed-wheel
+UNKNOWN/FAIL cases pass. [Contract](ENVIRONMENT_PROGRAM.md). No CP or inferred
+routes, measurements, HVAC or engineering acceptance are supplied.
+
 Checkpoint I.2.2 adds separate source-bound clean/ventilation regions,
 three explicit scenarios and exact pressure inequalities. Fresh current doors
 resolve actual boundary connectivity; declared/resolved graphs and design/

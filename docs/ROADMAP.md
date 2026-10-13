@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.2.2.1 delivers source-preserving environment review through a
+bounded actual CLI with current routes and connected pressure evidence.
+Archived MVP and external engineering acceptance criteria remain unchanged.
+
 Checkpoint I.2.2 delivers current-product planar environment declarations
 and exact declared/resolved pressure checks with source-bound scope. Archived
 MVP status and external engineering acceptance remain unchanged.

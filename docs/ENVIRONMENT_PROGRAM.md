@@ -66,4 +66,40 @@ boundary negative while preserving original objects. A regular wheel built from
 its offline packaged schema from a foreign working directory; wheel SHA-256 is
 `f5e1d56414529a2a7d99a2ea2536037d39c233e20dbc601389b3edbcb3374a33`.
 Detailed local evidence is in `out/checkpoints/environment-program-i22/`.
-CLI, scenario computation and synchronized documentation remain separate steps.
+CLI is delivered by I.2.2.1 below; complete scenario computation and synchronized
+documentation remain separate steps.
+
+## Actual environment-review CLI
+
+```console
+layout-configurator check-environment examples/environment_review_connected_pressure.json --output out/environment-review.json
+```
+
+I.2.2.1 requires strict canonical JSON containing `building`,
+`production_program`, `transfer_program`, `environment_program`, `layout` and
+actual `flow_routes`, plus optional original `equipment` placements. The
+[CLI example](../examples/environment_review_connected_pressure.json) includes
+literal actual route coordinates. The older contract example without routes
+does not satisfy this review boundary; the command never invents routes.
+
+The command shares original transfer admission, preserving canonical scalar
+types and whole source hashes. Environment schema and combined region/pressure
+work limits hold before any result GEOS construction. Embedded I1 stays present;
+unsupported original geometry predicates remain UNKNOWN without generation.
+Optional reports cannot alias the source by resolved path or actual file
+identity. The exact supplied UTF-8 file SHA accompanies the scoped report.
+
+Exits are0 for scoped PASS,4 for UNKNOWN and2 for FAIL/input rejection. The
+consistent example exits4: connected declared/design checks pass, while
+measurements, HVAC, action execution and engineering acceptance remain unknown/
+pending. A source-bound contradictory pressure cycle exits2 with exact edge
+evidence. Neither establishes whole-building infeasibility or built performance.
+
+On2026-10-14, seven environment-review tests/three subtests passed in2.40 s;
+ten transfer-review tests/five subtests passed separately in1.77 s. Initial
+missing-command RED produced six failures across four methods without errors.
+Actual durable consistent/cyclic reviews preserve source bytes and distinct
+exits; a regular wheel from `53b2667` plus five reviewed files repeats them from
+a foreign working directory with exact module hashes. Wheel SHA-256 is
+`56bbdd82cebfb9550754772ea3bc3938eef2da9a3798142ac0e9d55e0a37c457`.
+Local detailed evidence is in `out/checkpoints/environment-review-i221/`.

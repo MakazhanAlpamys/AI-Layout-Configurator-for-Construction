@@ -1,6 +1,6 @@
 """Bounded explicit JSON review of supplied source, geometry and actual routes."""
 
-from dataclasses import replace
+from dataclasses import dataclass, replace
 import hashlib
 import json
 import math
@@ -9,7 +9,7 @@ from pathlib import Path
 from .building import BuildingIR
 from .equipment import EquipmentLayoutResult, EquipmentPlacement
 from .flows import FlowRoute, FlowRoutingResult
-from .models import Rect
+from .models import LayoutResult, Rect
 from .production_program import _json_bytes, _preflight, _schema_issues
 from .result_geometry import parse_layout_result
 from .schema import DEFAULT_SCHEMA_PATH, load_building_schema, load_json_schema
@@ -39,15 +39,20 @@ def _budget_report(original, message):
         "issues": [{"status": "UNKNOWN", "code": "input_budget_exceeded", "path": "$", "message": message}]}
 
 
-def load_transfer_review(path, *, include_windows=False, limits=TransferProgramLimits()):
-    """Check literal supplied routes without generating, normalizing or approving.
+@dataclass(frozen=True)
+class TransferReviewInput:
+    building: BuildingIR
+    layout: LayoutResult
+    routing: FlowRoutingResult
+    equipment: EquipmentLayoutResult | None
+    production_program: dict
+    transfer_program: dict
 
-    The review JSON has building, production_program, transfer_program, layout
-    and flow_routes, plus optional canonical equipment placements. It is an
-    explicit source-only review boundary, not ordinary BuildingIR admission.
-    """
-    if not _limits_valid(limits) or type(include_windows) is not bool:
-        raise ValueError("Review requires bounded limits and a boolean window control")
+
+def read_review_source(path, *, limits=TransferProgramLimits()):
+    """Read a bounded original JSON snapshot without interpreting its semantics."""
+    if not _limits_valid(limits):
+        raise ValueError("Review requires bounded limits")
     source = Path(path)
     if source.stat().st_size > limits.max_input_bytes:
         raise ValueError("Transfer review exceeds its input byte budget")
@@ -58,6 +63,17 @@ def load_transfer_review(path, *, include_windows=False, limits=TransferProgramL
     # The shared contract parser bounds UTF-8, nesting and nodes before JSON.
     raw = _contract_raw(TransferProgramContract(original.decode("utf-8")), TransferProgramContract,
                         replace(limits, max_program_bytes=limits.max_input_bytes))
+    return original, raw
+
+
+def admit_transfer_review(raw, original, *, limits=TransferProgramLimits(), geometry_work_extra=0):
+    """Admit exact source objects once after complete raw resource checks.
+
+    A downstream independent reviewer can supply its bounded additional
+    geometry admission score before any layout geometry is constructed.
+    """
+    if not _limits_valid(limits) or type(geometry_work_extra) is not int or geometry_work_extra < 0:
+        raise ValueError("Review requires bounded limits and a nonnegative actual work score")
     _preflight(raw, _raw_limits(limits, byte_limit=limits.max_input_bytes))
     _object(raw, ("building", "production_program", "transfer_program", "layout", "flow_routes"), ("equipment",))
     _model_preflight(raw, limits)
@@ -123,7 +139,7 @@ def load_transfer_review(path, *, include_windows=False, limits=TransferProgramL
     if openings > limits.max_openings:
         return _budget_report(original, "Source opening budget exceeded before geometry construction")
     equipment_count = len(equipment_raw)
-    work = sum(max(0, len(route.points) - 1) for route in routes) * (room_edges + len(building.layout.rooms) + openings + equipment_count)
+    work = geometry_work_extra + sum(max(0, len(route.points) - 1) for route in routes) * (room_edges + len(building.layout.rooms) + openings + equipment_count)
     work += room_edges**2 + 4*equipment_count*room_edges + 16*equipment_count**2
     work += (openings + len(building.layout.rooms)**2)*maximum_edges**2
     work += (4 + 4*len(building.layout.boundary.cutouts))*room_edges
@@ -144,8 +160,25 @@ def load_transfer_review(path, *, include_windows=False, limits=TransferProgramL
         for supplied, current in zip(equipment_raw, rebuilt):
             if "clearance" in supplied and _json_bytes(supplied["clearance"]) != _json_bytes(current["clearance"]):
                 raise ValueError("Saved equipment clearance differs from original source-derived geometry")
-    report = validate_transfer_routes(building, layout, FlowRoutingResult(tuple(routes)), raw["transfer_program"],
-        production_program=raw["production_program"], equipment=equipment,
+    return TransferReviewInput(building, layout, FlowRoutingResult(tuple(routes)), equipment,
+                              raw["production_program"], raw["transfer_program"])
+
+
+def load_transfer_review(path, *, include_windows=False, limits=TransferProgramLimits()):
+    """Check literal supplied routes without generating, normalizing or approving.
+
+    JSON requires building, production_program, transfer_program, layout and
+    flow_routes, plus optional canonical equipment placements. This explicit
+    source-only boundary does not admit unsupported production generation.
+    """
+    if type(include_windows) is not bool:
+        raise ValueError("Review requires a boolean window control")
+    original, raw = read_review_source(path, limits=limits)
+    admitted = admit_transfer_review(raw, original, limits=limits)
+    if type(admitted) is dict:
+        return admitted
+    report = validate_transfer_routes(admitted.building, admitted.layout, admitted.routing, admitted.transfer_program,
+        production_program=admitted.production_program, equipment=admitted.equipment,
         include_windows=include_windows, limits=limits).to_dict()
     report["review_source"] = {"file_sha256": hashlib.sha256(original).hexdigest(),
                                "bytes": len(original), "scope": "exact_supplied_review_json"}
