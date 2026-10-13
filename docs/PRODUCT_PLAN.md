@@ -235,6 +235,13 @@ all 14 artifact hashes and native EXPRESS pass; rehashed foreign/flattened
 memberships and source-property/scope promotions fail. Default output stays
 exact. Receiving-tool review, physical-container and network engineering remain
 separate from declared group delivery.
+Checkpoint QA.16 splits complete unittest discovery into core and draft-bundle
+shards on both operating systems. Every invocation verifies unique, disjoint,
+exhaustive coverage before execution; import errors, duplicates or empty shards
+fail closed. All skips/assertions and nine pharma/API gates remain. Independent
+pharma no longer waits for tests, and checkpoint pushes keep cheap collection
+and contracts. Four test VMs repeat setup instead of two; actual elapsed CI
+savings require a pinned measurement.
 
 ## 1. Why we are expanding the project
 

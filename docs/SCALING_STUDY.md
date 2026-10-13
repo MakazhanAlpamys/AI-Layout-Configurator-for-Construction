@@ -661,3 +661,33 @@ of the saved80 family gives 792 support rows and 4,752 cells, with potential
 raw-model additions of 46 variables, 46 linears and nine tables. This analysis
 does not run the 80-room solver or establish performance; the next changed
 source-pinned measurement remains a separate gate.
+
+### Full-CI partition and independent acceptance jobs
+
+Checkpoint pushes still run compilation, complete pytest collection and the
+existing source/geometry contracts. Full platform/container/pharma acceptance
+remains on manual, pull-request and weekly events. Documentation-only pushes
+are skipped, and cheap pushes cannot cancel a pinned full run.
+
+Full unittest tests now run two shards per operating system. Every invocation
+performs complete `unittest discover` once and rejects loader errors, duplicate
+IDs, empty required shards or a nonexhaustive/disjoint partition before running
+anything. The draft-bundles shard contains exactly modules whose basename starts
+with `test_orthogonal_bundle`, including future modules; core contains everything
+else. Relative discovery order, all test assertions, skips, expected failures
+and nonzero failing outcomes remain. Unique OS/shard artifacts retain exact
+partition inventory, elapsed time and bounded outcome details for 14 days.
+
+At freeze, actual dry collection found 1,113 unique IDs: 1,060 core and 53 draft
+bundle cases, with zero import errors and no test execution. Eight real tiny-root
+runner tests and nine subtests passed in 2.60 s; root independently passed three
+actual execution/import-failure/duplicate guards in 0.91 s. Actionlint passed.
+The unused pharma dependency on the entire platform matrix was removed because
+that job independently builds and checks its own nine variants and consumes no
+test artifacts. Its original seeds, budgets and every saved-file gate remain;
+installed-container API acceptance is unchanged.
+
+Four test VMs replace two and repeat dependency setup/discovery. The aim is to
+shorten the critical path, not claim lower aggregate runner use. Any elapsed
+benefit requires actual pinned remote timing. Earlier full acceptance at
+`7561213` remains separate evidence for its own source and 1,001-test workload.

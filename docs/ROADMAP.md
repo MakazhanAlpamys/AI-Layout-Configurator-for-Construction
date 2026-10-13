@@ -315,6 +315,10 @@ Checkpoint B.16 completes opted native source zones and declared process
 systems in canonical orthogonal drafts, with exact direct membership readback
 and explicit bundle/CLI reader controls. It preserves the archive's boundaries
 and leaves receiving-tool and full engineering acceptance open.
+Checkpoint QA.16 parallelizes the complete platform tests without reducing
+coverage and removes an unused pharma dependency. Cheap checkpoint pushes stay
+separate from manual/PR/weekly full acceptance; actual full-run time is measured
+independently of the partition verification.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal
