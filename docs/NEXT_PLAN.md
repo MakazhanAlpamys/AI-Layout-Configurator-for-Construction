@@ -10,6 +10,14 @@ The three things that decide whether the tool is taken seriously are **scale**
 accept the output) and **usability** (a planner, not a programmer, can drive
 it). The order below follows that.
 
+H.3.6.14 preserves the previously checked finite-family obstruction in
+[compact evidence](acceptance/9632549-family-obstruction.json): 1,664 rejected
+receiving-bridge joins and a 1,600 mm minimum separation gap. Its concrete
+80-room witness fails the original receiving bridge; it is not an accepted
+layout. Local append examples do not establish augmented-family feasibility.
+Fresh verification checks saved identities/arithmetic without new geometry,
+CP, tests or producer runs. Full scaling acceptance remains open.
+
 H.3.6.13 records the newer changed physical80 run at `9632549`: all four
 appended source-derived stacks are present, but the captured232-shape final CP
 remains INFEASIBLE. [Checked evidence](acceptance/9632549.json) preserves source,

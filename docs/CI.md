@@ -13,6 +13,12 @@ or full CI was dispatched to verify this shell-only change; its local evidence
 is `out/checkpoints/ci-single-file-qa22/proof.json`. This is an execution-policy
 change, without a new timing or memory measurement.
 
+The subsequent [quick run at 4691d38](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38455661550)
+passes collection, exhaustive partition and all four single-file invocations.
+Its only active job lasts 43 seconds including setup; all full acceptance jobs
+are skipped. Queue time is separate. This result does not establish full
+acceptance for later changes or an isolated performance effect of QA.22.
+
 During the current memory-constrained development session, local checks also
 run one affected test file at a time. Full suites, benchmarks and background
 scripts remain suspended until the user explicitly authorizes them again.

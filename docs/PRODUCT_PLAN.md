@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint H.3.6.14 preserves the exact finite-family obstruction from saved
+physical80 evidence: all 1,664 receiving-bridge joins conflict with separation,
+with a 1,600 mm minimum gap. Fresh metadata checks preserve source/family
+identities without new geometry, CP or producer runs. Original-source
+feasibility and complete scaling acceptance remain open.
+[Evidence](acceptance/9632549-family-obstruction.json).
+
 Checkpoint QA.22 runs each quick CI contract file in a separate sequential
 pytest invocation. The same gates and full acceptance configuration remain;
 actionlint and structural verification pass without a new full run.

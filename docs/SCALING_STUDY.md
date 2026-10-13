@@ -889,6 +889,39 @@ All eight extracted file bytes and the downloaded archive SHA are independently
 verified. [Compact evidence](acceptance/9632549.json) retains the negative result;
 raw local artifacts remain under `out/checkpoints/9632549-physical80-ci/`.
 
+### Saved finite-family geometric obstruction
+
+H.3.6.14 retains a compact derivative of the earlier pure diagnosis of the
+actual `68351aa...` capture. Existing contact, containment and office-daylight
+filters force staff choices 52/53. Each half leaves 48 distinct necessary
+clean/staff/logistics choices. Every one of the 1,664 receiving-bridge support
+joins then conflicts with nonoverlap of the contiguous clean/staff blocks;
+the closest separation gap is 16 grid units, or 1,600 mm. This is neither a
+deletion-minimal core nor a proof that the original program is infeasible.
+A changed support packing that revives other staff choices may remove the
+premise; support extensions in general have not been ruled out.
+
+The saved concrete placement of all 80 original rooms passes the earlier
+fresh room/zone/daylight/reachability checks except the original
+`A/receiving`–`B/receiving` contact at
+`/layout/rooms/0/required_adjacency/1`. It remains unaccepted, with equipment,
+routes, profiles, exports and persisted bundle gates not evaluated.
+
+Two local source-axis-valid clean/logistics examples retain original room
+minima and child containers. Appending one of each per half preserves old
+choices and gives 236 shapes, 1,014 rectangle records, 4,003 candidate pairs
+and a support-row upper bound of 16,012 below 16,384. Individual equipment fits
+are distinct from mutual equipment packing. Complete augmented feasibility
+remains UNKNOWN; an actual complete original-constraint witness must precede
+another full 80-room producer run.
+
+Fresh root verification checks six saved file-byte identities, canonical
+source/family and ordered shape hashes, all saved separation inequalities,
+80 saved coordinate identities and source pointers. It executes no geometry
+checker, CP, producer or tests. [Compact evidence](acceptance/9632549-family-obstruction.json)
+records exact provenance and reproduction formulas; detailed prior raw data
+remain local under `out/checkpoints/9632549-physical80-pure-diagnosis/`.
+
 ### Optional supervised finite-conflict evidence
 
 C.5.5 adds default-false manual runner/workflow diagnostics with a separate

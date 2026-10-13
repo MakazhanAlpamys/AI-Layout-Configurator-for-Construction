@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.1",
+  "checkpoint": "H.3.6.14",
+  "status": "VERIFIED_DERIVATIVE_EVIDENCE",
+  "scope": "Compact derivative of previously executed pure geometric checks on the exact captured finite family. Fresh metadata verification checks saved bytes, hashes, inequalities and coordinate identities. No geometry checker, solver, producer, test or build was rerun for this document.",
+  "provenance": {
+    "implementation_commit": "9632549d28fecb8b4fe5d1d314febdf00fe11b3a",
+    "run_id": 38425518357,
+    "run_url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38425518357",
+    "archive_sha256": "5b8eab50f31e267099ff61d5c1b20504f5a60d203b00d7a418c3905213bda7e3",
+    "byte_sources": [
+      {
+        "path": "out/checkpoints/9632549-physical80-ci/scale80-warmstart-acceptance/acceptance-report.json",
+        "bytes": 656206,
+        "sha256": "02226af61758a3132ccbbb6404c9309d4b89bd381961928cfce47c4cbef4ac50"
+      },
+      {
+        "path": "out/checkpoints/9632549-physical80-ci/scale80-warmstart-acceptance/program80_prepared.json",
+        "bytes": 68878,
+        "sha256": "47bddcd808cad4a5aa662a66ea25fbcbc3d4b9688dd67e70ffd35eaca24ae55e"
+      },
+      {
+        "path": "out/checkpoints/9632549-physical80-ci/scale80-warmstart-acceptance/hints80.json",
+        "bytes": 10758,
+        "sha256": "74d54f1567014b8e2877669dd744b7cff6b24000f7545c8e8c05199158a7a5ad"
+      },
+      {
+        "path": "out/checkpoints/4604a10-physical80-ci/scale80-warmstart-acceptance/acceptance-report.json",
+        "bytes": 648245,
+        "sha256": "d09ba2fbed1ffbd093730d23160f126304bf28bf73dd4e7cb03daf13d23a69fc"
+      },
+      {
+        "path": "out/checkpoints/9632549-physical80-pure-diagnosis/proof.json",
+        "bytes": 868366,
+        "sha256": "b7c686f0657445f070f500e1a9adda386b37c6ee131b81c63e39abf309b64611",
+        "role": "Previously executed proof, including all1664 rejected joins, all80 witness rectangles and original source records. Not regenerated for this checkpoint."
+      },
+      {
+        "path": "out/checkpoints/9632549-physical80-pure-diagnosis/prove.py",
+        "bytes": 21342,
+        "sha256": "1d3cc85cfc9c5efff24c49cde7cbc9b8c7a88f66c0e04009c820358eb867b4fb",
+        "role": "Previously executed pure proof helper; reads archived coordinates, performs no CP solve and starts no producer. Not executed for this checkpoint."
+      }
+    ],
+    "canonical_json_policy": "SHA256 of UTF-8 JSON with sort_keys=True, ensure_ascii=False, separators=(',', ':'), allow_nan=False. File-byte hashes above are distinct from canonical object hashes below.",
+    "prepared_source_canonical_sha256": "483a5bc700741ebb9ff582c9dba65cedcb917776e95e52c3750efd3ed3e8da05",
+    "actual_captured_family_canonical_sha256": "68351aa5c9af17d80a322b1effc6e9d2e6c7b1358a79c4229c3a5f10f297e5e7",
+    "prior_captured_family_canonical_sha256": "ae54d4a80d7eaec153503d50db39218915bb1fb2a9a58f720439906cc5c53c47",
+    "separate_prior_family_plus_pure_helper_canonical_sha256": "60407ac7a5dd88106860b6515c206093c4882fcde42948f2671edd19a0d7df61",
+    "helper_family_is_actual_capture": false,
+    "prior_source_prepared_hints_manifest_and_supplied_bytes_unchanged": true,
+    "prior_all_eleven_stage_hashes_unchanged": true,
+    "prior_ordered_geometry_comparison": {
+      "B/staff_zone": {"prior_shapes": 52, "retained_prior_ordered_hashes": 48, "drift_indices": [8, 9, 10, 11]},
+      "all_other_units": "All previous ordered shape hashes retained.",
+      "new_source_derived_staff_shapes": {"A/staff_zone": [52, 53], "B/staff_zone": [52, 53]}
+    }
+  },
+  "captured_problem": {
+    "rooms": 80,
+    "root_units": 10,
+    "candidate_shapes": 232,
+    "rectangle_records": 992,
+    "canonical_family_bytes": 68460,
+    "grid_mm": 100,
+    "boundary_grid": [1528, 425],
+    "minimum_required_contact_grid": 24,
+    "recursive_physical_containment": true,
+    "candidate_pair_count": 3696,
+    "contact_support_rows": 936,
+    "contact_support_row_upper_bound": 14784,
+    "contact_support_row_limit": 16384,
+    "fixed_rooms": {},
+    "selected_axis_room_ids": [],
+    "structural_axes_grid": {},
+    "native_final_model_status": "INFEASIBLE",
+    "native_final_model_wall_seconds": 1.039395017,
+    "current_final_global_controls": {"seconds": 2, "workers": 1},
+    "prior_final_global_controls": {"seconds": 10, "workers": 4},
+    "causal_timing_improvement_proven": false,
+    "budget_caveat": "Different final search controls and four changed local shapes prevent a one-variable performance claim. More time cannot make this exact proven-infeasible finite family feasible."
+  },
+  "exact_finite_obstruction": {
+    "finding": "After the existing exact contact, containment and office-daylight filters force staff52/53 in each half, every receiving-bridge support is incompatible with nonoverlap of the two clean/staff blocks.",
+    "proof_scope": "Only the actual captured68351aa family and its source-bound effective constraints. Not all possible original-source layouts, not an unrestricted mathematical feasibility proof and not a deletion-minimal conflict core.",
+    "per_half_filter_counts": {
+      "A": {"supported_triples": 384, "same_face_height_impossible": 288, "daylight_supported_triples": 48, "four_root_combinations": 144, "logistics_y_empty": 48, "necessary_four_root_supported": 96},
+      "B": {"supported_triples": 384, "same_face_height_impossible": 288, "daylight_supported_triples": 48, "four_root_combinations": 144, "logistics_y_empty": 48, "necessary_four_root_supported": 96}
+    },
+    "necessary_staff_indices": {"A/staff_zone": [52, 53], "B/staff_zone": [52, 53]},
+    "unique_clean_staff_logistics_options_per_half": 48,
+    "joined_receiving_bridge_supports": 1664,
+    "joined_supports_with_empty_separation_intersection": 1664,
+    "minimum_separation_gap_grid": 16,
+    "minimum_separation_gap_mm": 1600,
+    "closest_example": {
+      "index_order": ["cleanroom_core", "staff_zone", "logistics"],
+      "A_indices": [0, 52, 5],
+      "B_indices": [1, 52, 4],
+      "bridge_logistics_B_minus_A_delta_grid": [-216, -216, -72, 72],
+      "clean_origin_B_minus_A_allowed_grid": [-324, -288],
+      "clean_origin_B_minus_A_disjoint_requirement": {"at_most": -340, "or_at_least": 260},
+      "intersection_empty": true
+    },
+    "support_extension_boundary": "This final block argument no longer uses support geometry after its current ports forced the tall staff subset. A support packing that revives different staff candidates can invalidate that premise; support-only extensions in general have not been ruled out."
+  },
+  "source_bindings": {
+    "receiving_bridge": {"room_ids": ["A/receiving", "B/receiving"], "pointer": "/layout/rooms/0/required_adjacency/1"},
+    "A": {
+      "raw_material_contact": "/layout/rooms/1/required_adjacency/1",
+      "packaging_finished_contact": "/layout/rooms/5/required_adjacency/1",
+      "personnel_staff_contact": "/layout/rooms/9/required_adjacency/0",
+      "support_staff_contact": "/layout/rooms/13/required_adjacency/0",
+      "office_daylight": "/layout/rooms/12/needs_daylight"
+    },
+    "B": {
+      "raw_material_contact": "/layout/rooms/41/required_adjacency/1",
+      "packaging_finished_contact": "/layout/rooms/45/required_adjacency/1",
+      "personnel_staff_contact": "/layout/rooms/49/required_adjacency/0",
+      "support_staff_contact": "/layout/rooms/53/required_adjacency/0",
+      "office_daylight": "/layout/rooms/52/needs_daylight"
+    },
+    "original_support_room_minima_areas_and_equipment": "Retained in the exact prepared source and previous proof's original_support_room_records/source_exclusions. No source dimension, area, adjacency, daylight, room-axis or equipment constraint was relaxed.",
+    "equipment_bound_support_leaves": {"declared_equipment_count_both_halves": 50, "eligible_for_existing_unchecked_leaf_turn_or_repacking_helpers": false},
+    "source_axis_caveat": "No unchecked whole-leaf quarter-turn is admissible. Future geometry must satisfy original per-axis room minimums and all equipment-fit/anchor/opening/axis exclusions."
+  },
+  "independent_reproduction_specification": {
+    "execution_status_this_checkpoint": "NOT_RUN",
+    "permission_note": "These steps document reproduction of prior evidence. They are not authorization to execute helpers, tests or solves while the current RAM restriction applies.",
+    "steps": [
+      "Verify the recorded file-byte hashes first. Decode the prepared source and captured candidate_family from acceptance-report.room_solver.global_diagnostics. Recompute their canonical hashes. For every shape verify its ordered index and SHA over width,height,rooms,containers, excluding index and sha256.",
+      "Using actual integer-grid coordinates, reconstruct exact closed translation segments for each required root pair. Test right,left,above,below root contacts. A side is valid only if every named room pair reaches the corresponding exterior faces and has at least24 grid units of shared boundary. Intersect every contact's offset interval with root containment in boundary1528x425. Use no solver response or persisted support count as a geometry witness.",
+      "For each half join clean/staff and staff/support rows on the exact staff shape index. Reject triples whose clean/support X intervals overlap: their heights260-or268 plus201 exceed425. Opposite-side neighbors exclude either building-X facade for the office. Test each source office's available bottom/top facade, fixing staffY to0 or425-staffHeight. Intersect clean/support Y intervals with their absolute boundary domains.",
+      "Join each remaining triple with the two simultaneous logistics/clean contacts raw_storage/material_airlock and finished_storage/packaging. Reject empty absolute logisticsY domains. Both halves have exactly96 necessary surviving cases and only staff52/53. Remove duplicate support/facade variants to obtain48 distinct (clean,staff,logistics) options per half. For the subsequent contradiction drop remaining support and Y restrictions, making a weaker necessary problem.",
+      "Every remaining staff height is328 and every clean height is260 or268. Any pair among these four roots has combined height greater than425, so all must be disjoint in X. Each clean/staff contact forms a contiguous X block. For each of the48x48 option pairs join every exact receiving-bridge support matching both logistics indices. Keep separate support rows even if they share an X interval; there are1664 joins.",
+      "Let A/B block X intervals relative to their clean origins be [LA,RA] and [LB,RB], logistics-minus-clean offsets [oAlo,oAhi]/[oBlo,oBhi], and bridge logisticsB-minus-logisticsA X interval [dxlo,dxhi]. Allowed clean-origin delta is [dxlo+oAlo-oBhi,dxhi+oAhi-oBlo]. Disjoint blocks require delta<=LA-RB or delta>=RA-LB. Every allowed interval lies strictly inside that excluded gap. Record min(allowedLow-(LA-RB),(RA-LB)-allowedHigh); the minimum across all1664 rows is16 grid units.",
+      "Rebuild the concrete80-room witness from the exact selected shape indices/origins below, multiplying all grid coordinates by100mm and translating both actual rooms and child containers. The previously executed fresh validate_zone_layout with recursive_zones=True/minimum_adjacency_mm=2400 reports exactly one required_adjacency issue for A/receiving-B/receiving, shared boundary0mm. Preserve the original entry and all original source requirements.",
+      "For local append examples only, copy original room declarations and internal relations into each local boundary, preserve original per-axis minimums/areas and child containers, and check actual rectangles. Retain declared equipment. Check individual room_fit_dimensions options including wall thickness, explicitly separating individual fits from mutual equipment packing. Compute support inventories for an appended candidate without claiming full augmented-family feasibility."
+    ],
+    "previous_pure_helper_api_references": [
+      "src/layout_configurator/zone_contact_pruning.py:_translation_segments",
+      "src/layout_configurator/zone_contact_pruning.py:plan_contact_support",
+      "src/layout_configurator/zone_hierarchy.py:validate_zone_layout",
+      "src/layout_configurator/zone_diagnostics.py:capture_candidate_family"
+    ]
+  },
+  "original_source_eighty_room_witness": {
+    "status": "FAIL_EXPLICIT_RECEIVING_BRIDGE",
+    "selection_value_order": ["actual_captured_shape_index", "origin_x_grid", "origin_y_grid"],
+    "selection": {
+      "A/support_zone": [1, 300, 0],
+      "A/staff_zone": [52, 260, 0],
+      "A/cleanroom_core": [1, 0, 152],
+      "A/logistics": [0, 71, 0],
+      "A/waste_zone": [0, 260, 328],
+      "B/support_zone": [1, 315, 224],
+      "B/staff_zone": [53, 981, 97],
+      "B/cleanroom_core": [2, 1021, 1],
+      "B/logistics": [3, 1052, 261],
+      "B/waste_zone": [0, 966, 0]
+    },
+    "previous_actual_checker": {"api": "validate_zone_layout", "recursive_zones": true, "minimum_adjacency_mm": 2400},
+    "findings": [{"code": "required_adjacency", "room_ids": ["A/receiving", "B/receiving"], "actual_shared_boundary_mm": 0}],
+    "all_other_room_zone_daylight_reachability_predicates_pass": true,
+    "source_constraints_removed": [],
+    "accepted_layout": false,
+    "equipment_packing": "NOT_EVALUATED",
+    "routing_profile_exports_and_persisted_bundle": "NOT_EVALUATED"
+  },
+  "local_append_examples": {
+    "scope": "Previously checked source-axis-valid local geometry examples, not an implementation or complete augmented solution.",
+    "rectangle_order": ["x_grid", "y_grid", "width_grid", "height_grid"],
+    "examples": [
+      {
+        "unit_id": "A/cleanroom_core",
+        "boundary_grid": [335, 170],
+        "rooms": {
+          "A/material_airlock": [0, 0, 40, 60],
+          "A/preparation": [0, 60, 100, 100],
+          "A/production": [100, 0, 130, 170],
+          "A/packaging": [230, 0, 105, 100],
+          "A/personnel_airlock": [230, 120, 60, 50]
+        },
+        "original_room_and_child_zone_predicates": "PASS",
+        "single_declared_equipment_item_fits": {"checked_items": 3, "status": "PASS"}
+      },
+      {
+        "unit_id": "A/logistics",
+        "boundary_grid": [300, 105],
+        "rooms": {
+          "A/receiving": [0, 9, 50, 96],
+          "A/raw_storage": [50, 25, 110, 80],
+          "A/dispatch": [160, 0, 40, 105],
+          "A/finished_storage": [200, 25, 100, 80]
+        },
+        "original_room_and_child_zone_predicates": "PASS",
+        "single_declared_equipment_item_fits": {"checked_items": 2, "status": "PASS"}
+      }
+    ],
+    "append_inventory_scope": "One clean and one logistics example appended in each half, retaining all232 original choices and their order. B examples bind to the original B source IDs; no source IR is replaced.",
+    "previous_actual_pure_support_inventory": {
+      "status": "APPLIED",
+      "candidate_shapes": 236,
+      "rectangle_records": 1014,
+      "candidate_pairs": 4003,
+      "orientation_contact_checks": 18964,
+      "support_rows": 1042,
+      "support_row_upper_bound": 16012,
+      "unchanged_support_row_limit": 16384
+    },
+    "complete_augmented_family_feasibility": "UNKNOWN",
+    "mutual_equipment_packing": "NOT_EVALUATED",
+    "external_contacts_in_complete_placement": "NOT_EVALUATED",
+    "flow_routing_profile_exports_bundle": "NOT_EVALUATED",
+    "requirement_before_any_future_eighty_room_run": "Prove an actual complete augmented-family placement against every original room/zone constraint before repeating the eighty-room producer. All downstream acceptance gates remain mandatory for a future accepted artifact. Local examples and support counts do not establish either result."
+  },
+  "agent_preparation_activity": {
+    "existing_file_edits": 0,
+    "new_tracked_draft_files": 1,
+    "new_cp_solves": 0,
+    "new_producer_runs": 0,
+    "new_helper_executions": 0,
+    "new_test_executions": 0,
+    "new_builds_or_ci_dispatches": 0,
+    "preparation_verification": "Read existing evidence/helper/captured files and their byte hashes; copy compact source-bound results and reproduction formulas. New enumeration and checker executions are deferred."
+  },
+  "root_verification": {
+    "status": "PASS",
+    "scope": "Six saved file-byte identities, exact canonical source/family and ordered shape hashes, all 1664 saved separation inequalities, all 80 saved witness coordinate identities, source pointers and compact derivative consistency only.",
+    "geometry_and_solver_reexecution": "NOT_RUN",
+    "local_evidence": "out/checkpoints/9632549-physical80-pure-diagnosis/root-derivative-verification.json",
+    "fresh_full_facility_acceptance": false
+  },
+  "original_source_feasibility": "UNKNOWN",
+  "original_program_infeasibility_proven": false,
+  "deletion_minimal_core_proven": false,
+  "equipment_packing_and_network_validation": "UNKNOWN",
+  "flow_routing_acceptance": "UNKNOWN",
+  "exports_and_persisted_eighty_room_bundle_acceptance": "UNKNOWN",
+  "full_facility_validation": {"status": "UNKNOWN", "ok": false},
+  "engineering_acceptance": "PENDING"
+}

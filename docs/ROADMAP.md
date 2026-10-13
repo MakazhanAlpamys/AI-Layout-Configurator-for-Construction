@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint H.3.6.14 records a source-bound obstruction in the captured
+physical80 family without another full run. This preserves a negative current
+scaling result; archived MVP scope is unchanged.
+
 Checkpoint QA.22 applies sequential single-file execution to quick CI checks.
 Archived MVP scope and full acceptance criteria remain unchanged.
 
