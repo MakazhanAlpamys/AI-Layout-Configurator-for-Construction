@@ -1,0 +1,176 @@
+{
+  "version": "0.1",
+  "id": "connected_process_review",
+  "drawing_revision": "D01",
+  "variant": 1,
+  "building": {
+    "version": "0.2",
+    "project_name": "Synthetic transfer permission fixture",
+    "layout": {
+      "version": "0.1",
+      "project_name": "Synthetic transfer permission fixture",
+      "tolerance": 0.03,
+      "grid_mm": 100,
+      "wall_thickness_mm": 200.0,
+      "door_width_mm": 900.0,
+      "window_width_mm": 1200.0,
+      "window_height_mm": 1500.0,
+      "window_sill_mm": 900.0,
+      "doors": [
+        {"id": "passbox_portal", "room_a": "source", "room_b": "target", "offset_mm": 1500.0, "width_mm": 900.0},
+        {"id": "upper_portal", "room_a": "source", "room_b": "upper", "offset_mm": 1500.0, "width_mm": 900.0},
+        {"id": "side_portal", "room_a": "target", "room_b": "upper", "offset_mm": 1500.0, "width_mm": 900.0}
+      ],
+      "windows": [],
+      "entry_room": "source",
+      "boundary": {"width": 6000.0, "height": 6000.0, "cutouts": []},
+      "rooms": [
+        {"id": "source", "type": "room", "target_area": 18.0, "min_area": 17.46, "max_area": 18.54,
+         "min_width": 1800.0, "min_depth": 1800.0, "required_adjacency": ["target", "upper"],
+         "preferred_adjacency": [], "forbidden_adjacency": [], "needs_daylight": false, "is_heated": false},
+        {"id": "target", "type": "room", "target_area": 9.0, "min_area": 8.73, "max_area": 9.27,
+         "min_width": 1800.0, "min_depth": 1800.0, "required_adjacency": ["upper"],
+         "preferred_adjacency": [], "forbidden_adjacency": [], "needs_daylight": false, "is_heated": false},
+        {"id": "upper", "type": "room", "target_area": 9.0, "min_area": 8.73, "max_area": 9.27,
+         "min_width": 1800.0, "min_depth": 1800.0, "required_adjacency": [],
+         "preferred_adjacency": [], "forbidden_adjacency": [], "needs_daylight": false, "is_heated": false}
+      ]
+    },
+    "zones": [],
+    "equipment": [],
+    "flows": [{"id": "movement", "type": "people", "from_ids": ["source"], "to_ids": ["target"],
+               "minimum_clear_width_mm": 800.0, "required": true}]
+  },
+  "layout": {
+    "variant": 1,
+    "objective_value": null,
+    "rooms": {
+      "source": {"x": 0, "y": 0, "width": 3000, "height": 6000, "area_m2": 18.0},
+      "target": {"x": 3000, "y": 0, "width": 3000, "height": 3000, "area_m2": 9.0},
+      "upper": {"x": 3000, "y": 3000, "width": 3000, "height": 3000, "area_m2": 9.0}
+    }
+  },
+  "equipment": [],
+  "flow_routes": {"routes": [
+    {"flow_id": "movement", "from_id": "source", "to_id": "target", "from_room_id": "source", "to_room_id": "target",
+     "room_path": ["source", "target"], "points": [{"x": 2450.0, "y": 1500.0}, {"x": 3000.0, "y": 1500.0}, {"x": 3550.0, "y": 1500.0}],
+     "minimum_clear_width_mm": 800.0}
+  ]},
+  "production_program": {
+    "version": "0.1", "id": "transfer_process", "revision": "P01", "origin": "supplied_project_program",
+    "building_sha256": "38f4dd4c30050d1001a687a4de01ae9c93f26d1095554b31b905239a3e805f3a",
+    "sources": [{
+      "id": "transfer_brief", "kind": "functional_diagram", "title": "Synthetic transfer test declaration", "edition": "1",
+      "uri": "urn:fixture:transfer:1", "locator": "Lines 1-6",
+      "content": "Environment reconstruction fixture; supplied declarations are not engineering approval.\r\nThe movement is personnel. All three explicit doors permit personnel in both directions.\r\nA local ISO 8 region is declared; GMP grade is unknown and no equivalence is inferred.\r\nProduction uses handover; maintenance and replacement require handover stopped.\r\nDeclared pressures are source 30 Pa, target 20 Pa, upper 10 Pa on a common reference.\r\nEach required pressure difference is at least 10 Pa. Measured values and HVAC evidence are unknown.\r\n",
+      "sha256": "25700f865abfd216d1a49e64d92532ee216d598f3c51d243efa3c5103acb98b8",
+      "usage_rights": {"state": "PERMITTED", "note": "Supplied software test declaration."}
+    }],
+    "materials": [{"id": "parts", "label": "Test parts"}],
+    "states": [{"id": "raw", "material_id": "parts", "label": "Raw test parts"}],
+    "operations": [{
+      "id": "handover", "label": "Synthetic handover", "room_id": "source", "equipment_ids": [], "flow_ids": ["movement"],
+      "inputs": ["raw"], "outputs": [],
+      "measurements": {
+        "cycle_time": {"status": "KNOWN", "value": 30, "unit": "s", "basis": "declared_fact", "source_id": "transfer_brief", "note": "Declared test value; no capacity simulation."},
+        "target_throughput": {"status": "KNOWN", "value": 120, "unit": "items/hour", "basis": "declared_fact", "source_id": "transfer_brief", "note": "Declared test value; no capacity simulation."},
+        "movement_frequency": {"status": "KNOWN", "value": 12, "unit": "movements/hour", "basis": "declared_fact", "source_id": "transfer_brief", "note": "Declared test value; no capacity simulation."},
+        "operators": {"status": "KNOWN", "value": 1, "unit": "persons", "basis": "declared_fact", "source_id": "transfer_brief", "note": "Declared test value; no capacity simulation."}
+      }
+    }],
+    "requirements": [], "engineer_confirmation": null
+  },
+  "transfer_program": {
+    "version": "0.1", "id": "transfer_policy", "revision": "T01", "units": "mm",
+    "building_sha256": "38f4dd4c30050d1001a687a4de01ae9c93f26d1095554b31b905239a3e805f3a",
+    "production_program_sha256": "b6a7cc1039e8e008dfdde0f98fe1061d405662b36502902f6d73e0fc75cab794",
+    "flow_movements": [{"flow_id": "movement", "movement_kind": "personnel", "source_id": "transfer_brief",
+                        "basis": "declared_fact", "excerpt": "movement is personnel"}],
+    "transfers": [
+      {"id": "transfer_1", "kind": "door", "opening_id": "passbox_portal", "room_chain": ["source", "target"],
+       "minimum_clear_width_mm": 800, "permissions": [{"direction": "forward", "movement_kinds": ["personnel"]}, {"direction": "reverse", "movement_kinds": ["personnel"]}],
+       "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "transfer_2", "kind": "door", "opening_id": "upper_portal", "room_chain": ["source", "upper"],
+       "minimum_clear_width_mm": 800, "permissions": [{"direction": "forward", "movement_kinds": ["personnel"]}, {"direction": "reverse", "movement_kinds": ["personnel"]}],
+       "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "transfer_3", "kind": "door", "opening_id": "side_portal", "room_chain": ["target", "upper"],
+       "minimum_clear_width_mm": 800, "permissions": [{"direction": "forward", "movement_kinds": ["personnel"]}, {"direction": "reverse", "movement_kinds": ["personnel"]}],
+       "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"}
+    ]
+  },
+  "environment_program": {
+    "version": "0.1", "id": "environment_fixture", "revision": "E01", "units": "mm",
+    "building_sha256": "38f4dd4c30050d1001a687a4de01ae9c93f26d1095554b31b905239a3e805f3a",
+    "layout_sha256": "3abbb1e2b50c40506d478e6249c69a08a57019f3c4494890aa263d1a274835c3",
+    "production_program_sha256": "b6a7cc1039e8e008dfdde0f98fe1061d405662b36502902f6d73e0fc75cab794",
+    "transfer_program_sha256": "be139642abbaaa77b2365ab6747cd11c06f3d8e078b064e93754b48aaf692ddb",
+    "clean_zones": [{
+      "id": "local_clean", "boundary": {"kind": "orthogonal", "units": "mm", "vertices": [[200, 200], [1200, 200], [1200, 1200], [200, 1200]]},
+      "host_room_ids": ["source"], "equipment_ids": [], "operation_ids": [],
+      "iso_class": {"status": "KNOWN", "value": 8}, "gmp_grade": {"status": "UNKNOWN", "value": null},
+      "state": {"status": "KNOWN", "value": "in_operation"},
+      "applicability": "Supplied reconstruction only; no profile applicability is authenticated.",
+      "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"
+    }],
+    "ventilation_zones": [{
+      "id": "ventilation_source", "boundary": {"kind": "orthogonal", "units": "mm", "vertices": [[0, 0], [3000, 0], [3000, 6000], [0, 6000]]},
+      "host_room_ids": ["source"], "equipment_ids": [], "operation_ids": ["handover"],
+      "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"
+    }],
+    "scenarios": [
+      {"id": "normal", "kind": "production", "active_operation_ids": ["handover"], "stopped_operation_ids": [], "actions": [],
+       "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "service", "kind": "maintenance", "active_operation_ids": [], "stopped_operation_ids": ["handover"],
+       "actions": [{"id": "stop_for_service", "kind": "production_stopped", "operation_ids": ["handover"], "equipment_ids": [], "transfer_ids": [],
+                    "required_stopped_operation_ids": ["handover"], "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"}],
+       "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "replacement", "kind": "installation_replacement", "active_operation_ids": [], "stopped_operation_ids": ["handover"],
+       "actions": [{"id": "stop_for_replacement", "kind": "production_stopped", "operation_ids": ["handover"], "equipment_ids": [], "transfer_ids": [],
+                    "required_stopped_operation_ids": ["handover"], "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"}],
+       "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"}
+    ],
+    "pressure_datums": [{"id": "common", "label": "Supplied common pressure reference", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"}],
+    "pressure_nodes": [
+      {"id": "pressure_source", "space": {"namespace": "room", "id": "source"}, "datum_id": "common",
+       "values": [
+         {"scenario_id": "normal", "design": {"status": "KNOWN", "value": 30, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}},
+         {"scenario_id": "service", "design": {"status": "KNOWN", "value": 30, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}},
+         {"scenario_id": "replacement", "design": {"status": "KNOWN", "value": 30, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}}
+       ], "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "pressure_target", "space": {"namespace": "room", "id": "target"}, "datum_id": "common",
+       "values": [
+         {"scenario_id": "normal", "design": {"status": "KNOWN", "value": 20, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}},
+         {"scenario_id": "service", "design": {"status": "KNOWN", "value": 20, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}},
+         {"scenario_id": "replacement", "design": {"status": "KNOWN", "value": 20, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}}
+       ], "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "pressure_upper", "space": {"namespace": "room", "id": "upper"}, "datum_id": "common",
+       "values": [
+         {"scenario_id": "normal", "design": {"status": "KNOWN", "value": 10, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}},
+         {"scenario_id": "service", "design": {"status": "KNOWN", "value": 10, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}},
+         {"scenario_id": "replacement", "design": {"status": "KNOWN", "value": 10, "unit": "Pa", "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+          "measured": {"status": "UNKNOWN", "value": null, "unit": "Pa", "source_id": null, "basis": "declared_fact", "excerpt": null}}
+       ], "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"}
+    ],
+    "pressure_edges": [
+      {"id": "source_target", "scenario_id": "normal", "high_node_id": "pressure_source", "low_node_id": "pressure_target", "transfer_id": "transfer_1",
+       "minimum_delta_pa": 10, "maximum_delta_pa": null, "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "target_upper", "scenario_id": "normal", "high_node_id": "pressure_target", "low_node_id": "pressure_upper", "transfer_id": "transfer_3",
+       "minimum_delta_pa": 10, "maximum_delta_pa": null, "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"},
+      {"id": "upper_source", "scenario_id": "normal", "high_node_id": "pressure_source", "low_node_id": "pressure_upper", "transfer_id": "transfer_2",
+       "minimum_delta_pa": 10, "maximum_delta_pa": null, "source_id": "transfer_brief", "basis": "declared_fact", "excerpt": "Environment reconstruction fixture"}
+    ]
+  },
+  "library": null,
+  "scenario_requests": {
+    "card_by_equipment": {}, "maintenance_targets": [], "installation_targets": [],
+    "actions_by_scenario": {"production": {}, "maintenance": {}, "installation_replacement": {}}
+  }
+}

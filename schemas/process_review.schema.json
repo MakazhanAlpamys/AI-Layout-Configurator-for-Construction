@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/process-review-0.1.json",
+  "title": "Synchronized supplied process review input 0.1",
+  "description": "One explicit revision and variant bind original sources, saved geometry and fresh local evidence. No supplied verdicts or export destinations are admitted.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "id", "drawing_revision", "variant", "building", "layout", "equipment", "flow_routes", "production_program", "transfer_program", "environment_program", "library", "scenario_requests"],
+  "properties": {
+    "version": {"const": "0.1"},
+    "id": {"$ref": "#/$defs/id"},
+    "drawing_revision": {"$ref": "#/$defs/id"},
+    "variant": {"type": "integer", "minimum": 1, "maximum": 1000000},
+    "building": {"type": "object", "minProperties": 1},
+    "layout": {"$ref": "https://layout-configurator.local/schemas/layout_result.schema.json"},
+    "equipment": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/placement"}},
+    "flow_routes": {"$ref": "#/$defs/routing"},
+    "production_program": {"$ref": "https://layout-configurator.local/schema/production-program-0.1.json"},
+    "transfer_program": {"$ref": "https://layout-configurator.local/schema/transfer-program-0.1.json"},
+    "environment_program": {"anyOf": [{"type": "null"}, {"$ref": "https://layout-configurator.local/schema/environment-program-0.1.json"}]},
+    "library": {"anyOf": [{"type": "null"}, {"$ref": "https://layout-configurator.local/schema/engineering-library-0.1.json"}]},
+    "scenario_requests": {"$ref": "#/$defs/scenarioRequests"}
+  },
+  "$defs": {
+    "id": {"type": "string", "minLength": 1, "maxLength": 128, "pattern": "^\\S(?:[^\\r\\n]*\\S)?$"},
+    "coordinate": {"type": "number", "minimum": -1000000, "maximum": 1000000},
+    "positive": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000},
+    "ids": {"type": "array", "maxItems": 32, "uniqueItems": true, "items": {"$ref": "#/$defs/id"}},
+    "point": {
+      "type": "object", "additionalProperties": false, "required": ["x", "y"],
+      "properties": {"x": {"$ref": "#/$defs/coordinate"}, "y": {"$ref": "#/$defs/coordinate"}}
+    },
+    "rect": {
+      "type": "object", "additionalProperties": false, "required": ["x", "y", "width", "depth"],
+      "properties": {"x": {"$ref": "#/$defs/coordinate"}, "y": {"$ref": "#/$defs/coordinate"},
+        "width": {"$ref": "#/$defs/positive"}, "depth": {"$ref": "#/$defs/positive"}}
+    },
+    "placement": {
+      "type": "object", "additionalProperties": false,
+      "required": ["equipment_id", "room_id", "x", "y", "width", "depth", "rotated"],
+      "properties": {
+        "equipment_id": {"$ref": "#/$defs/id"}, "room_id": {"$ref": "#/$defs/id"},
+        "x": {"$ref": "#/$defs/coordinate"}, "y": {"$ref": "#/$defs/coordinate"},
+        "width": {"$ref": "#/$defs/positive"}, "depth": {"$ref": "#/$defs/positive"},
+        "rotated": {"type": "boolean"}, "clearance": {"$ref": "#/$defs/rect"}
+      }
+    },
+    "route": {
+      "type": "object", "additionalProperties": false,
+      "required": ["flow_id", "from_id", "to_id", "from_room_id", "to_room_id", "room_path", "points", "minimum_clear_width_mm"],
+      "properties": {
+        "flow_id": {"$ref": "#/$defs/id"}, "from_id": {"$ref": "#/$defs/id"}, "to_id": {"$ref": "#/$defs/id"},
+        "from_room_id": {"$ref": "#/$defs/id"}, "to_room_id": {"$ref": "#/$defs/id"},
+        "room_path": {"type": "array", "maxItems": 16384, "items": {"$ref": "#/$defs/id"}},
+        "points": {"type": "array", "maxItems": 1024, "items": {"$ref": "#/$defs/point"}},
+        "minimum_clear_width_mm": {"$ref": "#/$defs/positive"}
+      }
+    },
+    "routing": {
+      "type": "object", "additionalProperties": false, "required": ["routes"],
+      "properties": {"routes": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/route"}}}
+    },
+    "actions": {
+      "type": "object", "maxProperties": 32, "propertyNames": {"$ref": "#/$defs/id"},
+      "additionalProperties": {"$ref": "#/$defs/ids"}
+    },
+    "scenarioRequests": {
+      "type": "object", "additionalProperties": false,
+      "required": ["card_by_equipment", "maintenance_targets", "installation_targets", "actions_by_scenario"],
+      "properties": {
+        "card_by_equipment": {"type": "object", "maxProperties": 32, "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/id"}},
+        "maintenance_targets": {"$ref": "#/$defs/ids"}, "installation_targets": {"$ref": "#/$defs/ids"},
+        "actions_by_scenario": {
+          "type": "object", "additionalProperties": false, "required": ["production", "maintenance", "installation_replacement"],
+          "properties": {"production": {"$ref": "#/$defs/actions"}, "maintenance": {"$ref": "#/$defs/actions"}, "installation_replacement": {"$ref": "#/$defs/actions"}}
+        }
+      }
+    }
+  }
+}

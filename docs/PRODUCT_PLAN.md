@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.1 synchronizes eight JSON schedules and five fresh scoped
+process reports from one exact supplied revision. Source identities, strict
+equipment/request admission and combined source budgets remain mandatory;
+bounded delivery preserves originating failures. A single-file check passes
+21 tests and 26 subtests. [Contract](PROCESS_REVIEW.md). Installed-wheel
+verification, PDF/overlay delivery and complete bundle integration remain open.
+Work is paused at the user's request after this checkpoint.
+
 Checkpoint H.3.6.14 preserves the exact finite-family obstruction from saved
 physical80 evidence: all 1,664 receiving-bridge joins conflict with separation,
 with a 1,600 mm minimum gap. Fresh metadata checks preserve source/family

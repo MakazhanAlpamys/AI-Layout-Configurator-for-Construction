@@ -143,6 +143,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | I.3.1.1 | Honest world-precision projection boundary | Source-bound transformed contours must remain valid positive-area world geometry before local PASS. Collapsed/invalid world contours return UNKNOWN with fresh library binding evidence; no original-source inconsistency or full-scenario claim. | Actual missing-guard RED; fresh single-file10 tests/15 subtests PASS1.42 s. Three normal pilot scenarios remain valid; source numerical negative UNKNOWN. Regular installed wheel fromf5a01d5 plus two exact files reproduces normal/numerical cases from foreign cwd. [Scope](ENGINEERING_LIBRARY.md). | complete 2026-10-14 for projection precision guard |
 | QA.22 | Sequential single-file quick CI | The same four source/geometry contract files run in separate sequential pytest invocations. Complete collection, exhaustive shard partition, triggers, concurrency and all full jobs are unchanged. | Actionlint and structural comparison against 8289365 PASS; exact workflow SHA recorded locally. No test execution, full CI dispatch or new performance claim. [Policy](CI.md). | complete 2026-10-14 for quick invocation policy |
 | H.3.6.14 | Saved physical80 finite-family obstruction | Exact captured family has 1,664 receiving-bridge joins incompatible with clean/staff separation; closest gap 1,600 mm. Prior concrete 80-room witness fails only the original receiving bridge within its room/zone check scope. Local append examples and support bounds do not prove augmented feasibility. | Fresh six saved byte identities, canonical source/family and ordered shape hashes, 1,664 saved inequalities, 80 saved coordinate identities and source pointers PASS; no new geometry, CP, producer, test or full CI run. [Compact evidence](acceptance/9632549-family-obstruction.json). | complete 2026-10-14 for derivative evidence; original-source feasibility and full scaling acceptance open |
+| I.5.1 | Synchronized supplied process schedules and evidence | One original revision produces eight detached JSON schedules and five fresh scoped reports with common component identities. Exact equipment frames/request IDs and combined production/library source budgets precede geometry even without a library. Embedded source identity is retained; bounded incomplete delivery preserves originating FAIL evidence. | Actual missing-module and numerical/admission/delivery RED regressions preceded fixes. Fresh root single-file `test_process_review.py`: 21 tests / 26 subtests PASS in 4.09 s. No full suite, solver, benchmark or wheel build at this pause. [Contract](PROCESS_REVIEW.md). | local core complete 2026-10-14; installed-wheel verification, PDF/overlays and full bundle attachment pending; user-requested pause |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -185,8 +186,10 @@ Cyrillic text.
 - I.1–I.6: source-bound production-program core, opt-in embedding/validation
   CLI, typed transfer sidecars/actual checks, sourced finite equipment cards/local
   projection, independent environment/scenario declarations, pressure checks
-  and local equipment scenario geometry checks exist. Agreed engineering program, unified producer enforcement, complete
-  scenario/installation paths, synchronized drawings/schedules, medical-plastics
+  and local equipment scenario geometry checks exist. Source-bound synchronized
+  JSON schedules and fresh process evidence exist; installed-wheel verification
+  for this new API remains pending. Agreed engineering program, unified producer enforcement, complete
+  scenario/installation paths, synchronized drawings/PDF/bundle delivery, medical-plastics
   benchmark and change scenario remain.
 
 ## External acceptance

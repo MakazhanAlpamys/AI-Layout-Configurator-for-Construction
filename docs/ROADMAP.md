@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint I.5.1 adds current-product source-bound JSON process schedules
+and fresh scoped evidence from one revision. Local verification passes;
+installed-wheel verification and complete documentation delivery remain open.
+Work is paused at the user's request; archived MVP criteria are unchanged.
+
 Checkpoint H.3.6.14 records a source-bound obstruction in the captured
 physical80 family without another full run. This preserves a negative current
 scaling result; archived MVP scope is unchanged.
