@@ -283,6 +283,8 @@ Checkpoint B.14 completes opted source facade windows in actual polygon
 generation, all three exchange formats, persisted bundles and independent CLI
 readback. Coordination eligibility does not establish daylight or engineering
 acceptance; the original MVP boundaries remain unchanged.
+Checkpoint QA.13 records full cross-platform/API/pharma acceptance pinned to
+`0c76aad`; later opted windows and runtime optimization need separate evidence.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

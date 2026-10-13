@@ -1,0 +1,68 @@
+{
+  "implementation_commit": "0c76aade61d598243ad68b3ec78ab3b555b96294",
+  "run_id": 38390173257,
+  "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38390173257",
+  "event": "workflow_dispatch",
+  "conclusion": "success",
+  "unit_tests": {
+    "linux": {
+      "count": 932,
+      "seconds": 498.596,
+      "skipped": 4,
+      "downloaded_log_sha256": "8f45ac327b799dba772c9445f09e3a96e83c6acfa2e80d00d5ccf49467ddfd91"
+    },
+    "windows": {
+      "count": 932,
+      "seconds": 744.631,
+      "skipped": 8,
+      "downloaded_log_sha256": "41f746bdb05f5bbb51e312718e779284e69d033b9f327554818e93a614bbdc8d"
+    }
+  },
+  "pharma": {
+    "seeds": [
+      1,
+      7,
+      42
+    ],
+    "variants_per_seed": 3,
+    "cross_seed_semantic_ids": "PASS",
+    "complete_saved_QA": "PASS",
+    "saved_variant_checks": 81,
+    "downloaded_artifact_files_sha256_checked": 54,
+    "raw_matrix_sha256": "391721ba195cfc68f239c0ce2b013b514c4fbfb6aa9e3ccf36644ed9127d0e98"
+  },
+  "installed_container_HTTP": {
+    "status": "SUCCEEDED",
+    "qa_ok": true,
+    "elapsed_seconds": 5.095251850000011,
+    "expert_acceptance": "PENDING",
+    "raw_report_sha256": "8ed94479573f662c6686781080f255ca7334b6d6b2cae8237eb33239938cdaae"
+  },
+  "jobs": {
+    "api-container": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T11:26:04Z",
+      "completed_at": "2026-10-13T11:27:29Z",
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38390173257/job/115271745704"
+    },
+    "tests (ubuntu-latest)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T11:26:04Z",
+      "completed_at": "2026-10-13T11:34:48Z",
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38390173257/job/115271745946"
+    },
+    "tests (windows-latest)": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T11:26:05Z",
+      "completed_at": "2026-10-13T11:39:57Z",
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38390173257/job/115271745963"
+    },
+    "pharma-cleanroom": {
+      "conclusion": "success",
+      "started_at": "2026-10-13T11:39:59Z",
+      "completed_at": "2026-10-13T11:41:53Z",
+      "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38390173257/job/115277088054"
+    }
+  },
+  "scope": "This pinned commit only, including the native Linux atomic draft publication branch and explicit polygon CLI. Subsequent opted window and test optimization checkpoints require their own CI; source artifact readback does not establish external engineering acceptance."
+}

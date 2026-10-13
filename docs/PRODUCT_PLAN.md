@@ -178,6 +178,10 @@ polygon room/equipment/flow/facility generation, DXF/PDF/IFC, atomic bundles and
 single/set CLI QA. Actual source elevations and facade identity are independently
 checked; default unsupported guards and closed circulation barriers are retained.
 Scoped delivery PASS leaves daylight and engineering acceptance open.
+Checkpoint QA.13 records full pinned `0c76aad` acceptance: 932 tests on both
+platforms, deployed API/container QA and nine pharma variants. This verifies the
+native Linux atomic publication and explicit polygon CLI gates for that commit;
+the later B.14 window checkpoint requires its own CI.
 
 ## 1. Why we are expanding the project
 

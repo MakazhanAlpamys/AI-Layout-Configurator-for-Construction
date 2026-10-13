@@ -438,7 +438,8 @@ PDF/IFC substitution, changed profile and a raced-in output directory. The agent
 passed all 23 bundle tests and 34 subtests in 263.77 s. Both retained actual and
 source-generated bundles pass every scoped check with zero EXPRESS statements;
 their two-page PDFs were rendered and inspected. Windows publication is tested
-locally; the native Linux publication branch awaits pinned CI.
+locally. The subsequent pinned `0c76aad` full CI in QA.13 passed the native
+Linux publication tests and explicit polygon CLI; it excludes later B.14 changes.
 
 The manifest stays DRAFT with `ok: false`; full facility validation remains
 UNKNOWN and engineering acceptance PENDING. Scoped exchange QA PASS verifies
