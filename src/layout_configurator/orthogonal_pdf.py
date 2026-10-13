@@ -36,6 +36,7 @@ STYLES = {
     "room": {"fill": (.94, .97, .99), "stroke": (.35, .44, .50), "paint": "B*"},
     "wall": {"fill": (.16, .22, .27), "stroke": INK, "paint": "f*"},
     "door": {"fill": INK, "stroke": (.69, .35, .15), "paint": "S"},
+    "window": {"fill": INK, "stroke": (.15, .60, .85), "paint": "S"},
     "equipment": {"fill": (.80, .88, .95), "stroke": (.20, .40, .61), "paint": "B*"},
     "service": {"fill": INK, "stroke": (.20, .40, .61), "paint": "S"},
     "corridor": {"fill": (.84, .94, .86), "stroke": INK, "paint": "f*"},
@@ -75,18 +76,27 @@ def _hash(raw):
     return hashlib.sha256(_json(raw)).hexdigest()
 
 
-def _prepare(building, layout, equipment, routing, limits):
+def _prepare(building, layout, equipment, routing, limits, *, include_windows=False):
     """Validate canonical inputs and bounded local predicates before any output."""
+    if type(include_windows) is not bool:
+        raise ValueError("include_windows requires a boolean")
+    window_options = {"include_windows": True} if include_windows else {}
     if not isinstance(limits, OrthogonalPDFLimits):
         raise ValueError("limits requires OrthogonalPDFLimits")
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Orthogonal PDF requires canonical BuildingIR and LayoutResult")
+    capability = None
     try:
         if len(building.layout.rooms) > limits.max_rooms or len(building.equipment) > limits.max_equipment:
             raise ValueError("Orthogonal PDF source room/equipment budget exhausted")
         raw, result_data = building.to_dict(), layout.to_dict()
         if len(_json(raw)) + len(_json(result_data)) > limits.max_source_bytes:
             raise ValueError("Orthogonal PDF source byte budget exhausted")
+        if include_windows:
+            from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
+            capability = validate_orthogonal_window_capability(building.layout, layout)
+            if not capability.ok:
+                raise OrthogonalWindowCapabilityError(capability)
         building, layout = normalize_building_mapping(raw), parse_layout_result(result_data)
     except (AttributeError, TypeError, OverflowError) as exc:
         raise ValueError("Orthogonal PDF source objects are malformed") from exc
@@ -98,18 +108,20 @@ def _prepare(building, layout, equipment, routing, limits):
     if vertices > limits.max_vertices:
         raise ValueError("Orthogonal PDF room vertex budget exhausted")
     policy = OrthogonalDimensionPolicy(max_scan_steps=10_000, max_candidates=4096)
-    room_report = validate_orthogonal_layout(building.layout, layout, dimension_policy=policy)
+    room_report = validate_orthogonal_layout(building.layout, layout, dimension_policy=policy, **window_options)
     if not room_report.ok:
         raise ValueError("Orthogonal PDF local room predicates are " + room_report.status)
-    walls = build_orthogonal_wall_plan(building.layout, layout)
+    walls = build_orthogonal_wall_plan(building.layout, layout, **window_options)
     local = {"rooms": "PASS", "walls_and_openings": "PASS", "equipment": "UNKNOWN",
              "door_approaches": "UNKNOWN", "routes": "UNKNOWN"}
+    if include_windows:
+        local["window_capability"] = capability.to_dict()
     if equipment is not None:
         if (not isinstance(equipment, EquipmentLayoutResult) or
                 not isinstance(equipment.placements, (tuple, list)) or len(equipment.placements) > limits.max_equipment):
             raise ValueError("Orthogonal PDF equipment placement container or budget is invalid")
-        report = validate_orthogonal_equipment(building, layout, equipment)
-        approaches = validate_orthogonal_door_approaches(building, layout, equipment)
+        report = validate_orthogonal_equipment(building, layout, equipment, **window_options)
+        approaches = validate_orthogonal_door_approaches(building, layout, equipment, **window_options)
         if not report.ok or not approaches.ok:
             raise ValueError("Orthogonal PDF supplied equipment or actual door approaches did not pass")
         local.update(equipment="PASS", door_approaches="PASS")
@@ -119,7 +131,7 @@ def _prepare(building, layout, equipment, routing, limits):
             raise ValueError("Orthogonal PDF route container or budget is invalid")
         budget = OrthogonalFlowBudget(max_rooms=limits.max_rooms, max_equipment=limits.max_equipment,
             max_endpoint_pairs=limits.max_routes, max_points_per_route=min(limits.max_vertices, 1024), room_policy=policy)
-        report = validate_orthogonal_flow_routes(building, layout, routing, equipment, budget=budget)
+        report = validate_orthogonal_flow_routes(building, layout, routing, equipment, budget=budget, **window_options)
         if not report.ok:
             raise ValueError("Orthogonal PDF supplied full-width route predicates are " + report.status)
         local["routes"] = "PASS"
@@ -167,6 +179,10 @@ def _rows(building, layout, walls, equipment, routing):
         rows.append(f"R{i:02d} | room {identifier} | type {building.layout.room_by_id[identifier].type} | actual area {shape.area_m2:.3f} m2")
     for opening in walls.openings:
         rows.append(f"Door {opening.id} | {opening.room_a} to {opening.room_b} | actual contiguous width {opening.width:g} mm")
+    for window in walls.windows:
+        rows.append(f"Window {window.id} | host {window.room_id} | orientation {window.orientation} | "
+                    f"source width {window.width:g} mm | source sill {building.layout.window_sill_mm:g} mm | "
+                    f"height {building.layout.window_height_mm:g} mm | closed facade barrier")
     specs = {item.id: item for item in building.equipment}
     for i, placement in enumerate(equipment.placements if equipment else (), 1):
         item = specs[placement.equipment_id]
@@ -188,7 +204,7 @@ def _paint(document, kind, identifier, rings, *, closed=True, scale):
     style = STYLES[kind]
     document.setFillColorRGB(*style["fill"])
     document.setStrokeColorRGB(*style["stroke"])
-    document.setLineWidth((1.4 if kind == "door" else .7) / scale)
+    document.setLineWidth((1.4 if kind in ("door", "window") else .7) / scale)
     if kind == "service":
         document.setDash(4 / scale, 2 / scale)
     for ring in rings:
@@ -203,9 +219,9 @@ def _paint(document, kind, identifier, rings, *, closed=True, scale):
 
 
 def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routing=None,
-                                revision="P01", font_path=None, limits=OrthogonalPDFLimits()):
+                                revision="P01", font_path=None, limits=OrthogonalPDFLimits(), include_windows=False):
     """Export actual contours and only independently checked optional components."""
-    building, layout, walls, local, source = _prepare(building, layout, equipment, routing, limits)
+    building, layout, walls, local, source = _prepare(building, layout, equipment, routing, limits, include_windows=include_windows)
     if not isinstance(revision, str) or not revision.strip() or len(revision) > 64:
         raise ValueError("Orthogonal PDF revision requires 1..64 nonempty characters")
     rows = _rows(building, layout, walls, equipment, routing)
@@ -241,7 +257,10 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
         document.setFont(regular, 8)
         for i, (name, digest) in enumerate(source.items()):
             document.drawString(50, 76 - i * 13, f"{name}: {digest}")
-        document.drawString(50, 18, "Source projection and local predicates only; complete profiles, windows and engineering review remain open.")
+        footer = "Source projection and local predicates only; complete profiles, windows and engineering review remain open."
+        if include_windows:
+            footer = "Source facade windows and local predicates only; daylight calculation and engineering review remain open."
+        document.drawString(50, 18, footer)
 
     header(1)
     document.saveState()
@@ -263,6 +282,8 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
         _paint(document, "equipment", placement.equipment_id, _rings(box(rect.x, rect.y, rect.right, rect.top)), scale=scale)
     for opening in walls.openings:
         _paint(document, "door", opening.id, [list(opening.centerline.coords)], closed=False, scale=scale)
+    for window in walls.windows:
+        _paint(document, "window", window.id, [list(window.centerline.coords)], closed=False, scale=scale)
     document.setFillColorRGB(*INK)
     document.setFont(bold, 8 / scale)
     for i, (_, shape) in enumerate(sorted(layout.placements.items()), 1):
@@ -272,7 +293,8 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
     document.setFont(regular, 10)
     legend = ["ACTUAL VECTOR GEOMETRY", "Room contour: pale blue", "Wall material: dark fill", "Door: actual opening line",
               "Equipment: blue footprint", "Service: directional dashed line", "Corridor: checked full-width fill", "Centerline: supplied route",
-              "LOCAL PREDICATES", *[f"{name}: {status}" for name, status in local.items()],
+              *(["Window: source facade line; closed barrier"] if include_windows else []),
+              "LOCAL PREDICATES", *[f"{name}: {status}" for name, status in local.items() if name != "window_capability"],
               "FULL FACILITY: UNKNOWN"]
     for i, line in enumerate(legend):
         document.drawString(875, 670 - i * 22, line)
@@ -298,7 +320,7 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_bytes(data)
-    return {"format": "FLC-orthogonal-pdf-draft", "version": "0.1", "pdf": target.name,
+    index = {"format": "FLC-orthogonal-pdf-draft", "version": "0.1", "pdf": target.name,
         "sha256": hashlib.sha256(data).hexdigest(), "status": "DRAFT", "ok": False, "units": "mm",
         "source_variant": layout.variant, "project_name": building.layout.project_name, "revision": revision,
         "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
@@ -306,3 +328,6 @@ def export_orthogonal_draft_pdf(path, building, layout, equipment=None, *, routi
         "components_supplied": {"equipment": equipment is not None, "routing": routing is not None},
         "pages": [{"page_id": f"OP-{i:03d}", "page_number": i, "kind": "plan" if i == 1 else "source_inventory",
                    "status": "DRAFT"} for i in range(1, pages + 1)], "limits": asdict(limits)}
+    if include_windows:
+        index["window_capability"] = local["window_capability"]
+    return index

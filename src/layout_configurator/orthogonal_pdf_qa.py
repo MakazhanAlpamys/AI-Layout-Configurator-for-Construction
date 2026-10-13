@@ -21,7 +21,7 @@ from shapely.ops import unary_union
 
 from .equipment import clearance_rect
 from .orthogonal import OrthogonalPolygon
-from .orthogonal_pdf import INK, PAGE_HEIGHT, PAGE_WIDTH, STYLES, OrthogonalPDFLimits, _json, _prepare, _projection, _route_id
+from .orthogonal_pdf import INK, PAGE_HEIGHT, PAGE_WIDTH, STYLES, OrthogonalPDFLimits, _json, _prepare, _projection, _route_id, _rows
 
 
 # PDF number serialization can round an otherwise equivalent coordinate frame.
@@ -161,7 +161,7 @@ def _path_stream(page, reader, limits, projection, plan):
     stack, tag, paths, observed = [], None, [], {}
     stage = -1
     layers = {"room": 0, "wall": 1, "corridor": 2, "route": 2,
-              "service": 3, "equipment": 3, "door": 4}
+              "service": 3, "equipment": 3, "door": 4, "window": 4}
     ignored = {b"BT", b"ET", b"TL", b"Td", b"TD", b"T*", b"Tc", b"Tw", b"J", b"j", b"M"}
     painting = {b"S", b"f", b"f*", b"B", b"B*", b"s", b"b", b"b*"}
     for values, op in operations:
@@ -268,7 +268,7 @@ def _path_stream(page, reader, limits, projection, plan):
             if style["paint"] in ("S", "B*"):
                 a, b, c, d, _, _ = state["matrix"]
                 physical_width = state["width"] * max(math.hypot(a, b), math.hypot(c, d))
-                expected_width = 1.4 if tag[0] == "door" else .7
+                expected_width = 1.4 if tag[0] in ("door", "window") else .7
                 if not _same_color(state["stroke"], style["stroke"]) or abs(physical_width - expected_width) > .002:
                     _reject("PDF_VECTOR_STRUCTURE", "Actual source stroke is invisible or obscures the projection")
             if bool(state["dash"]) != (tag[0] == "service"):
@@ -303,13 +303,15 @@ def _matches(actual, expected):
             max(.001, expected.length * GEOMETRY_TOLERANCE_MM * 2))
 
 
-def _check_vectors(observed, building, layout, walls, equipment, routing):
+def _check_vectors(observed, building, layout, walls, equipment, routing, *, include_windows=False):
     expected = {}
     for identifier, shape in layout.placements.items():
         expected[("room", identifier)] = shape.geometry if isinstance(shape, OrthogonalPolygon) else box(shape.x, shape.y, shape.right, shape.top)
     expected[("wall", "walls")] = walls.geometry
     for opening in walls.openings:
         expected[("door", opening.id)] = opening.centerline
+    for window in walls.windows:
+        expected[("window", window.id)] = window.centerline
     specifications = {item.id: item for item in building.equipment}
     for placement in equipment.placements if equipment else ():
         r = placement.rect
@@ -331,9 +333,11 @@ def _check_vectors(observed, building, layout, walls, equipment, routing):
         _reject("PATH_IDENTITY", "Actual painted source geometry IDs are missing, duplicated or unexpected")
     actual = {"room_areas_mm2": {}, "room_vertex_counts": {}, "wall_area_mm2": 0,
               "door_widths_mm": {}, "service_areas_mm2": {}, "corridor_areas_mm2": {}}
+    if include_windows:
+        actual["window_widths_mm"] = {}
     for (kind, identifier), source in expected.items():
         paths = observed[(kind, identifier)]
-        if kind in ("door", "route"):
+        if kind in ("door", "window", "route"):
             if len(paths) != 1 or paths[0][1] or len(paths[0][0]) < 2:
                 _reject("PATH_GEOMETRY", "Actual door/route requires one open source polyline")
             reconstructed = LineString(paths[0][0])
@@ -344,6 +348,8 @@ def _check_vectors(observed, building, layout, walls, equipment, routing):
                 _reject("PATH_GEOMETRY", "Actual route order/endpoints differ from the supplied checked route")
             if kind == "door":
                 actual["door_widths_mm"][identifier] = round(reconstructed.length, 6)
+            elif kind == "window":
+                actual["window_widths_mm"][identifier] = round(reconstructed.length, 6)
         else:
             reconstructed = _polygon(paths)
             if not _matches(reconstructed, source):
@@ -361,13 +367,13 @@ def _check_vectors(observed, building, layout, walls, equipment, routing):
 
 
 def validate_orthogonal_pdf(path, building, layout, equipment=None, *, routing=None,
-                            revision="P01", index=None, limits=OrthogonalPDFLimits()):
+                            revision="P01", index=None, limits=OrthogonalPDFLimits(), include_windows=False):
     """Read actual painted vectors; never accept a stored status/geometry report."""
     report = {"ok": False, "status": "FAIL", "scope": "Actual source identity and painted vector geometry only",
         "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
         "issues": [], "actual": {}}
     try:
-        building, layout, walls, local, source = _prepare(building, layout, equipment, routing, limits)
+        building, layout, walls, local, source = _prepare(building, layout, equipment, routing, limits, include_windows=include_windows)
         target = Path(path)
         if target.stat().st_size > limits.max_pdf_bytes:
             _reject("RESOURCE_LIMIT", "PDF byte budget exceeded")
@@ -378,6 +384,8 @@ def validate_orthogonal_pdf(path, building, layout, equipment=None, *, routing=N
             "sha256": hashlib.sha256(data).hexdigest(), "projection": _projection(building), "local_checks": local,
             "components_supplied": {"equipment": equipment is not None, "routing": routing is not None},
             "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING"}
+        if include_windows:
+            expected["window_capability"] = local["window_capability"]
         if not isinstance(index, dict) or len(_json(index)) > limits.max_source_bytes:
             _reject("INDEX_IDENTITY", "Actual artifact index is malformed or exceeds the source budget")
         if (set(index) != {*expected, "pages", "limits"} or
@@ -396,6 +404,7 @@ def validate_orthogonal_pdf(path, building, layout, equipment=None, *, routing=N
             _reject("PDF_PAGE_IDENTITY", "PDF page count or encrypted content cannot satisfy the draft index")
         observed = None
         text_inventory = ""
+        opted_inventory = ""
         for number, page in enumerate(reader.pages, 1):
             if (page.get("/Rotate", 0) != 0 or page.get("/UserUnit", 1) != 1 or page.get("/Annots") or
                     any(abs(float(actual) - wanted) > .001 for actual, wanted in
@@ -421,12 +430,34 @@ def validate_orthogonal_pdf(path, building, layout, equipment=None, *, routing=N
                       *[f"{name}: {digest}" for name, digest in source.items()]]
             if any("".join(claim.split()) not in compact for claim in claims) or "FULLFACILITY:PASS" in compact:
                 _reject("PDF_TEXT_IDENTITY", "Actual printed draft status, source hashes or page identity differ")
+            if include_windows:
+                footer = "Source facade windows and local predicates only; daylight calculation and engineering review remain open."
+                header = "".join("".join(claim.split()) for claim in (*claims, footer))
+                if not compact.startswith(header):
+                    _reject("PDF_TEXT_IDENTITY", "Opted source header order or scope differs")
+                body = compact[len(header):]
+                if "ENGINEERINGACCEPTANCE:" in body or (number == 1 and "|host" in body):
+                    _reject("PDF_TEXT_IDENTITY", "Unexpected source inventory or engineering acceptance claim")
+                if number > 1:
+                    opted_inventory += body
             text_inventory += compact
+        if include_windows:
+            expected_inventory = "".join("".join(row.split()) for row in _rows(building, layout, walls, equipment, routing))
+            if opted_inventory != expected_inventory:
+                _reject("PDF_TEXT_IDENTITY", "Actual source inventory has missing, duplicate, conflicting or unexpected entries")
         if any("".join(identifier.split()) not in text_inventory for identifier in
                [*layout.placements, *(item.equipment_id for item in (equipment.placements if equipment else ())),
                 *(route.flow_id for route in (routing.routes if routing else ()))]):
             _reject("PDF_TEXT_IDENTITY", "Canonical source identifiers are missing from the printed inventory")
-        report["actual"] = _check_vectors(observed, building, layout, walls, equipment, routing)
+        for window in walls.windows:
+            claim = (f"Window {window.id} | host {window.room_id} | orientation {window.orientation} | "
+                     f"source width {window.width:g} mm | source sill {building.layout.window_sill_mm:g} mm | "
+                     f"height {building.layout.window_height_mm:g} mm | closed facade barrier")
+            if text_inventory.count("".join(claim.split())) != 1:
+                _reject("PDF_TEXT_IDENTITY", "Actual printed source window identity, width, sill or height differs")
+        report["actual"] = _check_vectors(observed, building, layout, walls, equipment, routing, include_windows=include_windows)
+        if include_windows:
+            report["window_capability"] = local["window_capability"]
         report.update(ok=True, status="PASS")
     except _ReadbackError as exc:
         report["issues"].append({"code": exc.code, "message": str(exc)})

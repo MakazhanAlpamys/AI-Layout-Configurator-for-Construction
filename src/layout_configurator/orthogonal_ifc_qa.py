@@ -25,6 +25,7 @@ from .orthogonal_equipment import validate_orthogonal_door_approaches
 from .orthogonal_flows import validate_orthogonal_flow_routes
 from .orthogonal_projection import build_orthogonal_wall_plan
 from .orthogonal_validation import validate_orthogonal_equipment, validate_orthogonal_layout
+from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
 from .result_geometry import parse_layout_result
 
 
@@ -32,7 +33,8 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                             equipment: EquipmentLayoutResult | None = None, *,
                             routing: FlowRoutingResult | None = None,
                             expected_sha256: str | None = None,
-                            max_file_bytes: int = 16 * 1024 * 1024) -> dict:
+                            max_file_bytes: int = 16 * 1024 * 1024,
+                            include_windows: bool = False) -> dict:
     """Read actual IFC4 geometry with bounded native input and strict identity.
 
     Supported representations are closed polyline area-profile extrusions
@@ -40,6 +42,9 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
     rejected rather than replaced by their bounds. Numeric transform tolerance
     is 0.00001 mm; material difference tolerance is 0.0001 mm2. Strict EXPRESS
     validation is a separate executable check and is never inferred here.
+    Opted-in windows require fresh source_facade_v1 eligibility, native
+    relationships, actual world sill/head geometry and every wall material
+    interval. The checker does not trust exporter indexes or generated reports.
     """
     report = {"status": "FAIL", "ok": False, "scope": "Independent exact orthogonal IFC exchange geometry only",
               "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
@@ -47,6 +52,9 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
               "tolerance": {"coordinates_mm": 0.00001, "material_area_mm2": 0.0001}}
     issues = report["issues"]
     try:
+        if not isinstance(include_windows, bool):
+            raise ValueError("include_windows requires a boolean")
+        options = {"include_windows": True} if include_windows else {}
         if not isinstance(max_file_bytes, int) or isinstance(max_file_bytes, bool) or not 1 <= max_file_bytes <= 16 * 1024 * 1024:
             raise ValueError("max_file_bytes requires an integer between 1 and 16777216")
         target = Path(path)
@@ -59,7 +67,9 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
         report["artifact_sha256"] = digest
         if expected_sha256 is not None and (not isinstance(expected_sha256, str) or expected_sha256 != digest):
             raise ValueError("IFC artifact SHA256 does not match the supplied expected bytes")
-        building, layout, expected, wall_plan = _expected(building, layout, equipment, routing)
+        building, layout, expected, wall_plan, capability = _expected(building, layout, equipment, routing, **options)
+        if include_windows:
+            report["window_capability"] = capability.to_dict()
         source = {"building_sha256": _hash(building.to_dict()), "layout_sha256": _hash(layout.to_dict()),
                   "equipment_sha256": _hash(equipment.to_dict(building) if equipment is not None else None),
                   "routing_sha256": _hash(routing.to_dict() if routing is not None else None)}
@@ -90,6 +100,10 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                     "EquipmentState": "SUPPLIED" if equipment is not None else "NOT_SUPPLIED",
                     "RoutingState": "SUPPLIED" if routing is not None else "NOT_SUPPLIED",
                     "HeightPolicy": "coordination_proxy_v1; rooms/walls=2800; doors/openings=2100; equipment=1000; service/routes=20 mm"}
+        if include_windows:
+            contract.update(WindowCapability="source_facade_v1", WindowSillMM=building.layout.window_sill_mm,
+                            WindowHeightMM=building.layout.window_height_mm,
+                            HeightPolicy="coordination_proxy_v1; rooms/walls=2800; doors/door-openings=2100; windows/window-openings=source sill+height; equipment=1000; service/routes=20 mm")
         if not _same_properties(metadata, contract):
             issues.append("IFC source hash, variant, optional state or DRAFT acceptance metadata does not match the canonical source")
         length_units = [unit for unit in project.UnitsInContext.Units if unit.UnitType == "LENGTHUNIT"]
@@ -102,7 +116,7 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
         world = placement.get_axis2placement(context.WorldCoordinateSystem)
         if not np.isfinite(world).all():
             raise ValueError("IFC model context transform must be finite")
-        actual = {}
+        actual, materials = {}, {}
         scaffolding = {"IfcSite", "IfcBuilding", "IfcBuildingStorey"}
         for element in model.by_type("IfcProduct"):
             if element.is_a() in scaffolding:
@@ -123,7 +137,9 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                 issues.append(f"IFC {key} object type mismatch")
             if key[0] == "room" and element.LongName != record["identity"]["RoomType"]:
                 issues.append(f"IFC {key} room type mismatch")
-            material, matrix, representations = _material(element, context, world, placement, np, record["height"])
+            material, matrix, representations, vertical_range = _material(element, context, world, placement, np,
+                record["height"], record["base_elevation"])
+            materials[key] = (material, vertical_range)
             if material.symmetric_difference(record["geometry"]).area > 0.0001 or material.hausdorff_distance(record["geometry"]) > 0.00001:
                 issues.append(f"IFC {key} actual material geometry differs from canonical source")
             if key[0] == "route":
@@ -135,16 +151,26 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                 issues.append(f"IFC {key} has unexpected representation geometry")
             if key[0] == "door" and (not _close(element.OverallWidth, record["identity"]["WidthMM"]) or not _close(element.OverallHeight, 2100)):
                 issues.append(f"IFC {key} actual door width or height differs from source")
+            if key[0] == "window" and (not _close(element.OverallWidth, record["identity"]["WidthMM"])
+                    or not _close(element.OverallHeight, record["height"]) or element.PredefinedType != "WINDOW"):
+                issues.append(f"IFC {key} actual window width, height or type differs from source")
+            if key[0] == "window-opening" and element.PredefinedType != "OPENING":
+                issues.append(f"IFC {key} actual window void type differs from source")
             actual[key] = element
         if set(actual) != set(expected):
             issues.append(f"IFC missing source geometry identities: {sorted(set(expected) - set(actual))}")
-        _relations(model, actual, wall_plan, issues)
+        _relations(model, actual, wall_plan, issues, building=building if include_windows else None)
         roots = model.by_type("IfcRoot")
         if len({item.GlobalId for item in roots}) != len(roots):
             issues.append("IFC duplicate GlobalId")
         report["counts"] = {plural: sum(key[0] == kind for key in actual) for plural, kind in
                             (("rooms", "room"), ("walls", "wall"), ("doors", "door"), ("openings", "opening"),
                              ("equipment", "equipment"), ("services", "service"), ("routes", "route"))}
+        if include_windows:
+            report["counts"].update(windows=sum(key[0] == "window" for key in actual),
+                window_openings=sum(key[0] == "window-opening" for key in actual))
+            report["counts"]["openings"] += report["counts"]["window_openings"]
+            report["window_material"] = _window_material(materials, expected, wall_plan, issues)
     except Exception as exc:
         issues.append(f"IFC independent readback failed: {exc}")
     if not issues:
@@ -152,29 +178,38 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
     return report
 
 
-def _expected(building, layout, equipment, routing):
+def _expected(building, layout, equipment, routing, *, include_windows=False):
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Canonical BuildingIR and LayoutResult required")
-    building = BuildingIR.from_mapping(building.to_dict())
-    layout = parse_layout_result(layout.to_dict())
+    options = {"include_windows": True} if include_windows else {}
+    capability = None
+    if include_windows:
+        capability = validate_orthogonal_window_capability(building.layout, layout)
+        if not capability.ok:
+            raise OrthogonalWindowCapabilityError(capability)
+    canonical_building = BuildingIR.from_mapping(building.to_dict())
+    canonical_layout = parse_layout_result(layout.to_dict())
+    if not include_windows:
+        building, layout = canonical_building, canonical_layout
     if len(building.layout.rooms) > 64 or len(building.equipment) > 64:
         raise ValueError("Source room/equipment limit of 64 exceeded")
-    if not validate_orthogonal_layout(building.layout, layout).ok:
+    if not validate_orthogonal_layout(building.layout, layout, **options).ok:
         raise ValueError("Source room/opening local validation is not PASS")
     if equipment is not None:
-        if not isinstance(equipment, EquipmentLayoutResult) or not validate_orthogonal_equipment(building, layout, equipment).ok:
+        if not isinstance(equipment, EquipmentLayoutResult) or not validate_orthogonal_equipment(building, layout, equipment, **options).ok:
             raise ValueError("Source equipment local validation is not PASS")
-        if not validate_orthogonal_door_approaches(building, layout, equipment).ok:
+        if not validate_orthogonal_door_approaches(building, layout, equipment, **options).ok:
             raise ValueError("Source local door approaches are not PASS")
     if routing is not None:
-        if not isinstance(routing, FlowRoutingResult) or len(routing.routes) > 256 or not validate_orthogonal_flow_routes(building, layout, routing, equipment).ok:
+        if not isinstance(routing, FlowRoutingResult) or len(routing.routes) > 256 or not validate_orthogonal_flow_routes(building, layout, routing, equipment, **options).ok:
             raise ValueError("Source route validation is not PASS or route limit of 256 exceeded")
-    walls = build_orthogonal_wall_plan(building.layout, layout)
+    walls = build_orthogonal_wall_plan(building.layout, layout, **options)
     expected = {}
 
-    def record(kind, identifier, ifc_class, geometry, height, extra=None, object_type=None, points=None):
+    def record(kind, identifier, ifc_class, geometry, height, extra=None, object_type=None, points=None, base_elevation=0):
         expected[(kind, identifier)] = {"class": ifc_class, "geometry": geometry, "height": height,
-            "identity": {"Kind": kind, "SourceId": identifier, **(extra or {})}, "object_type": object_type, "points": points}
+            "identity": {"Kind": kind, "SourceId": identifier, **(extra or {})}, "object_type": object_type,
+            "points": points, "base_elevation": base_elevation}
 
     for room in building.layout.rooms:
         shape = layout.placements[room.id]
@@ -188,6 +223,16 @@ def _expected(building, layout, equipment, routing):
                opening.centerline.buffer(building.layout.wall_thickness_mm / 2 + 1, cap_style=2, join_style=2), 2100, identity)
         record("door", opening.id, "IfcDoor",
                opening.centerline.buffer(building.layout.wall_thickness_mm / 2, cap_style=2, join_style=2), 2100, identity)
+    for opening in walls.windows:
+        sill, height = building.layout.window_sill_mm, building.layout.window_height_mm
+        identity = {"HostRoomId": opening.room_id, "Orientation": opening.orientation,
+                    "WidthMM": opening.width, "SillMM": sill, "HeightMM": height}
+        record("window-opening", opening.id, "IfcOpeningElement",
+            opening.centerline.buffer(building.layout.wall_thickness_mm / 2 + 1, cap_style=2, join_style=2),
+            height, identity, base_elevation=sill)
+        record("window", opening.id, "IfcWindow",
+            opening.centerline.buffer(building.layout.wall_thickness_mm / 2, cap_style=2, join_style=2),
+            height, identity, base_elevation=sill)
     if equipment is not None:
         specs = {item.id: item for item in building.equipment}
         for item in equipment.placements:
@@ -207,7 +252,7 @@ def _expected(building, layout, equipment, routing):
             record("route", identifier, "IfcBuildingElementProxy",
                 LineString(route.points).buffer(route.minimum_clear_width_mm / 2, cap_style=3, join_style=2),
                 20, identity, "OrthogonalFlowCorridor", tuple((x, y, 0.) for x, y in route.points))
-    return building, layout, expected, walls
+    return building, layout, expected, walls, capability
 
 
 def _properties(element, name):
@@ -245,7 +290,7 @@ def _matrix(element, world, placement, np):
     return matrix
 
 
-def _material(element, context, world, placement, np, height):
+def _material(element, context, world, placement, np, height, base_elevation=0):
     if element.Representation is None:
         raise ValueError("IFC actual material geometry is missing")
     representations = tuple(element.Representation.Representations or ())
@@ -256,7 +301,7 @@ def _material(element, context, world, placement, np, height):
     if body.ContextOfItems != context or body.RepresentationType != "SweptSolid" or not 1 <= len(body.Items) <= 4096:
         raise ValueError("IFC actual Body context/type/solid-count contract failed")
     matrix = _matrix(element, world, placement, np)
-    polygons = []
+    polygons, vertical_ranges = [], []
     for solid in body.Items:
         if not solid.is_a("IfcExtrudedAreaSolid") or not _close(solid.Depth, height):
             raise ValueError("IFC actual material geometry must have the expected coordination extrusion height")
@@ -273,17 +318,19 @@ def _material(element, context, world, placement, np, height):
         holes = tuple(profile.InnerCurves) if profile.is_a("IfcArbitraryProfileDefWithVoids") else ()
         if len(holes) > 4096:
             raise ValueError("IFC profile hole-count limit exceeded")
-        polygon = Polygon(_ring(profile.OuterCurve, transform, np), [_ring(hole, transform, np) for hole in holes])
+        polygon = Polygon(_ring(profile.OuterCurve, transform, np, base_elevation),
+                          [_ring(hole, transform, np, base_elevation) for hole in holes])
         if polygon.is_empty or not polygon.is_valid or polygon.area <= 0:
             raise ValueError("IFC actual profile geometry is not a valid nonempty polygon with contained holes")
         polygons.append(polygon)
+        vertical_ranges.append((float(transform[2, 3]), float(transform[2, 3] + solid.Depth)))
     material = unary_union(polygons)
     if sum(polygon.area for polygon in polygons) - material.area > 0.0001:
         raise ValueError("IFC actual material solids overlap")
-    return material, matrix, representations
+    return material, matrix, representations, (min(item[0] for item in vertical_ranges), max(item[1] for item in vertical_ranges))
 
 
-def _ring(curve, transform, np):
+def _ring(curve, transform, np, base_elevation=0):
     if not curve.is_a("IfcPolyline") or not 4 <= len(curve.Points) <= 8192:
         raise ValueError("IFC profile geometry requires a closed 4..8192 point polyline")
     points = []
@@ -292,8 +339,9 @@ def _ring(curve, transform, np):
         if len(coordinates) != 2 or not all(math.isfinite(value) for value in coordinates):
             raise ValueError("IFC area profile coordinates must be finite 2D points")
         projected = transform @ np.asarray((*coordinates, 0., 1.))
-        if not np.isfinite(projected).all() or abs(projected[2]) > 0.00001:
-            raise ValueError("IFC actual material geometry has a nonzero or invalid base elevation")
+        if not np.isfinite(projected).all() or abs(projected[2] - base_elevation) > 0.00001:
+            message = "IFC actual material geometry has a nonzero or invalid base elevation" if base_elevation == 0 else "IFC actual material geometry has an invalid base elevation differing from canonical source"
+            raise ValueError(message)
         points.append((float(projected[0]), float(projected[1])))
     if any(abs(a - b) > 0.00001 for a, b in zip(points[0], points[-1])):
         raise ValueError("IFC profile geometry is not closed")
@@ -321,7 +369,7 @@ def _axis(representations, context, matrix, np):
     return tuple(points)
 
 
-def _relations(model, actual, walls, issues):
+def _relations(model, actual, walls, issues, *, building=None):
     storeys = model.by_type("IfcBuildingStorey")
     if len(model.by_type("IfcSite")) != 1 or len(model.by_type("IfcBuilding")) != 1 or len(storeys) != 1:
         issues.append("IFC must have exactly one site, building and ground storey")
@@ -331,12 +379,12 @@ def _relations(model, actual, walls, issues):
     aggregates = [relation for relation in model.by_type("IfcRelAggregates") if relation.RelatingObject == storey]
     if len(aggregates) != 1 or {item.id() for item in aggregates[0].RelatedObjects} != spaces:
         issues.append("IFC actual room aggregation does not match canonical source rooms")
-    contained = {element.id() for key, element in actual.items() if key[0] not in ("room", "opening")}
+    contained = {element.id() for key, element in actual.items() if key[0] not in ("room", "opening", "window-opening")}
     relations = model.by_type("IfcRelContainedInSpatialStructure")
     if len(relations) != 1 or relations[0].RelatingStructure != storey or {item.id() for item in relations[0].RelatedElements} != contained:
         issues.append("IFC physical geometry containment does not match the canonical source")
     voids, fills = model.by_type("IfcRelVoidsElement"), model.by_type("IfcRelFillsElement")
-    if len(voids) != len(walls.openings) or len(fills) != len(walls.openings):
+    if len(voids) != len(walls.openings) + len(walls.windows) or len(fills) != len(walls.openings) + len(walls.windows):
         issues.append("IFC actual source opening void/fill relation counts differ")
     for opening in walls.openings:
         void, door, wall = actual.get(("opening", opening.id)), actual.get(("door", opening.id)), actual.get(("wall", "wall-network"))
@@ -346,6 +394,52 @@ def _relations(model, actual, walls, issues):
             issues.append(f"IFC {opening.id} missing or incorrect actual wall void relation")
         if sum(relation.RelatingOpeningElement == void and relation.RelatedBuildingElement == door for relation in fills) != 1:
             issues.append(f"IFC {opening.id} missing or incorrect actual door filling relation")
+    for opening in walls.windows:
+        void, window, wall = actual.get(("window-opening", opening.id)), actual.get(("window", opening.id)), actual.get(("wall", "wall-network"))
+        if void is None or window is None or wall is None:
+            continue
+        matching_voids = [relation for relation in voids if relation.RelatingBuildingElement == wall and relation.RelatedOpeningElement == void]
+        matching_fills = [relation for relation in fills if relation.RelatingOpeningElement == void and relation.RelatedBuildingElement == window]
+        if len(matching_voids) != 1:
+            issues.append(f"IFC {opening.id} missing or incorrect actual window wall void relation")
+        if len(matching_fills) != 1:
+            issues.append(f"IFC {opening.id} missing or incorrect actual window filling relation")
+        if building is not None and (any(relation.GlobalId != _guid(building, "void-window:" + opening.id) for relation in matching_voids)
+                or any(relation.GlobalId != _guid(building, "fill-window:" + opening.id) for relation in matching_fills)):
+            issues.append(f"IFC {opening.id} window relation GlobalId differs from stable canonical source identity")
+
+
+def _window_material(materials, expected, walls, issues):
+    """Compare actual native void semantics in every wall-height interval.
+
+    Body profiles and world elevations come from the parsed IFC, not exporter
+    reports. Native relations have already been checked against the exact
+    window inventory. Door-cut body material retains its existing semantics.
+    """
+    keys = [("window-opening", window.id) for window in walls.windows]
+    if ("wall", "wall-network") not in materials or any(key not in materials for key in keys):
+        return []
+    wall, wall_range = materials[("wall", "wall-network")]
+    levels = sorted({*wall_range, *(level for key in keys for level in materials[key][1])})
+    intervals, areas = [], []
+    for low, high in zip(levels, levels[1:]):
+        if high <= low or low < wall_range[0] or high > wall_range[1]:
+            continue
+        midpoint = (low + high) / 2
+        active = [materials[key][0] for key in keys if materials[key][1][0] <= midpoint < materials[key][1][1]]
+        actual_slice = wall.difference(unary_union(active)) if active else wall
+        source_active = [expected[key]["geometry"] for key in keys
+            if expected[key]["base_elevation"] <= midpoint < expected[key]["base_elevation"] + expected[key]["height"]]
+        source_wall = expected[("wall", "wall-network")]["geometry"]
+        source_slice = source_wall.difference(unary_union(source_active)) if source_active else source_wall
+        if actual_slice.symmetric_difference(source_slice).area > 0.0001:
+            issues.append(f"IFC actual wall material interval {low:g}..{high:g} mm differs from canonical source")
+        intervals.append([low, high])
+        areas.append(actual_slice.area)
+    return [{"id": window.id, "host_room_id": window.room_id,
+             "z_intervals_mm": intervals, "actual_material_area_mm2": areas,
+             "scope": "Actual wall body minus native window voids; source sill/head coordination material only"}
+            for window in walls.windows]
 
 
 def _close(actual, expected):

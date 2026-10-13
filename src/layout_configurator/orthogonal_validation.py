@@ -22,6 +22,7 @@ from .equipment import EquipmentLayoutResult, EquipmentValidationIssue, clearanc
 from .models import LayoutIR, LayoutResult, Rect, RoomSpec
 from .orthogonal import OrthogonalPolygon
 from .orthogonal_projection import ProjectionCapabilityError, build_orthogonal_wall_plan
+from .orthogonal_window_capability import validate_orthogonal_window_capability
 from .result_geometry import GeometryCheck, parse_layout_result, validate_result_geometry
 from .schema import normalize_building_mapping, normalize_mapping
 
@@ -73,6 +74,7 @@ class OrthogonalValidationReport:
     checks: tuple[GeometryCheck, ...]
     room_dimensions: tuple[MinimumDimensionEvidence, ...]
     policy: OrthogonalDimensionPolicy
+    window_capability: dict | None = None
 
     @property
     def status(self):
@@ -86,13 +88,15 @@ class OrthogonalValidationReport:
         return {"status": self.status, "ok": self.ok, "policy": self.policy.to_dict(),
                 "scope": "Source room geometry, declared minima and actual door connectivity only; not engineering sign-off, equipment or process-route acceptance",
                 "checks": [_check_dict(check) for check in self.checks],
-                "room_dimensions": [room.to_dict() for room in self.room_dimensions]}
+                "room_dimensions": [room.to_dict() for room in self.room_dimensions],
+                **({"window_capability": self.window_capability} if self.window_capability is not None else {})}
 
 
 @dataclass(frozen=True)
 class OrthogonalEquipmentReport:
     checks: tuple[GeometryCheck, ...]
     issues: tuple[EquipmentValidationIssue, ...]
+    window_capability: dict | None = None
 
     @property
     def status(self):
@@ -106,7 +110,8 @@ class OrthogonalEquipmentReport:
         return {"status": self.status, "ok": self.ok,
                 "scope": "Supplied equipment footprint, directional service envelope, host and wall geometry only; not room topology, process-route or engineering sign-off",
                 "checks": [_check_dict(check) for check in self.checks],
-                "issues": [issue.to_dict() for issue in self.issues]}
+                "issues": [issue.to_dict() for issue in self.issues],
+                **({"window_capability": self.window_capability} if self.window_capability is not None else {})}
 
 
 def check_room_minimum_dimensions(room: RoomSpec, footprint: Rect | OrthogonalPolygon, *,
@@ -159,11 +164,14 @@ def check_room_minimum_dimensions(room: RoomSpec, footprint: Rect | OrthogonalPo
 
 
 def validate_orthogonal_layout(spec: LayoutIR, result: LayoutResult, *,
-                               dimension_policy: OrthogonalDimensionPolicy = OrthogonalDimensionPolicy()) -> OrthogonalValidationReport:
+                               dimension_policy: OrthogonalDimensionPolicy = OrthogonalDimensionPolicy(),
+                               include_windows: bool = False) -> OrthogonalValidationReport:
     """Evaluate exact room geometry, project minima, and actual door graph."""
+    window_options = _window_options(include_windows)
     result = _canonical_layout(spec, result)
     geometry = validate_result_geometry(spec, result)
     checks = list(geometry.checks[:4])
+    capability = _window_check(spec, result, checks) if include_windows else None
     rooms = {room_id: _footprint(shape) for room_id, shape in result.placements.items()}
     minimums = tuple(check_room_minimum_dimensions(room, result.placements[room.id], policy=dimension_policy)
                      for room in sorted(spec.rooms, key=lambda item: item.id) if room.id in rooms)
@@ -178,7 +186,7 @@ def validate_orthogonal_layout(spec: LayoutIR, result: LayoutResult, *,
     checks.append(GeometryCheck("ROOM_USABLE_CONNECTIVITY", "FAIL" if disconnected else "UNKNOWN" if missing else "PASS",
                                 tuple(disconnected) or ("Each declared room has one nonempty usable inset component",)))
     try:
-        wall_plan = build_orthogonal_wall_plan(spec, result)
+        wall_plan = build_orthogonal_wall_plan(spec, result, **window_options)
     except ProjectionCapabilityError as exc:
         checks.extend(GeometryCheck(key, "UNKNOWN", (str(exc),)) for key in ("OPENINGS", "DOOR_APPROACHES", "TOPOLOGY"))
     except ValueError as exc:
@@ -210,17 +218,19 @@ def validate_orthogonal_layout(spec: LayoutIR, result: LayoutResult, *,
         checks.append(GeometryCheck("TOPOLOGY", "FAIL" if unreachable else "PASS",
                                     tuple(f"{room_id}: unreachable from declared entry through actual usable doors" for room_id in unreachable)
                                     or ("All rooms reached through actual usable doors from declared entry room",)))
-    return OrthogonalValidationReport(tuple(checks), minimums, dimension_policy)
+    return OrthogonalValidationReport(tuple(checks), minimums, dimension_policy, capability)
 
 
 def validate_orthogonal_equipment(building: BuildingIR, layout: LayoutResult,
-                                  equipment: EquipmentLayoutResult) -> OrthogonalEquipmentReport:
+                                  equipment: EquipmentLayoutResult, *,
+                                  include_windows: bool = False) -> OrthogonalEquipmentReport:
     """Check supplied equipment against actual mitre insets and wall bands.
 
     No equipment placement is performed. An anchor uses its unique actual
     outward-facing inset edge, preserving Rect offset semantics; multiple
     candidate edges require a future explicit selector and stay UNKNOWN.
     """
+    window_options = _window_options(include_windows)
     _finite_json(building.to_dict())
     normalize_building_mapping(building.to_dict())
     layout = _canonical_layout(building.layout, layout)
@@ -228,12 +238,13 @@ def validate_orthogonal_equipment(building: BuildingIR, layout: LayoutResult,
     checks = [GeometryCheck("SOURCE_ROOM_GEOMETRY", _status(check.status for check in source_geometry.checks[:4]),
                             tuple(message for check in source_geometry.checks[:4] if check.status != "PASS" for message in check.evidence)
                             or ("Exact source room identity/area/boundary/overlap evaluated",))]
+    capability = _window_check(building.layout, layout, checks) if include_windows else None
     specs, seen, valid, issues = {item.id: item for item in building.equipment}, set(), [], []
     components = {room_id: _footprint(shape).inset_components(building.layout.wall_thickness_mm / 2)
                   for room_id, shape in layout.placements.items()}
     unknown_anchors = []
     try:
-        walls = build_orthogonal_wall_plan(building.layout, layout).geometry
+        walls = build_orthogonal_wall_plan(building.layout, layout, **window_options).geometry
     except ProjectionCapabilityError as exc:
         walls = None
         checks.append(GeometryCheck("WALL_COLLISIONS", "UNKNOWN", (str(exc),)))
@@ -300,7 +311,21 @@ def validate_orthogonal_equipment(building: BuildingIR, layout: LayoutResult,
     checks.append(GeometryCheck("ANCHORS", "FAIL" if any(issue.code == "anchor_mismatch" for issue in issues) else "UNKNOWN" if unknown_anchors else "PASS",
                                 tuple(unknown_anchors) or ("Source anchors evaluated against actual unique inset edges",)))
     checks.append(GeometryCheck("EQUIPMENT", "FAIL" if issues else "PASS", ("Source identity/host/orientation/footprint/service/pair collision predicates evaluated",)))
-    return OrthogonalEquipmentReport(tuple(checks), tuple(issues))
+    return OrthogonalEquipmentReport(tuple(checks), tuple(issues), capability)
+
+
+def _window_options(include_windows):
+    """Validate opt-in without changing omitted/default downstream calls."""
+    if not isinstance(include_windows, bool):
+        raise ValueError("include_windows requires a boolean")
+    return {"include_windows": True} if include_windows else {}
+
+
+def _window_check(spec, layout, checks):
+    capability = validate_orthogonal_window_capability(spec, layout)
+    checks.append(GeometryCheck("WINDOW_CAPABILITY", capability.status,
+        tuple(message for check in capability.checks for message in check.evidence)))
+    return capability.to_dict()
 
 
 def _covering_rectangles(levels, slabs, width, depth, policy):

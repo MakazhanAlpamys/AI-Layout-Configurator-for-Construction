@@ -21,7 +21,7 @@ from shapely.geometry import box
 
 from .models import LayoutIR, LayoutResult, Rect
 from .orthogonal import OrthogonalPolygon
-from .orthogonal_validation import OrthogonalDimensionPolicy, OrthogonalValidationReport, check_room_minimum_dimensions, validate_orthogonal_layout
+from .orthogonal_validation import OrthogonalDimensionPolicy, OrthogonalValidationReport, _window_options, check_room_minimum_dimensions, validate_orthogonal_layout
 from .schema import normalize_mapping
 from .search import configure_solver
 
@@ -84,7 +84,8 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
                                 fixed_footprints: Mapping[str, Rect | OrthogonalPolygon] | None = None,
                                 variants: int = 1, seed: int = 42, time_limit_seconds: float = 10,
                                 deterministic_units: float | None = None,
-                                budget: OrthogonalSolverBudget = OrthogonalSolverBudget()) -> OrthogonalSolveResult:
+                                budget: OrthogonalSolverBudget = OrthogonalSolverBudget(),
+                                include_windows: bool = False) -> OrthogonalSolveResult:
     """Select real source-compliant footprints and independently check doors.
 
     An explicit catalog supplies a finite solver domain, outside canonical IR.
@@ -92,6 +93,7 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
     domain exhaustion is UNKNOWN; a selected combination is only a DRAFT after
     complete scoped room QA passes. No bbox is used for collision/containment.
     """
+    window_options = _window_options(include_windows)
     from ortools.sat.python import cp_model
 
     if not isinstance(spec, LayoutIR):
@@ -125,6 +127,8 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
              "catalog_mode": "explicit" if catalog is not None else "generated_rect_and_floor_window_L",
              "catalog_truncated": False, "catalog_stats": {}, "pair_checks": 0, "attempts": 0,
              "rejection_count": 0, "rejection_counts": {}, "rejections": [], "last_rejection": None, "stop_reason": None}
+    if include_windows:
+        state.update(window_policy="source_facade_v1", proven_building_infeasible=False)
     accepted = []
     deadline = time.monotonic() + time_limit_seconds if deterministic_units is None else math.inf
 
@@ -255,11 +259,12 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
         # CP coefficients are integral. Native ObjectiveValue is a float and
         # can expose a tiny residue that violates canonical integer result IR.
         result = LayoutResult(len(accepted) + 1, {room_id: domains[room_id][index][1] for room_id, index in selected.items()}, solver.Value(objective))
-        report = validate_orthogonal_layout(spec, result, dimension_policy=budget.dimension_policy)
+        report = validate_orthogonal_layout(spec, result, dimension_policy=budget.dimension_policy, **window_options)
         if report.ok:
             accepted.append(OrthogonalRoomCandidate(result, report, {room_id: domains[room_id][index][0] for room_id, index in selected.items()}))
         else:
-            reject("room_qa", "; ".join(f"{check.id}: {'; '.join(check.evidence)}" for check in report.checks if check.status != "PASS"), attempt=state["attempts"], status=report.status)
+            reject("room_qa", "; ".join(f"{check.id}: {'; '.join(check.evidence)}" for check in report.checks if check.status != "PASS"),
+                   attempt=state["attempts"], status=report.status, **({"report": report.to_dict()} if include_windows else {}))
         model.Add(sum(choices[room_id][index] for room_id, index in selected.items()) <= len(room_ids) - 1)
     return finish("requested_room_candidates_verified" if len(accepted) == variants else "attempt_limit")
 

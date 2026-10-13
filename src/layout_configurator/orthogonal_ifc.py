@@ -23,22 +23,30 @@ from .orthogonal_equipment import validate_orthogonal_door_approaches
 from .orthogonal_flows import validate_orthogonal_flow_routes
 from .orthogonal_projection import build_orthogonal_wall_plan
 from .orthogonal_validation import validate_orthogonal_equipment, validate_orthogonal_layout
+from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
 from .result_geometry import parse_layout_result
 
 
 def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: LayoutResult,
                                 equipment: EquipmentLayoutResult | None = None, *,
-                                routing: FlowRoutingResult | None = None) -> dict:
+                                routing: FlowRoutingResult | None = None,
+                                include_windows: bool = False) -> dict:
     """Export source-backed rooms, actual walls/openings and optional geometry.
 
     Supplied equipment must pass independent directional service and complete
     local door-approach checks. Supplied routes must pass B7's independently
     rebuilt full-width corridor checks. Omitted equipment/routes are explicitly
     NOT_SUPPLIED, never a claim of complete facility validation.
+    Only include_windows=True enables fresh source_facade_v1 eligibility and
+    native voids/fills at the source global sill and height. The underlying
+    two-dimensional wall band remains closed across windows.
     All input and capability checks precede opening the destination file.
     """
-    building, layout, reports = _inputs(building, layout, equipment, routing)
-    walls = build_orthogonal_wall_plan(building.layout, layout)
+    if not isinstance(include_windows, bool):
+        raise ValueError("include_windows requires a boolean")
+    options = {"include_windows": True} if include_windows else {}
+    building, layout, reports = _inputs(building, layout, equipment, routing, **options)
+    walls = build_orthogonal_wall_plan(building.layout, layout, **options)
     source = {"building_sha256": _hash(building.to_dict()), "layout_sha256": _hash(layout.to_dict()),
               "equipment_sha256": _hash(equipment.to_dict(building) if equipment is not None else None),
               "routing_sha256": _hash(routing.to_dict() if routing is not None else None)}
@@ -68,21 +76,26 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
     for parent, child, name in ((project, site, "site"), (site, facility, "building"), (facility, storey, "storey")):
         document.create_entity("IfcRelAggregates", GlobalId=guid("aggregate-" + name), OwnerHistory=owner,
             RelatingObject=parent, RelatedObjects=[child])
-    _add_properties(document, owner, [project], "Pset_OrthogonalDraft", {
+    metadata = {
         "Schema": "orthogonal-ifc-draft/0.1", "Status": "DRAFT", "FullFacilityValidation": "UNKNOWN",
         "EngineeringAcceptance": "PENDING", "Units": "mm", "Variant": layout.variant,
         "BuildingSHA256": source["building_sha256"], "LayoutSHA256": source["layout_sha256"],
         "EquipmentSHA256": source["equipment_sha256"], "RoutingSHA256": source["routing_sha256"],
         "EquipmentState": "SUPPLIED" if equipment is not None else "NOT_SUPPLIED",
         "RoutingState": "SUPPLIED" if routing is not None else "NOT_SUPPLIED",
-        "HeightPolicy": "coordination_proxy_v1; rooms/walls=2800; doors/openings=2100; equipment=1000; service/routes=20 mm"})
+        "HeightPolicy": "coordination_proxy_v1; rooms/walls=2800; doors/openings=2100; equipment=1000; service/routes=20 mm"}
+    if include_windows:
+        metadata.update(WindowCapability="source_facade_v1", WindowSillMM=building.layout.window_sill_mm,
+                        WindowHeightMM=building.layout.window_height_mm,
+                        HeightPolicy="coordination_proxy_v1; rooms/walls=2800; doors/door-openings=2100; windows/window-openings=source sill+height; equipment=1000; service/routes=20 mm")
+    _add_properties(document, owner, [project], "Pset_OrthogonalDraft", metadata)
 
     spaces, contained = [], []
 
-    def product(ifc_class, kind, source_id, geometry, height, *, object_type=None, extra=None):
+    def product(ifc_class, kind, source_id, geometry, height, *, object_type=None, extra=None, base_elevation=0):
         attributes = {"GlobalId": guid(kind + ":" + source_id), "OwnerHistory": owner,
                       "Name": source_id, "ObjectPlacement": document.create_entity("IfcLocalPlacement",
-                          PlacementRelTo=storey.ObjectPlacement, RelativePlacement=_axis_placement(document, (0, 0, 0))),
+                          PlacementRelTo=storey.ObjectPlacement, RelativePlacement=_axis_placement(document, (0, 0, base_elevation))),
                       "Representation": _representation(document, context, geometry, height)}
         if object_type:
             attributes["ObjectType"] = object_type
@@ -118,6 +131,26 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
         document.create_entity("IfcRelFillsElement", GlobalId=guid("fill:" + opening.id), OwnerHistory=owner,
             RelatingOpeningElement=void, RelatedBuildingElement=door)
         contained.append(door)
+    # The base wall remains the existing door-cut network. Native window
+    # voids remove only the source sill-to-head range, retaining the wall
+    # below and above each window; windows never become 2D route portals.
+    for opening in walls.windows:
+        sill, height = building.layout.window_sill_mm, building.layout.window_height_mm
+        identity = {"HostRoomId": opening.room_id, "Orientation": opening.orientation,
+                    "WidthMM": opening.width, "SillMM": sill, "HeightMM": height}
+        void = product("IfcOpeningElement", "window-opening", opening.id,
+            opening.centerline.buffer(building.layout.wall_thickness_mm / 2 + 1, cap_style=2, join_style=2),
+            height, extra=identity, base_elevation=sill)
+        void.PredefinedType = "OPENING"
+        window = product("IfcWindow", "window", opening.id,
+            opening.centerline.buffer(building.layout.wall_thickness_mm / 2, cap_style=2, join_style=2),
+            height, extra=identity, base_elevation=sill)
+        window.OverallWidth, window.OverallHeight, window.PredefinedType = opening.width, height, "WINDOW"
+        document.create_entity("IfcRelVoidsElement", GlobalId=guid("void-window:" + opening.id), OwnerHistory=owner,
+            RelatingBuildingElement=wall, RelatedOpeningElement=void)
+        document.create_entity("IfcRelFillsElement", GlobalId=guid("fill-window:" + opening.id), OwnerHistory=owner,
+            RelatingOpeningElement=void, RelatedBuildingElement=window)
+        contained.append(window)
     if equipment is not None:
         specs = {item.id: item for item in building.equipment}
         for item in sorted(equipment.placements, key=lambda item: item.equipment_id):
@@ -146,7 +179,7 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
     document.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid("containment"), OwnerHistory=owner,
         RelatingStructure=storey, RelatedElements=contained)
     document.write(str(path))
-    return {"schema": "orthogonal-ifc-draft/0.1", "status": "DRAFT", "ok": False, "units": "mm",
+    evidence = {"schema": "orthogonal-ifc-draft/0.1", "status": "DRAFT", "ok": False, "units": "mm",
             "source": source, "variant": layout.variant,
             "artifact_sha256": hashlib.sha256(Path(path).read_bytes()).hexdigest(),
             "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
@@ -156,32 +189,50 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
                        "equipment": len(equipment.placements) if equipment is not None else 0,
                        "services": len(equipment.placements) if equipment is not None else 0,
                        "routes": len(routing.routes) if routing is not None else 0}}
+    if include_windows:
+        evidence["window_capability"] = reports["window_capability"]
+        evidence["counts"].update(windows=len(walls.windows), window_openings=len(walls.windows),
+                                  openings=len(walls.openings) + len(walls.windows))
+    return evidence
 
 
-def _inputs(building, layout, equipment, routing):
+def _inputs(building, layout, equipment, routing, *, include_windows=False):
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Orthogonal IFC requires canonical BuildingIR and LayoutResult")
-    building = BuildingIR.from_mapping(building.to_dict())
-    layout = parse_layout_result(layout.to_dict())
+    options = {"include_windows": True} if include_windows else {}
+    capability = None
+    if include_windows:
+        # Guard exact supplied source types and numeric bounds before any
+        # constructor can coerce them. Preserve caller provenance in this
+        # explicit mode, including valid integer-valued source dimensions.
+        capability = validate_orthogonal_window_capability(building.layout, layout)
+        if not capability.ok:
+            raise OrthogonalWindowCapabilityError(capability)
+    canonical_building = BuildingIR.from_mapping(building.to_dict())
+    canonical_layout = parse_layout_result(layout.to_dict())
+    if not include_windows:
+        building, layout = canonical_building, canonical_layout
     if len(building.layout.rooms) > 64 or len(building.equipment) > 64:
         raise ValueError("Orthogonal IFC source limit is 64 rooms and 64 equipment items")
     if routing is not None and (not isinstance(routing, FlowRoutingResult) or len(routing.routes) > 256):
         raise ValueError("Orthogonal IFC routing requires at most 256 canonical routes")
-    room_report = validate_orthogonal_layout(building.layout, layout)
+    room_report = validate_orthogonal_layout(building.layout, layout, **options)
     if not room_report.ok:
         raise ValueError("Orthogonal IFC room/opening local validation must PASS: " + json.dumps(room_report.to_dict()))
     reports = {"rooms": room_report.to_dict(), "equipment": {"status": "NOT_SUPPLIED"},
                "door_approaches": {"status": "NOT_SUPPLIED"}, "routes": {"status": "NOT_SUPPLIED"}}
+    if capability is not None:
+        reports["window_capability"] = capability.to_dict()
     if equipment is not None:
         if not isinstance(equipment, EquipmentLayoutResult):
             raise ValueError("Orthogonal IFC equipment requires EquipmentLayoutResult")
-        equipment_report = validate_orthogonal_equipment(building, layout, equipment)
-        door_report = validate_orthogonal_door_approaches(building, layout, equipment)
+        equipment_report = validate_orthogonal_equipment(building, layout, equipment, **options)
+        door_report = validate_orthogonal_door_approaches(building, layout, equipment, **options)
         if not equipment_report.ok or not door_report.ok:
             raise ValueError("Orthogonal IFC equipment/service/door local validation must PASS")
         reports.update(equipment=equipment_report.to_dict(), door_approaches=door_report.to_dict())
     if routing is not None:
-        flow_report = validate_orthogonal_flow_routes(building, layout, routing, equipment)
+        flow_report = validate_orthogonal_flow_routes(building, layout, routing, equipment, **options)
         if not flow_report.ok:
             raise ValueError("Orthogonal IFC supplied-route local validation must PASS: " + json.dumps(flow_report.to_dict()))
         reports["routes"] = flow_report.to_dict()

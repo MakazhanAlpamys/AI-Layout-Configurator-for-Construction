@@ -23,7 +23,7 @@ from .models import LayoutResult, Rect
 from .orthogonal import OrthogonalPolygon
 from .orthogonal_equipment import validate_orthogonal_door_approaches
 from .orthogonal_flows import validate_orthogonal_flow_routes
-from .orthogonal_validation import validate_orthogonal_equipment, validate_orthogonal_layout
+from .orthogonal_validation import _window_options, validate_orthogonal_equipment, validate_orthogonal_layout
 from .result_geometry import parse_layout_result
 from .schema import normalize_building_mapping, normalize_mapping, validate_mapping
 
@@ -59,7 +59,7 @@ class OrthogonalFacilityReport:
 def validate_orthogonal_building(building: BuildingIR, layout: LayoutResult,
                                   equipment: EquipmentLayoutResult | None,
                                   routing: FlowRoutingResult | None, *,
-                                  profile: FacilityProfile) -> OrthogonalFacilityReport:
+                                  profile: FacilityProfile, include_windows: bool = False) -> OrthogonalFacilityReport:
     """Recompute local predicates; never accept a caller-supplied QA verdict.
 
     Missing declared placements/routes yield UNKNOWN. Supplied empty or forged
@@ -67,6 +67,7 @@ def validate_orthogonal_building(building: BuildingIR, layout: LayoutResult,
     one contiguous actual shared edge, rather than sums or bounding rectangles.
     Rules retain their unchanged source provenance, including UNKNOWN evidence.
     """
+    window_options = _window_options(include_windows)
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult) or not isinstance(profile, FacilityProfile):
         raise ValueError("Canonical BuildingIR, LayoutResult and FacilityProfile required")
     if any(len(items) > 64 for items in (building.layout.rooms, building.zones, building.equipment, building.flows)):
@@ -92,8 +93,10 @@ def validate_orthogonal_building(building: BuildingIR, layout: LayoutResult,
         ("building", building.to_dict()), ("layout", layout.to_dict()),
         ("equipment", _equipment_source(building, equipment)),
         ("routing", routing.to_dict() if routing is not None else None), ("profile", raw_profile))}
-    rooms = validate_orthogonal_layout(building.layout, layout)
+    rooms = validate_orthogonal_layout(building.layout, layout, **window_options)
     local = {"rooms": rooms.to_dict()}
+    if include_windows:
+        local["window_capability"] = deepcopy(rooms.window_capability)
     checks = [_report_check("FACILITY_GEOMETRY", "Actual room geometry and openings", local["rooms"]),
               _zone_check(building, layout)]
     if equipment is None and building.equipment:
@@ -103,8 +106,8 @@ def validate_orthogonal_building(building: BuildingIR, layout: LayoutResult,
         local.update(equipment={"status": "UNKNOWN"}, door_approaches={"status": "UNKNOWN"})
     else:
         items = equipment if equipment is not None else EquipmentLayoutResult(())
-        item_report = validate_orthogonal_equipment(building, layout, items)
-        door_report = validate_orthogonal_door_approaches(building, layout, items)
+        item_report = validate_orthogonal_equipment(building, layout, items, **window_options)
+        door_report = validate_orthogonal_door_approaches(building, layout, items, **window_options)
         local.update(equipment=item_report.to_dict(), door_approaches=door_report.to_dict())
         checks.extend((_report_check("EQUIPMENT_CLEARANCE", "Equipment footprints and directional service", local["equipment"]),
                        _report_check("DOOR_EQUIPMENT_APPROACHES", "Actual full-width doors remain accessible", local["door_approaches"])))
@@ -115,7 +118,7 @@ def validate_orthogonal_building(building: BuildingIR, layout: LayoutResult,
         checks.append(FacilityCheckResult("FLOW_COMPLETENESS", "Actual declared flow routes", status, (message,)))
         local["routes"] = {"status": status}
     else:
-        route_report = validate_orthogonal_flow_routes(building, layout, routing, equipment)
+        route_report = validate_orthogonal_flow_routes(building, layout, routing, equipment, **window_options)
         local["routes"] = route_report.to_dict()
         checks.append(_report_check("FLOW_COMPLETENESS", "Actual declared flow routes", local["routes"]))
         if route_report.ok:

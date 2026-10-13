@@ -103,6 +103,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | B.14.1 | Opted source window wall-plan capability | Strict boolean opt-in verifies fresh source facade identity and the source sill/head against the existing 2800 mm coordination proxy, then attaches canonical windows. Closed facade wall material and door portals remain exact; unsupported height/selector retains UNKNOWN and collisions FAIL. | Fresh root B3/window projection: 23 tests / 24 subtests passed in 1.11 s; broader agent: 102 / 145 passed. Actual durable window line covers a fully closed facade with unchanged material WKB and door identities; head 2800 PASS / 2801 UNKNOWN. | wall-plan foundation complete 2026-10-13; B.14 exporter/generation integration remains open |
 | B.12 | Explicit orthogonal generation and single/set CLI QA | Strict canonical source-only JSON/YAML feeds B.11 generation and B.11.1 atomic child bundles. Bounded set metadata binds every canonical source/report and ordered child identity; actual child QA reruns independently. Protected prior output, failure-only evidence and explicit partial UNKNOWN/exit codes retain DRAFT/full UNKNOWN/PENDING. | Fresh root CLI/incremental CLI: 17 tests / 25 subtests passed in 86.17 s; agent: 27 / 25 plus two rectangular regressions. Actual canonical YAML module command generated a complete concave draft and fresh set QA checked all formats. Malformed raw types, duplicate keys, partial counts, traversal, corrupted second child and rehashed stale reports covered. | scoped selectable dispatch complete 2026-10-13; window propagation and full engineering acceptance separate |
 | H.3.6.4 | Pinned physical80 measurement with changed final controls | One installed-wheel Ubuntu request uses 10 seconds/four final-model workers while retaining all original source bytes, local/subtree budgets, independent physical-zone gates and the 120-second total deadline. Global CP remains UNKNOWN; no accepted bundle and no whole-building infeasibility claim. | [Run 38389399324](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38389399324), pinned `1813e19`: 69.776 s total / 68.117 s rooms, all original source gates PASS, four downloaded source hashes checked, 101 attempts. [Compact evidence](acceptance/1813e19.json) binds runtime/settings and actual raw report hash. | negative measurement recorded 2026-10-13; physical80 search improvement and acceptance remain open |
+| B.14 | Opted source facade windows through actual polygon delivery | Strict explicit capability propagates original source identity/elevations through all generation stages, native DXF/PDF/IFC, atomic bundles and independent single/set CLI QA. Closed circulation barriers, default contracts and bounded publication are retained; contradictory visible PDF claims and rehashed native geometry fail. | Fresh root integrated generation/IFC/bundle/CLI: 16 tests / 49 subtests in 68.30 s; final PDF/DXF: 10 / 25 in 7.33 s. Agent core 134 / 177, IFC 110 / 190, opted bundles 11 / 34 and CLI 3 / 6 passed. Final persisted QA PASS in 3.99 s; all 14 source/artifact hashes unchanged, strict EXPRESS clean, both PDF pages inspected. Actual source-only YAML command independently generated and checked. | scoped source window delivery complete 2026-10-13; daylight, grid/native semantics and full engineering acceptance remain open |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -134,6 +135,7 @@ Cyrillic text.
 
 
 
+
 ## Remaining implementation
 
 
@@ -145,7 +147,8 @@ Cyrillic text.
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
   scoped current predicates and three-format persisted draft QA are implemented;
-  integrated windows/grid/native semantic consumers and expert acceptance remain.
+  opted source windows are integrated; grid/native semantic consumers and
+  expert acceptance remain.
 - C: scalable zone-driven placement and containment; minimal conflicting
   constraint sets remain separate from implemented structured stage evidence.
   Preferred-zone singleton participants can increase search cost.

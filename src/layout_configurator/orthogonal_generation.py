@@ -26,6 +26,7 @@ from .orthogonal_equipment import OrthogonalPackingBudget, place_orthogonal_equi
 from .orthogonal_facility import OrthogonalFacilityReport, validate_orthogonal_building
 from .orthogonal_flows import OrthogonalFlowBudget, route_orthogonal_flows
 from .orthogonal_solver import OrthogonalSolverBudget, solve_orthogonal_candidates
+from .orthogonal_validation import _window_options
 from .schema import normalize_building_mapping, validate_mapping
 
 
@@ -103,7 +104,8 @@ def generate_orthogonal_facility_variants(building: BuildingIR, *, profile: Faci
         fixed_footprints: Mapping[str, Rect | OrthogonalPolygon] | None = None,
         variants: int = 1, seed: int = 42, time_limit_seconds: float = 10,
         deterministic_units: float | None = None,
-        budget: OrthogonalGenerationBudget = OrthogonalGenerationBudget()) -> OrthogonalGenerationResult:
+        budget: OrthogonalGenerationBudget = OrthogonalGenerationBudget(),
+        include_windows: bool = False) -> OrthogonalGenerationResult:
     """Compose actual geometry components without trusting their prior reports.
 
     The room backend supplies a finite independently checked candidate pool;
@@ -120,6 +122,7 @@ def generate_orthogonal_facility_variants(building: BuildingIR, *, profile: Faci
     """
     # perf_counter uses a high-resolution monotonic clock on Windows, where
     # Python 3.11 time.monotonic may have a 15.625 ms GetTickCount64 resolution.
+    window_options = _window_options(include_windows)
     started = time.perf_counter()
     building, profile = _inputs(building, profile, budget, variants, seed, time_limit_seconds,
                                 deterministic_units, room_catalog, equipment_catalog, fixed_footprints)
@@ -133,6 +136,8 @@ def generate_orthogonal_facility_variants(building: BuildingIR, *, profile: Faci
              "search_limitations": ["Finite B5 footprint family and B6 placement domains",
                                     "B7 bounded critical-coordinate visibility search",
                                     "No complete persisted polygon bundle acceptance in this component"]}
+    if include_windows:
+        state.update(window_policy="source_facade_v1")
     accepted, rejections = [], []
     deadline = started + time_limit_seconds if deterministic_units is None else math.inf
 
@@ -163,7 +168,7 @@ def generate_orthogonal_facility_variants(building: BuildingIR, *, profile: Faci
         return finish("time_limit_during_preparation")
     solved = solve_orthogonal_candidates(building.layout, catalog=room_catalog, fixed_footprints=fixed_footprints,
         variants=budget.max_room_candidates, seed=seed, time_limit_seconds=min(time_limit_seconds, deadline - time.perf_counter()),
-        deterministic_units=deterministic_units, budget=budget.room_budget)
+        deterministic_units=deterministic_units, budget=budget.room_budget, **window_options)
     state["room_search"] = solved.to_dict()
     if time.perf_counter() >= deadline:
         reject("budget", "UNKNOWN", {"reason": "Room stage completed after wall-clock deadline", "room_search": solved.to_dict()})
@@ -185,7 +190,7 @@ def generate_orthogonal_facility_variants(building: BuildingIR, *, profile: Faci
             state["equipment_attempts"] += 1
             packing = place_orthogonal_equipment(building, layout, catalog=equipment_catalog, excluded_layouts=tuple(excluded),
                 seed=seed, time_limit_seconds=min(time_limit_seconds, deadline - time.perf_counter()),
-                deterministic_units=deterministic_units, budget=budget.equipment_budget)
+                deterministic_units=deterministic_units, budget=budget.equipment_budget, **window_options)
             if packing.equipment is None or packing.status != "DRAFT":
                 reject("equipment", "UNKNOWN", {"packing": packing.to_dict()}, room_candidate=room_index, equipment_attempt=equipment_attempt)
                 break
@@ -194,7 +199,7 @@ def generate_orthogonal_facility_variants(building: BuildingIR, *, profile: Faci
                        room_candidate=room_index, equipment_attempt=equipment_attempt)
                 return finish("time_limit_after_equipment")
             state["route_attempts"] += 1
-            flow = route_orthogonal_flows(building, layout, packing.equipment, budget=budget.flow_budget)
+            flow = route_orthogonal_flows(building, layout, packing.equipment, budget=budget.flow_budget, **window_options)
             if flow.status != "DRAFT":
                 reject("routes", "UNKNOWN", {"packing": packing.to_dict(), "routing": flow.to_dict()},
                        room_candidate=room_index, equipment_attempt=equipment_attempt)
@@ -205,7 +210,7 @@ def generate_orthogonal_facility_variants(building: BuildingIR, *, profile: Faci
                        room_candidate=room_index, equipment_attempt=equipment_attempt)
                 return finish("time_limit_after_routes")
             state["profile_attempts"] += 1
-            report = validate_orthogonal_building(building, layout, packing.equipment, flow.routing, profile=profile)
+            report = validate_orthogonal_building(building, layout, packing.equipment, flow.routing, profile=profile, **window_options)
             if not report.ok:
                 reject("profile", report.status, {"packing": packing.to_dict(), "routing": flow.to_dict(), "report": report.to_dict()},
                        room_candidate=room_index, equipment_attempt=equipment_attempt)

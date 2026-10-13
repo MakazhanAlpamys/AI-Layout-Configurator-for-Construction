@@ -279,6 +279,10 @@ Checkpoint B.12 exposes bounded canonical polygon generation and independent
 draft-set QA through explicit CLI commands, with protected prior output.
 Checkpoint H.3.6.4 retains the second source-pinned physical80 negative result;
 larger final search settings alone did not establish the scale criterion.
+Checkpoint B.14 completes opted source facade windows in actual polygon
+generation, all three exchange formats, persisted bundles and independent CLI
+readback. Coordination eligibility does not establish daylight or engineering
+acceptance; the original MVP boundaries remain unchanged.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

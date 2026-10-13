@@ -42,6 +42,7 @@ class DraftProjectionEvidence:
     artifact_sha256: str
     geometry: GeometryEvidence
     opening_ids: tuple[str, ...]
+    window_capability: dict | None = None
 
     @property
     def status(self):
@@ -52,13 +53,16 @@ class DraftProjectionEvidence:
         return False
 
     def to_dict(self):
-        return {"status": self.status, "ok": self.ok, "units": "mm",
+        result = {"status": self.status, "ok": self.ok, "units": "mm",
                 "scope": "Exact room/wall/opening projection; not engineering sign-off or full layout acceptance",
                 "source": {"spec_sha256": self.spec_sha256, "layout_sha256": self.layout_sha256},
                 "artifact_sha256": self.artifact_sha256,
                 "opening_ids": list(self.opening_ids), "geometry": self.geometry.to_dict(),
                 "unknown": ["minimum usable room dimensions", "circulation topology",
                             "equipment clearance", "complete opening acceptance"]}
+        if self.window_capability is not None:
+            result["window_capability"] = json.loads(json.dumps(self.window_capability))
+        return result
 
 
 def build_orthogonal_wall_plan(spec: LayoutIR, result: LayoutResult, *, include_windows: bool = False) -> WallPlan:
@@ -129,7 +133,8 @@ def build_orthogonal_wall_plan(spec: LayoutIR, result: LayoutResult, *, include_
     return WallPlan(band, openings, windows)
 
 
-def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> DraftProjectionEvidence:
+def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult, *,
+                                include_windows: bool = False) -> DraftProjectionEvidence:
     """Write semantic room contours, exact wall bands and DRAFT provenance.
 
     All geometry and capability checks happen before opening the destination.
@@ -139,14 +144,26 @@ def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: Layout
     import ezdxf
     from ezdxf.enums import TextEntityAlignment
 
+    if type(include_windows) is not bool:
+        raise ValueError("include_windows requires a boolean")
+    capability = None
+    if include_windows:
+        from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
+        current = validate_orthogonal_window_capability(spec, result)
+        if not current.ok:
+            raise OrthogonalWindowCapabilityError(current)
+        capability = current.to_dict()
     footprints, geometry = _prepare(spec, result)
-    wall_plan = build_orthogonal_wall_plan(spec, result)
+    wall_plan = build_orthogonal_wall_plan(spec, result, include_windows=include_windows)
     spec_sha256, layout_sha256 = _hash_json(spec.to_dict()), _hash_json(result.to_dict())
     document = ezdxf.new("R2018")
     document.header["$INSUNITS"] = 4
     for name, color in (("A-ROOM", 8), ("A-WALL", 7), ("A-DOOR", 3), ("A-TEXT", 7), ("A-TITLE", 4)):
         document.layers.add(name, dxfattribs={"color": color})
     document.layers.get("A-ROOM").dxf.plot = 0
+    if include_windows:
+        document.layers.add("A-WINDOW", dxfattribs={"color": 4})
+        document.layers.add("A-WINDOW-TEXT", dxfattribs={"color": 7})
     document.appids.add("LAYOUT_IR")
     modelspace = document.modelspace()
     for ring in wall_plan.rings():
@@ -166,15 +183,28 @@ def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: Layout
         door = modelspace.add_line(first, second, dxfattribs={"layer": "A-DOOR"})
         door.set_xdata("LAYOUT_IR", [(1000, f"door_id={opening.id}"), (1000, f"room_a={opening.room_a}"),
                                     (1000, f"room_b={opening.room_b}"), (1040, opening.width)])
+    for position, window in enumerate(wall_plan.windows):
+        line = modelspace.add_line(*window.centerline.coords, dxfattribs={"layer": "A-WINDOW"})
+        line.set_xdata("LAYOUT_IR", [(1000, "kind=window"), (1000, "id=" + window.id),
+            (1000, "room_id=" + window.room_id), (1000, "orientation=" + window.orientation),
+            (1040, window.width), (1040, spec.window_sill_mm), (1040, spec.window_height_mm)])
+        label = (f"Window {window.id} | host {window.room_id} | width {window.width:g} mm | "
+                 f"sill {spec.window_sill_mm:g} mm | height {spec.window_height_mm:g} mm")
+        modelspace.add_text(label, dxfattribs={"height": 100, "layer": "A-WINDOW-TEXT"}).set_placement(
+            (spec.boundary.width_mm + 500, spec.boundary.height_mm - 200 * position))
     metadata = modelspace.add_point((0, 0), dxfattribs={"layer": "A-TITLE"})
-    metadata.set_xdata("LAYOUT_IR", [(1000, "schema=orthogonal-draft/0.1"), (1000, "status=DRAFT"),
+    tags = [(1000, "schema=orthogonal-draft/0.1"), (1000, "status=DRAFT"),
                                     (1000, "units=mm"), (1000, f"spec_sha256={spec_sha256}"),
-                                    (1000, f"layout_sha256={layout_sha256}")])
+                                    (1000, f"layout_sha256={layout_sha256}")]
+    if capability is not None:
+        tags.extend(((1000, "window_capability=source_facade_v1"),
+                     (1000, "window_capability_sha256=" + _hash_json(capability))))
+    metadata.set_xdata("LAYOUT_IR", tags)
     modelspace.add_text(f"DRAFT | {spec.project_name} | Variant {result.variant}", dxfattribs={"height": 180, "layer": "A-TITLE"}).set_placement((0, spec.boundary.height_mm + 500))
     modelspace.add_text("Room dimensions, circulation and equipment clearance require further checks", dxfattribs={"height": 100, "layer": "A-TITLE"}).set_placement((0, spec.boundary.height_mm + 250))
     document.saveas(path)
     return DraftProjectionEvidence(spec_sha256, layout_sha256, hashlib.sha256(Path(path).read_bytes()).hexdigest(),
-                                   geometry, tuple(opening.id for opening in wall_plan.openings))
+                                   geometry, tuple(opening.id for opening in wall_plan.openings), capability)
 
 
 def _prepare(spec, result):

@@ -160,6 +160,20 @@ coordinates and produces exact DXF/PDF/IFC drafts with independent readback.
 Partial sets remain UNKNOWN; full facility and engineering acceptance remain
 UNKNOWN/PENDING. See [the supported contract](docs/ORTHOGONAL_GEOMETRY.md).
 
+For source facade windows, explicitly enable the capability for generation and
+readback:
+
+```powershell
+.venv/Scripts/python.exe -m layout_configurator.cli generate-orthogonal-building examples/orthogonal_source_windows.yaml --output out/orthogonal-window-drafts --include-windows --seed 1 --deterministic-budget .05 --max-room-candidates 4 --equipment-retries 2
+.venv/Scripts/python.exe -m layout_configurator.cli qa-orthogonal-building out/orthogonal-window-drafts --include-windows --json
+```
+
+This example includes a source opening and an automatic opening for a declared
+daylight request. Source sill and height must fit the 2800 mm coordination wall
+proxy. Windows remain closed circulation barriers; daylight calculation and
+engineering review remain pending. Readback requires the explicit option even
+when saved metadata declares the capability.
+
 `generate-building` already solves rooms with CP-SAT, then places equipment
 with a second CP-SAT pass that accounts for clearance, and produces `building_01.json`. For dense
 facility programs, the default time limit of this command is 60 seconds:

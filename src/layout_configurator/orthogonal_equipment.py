@@ -23,7 +23,8 @@ from .equipment import EquipmentLayoutResult, EquipmentPlacement, clearance_rect
 from .models import LayoutResult, Rect
 from .orthogonal import OrthogonalPolygon
 from .orthogonal_projection import ProjectionCapabilityError, build_orthogonal_wall_plan
-from .orthogonal_validation import OrthogonalDimensionPolicy, OrthogonalEquipmentReport, OrthogonalValidationReport, validate_orthogonal_equipment, validate_orthogonal_layout
+from .orthogonal_validation import OrthogonalDimensionPolicy, OrthogonalEquipmentReport, OrthogonalValidationReport, _window_options, validate_orthogonal_equipment, validate_orthogonal_layout
+from .orthogonal_window_capability import validate_orthogonal_window_capability
 from .result_geometry import parse_layout_result, validate_result_geometry
 from .schema import normalize_building_mapping
 from .search import configure_solver
@@ -72,6 +73,7 @@ class OrthogonalDoorReport:
     reservations: tuple[DoorReservation, ...]
     issues: tuple[dict, ...] = ()
     unknown: tuple[str, ...] = ()
+    window_capability: dict | None = None
 
     @property
     def status(self):
@@ -89,7 +91,8 @@ class OrthogonalDoorReport:
                            "span": "max(actual opening width, widest required flow width) plus two routing margins",
                            "depth_from_wall_line": "flow_portal_offset_mm plus required-flow half-width plus routing margin",
                            "start": "actual interior wall face; entire reservation must fit one usable component"},
-                "reservations": [zone.to_dict() for zone in self.reservations], "issues": list(self.issues), "unknown": list(self.unknown)}
+                "reservations": [zone.to_dict() for zone in self.reservations], "issues": list(self.issues), "unknown": list(self.unknown),
+                **({"window_capability": self.window_capability} if self.window_capability is not None else {})}
 
 
 @dataclass(frozen=True)
@@ -121,25 +124,36 @@ class OrthogonalPackingResult:
 
 
 def validate_orthogonal_door_approaches(building: BuildingIR, layout: LayoutResult,
-                                       equipment: EquipmentLayoutResult) -> OrthogonalDoorReport:
+                                       equipment: EquipmentLayoutResult, *,
+                                       include_windows: bool = False) -> OrthogonalDoorReport:
     """Recompute actual full-width approaches without clipping or bbox sides.
 
     Required flow width is conservatively reserved at every actual door. A
     narrow source opening fails this local predicate; no routing is inferred.
     Unlike the legacy optional keep-outs, anchors also must leave these clear.
     """
+    window_options = _window_options(include_windows)
     layout = _canonical_inputs(building, layout)
     if not isinstance(equipment, EquipmentLayoutResult) or not isinstance(equipment.placements, (list, tuple)):
         raise ValueError("Door approach check requires EquipmentLayoutResult with a placement list/tuple")
     geometry = validate_result_geometry(building.layout, layout)
     if any(check.status != "PASS" for check in geometry.checks[:4]):
         return OrthogonalDoorReport((), ({"code": "source_room_geometry", "message": "Actual source room identity/area/bounds/overlap failed"},))
+    capability = None
+    if include_windows:
+        current = validate_orthogonal_window_capability(building.layout, layout)
+        capability = current.to_dict()
+        if current.status == "FAIL":
+            return OrthogonalDoorReport((), ({"code": "window_capability", "message": "Source facade window eligibility failed"},),
+                                        window_capability=capability)
+        if not current.ok:
+            return OrthogonalDoorReport((), unknown=("Source facade window eligibility is unresolved",), window_capability=capability)
     try:
-        openings = build_orthogonal_wall_plan(building.layout, layout).openings
+        openings = build_orthogonal_wall_plan(building.layout, layout, **window_options).openings
     except ProjectionCapabilityError as exc:
-        return OrthogonalDoorReport((), unknown=(str(exc),))
+        return OrthogonalDoorReport((), unknown=(str(exc),), window_capability=capability)
     except ValueError as exc:
-        return OrthogonalDoorReport((), ({"code": "source_openings", "message": str(exc)},))
+        return OrthogonalDoorReport((), ({"code": "source_openings", "message": str(exc)},), window_capability=capability)
     half_wall = building.layout.wall_thickness_mm / 2
     clear_width = max((flow.minimum_clear_width_mm for flow in building.flows if flow.required), default=0)
     depth = flow_portal_offset_mm(clear_width, building.layout.wall_thickness_mm) + clear_width / 2 + 10
@@ -182,7 +196,7 @@ def validate_orthogonal_door_approaches(building: BuildingIR, layout: LayoutResu
                 if overlap > 1e-6:
                     issues.append({"code": "door_approach_collision", "equipment_id": item.id,
                                    "door_id": zone.door_id, "room_id": zone.room_id, "overlap_area_mm2": overlap})
-    return OrthogonalDoorReport(tuple(reservations), tuple(issues))
+    return OrthogonalDoorReport(tuple(reservations), tuple(issues), window_capability=capability)
 
 
 def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
@@ -190,7 +204,8 @@ def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
                                excluded_layouts: Sequence[EquipmentLayoutResult] | None = None,
                                seed: int = 42, time_limit_seconds: float = 10,
                                deterministic_units: float | None = None,
-                               budget: OrthogonalPackingBudget = OrthogonalPackingBudget()) -> OrthogonalPackingResult:
+                               budget: OrthogonalPackingBudget = OrthogonalPackingBudget(),
+                               include_windows: bool = False) -> OrthogonalPackingResult:
     """Select one finite real-footprint/service candidate per source item.
 
     Optional exclusions contain at most 128 independently valid complete
@@ -198,6 +213,7 @@ def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
     selected combination, preserving other packings that reuse any item.
     Empty/omitted exclusions preserve the existing output contract exactly.
     """
+    window_options = _window_options(include_windows)
     from ortools.sat.python import cp_model
 
     layout = _canonical_inputs(building, layout)
@@ -219,6 +235,8 @@ def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
              "catalog_mode": "explicit" if catalog is not None else "generated_grid_and_source_anchors",
              "catalog_truncated": False, "catalog_stats": {}, "pair_checks": 0, "attempts": 0,
              "rejection_count": 0, "rejection_counts": {}, "rejections": [], "last_rejection": None, "stop_reason": None}
+    if include_windows:
+        state.update(window_policy="source_facade_v1")
     accepted, room_report, equipment_report, door_report = None, None, None, None
     deadline = time.monotonic() + time_limit_seconds if deterministic_units is None else math.inf
 
@@ -236,19 +254,19 @@ def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
 
     if len(building.layout.rooms) > budget.max_rooms or len(building.equipment) > budget.max_equipment:
         return finish("source_size_limit")
-    excluded = _exclusion_data(building, layout, excluded_layouts)
+    excluded = _exclusion_data(building, layout, excluded_layouts, **window_options)
     if excluded:
         state.update(excluded_layouts_count=len(excluded), excluded_layouts_sha256=_hash(excluded), matched_excluded_layouts=0)
-    room_report = validate_orthogonal_layout(building.layout, layout, dimension_policy=budget.room_policy)
+    room_report = validate_orthogonal_layout(building.layout, layout, dimension_policy=budget.room_policy, **window_options)
     if not room_report.ok:
         reject("room_qa", "; ".join(check.id for check in room_report.checks if check.status != "PASS"), status=room_report.status)
         return finish("source_room_qa_failed")
-    door_report = validate_orthogonal_door_approaches(building, layout, EquipmentLayoutResult(()))
+    door_report = validate_orthogonal_door_approaches(building, layout, EquipmentLayoutResult(()), **window_options)
     if not door_report.ok:
         reject("door_qa", "Source full-width door reservations failed", status=door_report.status, report=door_report.to_dict())
         return finish("source_door_reservations_failed")
     components = {room_id: _polygon(shape).inset_components(building.layout.wall_thickness_mm / 2) for room_id, shape in layout.placements.items()}
-    walls = build_orthogonal_wall_plan(building.layout, layout).geometry
+    walls = build_orthogonal_wall_plan(building.layout, layout, **window_options).geometry
     domains, raw = {}, {}
     for item in sorted(building.equipment, key=lambda value: (not value.fixed, value.id)):
         counter = {"steps": 0, "truncated": False}
@@ -339,8 +357,8 @@ def place_orthogonal_equipment(building: BuildingIR, layout: LayoutResult, *,
             return finish("finite_catalog_exhausted" if status == cp_model.INFEASIBLE else "solver_model_invalid" if status == cp_model.MODEL_INVALID else "search_budget_exhausted")
         selected = {item_id: next(index for index, choice in enumerate(choices[item_id]) if solver.Value(choice)) for item_id in item_ids}
         candidate = EquipmentLayoutResult(tuple(domains[item_id][index][1] for item_id, index in selected.items()))
-        equipment_report = validate_orthogonal_equipment(building, layout, candidate)
-        door_report = validate_orthogonal_door_approaches(building, layout, candidate)
+        equipment_report = validate_orthogonal_equipment(building, layout, candidate, **window_options)
+        door_report = validate_orthogonal_door_approaches(building, layout, candidate, **window_options)
         if equipment_report.ok and door_report.ok:
             accepted = candidate
             return finish("independent_equipment_and_approaches_verified")
@@ -487,7 +505,7 @@ def _placement_data(placement):
             "units": "mm", "rect": {"x": placement.rect.x, "y": placement.rect.y, "width": placement.rect.width, "height": placement.rect.height}}
 
 
-def _exclusion_data(building, layout, excluded_layouts):
+def _exclusion_data(building, layout, excluded_layouts, *, include_windows=False):
     if excluded_layouts is None:
         return ()
     if not isinstance(excluded_layouts, (list, tuple)) or len(excluded_layouts) > 128:
@@ -500,7 +518,8 @@ def _exclusion_data(building, layout, excluded_layouts):
         data = [_placement_data(placement) for placement in result.placements]
         if {placement["equipment_id"] for placement in data} != identifiers:
             raise ValueError("Every excluded layout must contain each source equipment ID exactly once")
-        if not validate_orthogonal_equipment(building, layout, result).ok or not validate_orthogonal_door_approaches(building, layout, result).ok:
+        window_options = _window_options(include_windows)
+        if not validate_orthogonal_equipment(building, layout, result, **window_options).ok or not validate_orthogonal_door_approaches(building, layout, result, **window_options).ok:
             raise ValueError("Excluded equipment combinations require independently valid actual equipment and door approaches")
         combination = {placement["equipment_id"]: placement for placement in sorted(data, key=lambda item: item["equipment_id"])}
         serialized = json.dumps(combination, ensure_ascii=False, allow_nan=False, sort_keys=True, separators=(",", ":"))

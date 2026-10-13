@@ -173,6 +173,11 @@ does not change DRAFT/full UNKNOWN/PENDING acceptance.
 Checkpoint H.3.6.4 records one changed-controls physical80 CI run: 69.776 s,
 global UNKNOWN with 10 seconds/four workers, no accepted bundle. Physical80
 acceptance remains open; unchanged-source constraints are preserved.
+Checkpoint B.14 completes explicit source window propagation through actual
+polygon room/equipment/flow/facility generation, DXF/PDF/IFC, atomic bundles and
+single/set CLI QA. Actual source elevations and facade identity are independently
+checked; default unsupported guards and closed circulation barriers are retained.
+Scoped delivery PASS leaves daylight and engineering acceptance open.
 
 ## 1. Why we are expanding the project
 

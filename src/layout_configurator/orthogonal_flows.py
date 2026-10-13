@@ -23,7 +23,7 @@ from .flows import FlowRoute, FlowRoutingResult, FlowValidationIssue
 from .models import LayoutResult, Rect
 from .orthogonal import OrthogonalPolygon
 from .orthogonal_projection import ProjectionCapabilityError, build_orthogonal_wall_plan
-from .orthogonal_validation import OrthogonalDimensionPolicy, validate_orthogonal_equipment, validate_orthogonal_layout
+from .orthogonal_validation import OrthogonalDimensionPolicy, _window_options, validate_orthogonal_equipment, validate_orthogonal_layout
 from .result_geometry import parse_layout_result
 from .schema import normalize_building_mapping
 
@@ -123,13 +123,15 @@ class _Context:
 
 def route_orthogonal_flows(building: BuildingIR, layout: LayoutResult,
                            equipment: EquipmentLayoutResult | None = None, *,
-                           budget: OrthogonalFlowBudget = OrthogonalFlowBudget()) -> OrthogonalFlowResult:
+                           budget: OrthogonalFlowBudget = OrthogonalFlowBudget(),
+                           include_windows: bool = False) -> OrthogonalFlowResult:
     """Search finite actual free-space visibility graphs, then recheck routes.
 
     Configuration-space polygon erosion can omit zero-area exact-width
     passages. Such missed paths remain UNKNOWN; a supplied route can still
     pass the independent swept-corridor checker at exactly the source width.
     """
+    window_options = _window_options(include_windows)
     layout, equipment = _inputs(building, layout, equipment, budget)
     state = {"source_sha256": _hash(building.to_dict()), "layout_sha256": _hash(layout.to_dict()),
              "equipment_sha256": _hash(_equipment_data(equipment)), "search_space_sha256": None,
@@ -138,12 +140,14 @@ def route_orthogonal_flows(building: BuildingIR, layout: LayoutResult,
              "last_rejection": None, "rejections_truncated": False,
              "search_limitations": ["Finite critical-coordinate grid and bounded component representatives",
                                     "Polygon erosion may omit zero-area exact-width connections"]}
+    if include_windows:
+        state.update(window_policy="source_facade_v1")
     limit = _source_limit(building, equipment, budget)
     if limit:
         state["search_truncated"] = True
         _reject(state, budget, "source_budget_exhausted", message=limit)
         return OrthogonalFlowResult(FlowRoutingResult(()), OrthogonalFlowReport(unknown=(limit,)), state)
-    context = _context(building, layout, equipment, budget)
+    context = _context(building, layout, equipment, budget, **window_options)
     expected, total_pairs = _expected_pairs(context, budget.max_endpoint_pairs)
     state["expected_pairs"] = total_pairs
     state["allocated_endpoint_pairs"] = len(expected)
@@ -193,15 +197,17 @@ def route_orthogonal_flows(building: BuildingIR, layout: LayoutResult,
 
 def validate_orthogonal_flow_routes(building: BuildingIR, layout: LayoutResult, routing: FlowRoutingResult,
                                     equipment: EquipmentLayoutResult | None = None, *,
-                                    budget: OrthogonalFlowBudget = OrthogonalFlowBudget()) -> OrthogonalFlowReport:
+                                    budget: OrthogonalFlowBudget = OrthogonalFlowBudget(),
+                                    include_windows: bool = False) -> OrthogonalFlowReport:
     """Rebuild source geometry; never accept a supplied report or room chain."""
+    window_options = _window_options(include_windows)
     layout, equipment = _inputs(building, layout, equipment, budget)
     if not isinstance(routing, FlowRoutingResult) or not isinstance(routing.routes, (list, tuple)):
         raise ValueError("Flow check requires FlowRoutingResult with a route list/tuple")
     limit = _source_limit(building, equipment, budget)
     if limit:
         return OrthogonalFlowReport(unknown=(limit,))
-    context = _context(building, layout, equipment, budget)
+    context = _context(building, layout, equipment, budget, **window_options)
     expected, _ = _expected_pairs(context, budget.max_endpoint_pairs)
     return _validate(context, routing, expected, budget)
 
@@ -464,11 +470,12 @@ def _search(context, free, center, starts, ends, width, budget, pair):
     return (), fingerprint, "no_finite_path"
 
 
-def _context(building, layout, equipment, budget):
+def _context(building, layout, equipment, budget, *, include_windows=False):
     rooms = {identifier: (OrthogonalPolygon.from_rect(shape) if isinstance(shape, Rect) else shape).geometry
              for identifier, shape in sorted(layout.placements.items())}
-    room_report = validate_orthogonal_layout(building.layout, layout, dimension_policy=budget.room_policy)
-    equipment_report = validate_orthogonal_equipment(building, layout, equipment)
+    window_options = _window_options(include_windows)
+    room_report = validate_orthogonal_layout(building.layout, layout, dimension_policy=budget.room_policy, **window_options)
+    equipment_report = validate_orthogonal_equipment(building, layout, equipment, **window_options)
     specs = {item.id: item for item in building.equipment}
     services = {}
     for item in equipment.placements:
@@ -477,7 +484,7 @@ def _context(building, layout, equipment, budget):
             services[item.equipment_id] = box(rect.x, rect.y, rect.right, rect.top)
     unknown, wall_plan = (), None
     try:
-        wall_plan = build_orthogonal_wall_plan(building.layout, layout)
+        wall_plan = build_orthogonal_wall_plan(building.layout, layout, **window_options)
     except (ProjectionCapabilityError, ValueError) as exc:
         unknown = (f"Actual opening projection unavailable: {exc}",)
     half_wall = building.layout.wall_thickness_mm / 2

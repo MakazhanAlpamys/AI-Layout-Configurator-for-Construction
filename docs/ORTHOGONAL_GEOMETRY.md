@@ -355,9 +355,9 @@ endpoint arithmetic so huge integers cannot escape as OverflowError.
 Fresh root window/projection/daylight regression passed 41 tests and 31 subtests
 in 1.49 s, including meaningful malformed-input and source-bound negatives.
 The existing IFC/PDF/window capability guards remain active. This standalone
-component covers two-dimensional facade lines only; coordinated wall/three-format
-window delivery, window elevations, engineering daylight and complete facility
-acceptance remain separate.
+component covers two-dimensional facade lines only. The opted coordinated
+delivery extension below adds source elevations and all three formats;
+engineering daylight and complete facility acceptance remain separate.
 
 ### Opted coordination window capability
 
@@ -372,7 +372,7 @@ infeasibility. Ambiguous source facade selection retains UNKNOWN; duplicate
 identities retain FAIL. Omitted/false options preserve the existing unsupported
 window guards. Fresh root wall-plan regression passed 23 tests and 24 subtests
 in 1.11 s; the agent's broader regression passed 102 tests and 145 subtests.
-Three-format export and complete generation/bundle propagation remain pending.
+Checkpoint B.14 completes the exporter and generation/bundle integration below.
 
 ## Explicit generation and delivery QA commands
 
@@ -428,8 +428,8 @@ The saved QA also binds the manifest and artifact-index bytes.
 Publication uses a sibling staging directory and a native no-replacement rename;
 existing or raced-in destinations remain protected. JSON structure, artifact,
 total-byte and DXF entity limits are enforced before publication and on readback.
-Declared structural grids and windows are rejected before creating output until
-their exporter capability is integrated. Unsupported native zones and systems
+Declared structural grids are rejected before creating output. Windows require
+the explicit capability below. Unsupported native zones and systems
 remain explicitly UNKNOWN; absent optional evidence is null and UNKNOWN.
 
 Fresh root verification passed five targeted tests in 62.44 s, covering the
@@ -443,3 +443,56 @@ locally; the native Linux publication branch awaits pinned CI.
 The manifest stays DRAFT with `ok: false`; full facility validation remains
 UNKNOWN and engineering acceptance PENDING. Scoped exchange QA PASS verifies
 the documented software predicates and does not promote either acceptance.
+
+## Coordinated source windows in actual polygon delivery
+
+The room, equipment, flow, facility and complete generation APIs, DXF/PDF/IFC
+writers, atomic bundle writer/readback and explicit CLI commands accept a strict
+`include_windows=False` option. Only explicit `True` enables `source_facade_v1`.
+Original canonical source types and hashes are checked before normalization.
+Omitted/false options retain prior serialized contracts and unsupported guards;
+saved metadata cannot enable a capability on behalf of a reader.
+
+Manual facade openings and deterministic openings for `needs_daylight` share the
+fresh source capability report. Sill and height come from `LayoutIR`; their sum
+must fit the existing 2800 mm coordination proxy. A head outside that proxy or
+an ambiguous facade selector remains UNKNOWN. Invalid source types and duplicate
+or conflicting identities fail. Neither result proves whole-building
+infeasibility or evaluates physical daylight.
+
+DXF contains actual facade lines, source width/sill/height metadata and visible
+inventory text. PDF contains those actual styled lines and source inventory
+rows, which independent readback checks across page boundaries. Added,
+contradictory, hidden, renamed or displaced windows and contradictory acceptance
+claims fail even after artifact hashes are recomputed. IFC uses native
+`IfcWindow` and `IfcOpeningElement`, world-coordinate source elevations and
+separate void/fill relationships. Independent native geometry readback checks
+wall material below and above the opening, actual opening widths/heights,
+host identity and semantic GUIDs; a full-height wall gap fails.
+
+Windows remain closed circulation barriers. Door portals, route clearance and
+the floor-plan wall material remain unchanged. Opted manifests, artifact indices,
+fresh facility predicates and saved QA bind the same canonical source report.
+The existing 14-file bounded inventory and no-replacement publication remain in
+force for single bundles and generated sets.
+
+The coordinate-free English example is
+[`orthogonal_source_windows.yaml`](../examples/orthogonal_source_windows.yaml).
+Enable `--include-windows` in both generation and QA, as shown in the README.
+It uses a concave room, a rectangular room, equipment/service clearance, a
+900 mm door, an 800 mm route, one manual window and one automatic daylight
+opening without supplied coordinates or catalogs.
+
+Fresh root verification: 16 generation/IFC/bundle/CLI tests with 49 subtests
+passed in 68.30 s; the final PDF/DXF source and tamper suite passed 10 tests with
+25 subtests in 7.33 s. Broader agent checks passed 134/177 core tests/subtests,
+110/190 IFC tests/subtests, 11/34 window bundle tests/subtests and 3/6 actual
+window CLI tests/subtests. The original bundle suite passed 23/34. Independent
+final readback passed in 3.99 s with all 14 retained file hashes unchanged;
+the actual two-page PDF was rendered and visually inspected. Durations describe
+these fixtures on this Windows runtime, not general performance guarantees.
+
+The complete source-generated example and persisted exchange remain DRAFT.
+Scoped software QA PASS coexists with full facility UNKNOWN and engineering
+acceptance PENDING. Structural grid/native semantic extensions, physical
+daylight calculation and receiving-tool/expert acceptance remain separate.
