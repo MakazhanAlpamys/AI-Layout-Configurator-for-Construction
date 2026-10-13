@@ -529,8 +529,8 @@ DXF, PDF, IFC, atomic single bundles and generated-set QA accept strict boolean
 Saved metadata cannot enable the reader. Windows still require their independent
 option. The existing bounded 14-file inventory and protected publication remain.
 Every opted manifest, artifact index and fresh QA report binds the same current
-source reference-axis capability. Unsupported native zone/system semantics and
-full facility acceptance remain separate.
+source reference-axis capability. Native zone/system semantics require their
+independent group option; full facility acceptance remains separate.
 
 DXF contains native `A-GRID` lines, exact source XDATA and visible labels placed
 after the window inventory. PDF contains actual dashed source lines and exact
@@ -599,3 +599,45 @@ PASS establishes declared semantic memberships only. Geometry is NOT_EVALUATED,
 physical-container and network checks remain UNKNOWN, full facility validation
 remains UNKNOWN and engineering acceptance PENDING. Existing room, equipment,
 route and profile authorities still govern actual native draft delivery.
+
+### Opted native groups and independent saved-file QA
+
+Standalone IFC writers/readers and atomic bundle/single-set APIs accept strict
+boolean `include_groups=False`; generation and QA commands expose
+`--include-groups`. Manifest metadata cannot enable the reader. Source window
+and reference-axis options remain independently explicit. DXF/PDF geometry
+does not acquire a group-specific projection flag. Every opted manifest, native
+IFC index, source capability and fresh QA verdict binds exact group declarations.
+
+Native IfcZone and IfcSystem use stable kind-specific source GUIDs and exact
+source property sets. Their native assignment references preserve direct spaces,
+immediate child zones, actual routes and explicitly supplied machine endpoints.
+Empty groups have no empty assignment relationship. JSON-list properties retain
+comma-bearing identities; declared class, pressure, airlock, direction, required
+state, stage and width remain source attributes. Independent readback checks
+actual product references, source properties/types, exact assignment inventory
+and stable property/assignment GUIDs, rather than trusting the exporter index.
+It rejects rehashed foreign/duplicate/flattened members, misleading descriptions,
+extra physical links/property sets and forged native counts.
+
+Standalone typed group declarations preserve original integer pressure/width
+values in their declaration JSON and source hashes. Persisted draft frames keep
+their existing strict canonical equality: noncanonical typed frames that change
+under BuildingIR normalization remain rejected. Source-only CLI input validates
+raw group types before constructors and uses the canonical generator contract.
+Original source/profile file digests are declared separately in opted generation
+evidence; absent external raw files cannot be reconstructed from these digests.
+
+The English synthetic example is
+[`orthogonal_source_groups.yaml`](../examples/orthogonal_source_groups.yaml).
+Its actual source-only command produced a concave 20+16 m2 draft with nested
+declared zones, a staged material system, machine/service geometry, checked
+route, source window and six reference axes. Fresh set QA passed; both actual
+PDF pages were rendered and inspected. A separate all-option 14-file pipeline
+took 22.19 s, with fresh single/set QA in 9.82 s. Root independently checked
+all 14 actual hashes and fresh native memberships in 4.06 s; EXPRESS is clean.
+Native/common/legacy tests passed 63 cases / 188 subtests in 49.11 s. Nineteen
+bundle/CLI methods and 52 subtests were verified, with one corrected new empty
+fixture rerun separately. Older omitted/False QA JSON and all 14 retained draft
+hashes are exact. These scoped software results leave physical containers,
+network engineering, receiving-tool review and full acceptance open.

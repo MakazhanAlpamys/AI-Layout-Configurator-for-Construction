@@ -114,6 +114,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | H.3.6.7 | Measure opted final diagnostics and contact pruning on unchanged physical80 | Pinned `9e5e598` completes diagnostic capture but final selected-shape search returns UNKNOWN without a solution. All four raw files, prepared program, hints, manifest and stage hashes match both earlier runs; all 220 shape hashes, family SHA and eight archived file bytes independently verified. | [Run 38398872773](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38398872773): 61.146 s total / 59.843 s room solving. Actual final model 1,651 variables / 7,934 constraints, 2,776 added contact clauses; 10.004 s Solve. [Compact negative evidence](acceptance/9e5e598.json). No equipment, routes, export or 80-room saved QA reached. | measurement complete 2026-10-13; physical80 acceptance open, source infeasibility unproven |
 | B.16.1 | Shared bounded canonical zone/process-group authority | Direct source room and immediate child-zone memberships remain exact; systems reference supplied routes and explicitly named supplied equipment endpoints only. Original declarations, comma-safe route identities and all four canonical hashes are retained. Strict original booleans/numbers and count/byte budgets reject before normalization or serialization; missing products stay explicit. | Fresh root group/BuildingIR/schema run: 25 tests PASS in 0.63 s. Real truthy rotation and pre-serialization optional-count regressions fail before repair; integer versus float pressure has distinct original source SHA. Geometry NOT_EVALUATED, physical/network/full validation UNKNOWN, engineering PENDING. | semantic foundation complete 2026-10-13; native writer/readback/bundle integration follows |
 | H.3.6.8 | Couple final root-shape choices to exact common-contact translations | Opted six-column tables bind existing one-hot candidate choices and actual relative X/Y intervals. Original clauses, objective and family geometry remain; empty safe tables prove at most selected-family infeasibility. Any unsafe candidate skips its whole root pair, and whole-pass budgets skip before mutation. Default JSON and runner controls stay exact. | Fresh agent final: 18 tests / 36 subtests in 6.85 s; related regression 87 / 272 in 30.88 s. Root six independent-geometry/actual-CP/empty-family/limit/unsafe/complete-bundle cases PASS in 5.47 s. Actionlint passed. Saved80 helper-only family: 792 rows / 4,752 cells; expected 46 extra variables, 46 linears and nine tables. | support propagation complete 2026-10-13; changed physical80 measurement and acceptance open |
+| B.16 | Opted native source group exchange through atomic drafts and CLI | Actual IfcZone/IfcSystem retains exact declared properties, direct rooms/immediate children and supplied route/explicit equipment memberships. Native source-only property and assignment GUIDs remain stable; closed fresh readback rejects physical-scope, foreign, duplicate, flattened and rehashed property/count claims. Strict explicit group opt-in binds manifest and single/set QA; other geometry options remain independent. | Native/common/legacy agent: 63 tests / 188 subtests PASS in 49.11 s. Bundle/CLI: 19 unique methods / 52 subtests verified across final 18-pass run and corrected new empty fixture rerun. Actual source-only all-option pipeline 22.19 s; fresh single/set QA 9.82 s, root 14-file readback PASS 4.06 s. Strict EXPRESS zero; English YAML example passes actual set QA and both PDF pages inspected. Default QA JSON and older 14 artifact hashes exact. | source group exchange complete 2026-10-13; receiving-tool and full engineering acceptance open |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -154,6 +155,7 @@ Cyrillic text.
 
 
 
+
 ## Remaining implementation
 
 
@@ -167,8 +169,8 @@ Cyrillic text.
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
   scoped current predicates and three-format persisted draft QA are implemented;
-  opted source windows and reference axes are integrated; native semantic
-  consumers and expert acceptance remain.
+  opted source windows, reference axes and declared native groups are integrated;
+  independent complete facility and expert acceptance remain.
 - C: scalable zone-driven placement and containment; minimal conflicting
   constraint sets remain separate from implemented structured stage evidence.
   Preferred-zone singleton participants can increase search cost.

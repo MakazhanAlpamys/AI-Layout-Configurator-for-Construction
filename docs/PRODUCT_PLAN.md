@@ -228,6 +228,13 @@ hard constraints, objectives and candidate geometry remain. Unsafe root pairs
 skip entirely; whole-pass limits precede posting. Small real CP and complete
 bundle QA pass. The saved80 family yields 792 rows without executing a new solve;
 physical80 runtime and acceptance need a separately pinned changed measurement.
+Checkpoint B.16 completes explicit native IFC zone/process-system delivery and
+fresh saved-source memberships through atomic drafts and single/set CLI QA.
+Original geometry gates remain mandatory. Actual concave source-only drafts,
+all 14 artifact hashes and native EXPRESS pass; rehashed foreign/flattened
+memberships and source-property/scope promotions fail. Default output stays
+exact. Receiving-tool review, physical-container and network engineering remain
+separate from declared group delivery.
 
 ## 1. Why we are expanding the project
 

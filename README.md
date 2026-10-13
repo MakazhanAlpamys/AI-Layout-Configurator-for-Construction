@@ -187,6 +187,22 @@ cutouts do not clip the reference span. These references do not align rooms or
 establish structural engineering acceptance. The example combines both opted
 capabilities; each requires its own flag.
 
+Declared zones and process groups require explicit native IFC delivery and
+readback:
+
+```powershell
+.venv/Scripts/python.exe -m layout_configurator.cli generate-orthogonal-building examples/orthogonal_source_groups.yaml --output out/orthogonal-group-drafts --include-windows --include-grid --include-groups --seed 1 --deterministic-budget .05 --max-room-candidates 4 --equipment-retries 2
+.venv/Scripts/python.exe -m layout_configurator.cli qa-orthogonal-building out/orthogonal-group-drafts --include-windows --include-grid --include-groups --json
+```
+
+Native zones retain direct rooms and immediate child zones; native process
+systems contain supplied routes and explicitly named supplied equipment only.
+Declared class, pressure and stage are source properties. Grouping does not
+establish physical zone containers or engineered MEP networks. DXF/PDF geometry,
+window options and reference-axis options remain independent; saved metadata
+cannot enable a reader capability. This synthetic example makes no engineering
+approval claim.
+
 `generate-building` already solves rooms with CP-SAT, then places equipment
 with a second CP-SAT pass that accounts for clearance, and produces `building_01.json`. For dense
 facility programs, the default time limit of this command is 60 seconds:

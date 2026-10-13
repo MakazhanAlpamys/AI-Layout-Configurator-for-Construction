@@ -311,6 +311,10 @@ Checkpoint H.3.6.8 adds bounded explicit final contact support tables and a
 default-false supervised runner control. This strengthens propagation within
 the selected finite family while retaining original source and acceptance gates;
 it does not close physical80 or prove whole-program infeasibility.
+Checkpoint B.16 completes opted native source zones and declared process
+systems in canonical orthogonal drafts, with exact direct membership readback
+and explicit bundle/CLI reader controls. It preserves the archive's boundaries
+and leaves receiving-tool and full engineering acceptance open.
 
 - The KZ ruleset remains partial and is extended only by individually confirmed
   clauses of the official source; the current model does not pretend to be a full legal

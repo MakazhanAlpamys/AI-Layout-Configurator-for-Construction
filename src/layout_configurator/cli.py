@@ -223,6 +223,8 @@ def main(argv: list[str] | None = None) -> int:
                             help="opt in to source_facade_v1 windows; full facility validation remains UNKNOWN")
     orthogonal.add_argument("--include-grid", action="store_true",
                             help="export boundary-spanning source reference axes; no structural engineering or room alignment claim")
+    orthogonal.add_argument("--include-groups", action="store_true",
+                            help="export declared source-bound native IFC zones and process systems; no physical containment or network engineering claim")
     orthogonal_qa = subparsers.add_parser(
         "qa-orthogonal-building",
         help="independently check one orthogonal draft bundle or set; full validation stays UNKNOWN",
@@ -234,6 +236,8 @@ def main(argv: list[str] | None = None) -> int:
                                help="explicitly check source_facade_v1 window delivery; metadata never grants this opt-in")
     orthogonal_qa.add_argument("--include-grid", action="store_true",
                                help="explicitly check source reference axes; metadata never grants this opt-in")
+    orthogonal_qa.add_argument("--include-groups", action="store_true",
+                               help="explicitly check declared native IFC groups; metadata never grants this opt-in")
     check_building = subparsers.add_parser(
         "check-building",
         help="recompute and validate a generated BuildingIR result",

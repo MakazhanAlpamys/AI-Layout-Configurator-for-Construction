@@ -14,7 +14,7 @@ from .equipment import clearance_rect
 from .models import Rect
 from .orthogonal_bundle import (ARTIFACT_FILES, FORMAT, FULL_UNKNOWN, INDEX_FILES, INVENTORY,
     SOURCE_FILES, OrthogonalBundleLimits, _hash, _json, _keys, _projection_scope, _read_json, _route_key, _sha, _source_frames,
-    _grid_capability, _grid_options, _window_capability, _window_options)
+    _grid_capability, _grid_options, _group_capability, _group_options, _window_capability, _window_options)
 from .orthogonal_facility import validate_orthogonal_building
 from .orthogonal_ifc_qa import validate_orthogonal_ifc
 from .orthogonal_pdf_qa import validate_orthogonal_pdf
@@ -348,7 +348,7 @@ def _express(raw):
 
 
 def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None, verify_saved=True, include_windows=False,
-              include_grid=False):
+              include_grid=False, include_groups=False):
     report = {"format": "FLC-orthogonal-bundle-qa", "version": "0.1", "status": "FAIL", "ok": False,
         "scope": "Persisted exchange delivery and declared software predicates only",
         "full_facility_validation": dict(FULL_UNKNOWN), "engineering_acceptance": "PENDING",
@@ -356,6 +356,7 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
     try:
         window_options = _window_options(include_windows)
         projection_options = {**window_options, **_grid_options(include_grid)}
+        bundle_options = {**projection_options, **_group_options(include_groups)}
         if not isinstance(limits, OrthogonalBundleLimits):
             raise ValueError("limits requires OrthogonalBundleLimits")
         root = Path(output)
@@ -385,20 +386,24 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
         manifest = _read_json(data["manifest.json"], limits)
         _keys(manifest, ("format", "version", "status", "ok", "project_name", "variant", "revision",
             "full_facility_validation", "engineering_acceptance", "projection_scope", "sources", "artifacts", "facility_predicates", "limits",
-            *(("window_capability",) if include_windows else ()), *(("grid_capability",) if include_grid else ())))
+            *(("window_capability",) if include_windows else ()), *(("grid_capability",) if include_grid else ()),
+            *(("group_capability",) if include_groups else ())))
         raw = {name: _read_json(data[filename], limits) for name, filename in SOURCE_FILES.items()}
         building, layout, equipment, routing, profile = _source_frames(raw, **projection_options)
         capability = _window_capability(building, layout, include_windows)
         grid_capability = _grid_capability(building, include_grid)
+        group_capability = _group_capability(building, layout, equipment, routing, include_groups)
         identity = _identity(building, layout, profile, raw)
         expected = {"format": FORMAT, "version": "0.1", "status": "DRAFT", "ok": False,
             "project_name": building.layout.project_name, "variant": layout.variant, "revision": profile.drawing.revision,
             "full_facility_validation": FULL_UNKNOWN, "engineering_acceptance": "PENDING",
-            "projection_scope": _projection_scope(building, **projection_options)}
+            "projection_scope": _projection_scope(building, **bundle_options)}
         if include_windows:
             expected["window_capability"] = capability
         if include_grid:
             expected["grid_capability"] = grid_capability
+        if include_groups:
+            expected["group_capability"] = group_capability
         if not _same({key: manifest[key] for key in expected}, expected):
             raise ValueError("Manifest canonical source/revision/variant or DRAFT status is false")
         _keys(manifest["limits"], vars(limits))
@@ -424,11 +429,13 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
                 raise ValueError("Source filename, actual bytes or canonical hash differs: " + name)
         report["identity"] = identity
         report["manifest_sha256"] = _sha(data["manifest.json"])
-        report["projection_scope"] = _projection_scope(building, **projection_options)
+        report["projection_scope"] = _projection_scope(building, **bundle_options)
         if include_windows:
             report["window_capability"] = capability
         if include_grid:
             report["grid_capability"] = grid_capability
+        if include_groups:
+            report["group_capability"] = group_capability
         facility = validate_orthogonal_building(building, layout, equipment, routing, profile=profile, **window_options).to_dict()
         _check(report, "SOURCE_CONTRACT", "PASS", ["Five strict canonical source snapshots, source hashes and current profile/revision agree"])
     except Exception as exc:
@@ -459,7 +466,8 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
         ifc = indices["ifc"]
         _keys(ifc, ("schema", "status", "ok", "units", "source", "variant", "artifact_sha256",
             "full_facility_validation", "engineering_acceptance", "scope", "local_validation", "counts", "bundle_identity",
-            *(("window_capability",) if include_windows else ()), *(("grid_capability",) if include_grid else ())))
+            *(("window_capability",) if include_windows else ()), *(("grid_capability",) if include_grid else ()),
+            *(("group_capability",) if include_groups else ())))
         expected_ifc = {"schema": "orthogonal-ifc-draft/0.1", "status": "DRAFT", "ok": False, "units": "mm",
             "source": {key: value for key, value in identity.items() if key.endswith("_sha256") and key != "profile_sha256"},
             "variant": layout.variant, "artifact_sha256": _sha(data[ARTIFACT_FILES["ifc"]]),
@@ -475,6 +483,9 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
         if include_grid:
             expected_ifc["grid_capability"] = grid_capability
             expected_ifc["local_validation"]["grid_capability"] = grid_capability
+        if include_groups:
+            expected_ifc["group_capability"] = group_capability
+            expected_ifc["local_validation"]["group_capability"] = group_capability
         if not _same({key: ifc[key] for key in expected_ifc}, expected_ifc):
             raise ValueError("IFC index source, revision or DRAFT scope differs")
         _check(report, "ARTIFACT_INDEX", "PASS", ["Three actual artifact and index byte hashes agree with the closed manifest"])
@@ -505,7 +516,7 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
         pdf = validate_orthogonal_pdf(snapshot / "geometry.pdf", building, layout, equipment,
             routing=routing, revision=profile.drawing.revision, index=indices.get("pdf"), **projection_options)
         ifc = validate_orthogonal_ifc(snapshot / "geometry.ifc", building, layout, equipment,
-            routing=routing, expected_sha256=_sha(data["geometry.ifc"]), max_file_bytes=min(limits.max_artifact_bytes, 16_777_216), **projection_options)
+            routing=routing, expected_sha256=_sha(data["geometry.ifc"]), max_file_bytes=min(limits.max_artifact_bytes, 16_777_216), **bundle_options)
         try:
             import ifcopenshell
             from .orthogonal_ifc_qa import _properties, _same_properties
@@ -535,7 +546,7 @@ def _validate(output, *, limits=OrthogonalBundleLimits(), expected_profile=None,
 
 
 def validate_orthogonal_bundle(output, *, expected_profile=None, limits=OrthogonalBundleLimits(), include_windows=False,
-                               include_grid=False):
+                               include_grid=False, include_groups=False):
     """Reload bounded persisted sources and independently check all three files.
 
     PASS is limited to exchange delivery and declared software predicates.
@@ -544,7 +555,7 @@ def validate_orthogonal_bundle(output, *, expected_profile=None, limits=Orthogon
     """
     try:
         return _validate(output, limits=limits, expected_profile=expected_profile,
-            **_window_options(include_windows), **_grid_options(include_grid))
+            **_window_options(include_windows), **_grid_options(include_grid), **_group_options(include_groups))
     except Exception as exc:
         return {"format": "FLC-orthogonal-bundle-qa", "version": "0.1", "status": "FAIL", "ok": False,
             "scope": "Persisted exchange delivery and declared software predicates only",

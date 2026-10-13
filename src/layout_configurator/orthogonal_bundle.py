@@ -128,6 +128,23 @@ def _grid_options(include_grid):
     return {"include_grid": True} if include_grid else {}
 
 
+def _group_options(include_groups):
+    if type(include_groups) is not bool:
+        raise ValueError("include_groups requires a boolean")
+    return {"include_groups": True} if include_groups else {}
+
+
+def _group_capability(building, layout, equipment, routing, include_groups):
+    _group_options(include_groups)
+    if not include_groups:
+        return None
+    from .orthogonal_groups import OrthogonalGroupsCapabilityError, validate_orthogonal_groups
+    capability = validate_orthogonal_groups(building, layout, equipment, routing=routing)
+    if not capability.ok:
+        raise OrthogonalGroupsCapabilityError(capability)
+    return capability.to_dict()
+
+
 def _grid_capability(building, include_grid):
     _grid_options(include_grid)
     if not include_grid:
@@ -226,9 +243,10 @@ def _source_frames(raw, *, include_windows=False, include_grid=False):
     return building, layout, equipment, routing, profile
 
 
-def _projection_scope(building, *, include_windows=False, include_grid=False):
+def _projection_scope(building, *, include_windows=False, include_grid=False, include_groups=False):
     _window_options(include_windows)
     _grid_options(include_grid)
+    _group_options(include_groups)
     scope = {"geometry_components": ["room_contours", "wall_material", "door_openings", "equipment_footprints",
         "directional_service_envelopes", "full_width_route_corridors", "route_centerlines"],
         "zones": {"declared": len(building.zones), "source_preserved": True,
@@ -248,6 +266,13 @@ def _projection_scope(building, *, include_windows=False, include_grid=False):
         scope["reference_grid"] = {"policy": "boundary_spanning_axes_v1", "elevation_mm": 0,
             "structural_engineering": "UNKNOWN", "room_alignment_enforced": False,
             "cutout_clipping": False, "axes_are_circulation_barriers": False}
+    if include_groups:
+        for kind, membership in (("zones", "direct_spaces_and_immediate_child_zones"),
+                ("process_systems", "supplied_routes_and_explicit_supplied_equipment_endpoints")):
+            scope[kind].update(native_ifc_projection="SOURCE_BOUND_DECLARED_GROUPS",
+                policy="declared_semantic_groups_v1", membership=membership)
+        scope["zones"]["physical_container_validation"] = "UNKNOWN"
+        scope["process_systems"]["network_engineering"] = "UNKNOWN"
     return scope
 
 
@@ -311,9 +336,10 @@ def _dxf(path, building, layout, equipment, routing, identity, *, include_window
     return index
 
 
-def _ifc(path, building, layout, equipment, routing, identity, *, include_windows=False, include_grid=False):
+def _ifc(path, building, layout, equipment, routing, identity, *, include_windows=False, include_grid=False,
+         include_groups=False):
     index = export_orthogonal_draft_ifc(path, building, layout, equipment, routing=routing,
-        **_window_options(include_windows), **_grid_options(include_grid))
+        **_window_options(include_windows), **_grid_options(include_grid), **_group_options(include_groups))
     import ifcopenshell
     from .ifc import _add_properties
     document = ifcopenshell.open(str(path))
@@ -354,7 +380,7 @@ def _publish_directory(stage, target):
 
 def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing=None,
                             profile, revision=None, font_path=None, limits=OrthogonalBundleLimits(), include_windows=False,
-                            include_grid=False):
+                            include_grid=False, include_groups=False):
     """Publish a new source-bound DRAFT directory after independent readback.
 
     Local FAIL or an unsupported render component rejects publication. Missing
@@ -364,6 +390,7 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
     window_options = _window_options(include_windows)
     grid_options = _grid_options(include_grid)
     projection_options = {**window_options, **grid_options}
+    bundle_options = {**projection_options, **_group_options(include_groups)}
     if not isinstance(limits, OrthogonalBundleLimits):
         raise ValueError("limits requires OrthogonalBundleLimits")
     target = Path(output).absolute()
@@ -378,6 +405,7 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
             raise ValueError("Draft bundle requires canonical routing or None")
         # Reject malformed original typed axes before JSON or IR normalization.
         _grid_capability(building, include_grid)
+        _group_capability(building, layout, equipment, routing, include_groups)
         raw = {"building": building.to_dict(), "layout": layout.to_dict(), "profile": profile.to_dict(),
                "equipment": equipment.to_dict(building) if equipment is not None else None,
                "routing": routing.to_dict() if routing is not None else None}
@@ -385,6 +413,7 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
         building, layout, equipment, routing, profile = _source_frames(raw, **projection_options)
         capability = _window_capability(building, layout, include_windows)
         grid_capability = _grid_capability(building, include_grid)
+        group_capability = _group_capability(building, layout, equipment, routing, include_groups)
         revision = profile.drawing.revision if revision is None else revision
         if not isinstance(revision, str) or not revision.strip() or revision != profile.drawing.revision:
             raise ValueError("Bundle revision must match its actual source drawing profile")
@@ -418,14 +447,14 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
             "dxf": _dxf(stage / ARTIFACT_FILES["dxf"], building, layout, equipment, routing, identity, **projection_options),
             "pdf": export_orthogonal_draft_pdf(stage / ARTIFACT_FILES["pdf"], building, layout, equipment,
                 routing=routing, revision=revision, font_path=font_path, **projection_options),
-            "ifc": _ifc(stage / ARTIFACT_FILES["ifc"], building, layout, equipment, routing, identity, **projection_options),
+            "ifc": _ifc(stage / ARTIFACT_FILES["ifc"], building, layout, equipment, routing, identity, **bundle_options),
         }
         artifacts = {name: {"file": ARTIFACT_FILES[name], "sha256": _sha((stage / ARTIFACT_FILES[name]).read_bytes()),
             "index": INDEX_FILES[name], "index_sha256": save(INDEX_FILES[name], index)} for name, index in indices.items()}
         manifest = {"format": FORMAT, "version": "0.1", "status": "DRAFT", "ok": False,
             "project_name": building.layout.project_name, "variant": layout.variant, "revision": revision,
             "full_facility_validation": dict(FULL_UNKNOWN), "engineering_acceptance": "PENDING",
-            "projection_scope": _projection_scope(building, **projection_options),
+            "projection_scope": _projection_scope(building, **bundle_options),
             "sources": sources, "artifacts": artifacts, "facility_predicates": {
                 "file": "facility-predicates.json", "sha256": save("facility-predicates.json", facility)},
             "limits": asdict(limits)}
@@ -433,14 +462,16 @@ def write_orthogonal_bundle(output, building, layout, equipment=None, *, routing
             manifest["window_capability"] = capability
         if include_grid:
             manifest["grid_capability"] = grid_capability
+        if include_groups:
+            manifest["group_capability"] = group_capability
         save("manifest.json", manifest)
         from .orthogonal_bundle_qa import _validate
-        qa = _validate(stage, limits=limits, verify_saved=False, **projection_options)
+        qa = _validate(stage, limits=limits, verify_saved=False, **bundle_options)
         if qa["status"] == "FAIL":
             failures = [row["id"] + ": " + "; ".join(row["evidence"]) for row in qa["checks"] if row["status"] == "FAIL"]
             raise ValueError("Persisted orthogonal draft failed independent delivery QA: " + "; ".join(failures))
         save("qa.json", qa)
-        final = _validate(stage, limits=limits, verify_saved=True, **projection_options)
+        final = _validate(stage, limits=limits, verify_saved=True, **bundle_options)
         if final["status"] == "FAIL":
             raise ValueError("Persisted orthogonal draft saved QA is inconsistent")
         if target.exists() or target.is_symlink():

@@ -32,7 +32,8 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
                                 equipment: EquipmentLayoutResult | None = None, *,
                                 routing: FlowRoutingResult | None = None,
                                 include_windows: bool = False,
-                                include_grid: bool = False) -> dict:
+                                include_grid: bool = False,
+                                include_groups: bool = False) -> dict:
     """Export source-backed rooms, actual walls/openings and optional geometry.
 
     Supplied equipment must pass independent directional service and complete
@@ -44,16 +45,26 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
     two-dimensional wall band remains closed across windows.
     Only include_grid=True enables declared continuous boundary-spanning
     reference axes. Axes do not constrain rooms or create structural material.
+    Only include_groups=True projects declared functional zones and process
+    movement groups. Native membership adds no physical containers or networks.
     All input and capability checks precede opening the destination file.
     """
     if not isinstance(include_windows, bool):
         raise ValueError("include_windows requires a boolean")
     if not isinstance(include_grid, bool):
         raise ValueError("include_grid requires a boolean")
+    if not isinstance(include_groups, bool):
+        raise ValueError("include_groups requires a boolean")
     options = {"include_windows": True} if include_windows else {}
     grid_options = {"include_grid": True} if include_grid else {}
-    building, layout, reports = _inputs(building, layout, equipment, routing, **options, **grid_options)
+    group_options = {"include_groups": True} if include_groups else {}
+    building, layout, reports = _inputs(building, layout, equipment, routing,
+                                       **options, **grid_options, **group_options)
     grid_capability = validate_orthogonal_grid(building.layout, building.structural_grid) if include_grid else None
+    group_capability = None
+    if include_groups:
+        from .orthogonal_groups import validate_orthogonal_groups
+        group_capability = validate_orthogonal_groups(building, layout, equipment, routing=routing)
     walls = build_orthogonal_wall_plan(building.layout, layout, **options)
     source = {"building_sha256": _hash(building.to_dict()), "layout_sha256": _hash(layout.to_dict()),
               "equipment_sha256": _hash(equipment.to_dict(building) if equipment is not None else None),
@@ -100,9 +111,12 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
         metadata.update(GridCapability="boundary_spanning_axes_v1",
                         GridSpecSHA256=grid_capability.spec_sha256,
                         StructuralGridSHA256=grid_capability.structural_grid_sha256)
+    if include_groups:
+        metadata.update(GroupCapability="declared_semantic_groups_v1",
+                        GroupCapabilitySHA256=_hash(group_capability.to_dict()))
     _add_properties(document, owner, [project], "Pset_OrthogonalDraft", metadata)
 
-    spaces, contained = [], []
+    spaces, contained, occurrences = [], [], {}
 
     def product(ifc_class, kind, source_id, geometry, height, *, object_type=None, extra=None, base_elevation=0):
         attributes = {"GlobalId": guid(kind + ":" + source_id), "OwnerHistory": owner,
@@ -114,6 +128,7 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
         element = document.create_entity(ifc_class, **attributes)
         _add_properties(document, owner, [element], "Pset_OrthogonalIdentity",
                         {"Kind": kind, "SourceId": source_id, **(extra or {})})
+        occurrences[(kind, source_id)] = element
         return element
 
     for room in sorted(building.layout.rooms, key=lambda item: item.id):
@@ -207,6 +222,26 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
         _add_properties(document, owner, [grid], "Pset_OrthogonalIdentity",
                         {"Kind": "grid", "SourceId": "structural-grid", "Policy": "boundary_spanning_axes_v1"})
         contained.append(grid)
+    group_relations = 0
+    if include_groups:
+        for group in group_capability.groups:
+            element = document.create_entity("IfcZone" if group.kind == "zone" else "IfcSystem",
+                GlobalId=guid(group.kind + ":" + group.id), OwnerHistory=owner,
+                Name=group.id, ObjectType=group.declaration["type"],
+                Description="Declared functional zone; not a qualified physical container" if group.kind == "zone"
+                            else "Declared process movement; not a designed MEP network")
+            _add_properties(document, owner, [element], "Pset_OrthogonalIdentity",
+                {"Kind": group.kind, "SourceId": group.id, "Policy": "declared_semantic_groups_v1"})
+            _group_properties(document, owner, element, _group_declaration(building, group), guid)
+            occurrences[(group.kind, group.id)] = element
+        for group in group_capability.groups:
+            if not group.members:
+                continue
+            document.create_entity("IfcRelAssignsToGroup",
+                GlobalId=guid("group-membership:" + group.kind + ":" + group.id), OwnerHistory=owner,
+                RelatingGroup=occurrences[(group.kind, group.id)],
+                RelatedObjects=[occurrences[(member.kind, member.id)] for member in group.members])
+            group_relations += 1
     document.create_entity("IfcRelAggregates", GlobalId=guid("aggregate-spaces"), OwnerHistory=owner,
         RelatingObject=storey, RelatedObjects=spaces)
     document.create_entity("IfcRelContainedInSpatialStructure", GlobalId=guid("containment"), OwnerHistory=owner,
@@ -229,13 +264,24 @@ def export_orthogonal_draft_ifc(path: str | Path, building: BuildingIR, layout: 
     if include_grid:
         evidence["grid_capability"] = reports["grid_capability"]
         evidence["counts"].update(grids=int(bool(grid_capability.axes)), grid_axes=len(grid_capability.axes))
+    if include_groups:
+        evidence["group_capability"] = reports["group_capability"]
+        evidence["counts"].update(zones=sum(group.kind == "zone" for group in group_capability.groups),
+            process_systems=sum(group.kind == "flow-system" for group in group_capability.groups),
+            group_relations=group_relations)
     return evidence
 
 
-def _inputs(building, layout, equipment, routing, *, include_windows=False, include_grid=False):
+def _inputs(building, layout, equipment, routing, *, include_windows=False, include_grid=False, include_groups=False):
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Orthogonal IFC requires canonical BuildingIR and LayoutResult")
     options = {"include_windows": True} if include_windows else {}
+    group_capability = None
+    if include_groups:
+        from .orthogonal_groups import OrthogonalGroupsCapabilityError, validate_orthogonal_groups
+        group_capability = validate_orthogonal_groups(building, layout, equipment, routing=routing)
+        if not group_capability.ok:
+            raise OrthogonalGroupsCapabilityError(group_capability)
     grid_capability = None
     if include_grid:
         grid_capability = validate_orthogonal_grid(building.layout, building.structural_grid)
@@ -251,7 +297,7 @@ def _inputs(building, layout, equipment, routing, *, include_windows=False, incl
             raise OrthogonalWindowCapabilityError(capability)
     canonical_building = BuildingIR.from_mapping(building.to_dict())
     canonical_layout = parse_layout_result(layout.to_dict())
-    if not include_windows and not include_grid:
+    if not include_windows and not include_grid and not include_groups:
         building, layout = canonical_building, canonical_layout
     if len(building.layout.rooms) > 64 or len(building.equipment) > 64:
         raise ValueError("Orthogonal IFC source limit is 64 rooms and 64 equipment items")
@@ -266,6 +312,8 @@ def _inputs(building, layout, equipment, routing, *, include_windows=False, incl
         reports["window_capability"] = capability.to_dict()
     if grid_capability is not None:
         reports["grid_capability"] = grid_capability.to_dict()
+    if group_capability is not None:
+        reports["group_capability"] = group_capability.to_dict()
     if equipment is not None:
         if not isinstance(equipment, EquipmentLayoutResult):
             raise ValueError("Orthogonal IFC equipment requires EquipmentLayoutResult")
@@ -282,6 +330,50 @@ def _inputs(building, layout, equipment, routing, *, include_windows=False, incl
     _hash(building.to_dict())
     _hash(layout.to_dict())
     return building, layout, reports
+
+
+def _group_declaration(building, group):
+    declaration = group.declaration
+    values = {"DeclarationJSON": json.dumps(declaration, sort_keys=True, ensure_ascii=False,
+                                            allow_nan=False, separators=(",", ":")),
+              "DeclarationState": "DECLARED", "SourceContract": "BuildingIR " + building.version,
+              "SourceEntityType": "ZoneSpec" if group.kind == "zone" else "FlowSpec"}
+    if group.kind == "zone":
+        values.update(ZoneId=group.id, ZoneType=declaration["type"],
+            DirectRoomIdsJSON=json.dumps(declaration["room_ids"], ensure_ascii=False, separators=(",", ":")),
+            Airlock=declaration.get("airlock", False), PhysicalContainerValidation="UNKNOWN")
+        for source, target in (("parent_zone_id", "ParentZoneId"), ("cleanroom_class", "CleanroomClass"),
+                               ("pressure_pa", "PressurePa")):
+            if source in declaration:
+                values[target] = declaration[source]
+    else:
+        values.update(FlowId=group.id, FlowType=declaration["type"],
+            FromIdsJSON=json.dumps(declaration["from_ids"], ensure_ascii=False, separators=(",", ":")),
+            ToIdsJSON=json.dumps(declaration["to_ids"], ensure_ascii=False, separators=(",", ":")),
+            Required=declaration["required"], MinimumClearWidthMM=declaration["minimum_clear_width_mm"],
+            NetworkEngineering="UNKNOWN", RepresentationKind="Declared process movement group; not an MEP network")
+        if "stage" in declaration:
+            values["Stage"] = declaration["stage"]
+    return values
+
+
+def _group_properties(document, owner, element, values, guid):
+    """Keep structured source lists in native text, rather than ambiguous CSV."""
+    properties = []
+    for name, value in values.items():
+        if name.endswith("JSON"):
+            nominal = document.create_entity("IfcText", value)
+        elif isinstance(value, bool):
+            nominal = document.create_entity("IfcBoolean", value)
+        elif isinstance(value, (int, float)):
+            nominal = document.create_entity("IfcReal", float(value))
+        else:
+            nominal = document.create_entity("IfcLabel", value)
+        properties.append(document.create_entity("IfcPropertySingleValue", Name=name, NominalValue=nominal))
+    definition = document.create_entity("IfcPropertySet", GlobalId=guid("group-properties:" + element.GlobalId),
+        OwnerHistory=owner, Name="Pset_OrthogonalGroup", HasProperties=properties)
+    document.create_entity("IfcRelDefinesByProperties", GlobalId=guid("group-defines:" + element.GlobalId),
+        OwnerHistory=owner, RelatedObjects=[element], RelatingPropertyDefinition=definition)
 
 
 def _representation(document, context, geometry, height):

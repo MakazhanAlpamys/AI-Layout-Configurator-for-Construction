@@ -1,0 +1,111 @@
+# Synthetic declared groups, source windows and reference axes; engineering PENDING.
+version: '0.2'
+project_name: Orthogonal source zones and process groups
+layout:
+  version: '0.1'
+  project_name: Orthogonal source zones and process groups
+  tolerance: 0.03
+  grid_mm: 100
+  wall_thickness_mm: 200.0
+  door_width_mm: 900.0
+  window_width_mm: 1200.0
+  window_height_mm: 1500.0
+  window_sill_mm: 900.0
+  doors: []
+  windows:
+  - id: source_window
+    room_id: main
+    side: bottom
+    offset_mm: 1000.0
+    width_mm: 800.0
+  entry_room: main
+  boundary:
+    width: 6000.0
+    height: 6000.0
+    cutouts: []
+  rooms:
+  - id: main
+    type: process
+    target_area: 20.0
+    min_area: 20.0
+    max_area: 20.0
+    min_width: 1800.0
+    min_depth: 1800.0
+    required_adjacency:
+    - corner
+    preferred_adjacency: []
+    forbidden_adjacency: []
+    needs_daylight: false
+    is_heated: false
+  - id: corner
+    type: support
+    target_area: 16.0
+    min_area: 16.0
+    max_area: 16.0
+    min_width: 1800.0
+    min_depth: 1800.0
+    required_adjacency: []
+    preferred_adjacency: []
+    forbidden_adjacency: []
+    needs_daylight: false
+    is_heated: false
+zones:
+- id: parent
+  type: process
+  room_ids:
+  - main
+  required_adjacency: []
+  preferred_adjacency: []
+  forbidden_adjacency: []
+  cleanroom_class: project-class-A
+  pressure_pa: 10.0
+  airlock: true
+- id: child
+  type: support
+  room_ids:
+  - corner
+  required_adjacency: []
+  preferred_adjacency: []
+  forbidden_adjacency: []
+  parent_zone_id: parent
+  pressure_pa: 0.0
+equipment:
+- id: machine
+  type: equipment
+  width_mm: 500.0
+  depth_mm: 500.0
+  clearance_front_mm: 100.0
+  clearance_back_mm: 100.0
+  clearance_left_mm: 400.0
+  clearance_right_mm: 400.0
+  rotation_allowed: false
+  fixed: false
+  anchor_offset_mm: 0.0
+  room_id: main
+flows:
+- id: material
+  type: material
+  from_ids:
+  - machine
+  to_ids:
+  - corner
+  minimum_clear_width_mm: 800.0
+  required: true
+  stage: declared_transfer
+structural_grid:
+  axes_x_mm:
+  - 0
+  - 2050.5
+  - 6000
+  axes_y_mm:
+  - 0
+  - 3100.25
+  - 6000
+  labels_x:
+  - A
+  - B
+  - C
+  labels_y:
+  - '1'
+  - '2'
+  - '3'

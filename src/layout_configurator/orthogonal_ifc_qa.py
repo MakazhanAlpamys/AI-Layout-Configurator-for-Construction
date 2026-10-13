@@ -36,7 +36,8 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                             expected_sha256: str | None = None,
                             max_file_bytes: int = 16 * 1024 * 1024,
                             include_windows: bool = False,
-                            include_grid: bool = False) -> dict:
+                            include_grid: bool = False,
+                            include_groups: bool = False) -> dict:
     """Read actual IFC4 geometry with bounded native input and strict identity.
 
     Supported representations are closed polyline area-profile extrusions
@@ -49,6 +50,8 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
     interval. The checker does not trust exporter indexes or generated reports.
     Explicit source grids require actual native ordered axes and the same
     curves in a visible FootPrint, with independent world-coordinate readback.
+    Explicit groups require exact declared source properties and actual native
+    memberships; no physical zone container or MEP network is inferred.
     """
     report = {"status": "FAIL", "ok": False, "scope": "Independent exact orthogonal IFC exchange geometry only",
               "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
@@ -60,8 +63,11 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
             raise ValueError("include_windows requires a boolean")
         if not isinstance(include_grid, bool):
             raise ValueError("include_grid requires a boolean")
+        if not isinstance(include_groups, bool):
+            raise ValueError("include_groups requires a boolean")
         options = {"include_windows": True} if include_windows else {}
         grid_options = {"include_grid": True} if include_grid else {}
+        group_options = {"include_groups": True} if include_groups else {}
         if not isinstance(max_file_bytes, int) or isinstance(max_file_bytes, bool) or not 1 <= max_file_bytes <= 16 * 1024 * 1024:
             raise ValueError("max_file_bytes requires an integer between 1 and 16777216")
         target = Path(path)
@@ -74,13 +80,15 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
         report["artifact_sha256"] = digest
         if expected_sha256 is not None and (not isinstance(expected_sha256, str) or expected_sha256 != digest):
             raise ValueError("IFC artifact SHA256 does not match the supplied expected bytes")
-        building, layout, expected, wall_plan, capability, grid_capability = _expected(
-            building, layout, equipment, routing, **options, **grid_options)
+        building, layout, expected, wall_plan, capability, grid_capability, group_capability = _expected(
+            building, layout, equipment, routing, **options, **grid_options, **group_options)
         if include_windows:
             report["window_capability"] = capability.to_dict()
         if include_grid:
             report["grid_capability"] = grid_capability.to_dict()
             report["grid_axes"] = []
+        if include_groups:
+            report["group_capability"] = group_capability.to_dict()
         source = {"building_sha256": _hash(building.to_dict()), "layout_sha256": _hash(layout.to_dict()),
                   "equipment_sha256": _hash(equipment.to_dict(building) if equipment is not None else None),
                   "routing_sha256": _hash(routing.to_dict() if routing is not None else None)}
@@ -119,6 +127,9 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
             contract.update(GridCapability="boundary_spanning_axes_v1",
                             GridSpecSHA256=grid_capability.spec_sha256,
                             StructuralGridSHA256=grid_capability.structural_grid_sha256)
+        if include_groups:
+            contract.update(GroupCapability="declared_semantic_groups_v1",
+                            GroupCapabilitySHA256=_hash(group_capability.to_dict()))
         if not _same_properties(metadata, contract):
             issues.append("IFC source hash, variant, optional state or DRAFT acceptance metadata does not match the canonical source")
         length_units = [unit for unit in project.UnitsInContext.Units if unit.UnitType == "LENGTHUNIT"]
@@ -184,6 +195,8 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
                            for axis in (*element.UAxes, *element.VAxes)]
             if {axis.id() for axis in model.by_type("IfcGridAxis")} != {axis.id() for axis in native_axes}:
                 issues.append("IFC unexpected or missing native grid axis inventory")
+        if include_groups:
+            report["groups"] = _groups(model, building, group_capability, actual)
         roots = model.by_type("IfcRoot")
         if len({item.GlobalId for item in roots}) != len(roots):
             issues.append("IFC duplicate GlobalId")
@@ -198,6 +211,10 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
         if include_grid:
             report["counts"].update(grids=sum(key[0] == "grid" for key in actual),
                                     grid_axes=len(report["grid_axes"]))
+        if include_groups:
+            report["counts"].update(zones=sum(group["kind"] == "zone" for group in report["groups"]),
+                process_systems=sum(group["kind"] == "flow-system" for group in report["groups"]),
+                group_relations=len(model.by_type("IfcRelAssignsToGroup")))
     except Exception as exc:
         issues.append(f"IFC independent readback failed: {exc}")
     if not issues:
@@ -205,10 +222,16 @@ def validate_orthogonal_ifc(path: str | Path, building: BuildingIR, layout: Layo
     return report
 
 
-def _expected(building, layout, equipment, routing, *, include_windows=False, include_grid=False):
+def _expected(building, layout, equipment, routing, *, include_windows=False, include_grid=False, include_groups=False):
     if not isinstance(building, BuildingIR) or not isinstance(layout, LayoutResult):
         raise ValueError("Canonical BuildingIR and LayoutResult required")
     options = {"include_windows": True} if include_windows else {}
+    group_capability = None
+    if include_groups:
+        from .orthogonal_groups import OrthogonalGroupsCapabilityError, validate_orthogonal_groups
+        group_capability = validate_orthogonal_groups(building, layout, equipment, routing=routing)
+        if not group_capability.ok:
+            raise OrthogonalGroupsCapabilityError(group_capability)
     grid_capability = None
     if include_grid:
         grid_capability = validate_orthogonal_grid(building.layout, building.structural_grid)
@@ -221,7 +244,7 @@ def _expected(building, layout, equipment, routing, *, include_windows=False, in
             raise OrthogonalWindowCapabilityError(capability)
     canonical_building = BuildingIR.from_mapping(building.to_dict())
     canonical_layout = parse_layout_result(layout.to_dict())
-    if not include_windows and not include_grid:
+    if not include_windows and not include_grid and not include_groups:
         building, layout = canonical_building, canonical_layout
     if len(building.layout.rooms) > 64 or len(building.equipment) > 64:
         raise ValueError("Source room/equipment limit of 64 exceeded")
@@ -287,7 +310,110 @@ def _expected(building, layout, equipment, routing, *, include_windows=False, in
     if include_grid and grid_capability.axes:
         expected[("grid", "structural-grid")] = {"class": "IfcGrid",
             "identity": {"Kind": "grid", "SourceId": "structural-grid", "Policy": "boundary_spanning_axes_v1"}}
-    return building, layout, expected, walls, capability, grid_capability
+    return building, layout, expected, walls, capability, grid_capability, group_capability
+
+
+def _group_contract(building, group):
+    """Rebuild exact source declaration properties without importing exporter."""
+    source = group.declaration
+    contract = {"DeclarationJSON": json.dumps(source, sort_keys=True, ensure_ascii=False,
+                                              allow_nan=False, separators=(",", ":")),
+                "DeclarationState": "DECLARED", "SourceContract": "BuildingIR " + building.version,
+                "SourceEntityType": "ZoneSpec" if group.kind == "zone" else "FlowSpec"}
+    if group.kind == "zone":
+        contract.update(ZoneId=group.id, ZoneType=source["type"],
+            DirectRoomIdsJSON=json.dumps(source["room_ids"], ensure_ascii=False, separators=(",", ":")),
+            Airlock=source.get("airlock", False), PhysicalContainerValidation="UNKNOWN")
+        for name, key in (("parent_zone_id", "ParentZoneId"), ("cleanroom_class", "CleanroomClass"),
+                           ("pressure_pa", "PressurePa")):
+            if name in source:
+                contract[key] = source[name]
+    else:
+        contract.update(FlowId=group.id, FlowType=source["type"],
+            FromIdsJSON=json.dumps(source["from_ids"], ensure_ascii=False, separators=(",", ":")),
+            ToIdsJSON=json.dumps(source["to_ids"], ensure_ascii=False, separators=(",", ":")),
+            Required=source["required"], MinimumClearWidthMM=source["minimum_clear_width_mm"],
+            NetworkEngineering="UNKNOWN", RepresentationKind="Declared process movement group; not an MEP network")
+        if "stage" in source:
+            contract["Stage"] = source["stage"]
+    return contract
+
+
+def _groups(model, building, capability, products):
+    expected = {(group.kind, group.id): group for group in capability.groups}
+    actual = {}
+    for element in model.by_type("IfcGroup"):
+        identity = _properties(element, "Pset_OrthogonalIdentity")
+        key = (identity.get("Kind"), identity.get("SourceId"))
+        if key not in expected or key in actual:
+            raise ValueError("IFC unexpected, duplicate or missing source native group identity")
+        group = expected[key]
+        if (element.is_a() != ("IfcZone" if group.kind == "zone" else "IfcSystem")
+                or element.Name != group.id or element.ObjectType != group.declaration["type"]
+                or element.Description != ("Declared functional zone; not a qualified physical container"
+                    if group.kind == "zone" else "Declared process movement; not a designed MEP network")
+                or element.GlobalId != _guid(building, group.kind + ":" + group.id)
+                or not _same_properties(identity, {"Kind": group.kind, "SourceId": group.id,
+                                                  "Policy": "declared_semantic_groups_v1"})):
+            raise ValueError("IFC native group class, source identity, type, policy or stable GUID differs")
+        if (group.kind == "zone" and element.LongName is not None
+                or element.Decomposes or element.IsDecomposedBy or element.Nests or element.IsNestedBy):
+            raise ValueError("IFC declared native groups cannot acquire physical scope text or decomposition links")
+        contract = _group_contract(building, group)
+        if not _same_properties(_properties(element, "Pset_OrthogonalGroup"), contract):
+            raise ValueError("IFC native group declared scalar or JSON source properties differ")
+        definitions = tuple(element.IsDefinedBy)
+        if (len(definitions) != 2
+                or any(link.is_a() != "IfcRelDefinesByProperties"
+                    or not link.RelatingPropertyDefinition.is_a("IfcPropertySet")
+                    or tuple(link.RelatedObjects) != (element,) for link in definitions)
+                or {link.RelatingPropertyDefinition.Name for link in definitions}
+                    != {"Pset_OrthogonalIdentity", "Pset_OrthogonalGroup"}):
+            raise ValueError("IFC declared native groups require exactly their own identity/source property relationships")
+        link = next(link for link in definitions if link.RelatingPropertyDefinition.Name == "Pset_OrthogonalGroup")
+        definition = link.RelatingPropertyDefinition
+        if (definition.GlobalId != _guid(building, "group-properties:" + element.GlobalId)
+                or link.GlobalId != _guid(building, "group-defines:" + element.GlobalId)):
+            raise ValueError("IFC native group source property or defining relationship GUID differs")
+        for prop in definition.HasProperties:
+            value = contract[prop.Name]
+            nominal_type = "IfcText" if prop.Name.endswith("JSON") else "IfcBoolean" if isinstance(value, bool) else "IfcReal" if isinstance(value, (int, float)) else "IfcLabel"
+            if prop.NominalValue.is_a() != nominal_type or prop.Unit is not None:
+                raise ValueError("IFC native group source scalar or JSON property types differ")
+        actual[key] = element
+    if set(actual) != set(expected):
+        raise ValueError("IFC missing declared native zone or process system")
+    if any(link.RelatingSystem in actual.values() for link in model.by_type("IfcRelServicesBuildings")):
+        raise ValueError("IFC declared process groups cannot acquire an unprojected building service relationship")
+    occurrences = {**products, **actual}
+    assignments = model.by_type("IfcRelAssignsToGroup")
+    if any(relation.is_a() != "IfcRelAssignsToGroup" or relation.RelatingGroup not in actual.values()
+           for relation in assignments):
+        raise ValueError("IFC unexpected native group assignment kind or target")
+    records = []
+    for key, group in expected.items():
+        element = actual[key]
+        links = [relation for relation in assignments if relation.RelatingGroup == element]
+        if len(links) != int(bool(group.members)):
+            raise ValueError("IFC source group requires exactly one nonempty assignment, or none when empty")
+        members = []
+        if links:
+            relation = links[0]
+            refs = tuple(relation.RelatedObjects)
+            if (relation.GlobalId != _guid(building, "group-membership:" + group.kind + ":" + group.id)
+                    or relation.Name is not None or relation.Description is not None
+                    or relation.RelatedObjectsType is not None
+                    or not refs or len({member.id() for member in refs}) != len(refs)):
+                raise ValueError("IFC group assignment GUID or duplicate/empty member inventory differs")
+            expected_refs = {occurrences[(member.kind, member.id)].id() for member in group.members}
+            if {member.id() for member in refs} != expected_refs:
+                raise ValueError("IFC actual direct native group membership differs from source")
+            for member in refs:
+                identity = _properties(member, "Pset_OrthogonalIdentity")
+                members.append({"kind": identity["Kind"], "id": identity["SourceId"]})
+        records.append({"kind": group.kind, "id": group.id, "class": element.is_a(),
+                        "global_id": element.GlobalId, "members": sorted(members, key=lambda item: (item["kind"], item["id"]))})
+    return records
 
 
 def _grid_axes(element, capability, context, world, placement, np):
