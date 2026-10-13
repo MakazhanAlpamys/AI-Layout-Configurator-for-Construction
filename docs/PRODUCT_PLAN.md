@@ -164,6 +164,9 @@ strict IFC EXPRESS. Exchange PASS remains separate from full facility acceptance
 Checkpoint H.3.6.3 exposes bounded final-global-model seconds and worker counts
 for explicit physical-zone solving and its supervised runner. Local/subtree
 limits and the 120-second whole-request deadline remain unchanged.
+Checkpoint B.14.1 adds explicit canonical window capability to the wall planner,
+preserving closed facade barriers and door portals. Three-format window export
+and complete generation propagation remain pending parts of B.14.
 
 ## 1. Why we are expanding the project
 

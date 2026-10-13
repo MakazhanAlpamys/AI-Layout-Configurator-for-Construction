@@ -359,6 +359,21 @@ component covers two-dimensional facade lines only; coordinated wall/three-forma
 window delivery, window elevations, engineering daylight and complete facility
 acceptance remain separate.
 
+### Opted coordination window capability
+
+`build_orthogonal_wall_plan(..., include_windows=True)` freshly verifies the
+`source_facade_v1` capability and attaches canonical `WindowOpening` records.
+Wall material and actual door openings remain exactly unchanged: a window is
+a closed facade barrier, never a circulation portal.
+
+The source sill plus height must fit the existing 2800 mm coordination wall
+proxy. A larger head retains scoped UNKNOWN and does not prove physical
+infeasibility. Ambiguous source facade selection retains UNKNOWN; duplicate
+identities retain FAIL. Omitted/false options preserve the existing unsupported
+window guards. Fresh root wall-plan regression passed 23 tests and 24 subtests
+in 1.11 s; the agent's broader regression passed 102 tests and 145 subtests.
+Three-format export and complete generation/bundle propagation remain pending.
+
 ## Atomic canonical draft bundle
 
 `write_orthogonal_bundle` persists five canonical source snapshots, three actual

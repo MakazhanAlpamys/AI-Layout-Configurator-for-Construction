@@ -61,22 +61,35 @@ class DraftProjectionEvidence:
                             "equipment clearance", "complete opening acceptance"]}
 
 
-def build_orthogonal_wall_plan(spec: LayoutIR, result: LayoutResult) -> WallPlan:
+def build_orthogonal_wall_plan(spec: LayoutIR, result: LayoutResult, *, include_windows: bool = False) -> WallPlan:
     """Buffer actual polygon edges and cut doors on real contiguous segments.
 
     Automatic doors choose the longest adequate shared segment, breaking ties
     by canonical endpoints. An explicit door preserves the existing offset
     from the lower endpoint only when there is one shared segment. Exterior
     entries require one exterior segment on the selected outward-facing side.
-    Windows and daylight opening generation require a later component.
+    Windows remain unsupported by default. Explicit opt-in attaches fresh
+    source facade windows after coordination-height eligibility passes. The
+    wall band remains a closed facade circulation barrier with door cuts only;
+    windows never become door graph or routing portals.
     """
+    if not isinstance(include_windows, bool):
+        raise ValueError("include_windows requires a boolean")
+    windows = ()
+    if include_windows:
+        # Lazy import avoids the B13 exterior-edge helper's module dependency.
+        from .orthogonal_window_capability import OrthogonalWindowCapabilityError, validate_orthogonal_window_capability
+        capability = validate_orthogonal_window_capability(spec, result)
+        if not capability.ok:
+            raise OrthogonalWindowCapabilityError(capability)
+        windows = capability.windows
     footprints, _ = _prepare(spec, result)
     unsupported = []
     if spec.windows:
         unsupported.append("explicit windows")
     if any(room.needs_daylight for room in spec.rooms):
         unsupported.append("daylight windows")
-    if unsupported:
+    if unsupported and not include_windows:
         raise ProjectionCapabilityError("windows", "Orthogonal DRAFT projection does not yet implement " + ", ".join(unsupported))
     centerlines = [LineString(edge) for room_id in sorted(footprints) for edge in footprints[room_id].edges]
     band = unary_union(centerlines).buffer(spec.wall_thickness_mm / 2, cap_style=2, join_style=2)
@@ -113,7 +126,7 @@ def build_orthogonal_wall_plan(spec: LayoutIR, result: LayoutResult) -> WallPlan
         band = band.difference(opening.centerline.buffer(spec.wall_thickness_mm / 2 + 1, cap_style=2, join_style=2))
     if band.is_empty or not band.is_valid:
         raise ValueError("Orthogonal wall projection produced invalid or empty wall geometry")
-    return WallPlan(band, openings)
+    return WallPlan(band, openings, windows)
 
 
 def export_orthogonal_draft_dxf(path: str | Path, spec: LayoutIR, result: LayoutResult) -> DraftProjectionEvidence:
