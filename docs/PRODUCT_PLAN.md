@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.1.2 retains a production program in an explicitly admitted canonical
+source and supplies a source-only validation CLI. Actual regular-wheel checks
+cover offline schemas and PASS/UNKNOWN/FAIL exits. Unsupported process semantics
+stop generation before CP search; agreed engineering data and I.2-I.6 remain open.
+
 Checkpoint H.3.6.10 adds bounded, independently checked automatic leaf turns
 that preserve the canonical source and old candidates. A real small final CP
 counterexample and complete small bundle pass; saved physical80 helper budgets

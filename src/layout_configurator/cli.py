@@ -148,6 +148,10 @@ def _confirmed_import(args, spec):
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="layout-configurator", description="Solver-first facility layout compiler")
     subparsers = parser.add_subparsers(dest="command", required=True)
+    production_program = subparsers.add_parser(
+        "validate-production-program", help="validate embedded source-bound process declarations; engineering acceptance stays PENDING")
+    production_program.add_argument("input", type=Path, help="strict canonical JSON/YAML BuildingIR with production_program")
+    production_program.add_argument("--output", "-o", type=Path, default=None, help="scoped validation report JSON")
     generate = subparsers.add_parser("generate", help="solve a JSON/YAML specification and export DXF/PDF")
     generate.add_argument("spec", type=Path)
     generate.add_argument("--output", "-o", type=Path, default=Path("out"))
@@ -427,6 +431,29 @@ def main(argv: list[str] | None = None) -> int:
     propose_llm.add_argument("--output", "-o", type=Path, required=True)
     propose_llm.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args(argv)
+
+    if args.command == "validate-production-program":
+        from .production_program import (EmbeddedProductionProgramError, ProductionProgramIssue,
+                                         ProductionProgramValidation, load_embedded_production_program)
+
+        try:
+            _, report = load_embedded_production_program(args.input)
+        except EmbeddedProductionProgramError as exc:
+            report = exc.report
+        except (OSError, ValueError, TypeError, OverflowError, RecursionError) as exc:
+            report = ProductionProgramValidation("FAIL", "NOT_EVALUATED", "NOT_EVALUATED", "NOT_EVALUATED",
+                None, (ProductionProgramIssue("invalid_embedded_input", "$", str(exc)[:2048]),), ())
+        payload = json.dumps(report.to_dict(), ensure_ascii=False, allow_nan=False, indent=2) + "\n"
+        try:
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(payload, encoding="utf-8")
+            else:
+                print(payload, end="")
+        except OSError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 2
+        return {"PASS": 0, "UNKNOWN": 4, "FAIL": 2}[report.status]
 
     if args.command == "generate-orthogonal-building":
         from .orthogonal_cli import generate_draft_set

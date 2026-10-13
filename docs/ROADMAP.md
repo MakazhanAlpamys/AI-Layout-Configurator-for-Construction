@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.1.2 adds opt-in production-program source admission and truthful
+validation CLI reports to the current product. Installed-wheel checks passed;
+downstream process enforcement and external agreement remain open.
+
 Checkpoint H.3.6.10 supplies source-preserving legal leaf choices with actual
 small CP/bundle verification. The current product's physical80 gate remains
 open until the changed complete measurement; this MVP archive is unchanged.
@@ -22,7 +26,8 @@ in the current product plan; archived MVP completion is unchanged.
 
 Checkpoint QA.17 repairs IFC test ownership and volatile-header parity found
 by the complete parallel CI without reopening this completed MVP archive.
-The changed local fixtures pass; their full changed-commit CI remains pending.
+The changed local fixtures passed; complete pinned `c0eb166` CI subsequently
+passed and is recorded in QA.19.
 
 Checkpoint B.6 adds independently checked equipment placement in actual
 orthogonal room components, without reopening the completed residential MVP.

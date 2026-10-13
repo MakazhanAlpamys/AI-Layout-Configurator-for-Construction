@@ -420,6 +420,10 @@ def validate_building(
         _flow_separation_check(building, flow_routes, profile, flow_separation_rule),
         *profile_checks,
     ]
+    if building.production_program is not None:
+        checks.append(FacilityCheckResult(
+            "PRODUCTION_PROGRAM_CAPABILITY", "Embedded production-program requirements are not evaluated", "UNKNOWN",
+            ("Source declarations, measurements and supplied attribution do not establish process or engineering acceptance.",)))
     issues = _coordination_issues(
         checks,
         geometry_report,

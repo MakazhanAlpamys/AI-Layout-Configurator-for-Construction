@@ -83,6 +83,12 @@ def re_solve_facility_after_edit(
     }
     if not isinstance(prior_building, BuildingIR) or not isinstance(edited_building, BuildingIR):
         _reject(evidence, "invalid_source_type", "Prior and edited programs must be canonical BuildingIR objects")
+    unsupported = [name for name, source in (("prior", prior_building), ("edited", edited_building))
+                   if source.production_program is not None]
+    if unsupported:
+        _reject(evidence, "unsupported_production_program",
+                "Embedded production-program declarations are not enforced by incremental facility solving",
+                unsupported_sources=unsupported)
     if not isinstance(prior_result, LayoutResult) or not isinstance(profile, FacilityProfile):
         _reject(evidence, "invalid_source_type", "Prior geometry and current profile must be canonical objects")
     try:

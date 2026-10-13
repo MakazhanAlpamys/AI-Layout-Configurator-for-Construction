@@ -9,10 +9,11 @@ from datetime import date
 import hashlib
 import json
 import math
+from pathlib import Path
 
 from .building import BuildingIR
 from .resources import resource_path
-from .schema import DEFAULT_BUILDING_SCHEMA_PATH, DEFAULT_SCHEMA_PATH, load_json_schema
+from .schema import DEFAULT_BUILDING_SCHEMA_PATH, DEFAULT_SCHEMA_PATH, load_building_schema, load_json_schema
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,15 @@ class ProductionProgramValidation:
                 "geometry_validation": "NOT_EVALUATED", "usage_rights_scope": "supplied_declaration_only",
                 "building_sha256": self.building_sha256, "counts": dict(self.counts),
                 "issues": [issue.to_dict() for issue in self.issues]}
+
+
+class EmbeddedProductionProgramError(ValueError):
+    """A rejected embedded contract retains its independent scoped report."""
+
+    def __init__(self, report):
+        self.report = report
+        super().__init__("Invalid embedded production_program: " + "; ".join(
+            f"{issue.code}: {issue.path}: {issue.message}" for issue in report.issues))
 
 
 class _InputFailure(Exception):
@@ -185,10 +195,11 @@ def _schema_issues(value, schema):
 def validate_production_program(raw, *, building, limits=ProductionProgramLimits()):
     """Reconcile supplied declarations with original source, never placed geometry.
 
-    Building identity hashes its unchanged canonical ``to_dict()`` bytes using
-    sorted keys, compact separators, UTF-8 and finite JSON numbers. Numeric
-    strings and booleans are never normalized into measurements. PASS does not
-    establish the truth of source claims or approval of the manufacturing design.
+    Base building identity excludes its optional embedded program and hashes
+    canonical bytes using sorted keys, compact separators, UTF-8 and finite JSON
+    numbers. Whole-source serialization retains the program. Numeric strings
+    and booleans are never normalized into measurements. PASS does not establish
+    the truth of source claims or approval of the manufacturing design.
     """
     counts = {}
 
@@ -230,7 +241,9 @@ def validate_production_program(raw, *, building, limits=ProductionProgramLimits
         references += 1 + int(building.layout.external_entry is not None)
         if objects > limits.max_building_objects or references + counts["typed_references"] > limits.max_references:
             raise _InputFailure("input_budget_exceeded", "$.building", "Original building object/reference budget exceeded")
-        original = building.to_dict()
+        # Embedded evidence is excluded only from its own base-source binding.
+        # Whole BuildingIR serialization and external source identities retain it.
+        original = replace(building, production_program=None).to_dict()
         remaining_bytes = limits.max_total_utf8_bytes - counts["json_utf8_bytes"]
         remaining_nodes = limits.max_nodes - counts["json_nodes"]
         if remaining_bytes <= 0 or remaining_nodes <= 0:
@@ -380,3 +393,101 @@ def validate_production_program(raw, *, building, limits=ProductionProgramLimits
     status = "FAIL" if any(issue.status == "FAIL" for issue in issues) else "UNKNOWN" if issues else "PASS"
     program = ProductionProgramContract(_json_bytes(raw).decode("utf-8"))
     return result("PASS", "PASS", status, issues, program, digest)
+
+
+def admit_embedded_production_program(raw, *, limits=ProductionProgramLimits(),
+                                     schema_path=DEFAULT_BUILDING_SCHEMA_PATH):
+    """Return a strictly bound source object and scoped contract evidence.
+
+    Raw JSON types and both canonical source schemas are checked before any
+    constructor coercion. Canonical scalar or field changes are rejected rather
+    than silently rebinding the supplied program to a normalized source.
+    """
+    if type(limits) is not ProductionProgramLimits or any(type(getattr(limits, field.name)) is not int or
+                                                        getattr(limits, field.name) <= 0 for field in fields(limits)):
+        raise ValueError("Production-program limits must contain actual positive integers")
+    try:
+        _preflight(raw, limits)
+        if type(raw) is not dict or "production_program" not in raw:
+            raise ValueError("Canonical BuildingIR must contain production_program")
+        program_counts = _preflight(raw["production_program"], limits)
+    except _InputFailure as exc:
+        raise ValueError(f"{exc.issue.code}: {exc.issue.path}: {exc.issue.message}") from exc
+    issues = _schema_issues(raw, load_building_schema(schema_path, include_production_program=True))
+    if type(raw.get("layout")) is dict:
+        issues += _schema_issues(raw["layout"], load_json_schema(DEFAULT_SCHEMA_PATH))
+    if issues:
+        raise ValueError("Invalid embedded canonical BuildingIR: " + "; ".join(
+            f"{issue.path}: {issue.message}" for issue in issues))
+    layout = raw["layout"]
+    objects = sum(len(raw[name]) for name in ("zones", "equipment", "flows")) + len(layout["rooms"])
+    objects += len(layout.get("doors", [])) + len(layout.get("windows", []))
+    objects += len(layout["boundary"].get("cutouts", [])) + int("external_entry" in layout)
+    grid = raw.get("structural_grid")
+    if grid is not None:
+        objects += 1 + sum(len(grid.get(name, [])) for name in ("axes_x_mm", "axes_y_mm", "labels_x", "labels_y"))
+    references = sum(len(room.get(name, [])) for room in layout["rooms"]
+                     for name in ("required_adjacency", "preferred_adjacency", "forbidden_adjacency"))
+    references += sum(len(zone[name]) for zone in raw["zones"]
+                      for name in ("room_ids", "required_adjacency", "preferred_adjacency", "forbidden_adjacency"))
+    references += sum(int("parent_zone_id" in zone) for zone in raw["zones"])
+    references += sum(int("room_id" in item) + int("zone_id" in item) for item in raw["equipment"])
+    references += sum(len(flow["from_ids"]) + len(flow["to_ids"]) for flow in raw["flows"])
+    references += 2 * len(layout.get("doors", [])) + len(layout.get("windows", []))
+    references += 1 + int("external_entry" in layout)
+    if objects > limits.max_building_objects or references + program_counts["typed_references"] > limits.max_references:
+        raise ValueError("input_budget_exceeded: original building object/reference budget exceeded before normalization")
+    base = {key: value for key, value in raw.items() if key != "production_program"}
+    building = BuildingIR.from_mapping(base)
+    if _json_bytes(base) != _json_bytes(building.to_dict()):
+        raise ValueError("Original canonical source identity changes during constructor normalization")
+    report = validate_production_program(raw["production_program"], building=building, limits=limits)
+    if report.status == "FAIL":
+        raise EmbeddedProductionProgramError(report)
+    return replace(building, production_program=report.program), report
+
+
+def load_embedded_production_program(path, *, limits=ProductionProgramLimits()):
+    """Read a bounded duplicate-safe canonical JSON/YAML source for validation."""
+    if type(limits) is not ProductionProgramLimits or any(type(getattr(limits, field.name)) is not int or
+                                                        getattr(limits, field.name) <= 0 for field in fields(limits)):
+        raise ValueError("Production-program limits must contain actual positive integers")
+    source = Path(path)
+    with source.open("rb") as stream:
+        data = stream.read(limits.max_total_utf8_bytes + 1)
+    if len(data) > limits.max_total_utf8_bytes:
+        raise ValueError("input_budget_exceeded: input file exceeds its UTF-8 byte budget")
+    text = data.decode("utf-8")
+
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if type(key) is not str or key in result:
+                raise ValueError("Canonical input requires unique string mapping keys")
+            result[key] = value
+        return result
+
+    if source.suffix.lower() == ".json":
+        raw = json.loads(text, object_pairs_hook=unique_pairs)
+    elif source.suffix.lower() in {".yaml", ".yml"}:
+        import yaml
+
+        class UniqueLoader(yaml.SafeLoader):
+            pass
+
+        def mapping(loader, node):
+            pairs = []
+            for key_node, value_node in node.value:
+                if key_node.tag == "tag:yaml.org,2002:merge":
+                    raise ValueError("Canonical YAML cannot merge mappings")
+                pairs.append((loader.construct_object(key_node), loader.construct_object(value_node)))
+            return unique_pairs(pairs)
+
+        UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, mapping)
+        try:
+            raw = yaml.load(text, Loader=UniqueLoader)
+        except yaml.YAMLError as exc:
+            raise ValueError("Malformed canonical YAML") from exc
+    else:
+        raise ValueError("Production-program input requires JSON or YAML")
+    return admit_embedded_production_program(raw, limits=limits)

@@ -31,6 +31,22 @@ def load_json_schema(path: str | Path = DEFAULT_SCHEMA_PATH) -> dict[str, Any]:
     return raw
 
 
+def load_building_schema(schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH, *,
+                         include_production_program: bool = False) -> dict[str, Any]:
+    """Compose opt-in admission from packaged schemas without changing defaults.
+
+    The nested program retains its own resource ID and local definitions, so
+    local references resolve within that packaged schema without network I/O.
+    """
+    if type(include_production_program) is not bool:
+        raise ValueError("include_production_program must be a boolean")
+    schema = load_json_schema(schema_path)
+    if include_production_program:
+        schema["properties"]["production_program"] = load_json_schema(
+            resource_path("schemas/production_program.schema.json"))
+    return schema
+
+
 def validate_mapping(mapping: Mapping[str, Any], schema_path: str | Path = DEFAULT_SCHEMA_PATH) -> tuple[SchemaIssue, ...]:
     """Validate one canonical mapping and return stable, printable issues."""
 
@@ -94,17 +110,35 @@ def load_canonical_spec(path: str | Path, schema_path: str | Path = DEFAULT_SCHE
     return normalize_mapping(load_mapping(path), schema_path)
 
 
-def validate_building(building: BuildingIR, schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH) -> tuple[SchemaIssue, ...]:
+def validate_building(building: BuildingIR, schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH, *,
+                      include_production_program: bool = False) -> tuple[SchemaIssue, ...]:
     """Validate the normalized serialization emitted by ``BuildingIR.to_dict``."""
 
+    if type(include_production_program) is not bool:
+        raise ValueError("include_production_program must be a boolean")
+    if include_production_program:
+        from jsonschema import Draft202012Validator
+
+        validator = Draft202012Validator(load_building_schema(schema_path, include_production_program=True))
+        return tuple(SchemaIssue("$" + "".join(f"[{part}]" if isinstance(part, int) else f".{part}"
+                                               for part in error.absolute_path), error.message)
+                     for error in validator.iter_errors(building.to_dict()))
     return validate_mapping(building.to_dict(), schema_path)
 
 
 def normalize_building_mapping(
-    mapping: Mapping[str, Any], schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH
+    mapping: Mapping[str, Any], schema_path: str | Path = DEFAULT_BUILDING_SCHEMA_PATH, *,
+    include_production_program: bool = False
 ) -> BuildingIR:
     """Validate an extended building program before converting it to ``BuildingIR``."""
 
+    if type(include_production_program) is not bool:
+        raise ValueError("include_production_program must be a boolean")
+    if include_production_program and isinstance(mapping, Mapping) and "production_program" in mapping:
+        from .production_program import admit_embedded_production_program
+
+        result, _ = admit_embedded_production_program(mapping, schema_path=schema_path)
+        return result
     issues = validate_mapping(mapping, schema_path)
     if issues:
         details = "; ".join(f"{issue.path}: {issue.message}" for issue in issues)

@@ -11,9 +11,12 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from collections.abc import Mapping
 import math
-from typing import Any, Literal
+from typing import Any, Literal, TYPE_CHECKING
 
 from .models import LayoutIR
+
+if TYPE_CHECKING:
+    from .production_program import ProductionProgramContract
 
 
 class BuildingSpecError(ValueError):
@@ -293,14 +296,24 @@ class BuildingIR:
     flows: tuple[FlowSpec, ...] = ()
     structural_grid: StructuralGridSpec | None = None
     version: str = "0.2"
+    production_program: ProductionProgramContract | None = None
 
     @classmethod
-    def from_mapping(cls, raw: Mapping[str, Any]) -> "BuildingIR":
+    def from_mapping(cls, raw: Mapping[str, Any], *, include_production_program: bool = False) -> "BuildingIR":
+        if type(include_production_program) is not bool:
+            raise BuildingSpecError("include_production_program must be a boolean")
         if not isinstance(raw, Mapping):
             raise BuildingSpecError("BuildingIR root must be an object")
         payload = raw.get("building", raw)
         if not isinstance(payload, Mapping):
             raise BuildingSpecError("building must be an object")
+        if "production_program" in payload:
+            if not include_production_program:
+                raise BuildingSpecError("production_program requires explicit source-only validation admission")
+            from .production_program import admit_embedded_production_program
+
+            result, _ = admit_embedded_production_program(raw)
+            return result
         layout_raw = payload.get("layout", payload)
         if not isinstance(layout_raw, Mapping):
             raise BuildingSpecError("building.layout must be an object")
@@ -477,6 +490,8 @@ class BuildingIR:
         }
         if self.structural_grid is not None:
             payload["structural_grid"] = self.structural_grid.to_dict()
+        if self.production_program is not None:
+            payload["production_program"] = self.production_program.to_dict()
         return payload
 
 

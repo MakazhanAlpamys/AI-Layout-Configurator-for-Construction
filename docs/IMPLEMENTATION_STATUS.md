@@ -123,6 +123,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.18 | Bound genuine accepted review/repeatability pilot preparation | Two monolithic pilot setups use existing width/contact/door-clear orchestration and .25 deterministic work units. Fresh equipment/flow/facility PASS is required before review caching and after both actual seed-42 equipment repetitions. Raw unresolved dossier setup is no longer described as accepted. | Agent nine tests PASS in 5.16 s; fresh root nine PASS in 5.08 s. Root independently confirmed all nine method identities and all 32 original assertion ASTs; three additional gate assertions run for each repetition. Old remote consecutive-log spans 60.106/30.741 s describe another runtime/workload, not an isolated speedup. | fixture optimization complete 2026-10-13; changed full-CI timing pending |
 | QA.19 | Complete pinned parallel-shard acceptance after native fixture repair | Both platforms complete all 1,113 unique cases with exactly disjoint/exhaustive 1,060 core and 53 bundle inventories, identical cross-platform discovery and retained skip reasons. All active jobs, installed API and nine saved pharma variants PASS; six archive and 84 extracted-file identities checked. | [Run 38409230704](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38409230704), pinned c0eb166: Linux core523.439/bundle307.299 s, Windows core700.527/bundle356.794 s; four/eight skips. Total792 s; Windows core job787 s including setup. Nine pharma cases/81checks, 54 actual variant hashes/three manifests; API5.113 s/nine checks, expert PENDING. [Evidence](acceptance/c0eb166.json). Parallel wall times and changed workloads prevent causal timing attribution. | complete 2026-10-13 for pinned commit; later C/I/budget/leaf-turn changes outside scope |
 | H.3.6.10 | Selective legal automatic-root-leaf diversity | True-only option appends at most four deduplicated independently valid swapped-envelope shapes to eligible leaves. Old choices/source hashes remain. Explicit pools/parents/fixed/axes/openings/equipment excluded; original minima/internal/group constraints and all support/diagnostic bounds retained. | Real small old final CP INFEASIBLE becomes independently accepted with four choices; complete small producer/persisted QA/EXPRESS PASS. Agent 103 methods/218 subtests PASS30.815 s; fresh root 14/20 PASS4.63 s/actionlint. Root reconstructed actual saved80 family: all220 retained, +eight staff shapes, 228 total/980 records/67,548 bytes, 912 support rows, upper14,592<=16,384; original hashes match. Default tiny/runner old/current omitted/False bytes exact. [Scope](SCALING_STUDY.md). | diversity complete 2026-10-13; changed full80 measurement and acceptance pending |
+| I.1.2 | Explicit embedded production-program admission | Closed raw canonical validation preserves the whole source and binds the program to the building without its own field. Duplicate-safe bounded JSON/YAML CLI exits PASS 0 / UNKNOWN 4 / FAIL 2. Unsupported process semantics stop generation/incremental solving before CP and prevent full facility QA PASS. | Root: 55 core/source tests in 1.593 s and 25 stage/incremental/form tests in 5.161 s passed. Clean pinned-source wheel plus eight frozen files installed separately: seven actual packaged implementation hashes, two authoritative offline schemas and four actual CLI outcomes verified outside checkout; reconstruction preserves 18 unknown evidence items. | complete 2026-10-13 for source admission; downstream enforcement and engineering agreement separate |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -162,12 +163,13 @@ Cyrillic text.
   source-pinned API and editor launch controls exist; measured large edits remain separate.
   pinned two-floor 40-room CI, shared-grid IFC and typed
   core declarations exist, with detailed engineering still out of scope.
-- I.1–I.6: standalone production-program core exists; opt-in embedding and
-  agreed engineering program remain; unified BuildingIR extensions; source-backed
+- I.1–I.6: source-bound production-program core, opt-in embedding and validation
+  CLI exist; agreed engineering program remains; unified BuildingIR extensions; source-backed
   engineering library; scenario and pressure-network checks; synchronized
   drawings/schedules; medical-plastics benchmark and change scenario.
 
 ## External acceptance
+
 
 The process/QA, cleanroom/HVAC and architecture/BIM decision blocks remain
 open until the named reviewers actually review the pinned bundles. Receiving

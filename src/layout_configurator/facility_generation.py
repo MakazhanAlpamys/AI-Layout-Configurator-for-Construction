@@ -202,6 +202,18 @@ def solve_feasible_facility_variants(
     if max_attempts < variants:
         raise ValueError("max_attempts must be greater than or equal to variants")
 
+    if building.production_program is not None:
+        failure = _stage_evidence(
+            "input", "UNKNOWN", (building.production_program.to_dict()["id"],),
+            proof_scope="unsupported_source_capability", code="unsupported_production_program",
+            message="Embedded production-program declarations are not enforced by facility generation")
+        generation = FacilityGenerationResult(
+            requested_variants=variants, max_attempts=max_attempts, attempted_candidates=0,
+            accepted=(), rejected=(), seed=seed, time_limit_seconds=time_limit_seconds,
+            equipment_retries=equipment_retries, deterministic_units=deterministic_units,
+            room_solver=room_solver, failure_evidence=(failure,))
+        raise InfeasibleFacilityGeneration(failure["message"], generation)
+
     prepared = building.with_required_flow_opening_width()
     warm_options = {}
     if hint_rects:
