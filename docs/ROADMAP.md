@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint C.5.4 retains opted conflict reports and canonical failed source in
+persistent HTTP jobs, with strict budgets and fresh-QA cache reuse. This extends
+current-product delivery without changing finite-family proof scope or the
+archived MVP criteria.
+
 Checkpoint QA.21 retains successful pinned `70ee96e` full current-product CI:
 all 1,202 cases per OS remain covered, with container and nine pharma variants.
 Actual elapsed falls from 792 s to 416 s across changed source and six test VMs.

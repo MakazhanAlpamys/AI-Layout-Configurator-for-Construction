@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint C.5.4 persists opted zone explanations through actual HTTP jobs.
+Strict normalized JSON budgets participate in cache identity; unsupported and
+incremental controls reject before queueing. Durable success/failure, restart,
+fresh saved QA and cache reuse passed. [Contract](API.md). Editor/scale and
+other-stage conflict registration remain separate.
+
 Checkpoint QA.21 verifies complete pinned `70ee96e` acceptance: 1,202 tests
 per OS across three exhaustive shards, installed-container API and nine pharma
 variants. Eight downloaded archive identities and 86 extracted files match.
@@ -16,7 +22,7 @@ Checkpoint C.5.2 registers actual hierarchy terminal constraints and captures
 the source/family/model before derived clauses. Fresh checked contact and
 fixed-axis cores have SAT deletion witnesses; one diagnostic budget spans
 subtree retries. Source-conditioned family proofs never establish original
-BuildingIR infeasibility. Public persistence is the next C.5.3 checkpoint.
+BuildingIR infeasibility. C.5.3-C.5.4 subsequently supply CLI/HTTP persistence.
 
 Checkpoint QA.20 separates complete exchange/CLI modules into a third CI shard
 per OS, preserving every test and all independent API/pharma/quick gates.

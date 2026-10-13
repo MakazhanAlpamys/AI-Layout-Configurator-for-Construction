@@ -34,7 +34,7 @@ comes from the environment and is never printed. Send
 `POST /jobs` accepts `program`, optional `profile`, and `variants`,
 `max_attempts`, `time_limit_seconds`, `seed`, `equipment_retries`,
 `deterministic_units`, `room_solver`, `reuse`, optional `revision_history` and
-optional `incremental_from`.
+optional `incremental_from`, `explain_zone_conflicts` and `zone_conflict_budget`.
 The history contains exact self-contained prior source JSON and hashes,
 never server filesystem paths; see [DRAWING_SHEETS.md](DRAWING_SHEETS.md).
 Invalid history is rejected before enqueueing, including in batch requests.
@@ -44,6 +44,32 @@ shorthand YAML must be normalized before submission. Unknown fields, paths,
 coordinates, invalid settings and non-finite numbers are rejected before work
 is queued. Defaults match the facility generator: one variant, 60 seconds per
 solver invocation, seed 42, two equipment retries and automatic room backend.
+
+## Bounded zone conflict diagnostics
+
+Set `"explain_zone_conflicts": true` for a direct `zone_hierarchical` or
+`zone_recursive` request. Ordinary backends and incremental requests reject
+this option before enqueueing. The optional budget is a nonempty JSON object:
+
+```json
+{"explain_zone_conflicts": true, "zone_conflict_budget": {"wall_seconds": 2, "max_solves": 8, "deterministic_units": 0.1}}
+```
+
+Omitted budget fields default to 2 seconds, 64 solves and 0.1 deterministic
+units. Limits are `(0,10]` seconds, integer `1..512` solves and `(0,10]` units;
+units may be `null`. Booleans, unknown fields and non-finite values are rejected.
+A budget requires explicit true mode. Omitted/false controls retain the original
+request settings and cache identity. Enabled normalized budgets remain JSON in
+persisted requests/jobs and participate in cache identity; the worker alone
+constructs the solver budget object.
+
+Accepted manifests and failed jobs retain
+`generation.room_solver_evidence.conflict_explanations`. Opted generation
+failures also retain their canonical `spec` beside this evidence. Completed job
+records survive restart; cache reuse still requires artifact hashes and fresh
+saved-bundle QA. A feasible capture can use zero diagnostic solves. An unnamed
+base conflict remains UNKNOWN, and a finite-family core never proves original
+BuildingIR infeasibility. See [FINITE_CONFLICTS.md](FINITE_CONFLICTS.md).
 
 ## Re-solve an edited accepted program
 

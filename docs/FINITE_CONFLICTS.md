@@ -81,7 +81,8 @@ layout-configurator generate-building program.json --room-solver zone_recursive 
 
 The flag applies to direct generation. Unsupported ordinary backends and an
 incremental request with this flag are rejected before source/output mutation.
-HTTP, editor and supervised80 conflict controls remain separate integrations.
+HTTP controls are supplied by C.5.4 below; editor and supervised80 controls
+remain separate integrations.
 
 Actual reports are retained under
 `generation.room_solver_evidence.conflict_explanations`: in `manifest.json` for
@@ -95,4 +96,29 @@ Meaningful RED exposed the missing public controls and CLI flag. Fresh root
 verification passed 42 related tests in 4.005 s. Durable actual CLI probes
 preserved source bytes, retained an initial global base conflict as UNKNOWN,
 and produced an accepted three-format bundle whose nine saved-file QA checks
-passed independently. Earlier pinned full CI remains separate until a new run.
+passed independently. Complete pinned `70ee96e` CI subsequently passed in
+QA.21; later HTTP controls are outside that pin.
+
+## Persistent HTTP diagnostics
+
+C.5.4 accepts the same strict flag in direct zone requests, with a bounded
+JSON `zone_conflict_budget`. Validation and atomic batches reject unsupported
+backends, incremental mode, wrong types or budgets before any job is queued.
+Omitted/false settings retain the original request/cache identity; enabled
+budgets normalize their defaults and are copied into JSON-only persistent
+settings. The worker reconstructs `ConflictBudget` only for the direct call.
+
+Actual accepted manifests retain the captured diagnostics; opted generation
+failures retain the canonical source and full generation evidence. Restart
+reads the same completed job JSON, and successful reuse still checks actual
+artifact hashes and independent saved QA. Diagnostic budgets are part of the
+cache key. Production constraints and their search budgets are unchanged.
+
+Meaningful missing-contract RED produced four failures in five tests without
+errors. Fresh root API/incremental/delivery verification passed 30 tests in
+25.250 s; the final six HTTP tests passed in 1.867 s. Durable actual HTTP
+accepted/failed jobs preserve JSON settings and source-bound reports after
+restart; the accepted bundle passes all nine fresh saved QA checks before a
+real cache hit. Its COMPLETE capture uses zero diagnostic solves. The actual
+unnamed base conflict remains UNKNOWN, without subset-minimal or original-source
+infeasibility claims. See [API.md](API.md) for the request contract.

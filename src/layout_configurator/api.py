@@ -31,18 +31,21 @@ from .drawing_revision_history import parse_revision_history
 from .facility import FacilityProfile, default_facility_profile, DEFAULT_FACILITY_PROFILE_SCHEMA_PATH
 from .facility_generation import FACILITY_SOLVER_STRATEGIES, InfeasibleFacilityGeneration, solve_feasible_facility_variants
 from .facility_incremental import IncrementalSourceError, re_solve_facility_after_edit
+from .finite_conflicts import ConflictBudget
 from .io import load_building_result
 from .result_geometry import parse_layout_result
 from .qa import validate_building_set
 from .program_form import ProgramFormError, program_form_config, validate_program_form
 from .review import write_review_dossier
 from .schema import normalize_building_mapping, validate_mapping
+from .zone_conflict_registry import validate_conflict_budget
 
 
 _JOB_ID = re.compile(r"[0-9a-f]{32}\Z")
 _TERMINAL = {"SUCCEEDED", "FAILED", "CANCELLED", "INTERRUPTED"}
 _FIELDS = {"program", "profile", "variants", "max_attempts", "time_limit_seconds",
-           "seed", "equipment_retries", "deterministic_units", "room_solver", "reuse", "revision_history", "incremental_from"}
+           "seed", "equipment_retries", "deterministic_units", "room_solver", "reuse", "revision_history", "incremental_from",
+           "explain_zone_conflicts", "zone_conflict_budget"}
 
 
 class JobUnavailable(RuntimeError):
@@ -139,6 +142,24 @@ def _validated_request(payload):
         raise ValueError("seed must be an integer between 0 and 2147483647")
     if settings["room_solver"] not in FACILITY_SOLVER_STRATEGIES:
         raise ValueError("Unknown room_solver")
+    explain = payload.get("explain_zone_conflicts", False)
+    if type(explain) is not bool:
+        raise ValueError("explain_zone_conflicts must be a boolean")
+    if "zone_conflict_budget" in payload and not explain:
+        raise ValueError("zone_conflict_budget requires explain_zone_conflicts=True")
+    if explain:
+        if settings["room_solver"] not in {"zone_hierarchical", "zone_recursive"} or "incremental_from" in payload:
+            raise ValueError("Zone conflict explanations require direct generation with a zone room solver")
+        budget_fields = {"wall_seconds", "max_solves", "deterministic_units"}
+        raw_budget = payload.get("zone_conflict_budget", {"wall_seconds": 2.0})
+        if not isinstance(raw_budget, dict) or not raw_budget or set(raw_budget) - budget_fields:
+            raise ValueError("zone_conflict_budget requires supported nonempty budget settings")
+        budget = ConflictBudget(**raw_budget)
+        validate_conflict_budget(budget)
+        # Persist only JSON values; reconstruct the solver object in the worker.
+        settings.update(explain_zone_conflicts=True, zone_conflict_budget={
+            "wall_seconds": budget.wall_seconds, "max_solves": budget.max_solves,
+            "deterministic_units": budget.deterministic_units})
     reuse = payload.get("reuse", False)
     if not isinstance(reuse, bool) or reuse and settings["deterministic_units"] is None:
         raise ValueError("reuse requires a deterministic_units budget")
@@ -320,8 +341,11 @@ class FacilityService:
             request = json.loads((root / "request.json").read_text(encoding="utf-8"))
             building = normalize_building_mapping(request["program"])
             profile = FacilityProfile.from_mapping(request["profile"])
+            solver_settings = dict(request["settings"])
+            if "zone_conflict_budget" in solver_settings:
+                solver_settings["zone_conflict_budget"] = ConflictBudget(**solver_settings["zone_conflict_budget"])
             generation = (self._solve_incremental(request, building, profile) if "incremental_source" in request
-                          else solve_feasible_facility_variants(building, profile, **request["settings"]))
+                          else solve_feasible_facility_variants(building, profile, **solver_settings))
             prepared = building.with_required_flow_opening_width()
             manifest = {"project": prepared.layout.project_name, "profile": profile.to_dict(),
                         "generation": generation.to_dict(), "variants": []}
@@ -358,6 +382,8 @@ class FacilityService:
             error = {"message": str(exc), "type": type(exc).__name__}
             if isinstance(exc, InfeasibleFacilityGeneration):
                 error["generation"] = exc.generation.to_dict()
+                if request["settings"].get("explain_zone_conflicts"):
+                    error["spec"] = request["program"]
             if isinstance(exc, IncrementalSourceError):
                 error["input_evidence"] = exc.evidence
             _save(root / "generation-failure.json", error)
