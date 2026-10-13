@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint C.5.1 establishes checked conflict explanations relative to a fixed
+captured model/family. Production registration and persisted integration remain
+in the current product plan; archived MVP completion is unchanged.
+
 Checkpoint QA.17 repairs IFC test ownership and volatile-header parity found
 by the complete parallel CI without reopening this completed MVP archive.
 The changed local fixtures pass; their full changed-commit CI remains pending.

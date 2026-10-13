@@ -1,5 +1,10 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint C.5.1 adds bounded, independently re-solved subset-minimal conflicts
+for a captured finite model. Actual final deletion witnesses and same-source
+expanded-family feasibility preserve the original-program proof boundary.
+[Contract](FINITE_CONFLICTS.md); production hierarchy integration follows.
+
 Checkpoint QA.17 repairs the native IFC fixture lifetime and timestamp-sensitive
 parity exposed by the first complete sharded CI. Actual file hashes, exact IFC
 DATA, same-file option parity, memberships and semantic checks remain verified.

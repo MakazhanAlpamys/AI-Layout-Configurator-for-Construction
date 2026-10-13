@@ -118,6 +118,7 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.16 | Reduce full-CI critical path with exhaustive parallel test shards | Each OS discovers the complete unittest root once per invocation and runs one disjoint ordered shard: all core cases or exactly test_orthogonal_bundle-prefixed modules. Import/identity/empty/exhaustiveness safeguards fail before execution. Four named test VMs retain every test and outcome; bounded structured evidence uploads always. Independent pharma starts immediately; API and nine pharma cases remain. Cheap push jobs add dry partition verification only. | Actual frozen-worktree dry collection: 1,113 unique IDs = 1,060 core + 53 draft-bundle; zero import errors, tests not executed. Agent eight real runner cases / nine subtests PASS 2.60 s; root three execution/import/duplicate safeguards PASS 0.91 s. Actionlint clean. More VM setup/discovery is the tradeoff; elapsed savings need the next pinned full CI. | partition/workflow complete 2026-10-13; remote latency measurement pending |
 | H.3.6.9 | Measure final translation-support propagation on unchanged physical80 source | Pinned `93fdc7c` captures 220 actual shapes and posts 816 support rows / nine tables, then proves only that selected family INFEASIBLE. All original raw files, prepared program, hints, manifest and eleven stage hashes match three prior runs. Every shape/family SHA and eight ZIP file bytes independently verified; twelve ordered candidate shapes differ from the prior wall-clock family. | [Run 38404321208](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38404321208): 43.515 s total / 42.313 s rooms; final Solve 0.031 s, 1,697 variables / 7,973 constraints, no solution. [Compact evidence](acceptance/93fdc7c.json). No equipment, routes, exports or persisted80 gates reached; cross-run times do not isolate an optimization effect. | measurement complete 2026-10-13; physical80 acceptance open, original source infeasibility unproven |
 | QA.17 | Repair real native IFC fixture failures exposed by full parallel CI | Hold the native file owner while reading borrowed members/GUIDs. Separate-export parity keeps exact DATA and semantic equality; each actual file SHA is checked and same-file omitted/False report equality retained. Production exports and assertions about membership/geometry remain. | Pinned d4edf62 full CI passed both bundle shards, pharma and API but failed core. Native exit reproduced on installed IFC 0.9.0; both controlled distinct-header cases failed before repair. Fresh 25 group/grid tests PASS in 27.299 s on 0.9.0, two controlled timestamp cases PASS; four affected cases PASS in 0.951 s on 0.8.5. [Negative evidence](acceptance/d4edf62.json). | fixture repair complete 2026-10-13; changed full CI pending |
+| C.5.1 | Checked finite-model subset-minimal conflict core | Builder-registered original terminals are guarded on a bounded clone before derived pruning/hints/exclusions. Fresh base/full/core/final-core and final deletion solves certify completed UNSAT/SAT evidence. Caller/model equivalence remains the integration's obligation; incomplete work stays UNKNOWN and original-program infeasibility false. | Agent 15 tests / 30 subcases PASS in 1.93 s. Fresh root all 15 PASS in 1.216 s; root independently checked both final witnesses' actual nonoverlap/full-width contacts, eight minimal-core solves, two expanded-family solves with identical source and exact original proto preservation. [Contract](FINITE_CONFLICTS.md). | core complete 2026-10-13; actual hierarchy registry and persisted integration pending |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -172,13 +173,14 @@ Cyrillic text.
 
 
 
+
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
   scoped current predicates and three-format persisted draft QA are implemented;
   opted source windows, reference axes and declared native groups are integrated;
   independent complete facility and expert acceptance remain.
-- C: scalable zone-driven placement and containment; minimal conflicting
-  constraint sets remain separate from implemented structured stage evidence.
+- C: scalable zone-driven placement and containment; checked finite conflict
+  core exists, with actual hierarchy registry and persisted integration pending.
   Preferred-zone singleton participants can increase search cost.
 - D: extended discipline/manufacturer symbol libraries and receiving-tool
   acceptance; editable source dimension chains, named presentation presets, initial project schematic symbols,
