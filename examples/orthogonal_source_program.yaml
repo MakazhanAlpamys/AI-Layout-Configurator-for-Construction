@@ -1,0 +1,83 @@
+# Synthetic project-policy example; no supplied coordinates or engineering approval.
+equipment:
+- anchor_offset_mm: 0.0
+  clearance_back_mm: 100.0
+  clearance_front_mm: 100.0
+  clearance_left_mm: 400.0
+  clearance_right_mm: 400.0
+  depth_mm: 500.0
+  fixed: false
+  id: machine
+  room_id: main
+  rotation_allowed: false
+  type: equipment
+  width_mm: 500.0
+flows:
+- from_ids:
+  - machine
+  id: material
+  minimum_clear_width_mm: 800.0
+  required: true
+  to_ids:
+  - corner
+  type: material
+layout:
+  boundary:
+    cutouts: []
+    height: 6000.0
+    width: 6000.0
+  door_width_mm: 900.0
+  doors: []
+  entry_room: main
+  grid_mm: 100
+  project_name: Orthogonal solver counterexample
+  rooms:
+  - forbidden_adjacency: []
+    id: main
+    is_heated: false
+    max_area: 20.0
+    min_area: 20.0
+    min_depth: 1800.0
+    min_width: 1800.0
+    needs_daylight: false
+    preferred_adjacency: []
+    required_adjacency:
+    - corner
+    target_area: 20.0
+    type: process
+  - forbidden_adjacency: []
+    id: corner
+    is_heated: false
+    max_area: 16.0
+    min_area: 16.0
+    min_depth: 1800.0
+    min_width: 1800.0
+    needs_daylight: false
+    preferred_adjacency: []
+    required_adjacency: []
+    target_area: 16.0
+    type: support
+  tolerance: 0.03
+  version: '0.1'
+  wall_thickness_mm: 200.0
+  window_height_mm: 1500.0
+  window_sill_mm: 900.0
+  window_width_mm: 1200.0
+  windows: []
+project_name: Orthogonal solver counterexample
+version: '0.2'
+zones:
+- forbidden_adjacency: []
+  id: process
+  preferred_adjacency: []
+  required_adjacency: []
+  room_ids:
+  - main
+  type: process
+- forbidden_adjacency: []
+  id: support
+  preferred_adjacency: []
+  required_adjacency: []
+  room_ids:
+  - corner
+  type: support

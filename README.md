@@ -148,6 +148,18 @@ structural axes. The full acceptance input is in
 and its boundaries and external review gates are in
 [`docs/PILOT_ACCEPTANCE_SPEC.md`](docs/PILOT_ACCEPTANCE_SPEC.md).
 
+Explicit polygon DRAFT generation and saved-bundle QA are also available:
+
+```powershell
+.venv/Scripts/python.exe -m layout_configurator.cli generate-orthogonal-building examples/orthogonal_source_program.yaml --output out/orthogonal-drafts --seed 1 --deterministic-budget .05 --max-room-candidates 4 --equipment-retries 2
+.venv/Scripts/python.exe -m layout_configurator.cli qa-orthogonal-building out/orthogonal-drafts --json
+```
+
+Use a new output directory. The synthetic canonical example needs no supplied
+coordinates and produces exact DXF/PDF/IFC drafts with independent readback.
+Partial sets remain UNKNOWN; full facility and engineering acceptance remain
+UNKNOWN/PENDING. See [the supported contract](docs/ORTHOGONAL_GEOMETRY.md).
+
 `generate-building` already solves rooms with CP-SAT, then places equipment
 with a second CP-SAT pass that accounts for clearance, and produces `building_01.json`. For dense
 facility programs, the default time limit of this command is 60 seconds:

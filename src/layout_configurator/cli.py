@@ -205,6 +205,27 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="previous BCF package; disappeared issues are carried forward as resolved history",
     )
+    orthogonal = subparsers.add_parser(
+        "generate-orthogonal-building",
+        help="generate bounded orthogonal DRAFT bundles; full facility validation stays UNKNOWN",
+    )
+    orthogonal.add_argument("spec", type=Path, help="strict canonical JSON/YAML BuildingIR")
+    orthogonal.add_argument("--output", "-o", type=Path, required=True, help="new draft-set directory; existing output is never overwritten")
+    orthogonal.add_argument("--profile", type=Path, default=None)
+    orthogonal.add_argument("--variants", type=int, default=1)
+    orthogonal.add_argument("--time-limit", type=float, default=10, help="bounded generation seconds; exports have separate local limits")
+    orthogonal.add_argument("--deterministic-budget", type=float, default=None, dest="deterministic_units",
+                            help="work allowance per CP-SAT invocation within the same runtime")
+    orthogonal.add_argument("--seed", type=int, default=42)
+    orthogonal.add_argument("--max-room-candidates", type=int, default=8)
+    orthogonal.add_argument("--equipment-retries", type=int, default=8)
+    orthogonal_qa = subparsers.add_parser(
+        "qa-orthogonal-building",
+        help="independently check one orthogonal draft bundle or set; full validation stays UNKNOWN",
+    )
+    orthogonal_qa.add_argument("input", type=Path)
+    orthogonal_qa.add_argument("--profile", type=Path, default=None)
+    orthogonal_qa.add_argument("--json", action="store_true", dest="json_output")
     check_building = subparsers.add_parser(
         "check-building",
         help="recompute and validate a generated BuildingIR result",
@@ -394,6 +415,15 @@ def main(argv: list[str] | None = None) -> int:
     propose_llm.add_argument("--output", "-o", type=Path, required=True)
     propose_llm.add_argument("--timeout", type=float, default=60)
     args = parser.parse_args(argv)
+
+    if args.command == "generate-orthogonal-building":
+        from .orthogonal_cli import generate_draft_set
+
+        return generate_draft_set(args)
+    if args.command == "qa-orthogonal-building":
+        from .orthogonal_cli import check_draft_command
+
+        return check_draft_command(args)
 
     if args.command == "import-raster":
         try:

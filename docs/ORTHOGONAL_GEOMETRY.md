@@ -374,6 +374,42 @@ window guards. Fresh root wall-plan regression passed 23 tests and 24 subtests
 in 1.11 s; the agent's broader regression passed 102 tests and 145 subtests.
 Three-format export and complete generation/bundle propagation remain pending.
 
+## Explicit generation and delivery QA commands
+
+```powershell
+.venv/Scripts/python.exe -m layout_configurator.cli generate-orthogonal-building examples/orthogonal_source_program.yaml --output out/orthogonal-drafts --seed 1 --deterministic-budget .05 --max-room-candidates 4 --equipment-retries 2
+.venv/Scripts/python.exe -m layout_configurator.cli qa-orthogonal-building out/orthogonal-drafts --json
+.venv/Scripts/python.exe -m layout_configurator.cli qa-orthogonal-building out/orthogonal-drafts/variant_01 --json
+```
+
+The synthetic example contains only canonical program requirements, equipment
+and a flow. It supplies no coordinates, catalogs or fixed footprints. Add
+`--profile PATH` to both commands to anchor an explicit current profile; the
+omitted profile is the generic sourced project compatibility policy.
+
+Generation requires strict raw canonical JSON/YAML and a new output directory.
+Duplicate keys, boolean/string dimensions and malformed source types are rejected
+before normalization or solving. A set manifest and `generation.json` are bounded
+delivery metadata over the existing canonical models; every child has the B.11.1
+14-file bundle. Source/profile changes during work prevent publication.
+
+Independent set QA checks every child, actual generation/manifest byte hashes,
+ordered unique relative IDs, all canonical source snapshots and the current
+facility report. Traversal, extra inventory, stale rehashed reports and promoted
+statuses fail. A verified partial set stays UNKNOWN even when each child passes.
+Existing destinations are protected by native no-replacement publication.
+
+Generation exits 0 for complete scoped DRAFT delivery, 4 for bounded search with
+no accepted draft or a verified partial set, 2 for invalid input and 3 for export
+rejection. Failure-only evidence is preserved when possible. QA exits 0 for
+scoped PASS and 4 otherwise. Full facility validation always remains UNKNOWN and
+engineering acceptance PENDING.
+
+Fresh root CLI/incremental CLI regression passed 17 tests and 25 subtests in
+86.17 s; the agent passed 27 tests and 25 subtests plus two rectangular CLI
+regressions. The actual canonical YAML example was generated through the module
+command into a complete concave draft and independently checked as a set.
+
 ## Atomic canonical draft bundle
 
 `write_orthogonal_bundle` persists five canonical source snapshots, three actual

@@ -167,6 +167,9 @@ limits and the 120-second whole-request deadline remain unchanged.
 Checkpoint B.14.1 adds explicit canonical window capability to the wall planner,
 preserving closed facade barriers and door portals. Three-format window export
 and complete generation propagation remain pending parts of B.14.
+Checkpoint B.12 adds explicit orthogonal generation and independent single/set
+QA commands. Partial requested sets stay UNKNOWN; complete exchange delivery
+does not change DRAFT/full UNKNOWN/PENDING acceptance.
 
 ## 1. Why we are expanding the project
 
