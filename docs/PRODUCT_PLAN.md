@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.4.2 checks a supplied source-bound whole-equipment 2D installation
+path through actual explicit openings, walls, staging obstacles and neighboring
+bodies/operating reservations. Unsupported motion stays UNKNOWN while known
+pose collisions remain FAIL. Fresh single-file 23 tests/21 subtests and regular
+installed-wheel clear/rotated/collision cases pass.
+[Scope](EQUIPMENT_INSTALLATION_PATHS.md). Full 3D/scenario acceptance, producer
+and synchronized process-documentation integration remain separate.
+
 Checkpoint I.5.1.1 verifies the exact `34abb9e` process-review API and offline
 schema in a regular installed wheel outside the checkout. Consistent UNKNOWN,
 actual pressure-cycle FAIL and bounded originating-failure retention pass,

@@ -1,5 +1,10 @@
 # Independent Local Equipment Scenario Checks
 
+Checkpoint I.4.2 separately checks explicitly supplied whole-body 2D paths
+from external access. [Path contract](EQUIPMENT_INSTALLATION_PATHS.md).
+These stationary scenario reports retain their own scope; complete path/3D
+integration and engineering acceptance remain separate.
+
 Checkpoint I.4.1 adds
 `validate_equipment_scenarios(building, layout, equipment, library=...,
 card_by_equipment=..., maintenance_targets=..., installation_targets=...,

@@ -144,8 +144,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.22 | Sequential single-file quick CI | The same four source/geometry contract files run in separate sequential pytest invocations. Complete collection, exhaustive shard partition, triggers, concurrency and all full jobs are unchanged. | Actionlint and structural comparison against 8289365 PASS; exact workflow SHA recorded locally. No test execution, full CI dispatch or new performance claim. [Policy](CI.md). | complete 2026-10-14 for quick invocation policy |
 | H.3.6.14 | Saved physical80 finite-family obstruction | Exact captured family has 1,664 receiving-bridge joins incompatible with clean/staff separation; closest gap 1,600 mm. Prior concrete 80-room witness fails only the original receiving bridge within its room/zone check scope. Local append examples and support bounds do not prove augmented feasibility. | Fresh six saved byte identities, canonical source/family and ordered shape hashes, 1,664 saved inequalities, 80 saved coordinate identities and source pointers PASS; no new geometry, CP, producer, test or full CI run. [Compact evidence](acceptance/9632549-family-obstruction.json). | complete 2026-10-14 for derivative evidence; original-source feasibility and full scaling acceptance open |
 | I.5.1 | Synchronized supplied process schedules and evidence | One original revision produces eight detached JSON schedules and five fresh scoped reports with common component identities. Exact equipment frames/request IDs and combined production/library source budgets precede geometry even without a library. Embedded source identity is retained; bounded incomplete delivery preserves originating FAIL evidence. | Actual missing-module and numerical/admission/delivery RED regressions preceded fixes. Fresh root single-file `test_process_review.py`: 21 tests / 26 subtests PASS in 4.09 s. No full suite, solver, benchmark or wheel build at this pause. [Contract](PROCESS_REVIEW.md). | local core complete 2026-10-14; installed-wheel verification, PDF/overlays and full bundle attachment pending; user-requested pause |
-
 | I.5.1.1 | Regular installed process review | Exact committed API and offline schema run outside the checkout. Eight schedules and five fresh reports share identities; original source bytes survive consistent review, pressure conflict and bounded failure delivery. | Fresh regular wheel from `34abb9e`: consistent UNKNOWN/resolved pressure PASS; actual three-edge cycle FAIL; 4096-byte cap retains original source/edge failure in 2940 bytes. Exact module/schema hashes and wheel SHA are retained. [Scope](PROCESS_REVIEW.md). No full suite or benchmark. | complete 2026-10-14 for installed API; PDF/overlays/full bundle integration open; explicitly resumed |
+| I.4.2 | Explicit whole-equipment installation paths | Source-bound fixed-orientation axis motion checks the complete body and optional supplied clearance against explicit door-only walls, actual staging floor/obstacles and known bodies/operating reservations. Own neighbor stop is conditional; unsupported motion cannot hide literal pose collisions; narrow entry failures remain in the entry subreport. | Initial missing-module RED plus actual diagonal-collision and narrow-entry RED. Fresh root single-file 23 tests / 21 subtests PASS3.00 s. Regular installed wheel repeats clear/fixed90 local PASS with overall UNKNOWN and actual 700000 mm2 body collision FAIL; exact original sources unchanged. [Scope](EQUIPMENT_INSTALLATION_PATHS.md). | complete 2026-10-14 for supplied 2D paths; full 3D/scenario, producer and process-document integration open |
 
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
@@ -188,10 +188,12 @@ Cyrillic text.
 - I.1–I.6: source-bound production-program core, opt-in embedding/validation
   CLI, typed transfer sidecars/actual checks, sourced finite equipment cards/local
   projection, independent environment/scenario declarations, pressure checks
-  and local equipment scenario geometry checks exist. Source-bound synchronized
+  and local equipment scenario geometry checks exist. Explicit source-bound
+  fixed-orientation whole-body 2D installation paths are checked independently.
+  Source-bound synchronized
   JSON schedules and fresh process evidence exist, with a verified regular
   installed review API. Agreed engineering program, unified producer enforcement, complete
-  scenario/installation paths, synchronized drawings/PDF/bundle delivery, medical-plastics
+  full scenario/3D/installation-path integration, synchronized drawings/PDF/bundle delivery, medical-plastics
   benchmark and change scenario remain.
 
 ## External acceptance

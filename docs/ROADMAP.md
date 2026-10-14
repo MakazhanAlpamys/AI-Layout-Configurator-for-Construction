@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint I.4.2 supplies current-product source-bound whole-body installation
+path review with actual opening and collision evidence. Local and installed
+verification pass; full 3D/scenario and external acceptance stay separate.
+Archived MVP scope is unchanged.
+
 Checkpoint I.5.1.1 verifies current-product process review from an installed
 wheel after the user explicitly resumed work. Source-bound UNKNOWN/FAIL and
 bounded failure evidence pass; archived MVP and complete acceptance stay unchanged.
