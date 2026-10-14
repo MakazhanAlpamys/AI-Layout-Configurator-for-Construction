@@ -1,5 +1,10 @@
 # Source-bound production program
 
+Checkpoint I.4.3.1 separately checks actual supplied required/forbidden room
+adjacency with original source identities and bounded geometric witnesses.
+[Standalone geometry contract](PRODUCTION_LAYOUT_REVIEW.md). This does not
+change the declaration validator or enable embedded-program generation.
+
 Cycle I.1.1 introduces the versioned contract in
 `schemas/production_program.schema.json` and
 `production_program.validate_production_program(raw, building=building)`.

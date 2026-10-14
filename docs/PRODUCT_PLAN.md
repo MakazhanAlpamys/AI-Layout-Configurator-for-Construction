@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.4.3.1 independently checks actual production room adjacency:
+one contiguous project-width span, forbidden positive contact and actual
+overlap, with original requirement/source identities and bounded failures.
+Sixteen tests/seventeen subtests and eight regular-wheel cases pass.
+[Scope](PRODUCTION_LAYOUT_REVIEW.md). Existing producer barriers remain;
+integration, complete process enforcement and Cycle I acceptance stay open.
+
 Checkpoint I.5.4.3 attaches explicit version `0.2` path documents to unchanged
 original facility artifacts. Caller/outer/child controls and combined artifact
 bounds are admitted before fresh geometry; metadata-recapture races reject.

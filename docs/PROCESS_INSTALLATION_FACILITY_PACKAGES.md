@@ -86,3 +86,8 @@ or establish font portability/receiving-tool acceptance.
 [Compact evidence](acceptance/e481922-process-path-packages.json) records exact
 source, wheel, input, profile, request and saved-PDF identities. Local proof is
 retained under `out/checkpoints/process-installation-facility-package-i543/`.
+
+The pushed `a8f1e44` checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38576986775)
+in twenty-nine seconds including setup. Full acceptance jobs are skipped;
+changed full acceptance remains separate.

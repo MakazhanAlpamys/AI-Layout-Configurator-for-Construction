@@ -1,0 +1,263 @@
+{
+  "checkpoint": "I.4.3.1",
+  "verified_on": "2026-10-14",
+  "status": "PASS",
+  "base_commit": "a8f1e4433ba7bc9bc1407488b78bd9dd77169d29",
+  "source_sha256": {
+    "src/layout_configurator/production_layout_review.py": "163b6b4dbd0b4e9ecf1fb7d7e2b19b6b1fb8a898da364ba5253972e491d42369",
+    "tests/test_production_layout_review.py": "7efcc8f24cd95b2a3f2bfc59f34fd6a712f9da059278243e8c983698e9062c36"
+  },
+  "archive_sha256": "7ed592f1f2b3adbdc34a95a5aa06608a0947e7ed207090601adf11cc52ba6bfb",
+  "wheel_sha256": "fe707da40f835f86fc75bfa8f17ef70ba733424ea47c61f29343d6a96768ef3c",
+  "imports": "regular installed wheel from foreign cwd",
+  "cases": [
+    {
+      "case": "clear",
+      "status": "PASS",
+      "geometry_status": "PASS",
+      "binding_status": "PASS",
+      "provenance_status": "PASS",
+      "source": {
+        "building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d",
+        "layout_sha256": "220a42cf527b8bf33cc99791625f45fce9964a1535885a671b6eab78c0f30600",
+        "production_program_sha256": "4fa1fb7cb6ba0d872aba1a67ab9dd7cd2e6d21c7b18ebede0018f7dd65fea9c5",
+        "program_base_building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d"
+      },
+      "inventory_status": "COMPLETE",
+      "requirements": [
+        {
+          "requirement_id": "near_assembly",
+          "status": "PASS",
+          "maximum_contiguous_mm": 3000.0,
+          "required_contiguous_mm": 900.0
+        },
+        {
+          "requirement_id": "separate_waste",
+          "status": "PASS",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": null
+        }
+      ]
+    },
+    {
+      "case": "corner",
+      "status": "FAIL",
+      "geometry_status": "FAIL",
+      "binding_status": "PASS",
+      "provenance_status": "PASS",
+      "source": {
+        "building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d",
+        "layout_sha256": "2e982dbdd5dba80e6001cf8449d533d5e35f3565195bd4164d4da11ce51c496c",
+        "production_program_sha256": "4fa1fb7cb6ba0d872aba1a67ab9dd7cd2e6d21c7b18ebede0018f7dd65fea9c5",
+        "program_base_building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d"
+      },
+      "inventory_status": "COMPLETE",
+      "requirements": [
+        {
+          "requirement_id": "near_assembly",
+          "status": "FAIL",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": 900.0
+        },
+        {
+          "requirement_id": "separate_waste",
+          "status": "PASS",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": null
+        }
+      ]
+    },
+    {
+      "case": "overlap",
+      "status": "FAIL",
+      "geometry_status": "FAIL",
+      "binding_status": "PASS",
+      "provenance_status": "PASS",
+      "source": {
+        "building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d",
+        "layout_sha256": "6f2dfe4db5ca0a65556283c2372d51e0b022e15944eef1553475941c7df8261f",
+        "production_program_sha256": "4fa1fb7cb6ba0d872aba1a67ab9dd7cd2e6d21c7b18ebede0018f7dd65fea9c5",
+        "program_base_building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d"
+      },
+      "inventory_status": "COMPLETE",
+      "requirements": [
+        {
+          "requirement_id": "near_assembly",
+          "status": "FAIL",
+          "maximum_contiguous_mm": 1000.0,
+          "required_contiguous_mm": 900.0
+        },
+        {
+          "requirement_id": "separate_waste",
+          "status": "PASS",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": null
+        }
+      ]
+    },
+    {
+      "case": "mixed",
+      "status": "FAIL",
+      "geometry_status": "FAIL",
+      "binding_status": "PASS",
+      "provenance_status": "UNKNOWN",
+      "source": {
+        "building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d",
+        "layout_sha256": "389761859786443d871615147415c59dbeb4948b9e0d97f572afa0b8762083f6",
+        "production_program_sha256": "44a08096655671def9ae02ab5c35325884c9850156fe4db905af1c7cdb293eea",
+        "program_base_building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d"
+      },
+      "inventory_status": "COMPLETE",
+      "requirements": [
+        {
+          "requirement_id": "near_assembly",
+          "status": "FAIL",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": 900.0
+        },
+        {
+          "requirement_id": "separate_waste",
+          "status": "UNKNOWN",
+          "maximum_contiguous_mm": null,
+          "required_contiguous_mm": null
+        }
+      ]
+    },
+    {
+      "case": "disconnected",
+      "status": "FAIL",
+      "geometry_status": "FAIL",
+      "binding_status": "PASS",
+      "provenance_status": "PASS",
+      "source": {
+        "building_sha256": "360dc4333b2c18a9efe4b1ad3d55a57e19f2ea813cf96c3f509bd7a43d0fb6c7",
+        "layout_sha256": "8ccae75c7095e438cc69c5306ee9313aae873debd1aa1f8e9bb4f4502b1a799d",
+        "production_program_sha256": "a2fd76663a0c262979c314c5214857d37171dd902085a2764468468cbde60b7f",
+        "program_base_building_sha256": "360dc4333b2c18a9efe4b1ad3d55a57e19f2ea813cf96c3f509bd7a43d0fb6c7"
+      },
+      "inventory_status": "COMPLETE",
+      "requirements": [
+        {
+          "requirement_id": "near_assembly",
+          "status": "FAIL",
+          "maximum_contiguous_mm": 600.0,
+          "required_contiguous_mm": 900.0
+        },
+        {
+          "requirement_id": "separate_waste",
+          "status": "PASS",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": null
+        }
+      ]
+    },
+    {
+      "case": "embedded",
+      "status": "PASS",
+      "geometry_status": "PASS",
+      "binding_status": "PASS",
+      "provenance_status": "PASS",
+      "source": {
+        "building_sha256": "4d0cf74ff44119856a4cc6c50a56bc7f99bad83cad5f4065dadd9cb7745a2f8d",
+        "layout_sha256": "220a42cf527b8bf33cc99791625f45fce9964a1535885a671b6eab78c0f30600",
+        "production_program_sha256": "237fa3179b3ac5b862a744605d228cc47d2a1a7ca1f54235a6cbb92eb3fa14f6",
+        "program_base_building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d"
+      },
+      "inventory_status": "COMPLETE",
+      "requirements": [
+        {
+          "requirement_id": "near_assembly",
+          "status": "PASS",
+          "maximum_contiguous_mm": 3000.0,
+          "required_contiguous_mm": 900.0
+        },
+        {
+          "requirement_id": "separate_waste",
+          "status": "PASS",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": null
+        }
+      ]
+    },
+    {
+      "case": "precision",
+      "status": "UNKNOWN",
+      "geometry_status": "NOT_EVALUATED",
+      "binding_status": "NOT_EVALUATED",
+      "provenance_status": "NOT_EVALUATED",
+      "source": {},
+      "inventory_status": "NOT_EVALUATED",
+      "requirements": []
+    },
+    {
+      "case": "degenerate",
+      "status": "FAIL",
+      "geometry_status": "FAIL",
+      "binding_status": "PASS",
+      "provenance_status": "PASS",
+      "source": {
+        "building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d",
+        "layout_sha256": "f4c361787b4e67a7cc80575ec8118f658e5ec5ea446c941dd0154d4cc3c63d42",
+        "production_program_sha256": "4fa1fb7cb6ba0d872aba1a67ab9dd7cd2e6d21c7b18ebede0018f7dd65fea9c5",
+        "program_base_building_sha256": "cfd78cb8a3b59f6751704055ecaf3fa1fc01f7b9b6bb7c7d23155cd88c3b474d"
+      },
+      "inventory_status": "COMPLETE",
+      "requirements": []
+    }
+  ],
+  "compact_failure_bytes": 2921,
+  "compact_failure": {
+    "code": "required_room_adjacency_failed",
+    "status": "FAIL",
+    "requirement_id": "near_assembly",
+    "requirement_sha256": "3b25fed7eb576eac266a992aa49bcc53713178024cb4044983a7f7f8d81874dd",
+    "operation_id": "mold",
+    "source_id": "brief",
+    "source_sha256": "bf5a2cab250f129436ae53302b6cd10f7bb8d147c478c7ff38a4ca1e7e08d74c",
+    "room_a": "molding",
+    "room_b": "assembly",
+    "maximum_contiguous_mm": 0,
+    "required_contiguous_mm": 900.0,
+    "overlap_area_mm2": 0.0,
+    "message": "Actual room geometry conflicts with the originating production requirement"
+  },
+  "cp_calls": 0,
+  "root_sequential_single_file_tests": [
+    {
+      "file": "tests/test_production_layout_review.py",
+      "tests": 16,
+      "subtests": 17,
+      "seconds": 1.13,
+      "exit_code": 0
+    },
+    {
+      "file": "tests/test_production_program.py",
+      "tests": 18,
+      "subtests": 34,
+      "seconds": 0.94,
+      "exit_code": 0
+    }
+  ],
+  "precision_regression": {
+    "polygon_units": "mm",
+    "extent_mm": 1E-200,
+    "original_finite_only_predicate_constructor_calls": 1,
+    "current_exact_fallback_constructor_calls": 0,
+    "reproduction": "Isolated original predicate via removal of the sole new area==0 AST branch, no source mutation",
+    "truly_zero_area_status": "FAIL",
+    "root_initial_missing_unit_test": "Corrected; initial schema rejection was not a precision witness"
+  },
+  "scope": {
+    "document_status": "DRAFT",
+    "full_facility_validation": "UNKNOWN",
+    "full_scenario_validation": "UNKNOWN",
+    "three_dimensional_feasibility": "UNKNOWN",
+    "engineering_acceptance": "PENDING",
+    "authenticated_approval": "UNKNOWN",
+    "proven_building_infeasible": false,
+    "producer_support": "NOT_ENABLED",
+    "full_suite_run": false,
+    "benchmark_run": false,
+    "background_scripts": false
+  }
+}

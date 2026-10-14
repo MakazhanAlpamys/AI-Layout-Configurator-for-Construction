@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint I.4.3.1 adds current-product source-bound actual production room
+adjacency verification. Scoped local/installed checks pass; complete process
+enforcement and engineering acceptance remain separate from the MVP archive.
+
 Checkpoint I.5.4.3 adds current-product original-bound facility/path-document
 attachment with shared pre-geometry admission and unchanged child artifacts.
 Local/installed checks pass; full engineering acceptance and the original MVP
