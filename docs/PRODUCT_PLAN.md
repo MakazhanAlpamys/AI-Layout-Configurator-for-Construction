@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.4.1 adds an explicit version `0.2` process reader with supplied
+installation paths. Nine raw component hashes and four canonical leaf hashes
+retain their distinct identities; combined work/vertices are admitted before
+common geometry or source decoding. Fresh single-file 17 tests/21 subtests
+and regular installed-wheel checks pass, including unchanged version `0.1`
+results and saved PDF QA. [Scope](PROCESS_INSTALLATION_REVIEW.md). Path diagrams,
+producer enforcement and full scenario/engineering acceptance remain open.
+
 Checkpoint I.5.3 attaches unchanged facility artifacts and process documents
 through an opted source-bound outer package. Exact original frames, supplied
 routes, revision and profile are rechecked; actual child QA detects rehashed

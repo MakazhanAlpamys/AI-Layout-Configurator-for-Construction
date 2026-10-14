@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint I.5.4.1 adds a current-product version `0.2` process/path reader
+with original source identities, shared pre-geometry bounds and originating
+failure evidence. Scoped local/installed checks pass; path drawings and full
+engineering acceptance remain open. The archived MVP criteria stay unchanged.
+
 Checkpoint I.5.3 adds a current-product source-bound outer facility/process
 package with exact child preservation and fresh physical/evidence checks.
 Software attachment passes; full engineering acceptance and MVP archive scope

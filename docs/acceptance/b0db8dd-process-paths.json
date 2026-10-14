@@ -1,0 +1,146 @@
+{
+  "checkpoint": "I.5.4.1",
+  "recorded_utc": "2026-10-14T11:05:42.3074192Z",
+  "scope": "Explicit supplied process revision 0.2; full engineering acceptance remains pending",
+  "source_sha256": {
+    "src/layout_configurator/process_review.py": "fa57874ab0aacafcd23b056ce136f6adb266b450b202c722585eb29df5c1b462",
+    "src/layout_configurator/process_installation_review.py": "c2f4c55dd40ba75b23bed7c8cc8aeb88b2722fcd91eed18ee78107e2e5fd5877",
+    "src/layout_configurator/equipment_installation_path.py": "5f77c7b97b5b42bc489f7c0ba923975ebbdddbed27ab7ea4fedb93fdf7814277",
+    "schemas/process_review_paths.schema.json": "badd26193f46c40f2102c75095701abdb27fa39d9234f3cb60c9a9518685feac",
+    "tests/test_process_installation_review.py": "2da4dfbe516ed96f519db2d1c1a839ff47d2f877f3977da9708285eb2efac671"
+  },
+  "verification": [
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_process_installation_review.py -q --tb=short",
+      "exit_code": 0,
+      "passed": 17,
+      "passed_subtests": 21,
+      "seconds": 21.08
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_process_review.py -q --tb=short",
+      "exit_code": 0,
+      "passed": 21,
+      "passed_subtests": 26,
+      "seconds": 3.99
+    },
+    {
+      "command": ".venv/Scripts/python.exe -m pytest tests/test_equipment_installation_path.py -q --tb=short",
+      "exit_code": 0,
+      "passed": 23,
+      "passed_subtests": 21,
+      "seconds": 4.52
+    }
+  ],
+  "regressions": [
+    "Missing module: eight failures in 1.06 seconds before implementation",
+    "Missing library wrongly returned FAIL: actual selected RED 1.11 seconds, then correct UNKNOWN with independent collision FAIL",
+    "Literal shared/default vertex admission: two actual RED failures in 2.16 seconds",
+    "Actual room and duplicated structured source vertices, including escaped points key: three actual RED failures in 2.10 seconds",
+    "Quoted source text about point arrays remains non-geometric"
+  ],
+  "installed_wheel": {
+    "status": "PASS",
+    "cases": {
+      "clear": {
+        "status": "UNKNOWN",
+        "local_2d_path_status": "PASS",
+        "review_source": {
+          "file_sha256": "80bf60f0382eec11822d83796f283c0cb68847774165c6a1e9da63ce1f1d0057",
+          "bytes": 49596,
+          "scope": "exact_supplied_process_review_json"
+        },
+        "request_sha256": "7d6844269c26a9b891925f73d744f90c960c3646ced45098bf1acc449baa0f64"
+      },
+      "blocked": {
+        "status": "FAIL",
+        "local_2d_path_status": "FAIL",
+        "review_source": {
+          "file_sha256": "ef3a288f17cfc7a2982386fe458fe83f66283da80ac17462f6f5ae1f8bd25475",
+          "bytes": 49596,
+          "scope": "exact_supplied_process_review_json"
+        },
+        "request_sha256": "6042e5406c0c0a01f110a5819fdcc76195be673d70aee518432faa4f23211cf4"
+      },
+      "pressure": {
+        "status": "FAIL",
+        "local_2d_path_status": "PASS",
+        "review_source": {
+          "file_sha256": "9b44a6a1d2ddc772bf1c1a23ff6fa4c7fb3f1907e7f599ff1abf115711f82d27",
+          "bytes": 60348,
+          "scope": "exact_supplied_process_review_json"
+        },
+        "request_sha256": "7d6844269c26a9b891925f73d744f90c960c3646ced45098bf1acc449baa0f64"
+      },
+      "optional": {
+        "status": "UNKNOWN",
+        "local_2d_path_status": "PASS",
+        "review_source": {
+          "file_sha256": "c102aace5ae0b20e68909c0633f39fdfe68067f3f8e58abed23b46d1e5de9e05",
+          "bytes": 49277,
+          "scope": "exact_supplied_process_review_json"
+        },
+        "request_sha256": "7d6844269c26a9b891925f73d744f90c960c3646ced45098bf1acc449baa0f64"
+      },
+      "embedded": {
+        "status": "UNKNOWN",
+        "local_2d_path_status": "PASS",
+        "review_source": {
+          "file_sha256": "5c5109f350be09ef19ffedb5219ce5126416d5fc9e1d6c41a92e48b43f37b1f2",
+          "bytes": 52490,
+          "scope": "exact_supplied_process_review_json"
+        },
+        "request_sha256": "0e8918e6629554455186a36f263efa662b3604f0b79e3d90a67d7087568cd874"
+      },
+      "missing_library": {
+        "status": "UNKNOWN",
+        "local_2d_path_status": "UNKNOWN",
+        "review_source": {
+          "file_sha256": "afc427e41d03ae2658dbd91a89879f701d61f8517dd10eb4ac2f853309463c7f",
+          "bytes": 8428,
+          "scope": "exact_supplied_process_review_json"
+        },
+        "request_sha256": "708bada2b959f918d67713553db384145b2c8268881ed17594cb002336b0f0ee"
+      },
+      "missing_library_blocked": {
+        "status": "FAIL",
+        "local_2d_path_status": "FAIL",
+        "review_source": {
+          "file_sha256": "65a7d8ea4d1d28e9039284f2afc416e20e3353c76787ba459240a207e82a7bdf",
+          "bytes": 8428,
+          "scope": "exact_supplied_process_review_json"
+        },
+        "request_sha256": "7819b30f16cb9fb184fe608f76bb02f17bb4ee8912e425aa1de9168c1af7f232"
+      }
+    },
+    "historical_api_sha256": "7c9bc8895fbc3c9907d960aa30b6e99c240054189d020edfd3fb6f11766d542a",
+    "historical_documentation_qa": "PASS",
+    "old_limit_fields_unchanged": true,
+    "original_sources_unchanged": true,
+    "compact_failure_bytes": 3310,
+    "compact_request_id": "install_press",
+    "cp_calls": 0,
+    "imports": "regular installed wheel from foreign cwd",
+    "schema": "offline installed resource",
+    "base_commit": "b0db8ddff1ca6fefed6f3b024d0166a6eafc6a0d",
+    "source_sha256": {
+      "src/layout_configurator/process_review.py": "fa57874ab0aacafcd23b056ce136f6adb266b450b202c722585eb29df5c1b462",
+      "src/layout_configurator/process_installation_review.py": "c2f4c55dd40ba75b23bed7c8cc8aeb88b2722fcd91eed18ee78107e2e5fd5877",
+      "src/layout_configurator/equipment_installation_path.py": "5f77c7b97b5b42bc489f7c0ba923975ebbdddbed27ab7ea4fedb93fdf7814277",
+      "schemas/process_review_paths.schema.json": "badd26193f46c40f2102c75095701abdb27fa39d9234f3cb60c9a9518685feac",
+      "tests/test_process_installation_review.py": "2da4dfbe516ed96f519db2d1c1a839ff47d2f877f3977da9708285eb2efac671"
+    },
+    "archive_sha256": "c3ce189756b9363355f46f479516f7f5d11fcb2413fa36d355b3c84eae6539ad",
+    "wheel_sha256": "726fcc458bd35d3a5526b1184a17bbd819baa0b371102ad50e9d647399306184"
+  },
+  "independent_readonly_audit": "READY; no further concrete blocker found",
+  "cp_calls": 0,
+  "full_suite": false,
+  "benchmark": false,
+  "background_tasks": false,
+  "agent_executions": 0,
+  "document_status": "DRAFT",
+  "engineering_acceptance": "PENDING",
+  "authenticated_approval": "UNKNOWN",
+  "full_facility_validation": "UNKNOWN"
+}

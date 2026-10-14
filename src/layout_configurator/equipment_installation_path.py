@@ -361,10 +361,14 @@ def validate_equipment_installation_path(request, *, building, layout, equipment
     if raw["canonical_equipment"]["status"] != "PASS":
         path_issues.append(_issue("canonical_equipment", "Unchanged canonical body, host, anchor and directional clearance predicates remain required",
             status=raw["canonical_equipment"]["status"]))
-    admission = validate_engineering_library(library)
-    raw["library_validation"] = admission.to_dict()
-    if admission.library is None or admission.binding_status != "PASS":
-        path_issues.append(_issue("library_binding", "Unbound library geometry is excluded", status="FAIL" if admission.status == "FAIL" else "UNKNOWN"))
+    admission = None if library is None else validate_engineering_library(library)
+    raw["library_validation"] = ({"status": "UNKNOWN", "binding_status": "UNKNOWN",
+        "schema_status": "NOT_EVALUATED", "engineering_acceptance": "PENDING", "source_authentication": "UNKNOWN",
+        "issues": [_issue("missing_library", "No supplied engineering-library evidence", status="UNKNOWN")]}
+        if admission is None else admission.to_dict())
+    if admission is None or admission.library is None or admission.binding_status != "PASS":
+        path_issues.append(_issue("library_binding", "Unbound library geometry is excluded",
+            status="FAIL" if admission is not None and admission.status == "FAIL" else "UNKNOWN"))
         cards, sources, documents = {}, {}, {}
     else:
         current = admission.library.to_dict()

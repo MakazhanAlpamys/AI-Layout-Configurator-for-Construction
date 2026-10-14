@@ -1,9 +1,18 @@
 # Synchronized Supplied Process Review
 
+Checkpoint I.5.4.1 separately admits supplied installation paths through a
+closed version `0.2` reader, preserving original bytes, the nine raw component
+hashes and standalone canonical model signatures. Shared work/vertex admission
+precedes common geometry. The default version `0.1` API and saved documents
+retain their prior results. [Extension contract](PROCESS_INSTALLATION_REVIEW.md).
+
+Checkpoint I.5.3 attaches unchanged facility and process children through an
+explicit outer package. [Attachment contract](PROCESS_FACILITY_PACKAGES.md).
+
 Checkpoint I.5.2 adds independently checked paginated PDF appendices and
 literal source overlays in a standalone five-file DRAFT package.
-[Delivery contract](PROCESS_DOCUMENTATION.md). Complete facility attachment
-and equipment-path integration remain separate.
+[Delivery contract](PROCESS_DOCUMENTATION.md). Path diagrams and complete
+engineering acceptance remain separate.
 
 Checkpoint I.5.1 adds a read-only, offline process review of one supplied model
 revision. It produces detached JSON schedules and freshly computed local

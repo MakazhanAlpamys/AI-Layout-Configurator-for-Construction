@@ -248,6 +248,11 @@ def _check_schema(raw):
     error = next(_validator().iter_errors(raw), None)
     if error is not None:
         raise ValueError("Process review must satisfy its closed source schema: " + error.message[:512])
+    _check_common_schema(raw)
+
+
+def _check_common_schema(raw):
+    """Validate original canonical frames shared by explicit review versions."""
     building = raw["building"]
     source_issues = _schema_issues(building, load_building_schema(include_production_program="production_program" in building))
     source_issues += _schema_issues(building["layout"], load_json_schema(DEFAULT_SCHEMA_PATH))
@@ -539,25 +544,46 @@ def load_process_review(path, *, include_windows=False, limits=ProcessReviewLimi
         original, raw = read_review_source(path, limits=parent)
     except _InputFailure as exc:
         raise ValueError(exc.issue.message) from exc
+    output, _ = _evaluate_process_source(original, raw, include_windows=include_windows, limits=limits)
+    return _bounded_output(output, limits)
+
+
+def _evaluate_process_source(original, raw, *, include_windows, limits,
+                             schema_check=None, additional_preflight=None):
+    """Admit original bytes once and return fresh evidence and its actual models.
+
+    The version 0.1 public API still supplies its original closed schema and
+    bounds the same output. An explicit extension may add a closed schema and
+    pure whole-input work admission before any common geometry construction.
+    No temporary input, source replacement or cached verdict is accepted.
+    """
+    if not _limits_valid(limits) or type(include_windows) is not bool:
+        raise ValueError("Process review requires bounded actual integer limits and a boolean window control")
+    parent = _parent_limits(limits)
+    schema_check = _check_schema if schema_check is None else schema_check
     try:
         counts, points, pairs = _raw_preflight(raw, limits)
-        _check_schema(raw)
+        additional = 0 if additional_preflight is None else additional_preflight(raw)
+        if type(additional) is not int or additional < 0:
+            raise ValueError("Additional review work requires a nonnegative actual integer")
+        schema_check(raw)
         _exact_frames_and_requests(raw)
         precision_issue = _unrepresentable_rectangle(raw)
         if precision_issue is not None:
             report = _base(original)
             report.update(inventory_status="NOT_EVALUATED", issues=[precision_issue])
-            return report
+            return report, None
         extra = _geometry_work(raw, counts, points, pairs, limits)
+        extra += additional
     except (_InputFailure, _LibraryFailure) as exc:
         if exc.issue.code == "input_budget_exceeded":
-            return _stopped(original, exc.issue.message)
+            return _stopped(original, exc.issue.message), None
         raise ValueError(exc.issue.message) from exc
     identity = _identity(raw)
     core = {name: raw[name] for name in ("building", "layout", "equipment", "flow_routes", "production_program", "transfer_program")}
     admitted = admit_transfer_review(core, original, limits=parent, geometry_work_extra=extra)
     if type(admitted) is dict:
-        return _stopped(original, admitted["issues"][0]["message"])
+        return _stopped(original, admitted["issues"][0]["message"]), None
     reports = {}
     reports["production_program"] = validate_production_program(raw["production_program"], building=admitted.building).to_dict()
     reports["transfers"] = validate_transfer_routes(admitted.building, admitted.layout, admitted.routing,
@@ -596,4 +622,4 @@ def load_process_review(path, *, include_windows=False, limits=ProcessReviewLimi
     output["issues"] = [{"status": evidence["status"], "code": "scoped_review_" + evidence["status"].lower(),
         "component": name, "message": "Fresh local evidence is attached; no full engineering approval is inferred"}
         for name, evidence in reports.items() if evidence["status"] != "PASS"]
-    return _bounded_output(output, limits)
+    return output, admitted

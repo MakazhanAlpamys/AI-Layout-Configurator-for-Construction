@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://layout-configurator.local/schema/process-review-paths-0.2.json",
+  "title": "Explicit supplied process review and installation paths 0.2",
+  "description": "Original process frames and complete standalone source-bound 2D requests; no saved verdicts, replacement model or inferred route.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "id", "drawing_revision", "variant", "building", "layout", "equipment", "flow_routes", "production_program", "transfer_program", "environment_program", "library", "scenario_requests", "installation_paths"],
+  "properties": {
+    "version": {"const": "0.2"},
+    "id": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/id"},
+    "drawing_revision": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/drawing_revision"},
+    "variant": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/variant"},
+    "building": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/building"},
+    "layout": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/layout"},
+    "equipment": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/equipment"},
+    "flow_routes": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/flow_routes"},
+    "production_program": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/production_program"},
+    "transfer_program": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/transfer_program"},
+    "environment_program": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/environment_program"},
+    "library": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/library"},
+    "scenario_requests": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/properties/scenario_requests"},
+    "installation_paths": {"type": "array", "maxItems": 16, "items": {"$ref": "#/$defs/request"}}
+  },
+  "$defs": {
+    "id": {"$ref": "https://layout-configurator.local/schema/process-review-0.1.json#/$defs/id"},
+    "coordinate": {"type": "number", "minimum": -1000000, "maximum": 1000000},
+    "positive": {"type": "number", "exclusiveMinimum": 0, "maximum": 1000000},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "point": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"$ref": "#/$defs/coordinate"}},
+    "rectangle": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "x", "y", "width", "depth"],
+      "properties": {"kind": {"const": "rectangle"}, "unit": {"const": "mm"},
+        "x": {"$ref": "#/$defs/coordinate"}, "y": {"$ref": "#/$defs/coordinate"},
+        "width": {"$ref": "#/$defs/positive"}, "depth": {"$ref": "#/$defs/positive"}}
+    },
+    "orthogonal": {
+      "type": "object", "additionalProperties": false, "required": ["kind", "points"],
+      "properties": {"kind": {"const": "orthogonal_polygon"}, "unit": {"const": "mm"},
+        "points": {"type": "array", "minItems": 5, "maxItems": 257, "items": {"$ref": "#/$defs/point"}}}
+    },
+    "shape": {"oneOf": [{"$ref": "#/$defs/rectangle"}, {"$ref": "#/$defs/orthogonal"}]},
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_id", "source_sha256", "source_pointer", "value"],
+      "properties": {"source_id": {"$ref": "#/$defs/id"}, "source_sha256": {"$ref": "#/$defs/sha256"},
+        "source_pointer": {"type": "string", "minLength": 1, "maxLength": 1024, "pattern": "^/"}, "value": {}}
+    },
+    "staging": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "unit", "floor", "obstacles", "inventory_scope"],
+      "properties": {"kind": {"const": "exterior_staging_2d"}, "unit": {"const": "mm"},
+        "floor": {"$ref": "#/$defs/shape"},
+        "obstacles": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/shape"}},
+        "inventory_scope": {"const": "supplied_2d_only"}}
+    },
+    "stagingEvidence": {"allOf": [{"$ref": "#/$defs/evidence"},
+      {"properties": {"value": {"$ref": "#/$defs/staging"}}}]},
+    "clearanceEvidence": {"allOf": [{"$ref": "#/$defs/evidence"},
+      {"properties": {"value": {"allOf": [{"$ref": "#/$defs/rectangle"}, {"required": ["unit"]}]}}}]},
+    "pose": {
+      "type": "object", "additionalProperties": false, "required": ["x_mm", "y_mm", "rotated"],
+      "properties": {"x_mm": {"$ref": "#/$defs/coordinate"}, "y_mm": {"$ref": "#/$defs/coordinate"}, "rotated": {"type": "boolean"}}
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["building_sha256", "layout_sha256", "equipment_sha256", "library_sha256"],
+      "properties": {"building_sha256": {"$ref": "#/$defs/sha256"}, "layout_sha256": {"$ref": "#/$defs/sha256"},
+        "equipment_sha256": {"$ref": "#/$defs/sha256"}, "library_sha256": {"$ref": "#/$defs/sha256"}}
+    },
+    "request": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "id", "equipment_id", "card_id", "external_entry_id", "source", "poses", "transport_clearance", "exterior_staging"],
+      "properties": {"version": {"const": "0.1"}, "id": {"$ref": "#/$defs/id"},
+        "equipment_id": {"$ref": "#/$defs/id"}, "card_id": {"$ref": "#/$defs/id"},
+        "external_entry_id": {"$ref": "#/$defs/id"}, "source": {"$ref": "#/$defs/source"},
+        "poses": {"type": "array", "minItems": 2, "maxItems": 128, "items": {"$ref": "#/$defs/pose"}},
+        "transport_clearance": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/clearanceEvidence"}]},
+        "exterior_staging": {"anyOf": [{"type": "null"}, {"$ref": "#/$defs/stagingEvidence"}]}}
+    }
+  }
+}
