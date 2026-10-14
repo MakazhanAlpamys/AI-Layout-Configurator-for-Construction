@@ -111,3 +111,11 @@ The subsequent `4217633` push has successful quick CI:
 Its one quick job takes 44 seconds including setup; queue time is separate.
 Complete collection/partition and four sequential single-file gates pass.
 Full jobs are skipped for this push, so it is not full acceptance evidence.
+
+Quick pushes for the QA.23 repair (`54af4e4`,
+[run 38540735504](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38540735504))
+and I.5.2 (`0286843`,
+[run 38542708253](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38542708253))
+also pass. The I.5.2 quick job takes 41 seconds including setup, with full jobs
+skipped. Collection includes the new documentation tests; quick CI does not
+execute their local 14-test artifact/readback verification or replace full acceptance.
