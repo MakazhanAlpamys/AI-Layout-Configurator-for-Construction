@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint I.5.2 adds current-product source-bound DRAFT process appendices
+and literal environmental overlays with independent actual PDF readback.
+Local/installed/rendered verification passes; full current-product and
+engineering acceptance remain separate from the unchanged MVP archive.
+
 Checkpoint QA.23 repairs the workflow test's obsolete combined pytest command
 expectation, preserving current-product coverage and sequential execution.
 Pinned negative full CI and successful quick CI stay distinct; archive unchanged.

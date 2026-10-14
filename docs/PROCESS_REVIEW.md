@@ -1,5 +1,10 @@
 # Synchronized Supplied Process Review
 
+Checkpoint I.5.2 adds independently checked paginated PDF appendices and
+literal source overlays in a standalone five-file DRAFT package.
+[Delivery contract](PROCESS_DOCUMENTATION.md). Complete facility attachment
+and equipment-path integration remain separate.
+
 Checkpoint I.5.1 adds a read-only, offline process review of one supplied model
 revision. It produces detached JSON schedules and freshly computed local
 evidence. PDF appendices, drawing overlays and attachment to a complete

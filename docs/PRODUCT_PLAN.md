@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.2 delivers a source-bound standalone DRAFT process appendix:
+eight schedules, five fresh reports and literal room/environment/pressure
+overlays. Independent actual PDF readback detects rehashed source, text,
+path, page and visibility changes. Fresh single-file 14 tests/25 subtests,
+regular installed-wheel verification and rendered examples pass.
+[Scope](PROCESS_DOCUMENTATION.md). Full facility bundle, additional views and
+installation-path integration remain open.
+
 Checkpoint QA.23 repairs the obsolete combined-command workflow assertion
 found in scheduled `34abb9e` CI. Exact single-file contract coverage and
 sequential execution are checked; ten tests/15 subtests pass locally.
