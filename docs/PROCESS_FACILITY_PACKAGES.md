@@ -65,5 +65,9 @@ original facility files remain byte-identical, both child artifact checks PASS,
 the pressure-cycle review stays FAIL, the package stays DRAFT and no solver is
 called. Its twenty process pages were rendered and visually inspected.
 Local proof is retained under `out/checkpoints/process-facility-package-i53/`.
+The pushed `72b7fd6` checkpoint also passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38548214431)
+in 39 seconds including setup. Full acceptance jobs are skipped on this push;
+this is separate from changed full-suite acceptance.
 Version `0.2` installation-path diagrams and complete Cycle I engineering
 acceptance remain subsequent work.
