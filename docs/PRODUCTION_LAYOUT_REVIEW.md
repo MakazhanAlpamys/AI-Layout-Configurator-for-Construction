@@ -1,5 +1,9 @@
 # Actual Production-Program Room Adjacency
 
+Checkpoint I.4.3.2 separately attaches fresh actual requirement evidence to one
+unchanged version0.2 process source through an explicit opted reader.
+[Integrated identity, resource and delivery scope](PROCESS_PRODUCTION_LAYOUT_REVIEW.md).
+
 Checkpoint I.4.3.1 independently checks supplied required/forbidden room
 adjacencies from the [production-program contract](PRODUCTION_PROGRAM.md)
 against actual room contours. It accepts original canonical BuildingIR and

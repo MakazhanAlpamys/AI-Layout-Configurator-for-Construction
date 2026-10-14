@@ -401,7 +401,8 @@ def _retained_path_failures(section, limit):
     return retained, total
 
 
-def _bounded_output(report, limits):
+def _bounded_output(report, limits, *, additional_failures=(), additional_failure_total=0,
+                    additional_summary=None, additional_delivery_incomplete=False):
     size = 0
     for chunk in json.JSONEncoder(sort_keys=True, ensure_ascii=False, allow_nan=False).iterencode(report):
         size += len(chunk.encode("utf-8"))
@@ -412,30 +413,63 @@ def _bounded_output(report, limits):
             "identity", "review_source")}
         compact.update(inventory_status="INCOMPLETE", source_frames={}, schedules={}, reports={}, issues=[{
             "code": "output_budget_exceeded", "status": "UNKNOWN", "message": "Detailed process and path delivery inventory exceeds its byte bound"}])
-        section = report["installation_paths"]
-        path_rows, path_total = _retained_path_failures(section, limits.max_findings)
+        section = report.get("installation_paths")
+        path_rows, path_total = ([], 0) if section is None else _retained_path_failures(section, limits.max_findings)
         common_rows, common_total = _common._originating_failures(report, limits.max_findings)
         # Reserve an originating path conflict even if an earlier common report
         # also failed. The inventory truthfully accounts for omitted conflicts.
-        retained = (path_rows + common_rows)[:limits.max_findings]
-        total = path_total + common_total
+        retained = (list(additional_failures) + path_rows + common_rows)[:limits.max_findings]
+        total = additional_failure_total + path_total + common_total
         compact["retained_failures"] = retained
         compact["failure_inventory"] = {"status": "INCOMPLETE", "originating_failures": total,
             "retained": len(retained), "omitted": total - len(retained),
             "count_scope": "Available distinct originating witnesses after bounded leaf inventories",
-            "leaf_delivery_incomplete": any(row["evidence"].get("finding_inventory", {}).get("status") == "INCOMPLETE"
-                for row in section["reports"])}
-        compact["installation_paths"] = {"identity": section["identity"], "status": section["status"],
-            "request_set_sha256": section["request_set_sha256"], "inventory_status": "INCOMPLETE",
-            "full_scenario_validation": "UNKNOWN", "three_dimensional_feasibility": "UNKNOWN", "engineering_acceptance": "PENDING"}
+            "leaf_delivery_incomplete": additional_delivery_incomplete or (section is not None and any(
+                row["evidence"].get("finding_inventory", {}).get("status") == "INCOMPLETE"
+                for row in section["reports"]))}
+        if section is not None:
+            compact["installation_paths"] = {"identity": section["identity"], "status": section["status"],
+                "request_set_sha256": section["request_set_sha256"], "inventory_status": "INCOMPLETE",
+                "full_scenario_validation": "UNKNOWN", "three_dimensional_feasibility": "UNKNOWN", "engineering_acceptance": "PENDING"}
+        if additional_summary is not None:
+            compact["additional_reports"] = additional_summary
         while len(json.dumps(compact, ensure_ascii=False, allow_nan=False).encode("utf-8")) > limits.max_report_bytes and len(retained) > 1:
             retained.pop()
             compact["failure_inventory"].update(retained=len(retained), omitted=total - len(retained))
-        if len(json.dumps(compact, ensure_ascii=False, allow_nan=False).encode("utf-8")) > limits.max_report_bytes:
+        if section is not None and len(json.dumps(compact, ensure_ascii=False, allow_nan=False).encode("utf-8")) > limits.max_report_bytes:
             compact["installation_paths"].pop("identity")
         if len(json.dumps(compact, ensure_ascii=False, allow_nan=False).encode("utf-8")) > limits.max_report_bytes:
             raise ValueError("Process installation review delivery cannot hold its mandatory originating failure and identity")
         return compact
+    return report
+
+
+def _attach_paths(report, admitted, raw, *, limits, path_limits, work):
+    """Attach fresh path evidence without applying a final delivery cap."""
+    identity = report["identity"]
+    requests = raw["scenario_requests"]
+    rows = []
+    for request in raw["installation_paths"]:
+        evidence = validate_equipment_installation_path(request, building=admitted.building, layout=admitted.layout,
+            equipment=admitted.equipment, library=raw["library"], card_by_equipment=requests["card_by_equipment"],
+            actions_by_scenario=requests["actions_by_scenario"], limits=_leaf_limits(limits, path_limits)).to_dict()
+        rows.append({"request_id": request["id"], "request_sha256": _common._sha(request), "identity": identity,
+            "status": evidence["status"], "evidence": evidence})
+    covered = {request["equipment_id"] for request in raw["installation_paths"]}
+    targets = requests["installation_targets"]
+    section = {"identity": identity, "source_requests": raw["installation_paths"],
+        "request_set_sha256": _common._sha(raw["installation_paths"]), "requested_targets": list(targets),
+        "covered_targets": [target for target in targets if target in covered],
+        "missing_targets": [target for target in targets if target not in covered], "reports": rows,
+        "status": "FAIL" if any(row["status"] == "FAIL" for row in rows) else "UNKNOWN",
+        "scope": "Supplied independent local 2D paths; no complete installation approval", "ok": False,
+        "full_scenario_validation": "UNKNOWN", "three_dimensional_feasibility": "UNKNOWN", "engineering_acceptance": "PENDING",
+        "workload": work, "source_signature_policy": "Standalone canonical model signatures remain separate from the nine original raw process component hashes"}
+    report["installation_paths"] = section
+    if section["status"] == "FAIL":
+        report["status"] = "FAIL"
+    report["issues"].append({"code": "scoped_installation_paths_" + section["status"].lower(),
+        "status": section["status"], "component": "installation_paths", "message": "Fresh supplied local path evidence is attached; full scenario and 3D feasibility remain UNKNOWN"})
     return report
 
 
@@ -464,28 +498,5 @@ def load_process_review_with_paths(path, *, include_windows=False, limits=Proces
         return report
     if admitted is None:
         return report
-    identity = report["identity"]
-    requests = raw["scenario_requests"]
-    rows = []
-    for request in raw["installation_paths"]:
-        evidence = validate_equipment_installation_path(request, building=admitted.building, layout=admitted.layout,
-            equipment=admitted.equipment, library=raw["library"], card_by_equipment=requests["card_by_equipment"],
-            actions_by_scenario=requests["actions_by_scenario"], limits=_leaf_limits(limits, path_limits)).to_dict()
-        rows.append({"request_id": request["id"], "request_sha256": _common._sha(request), "identity": identity,
-            "status": evidence["status"], "evidence": evidence})
-    covered = {request["equipment_id"] for request in raw["installation_paths"]}
-    targets = requests["installation_targets"]
-    section = {"identity": identity, "source_requests": raw["installation_paths"],
-        "request_set_sha256": _common._sha(raw["installation_paths"]), "requested_targets": list(targets),
-        "covered_targets": [target for target in targets if target in covered],
-        "missing_targets": [target for target in targets if target not in covered], "reports": rows,
-        "status": "FAIL" if any(row["status"] == "FAIL" for row in rows) else "UNKNOWN",
-        "scope": "Supplied independent local 2D paths; no complete installation approval", "ok": False,
-        "full_scenario_validation": "UNKNOWN", "three_dimensional_feasibility": "UNKNOWN", "engineering_acceptance": "PENDING",
-        "workload": work, "source_signature_policy": "Standalone canonical model signatures remain separate from the nine original raw process component hashes"}
-    report["installation_paths"] = section
-    if section["status"] == "FAIL":
-        report["status"] = "FAIL"
-    report["issues"].append({"code": "scoped_installation_paths_" + section["status"].lower(),
-        "status": section["status"], "component": "installation_paths", "message": "Fresh supplied local path evidence is attached; full scenario and 3D feasibility remain UNKNOWN"})
+    _attach_paths(report, admitted, raw, limits=limits, path_limits=path_limits, work=work)
     return _bounded_output(report, limits)

@@ -421,6 +421,11 @@ vertical cores, structural grid lines, a stair check and a shared IFC were added
 
 ## Fixed project boundaries
 
+Checkpoint I.4.3.2 adds opted fresh production room evidence to an unchanged
+process revision with shared admission and originating-failure delivery. This
+extends the current product without altering the archived MVP or establishing
+producer, complete scenario or engineering acceptance.
+
 Checkpoint QA.24 repairs future rectangular main-PDF equipment captions using
 actual font boxes and bounded placement, with unchanged literal geometry and
 retained old artifact evidence. It does not change the archived MVP or establish

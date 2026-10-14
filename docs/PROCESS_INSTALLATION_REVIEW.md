@@ -1,5 +1,10 @@
 # Supplied Installation Paths in a Process Revision
 
+An explicit [production-layout reader](PROCESS_PRODUCTION_LAYOUT_REVIEW.md)
+adds fresh actual room requirements to the same version0.2 source, with summed
+preconstructor work and one delivery cap. This existing reader and its closed
+reports, schedules and default controls retain their historical behavior.
+
 Checkpoint I.5.4.2 separately publishes
 [source-bound path diagrams](PROCESS_INSTALLATION_DOCUMENTATION.md). Fresh
 admitted clearance and exterior inventory are exposed in leaf evidence for

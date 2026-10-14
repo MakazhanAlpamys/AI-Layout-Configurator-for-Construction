@@ -1,0 +1,509 @@
+{
+  "checkpoint": "I.4.3.2",
+  "verified_on": "2026-10-14",
+  "status": "PASS",
+  "base_commit": "517ae7c2a8b8f0ab631a5f8d52fd376ac9b7e565",
+  "archive_sha256": "018b484103dac0e0b0f14038a659b183c2fa631b30c3d31c497a0fe488a0a16c",
+  "archive_overlay": [
+    "src/layout_configurator/process_production_layout_review.py",
+    "src/layout_configurator/process_installation_review.py",
+    "tests/test_process_production_layout_review.py"
+  ],
+  "source_sha256": {
+    "src/layout_configurator/process_production_layout_review.py": "5eb095e4cb3ddfb2701e85783f0ff3223077e6cb7e1c128f70c5935757626206",
+    "src/layout_configurator/process_installation_review.py": "de30bfdf56e500188c9846a68d6d92efbf1f409b48a11a0b26b2f5d985c685d3",
+    "tests/test_process_production_layout_review.py": "322b7774887c1fa13dc7c3eab1d6956d8efcdb698a90c765f8e5bb539656068a"
+  },
+  "wheel_sha256": "3341808650c3f56b79cebbe13f6a1569a05aba21ab3a5e579ee6a03d2bd569da",
+  "imports": "regular installed wheels from foreign working directories",
+  "staged_lf_source_bytes_match_wheel": true,
+  "root_tests": [
+    {
+      "file": "tests/test_process_production_layout_review.py",
+      "tests": 14,
+      "subtests": 15,
+      "seconds": 15.13,
+      "status": "PASS"
+    },
+    {
+      "file": "tests/test_process_installation_review.py",
+      "tests": 17,
+      "subtests": 21,
+      "seconds": 19.45,
+      "status": "PASS"
+    }
+  ],
+  "red_evidence": {
+    "initial_missing_module_tests": 10,
+    "initial_seconds": 1.03,
+    "added_missing_module_tests": 2,
+    "added_seconds": 0.72,
+    "full_snapshot_embedded_utf_subfailures": 2,
+    "utf_seconds": 2.0,
+    "known_binding_hidden_by_precision_subfailures": 2,
+    "binding_precision_seconds": 1.15
+  },
+  "fixture_admission": "Eight supported original oldpath/standalone cases PASS before implementation",
+  "root_helper_corrections": [
+    "Initial fixture helper assumed a nonexistent raw source envelope; corrected helper only",
+    "First wheel helper assumed inventory_status exists on every normal historical-compatible report; record optional actual field, source unchanged"
+  ],
+  "cases": [
+    {
+      "case": "clear",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "report_sha256": "5054f50afaab54aadf913eec43d1dbf5531321bc18500eec666d7d0876323b6f",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "a621b7c1b31a4cd4ac502e63f997fa0e619b6b47c908946b55f7b1f8337b1843",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "2a63b850f2320ce193776dd5b9fe6d7745eb3f0774a5a41f5048330f6ff6400a",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "PASS",
+          "maximum_contiguous_mm": 6000.0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "optional",
+      "status": "UNKNOWN",
+      "source_file_sha256": "250b904274b2f44f9d56dd825047118e47627c1b74e9918e83d4b1c53b1d3898",
+      "report_sha256": "ba93850deaddcdbc8eeecefc25acf316018b878aec6177a38f8c30cd40f6897a",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "f40c96868c185bf76be0295028ba5f8604c0b66eb65a665281e38cc0d0d8b1f3",
+        "production_program_sha256": "a621b7c1b31a4cd4ac502e63f997fa0e619b6b47c908946b55f7b1f8337b1843",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "2a63b850f2320ce193776dd5b9fe6d7745eb3f0774a5a41f5048330f6ff6400a",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "PASS",
+          "maximum_contiguous_mm": 6000.0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "embedded-integer",
+      "status": "UNKNOWN",
+      "source_file_sha256": "4e361961bf53d4cd6d9931ce7df83949bffc56c5a391e0f0e0c125f91eaf51f8",
+      "report_sha256": "0a552f517ecddde1bee967c48f5b9fa6bd976ae72a1ef29b583d4a79ee6c9f36",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "production_source": {
+        "building_sha256": "97425ceb697cb5c9fb5ffd2d84d31e53833180b6184abf615f50d7e3dc09a5cf",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "a621b7c1b31a4cd4ac502e63f997fa0e619b6b47c908946b55f7b1f8337b1843",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "2a63b850f2320ce193776dd5b9fe6d7745eb3f0774a5a41f5048330f6ff6400a",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "PASS",
+          "maximum_contiguous_mm": 6000.0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "embedded-float",
+      "status": "UNKNOWN",
+      "source_file_sha256": "93342e92c2ff8fe09f905dc1af4435abb187ff5229b09b4b6ee80c337339420c",
+      "report_sha256": "05d7ac7858933f871c98ef977ab246033b34ec57df57829cf7f515701b2ddf00",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "production_source": {
+        "building_sha256": "fb537b42b0329351034b30e32e0f5492755d077ae846eb7bb0790f17733bd237",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "e5bfe1a4d22b2a5537e4590c3bed472e7d875da9b9a945a9a7c353ffca843da3",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "2a63b850f2320ce193776dd5b9fe6d7745eb3f0774a5a41f5048330f6ff6400a",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "PASS",
+          "maximum_contiguous_mm": 6000.0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "gap",
+      "status": "FAIL",
+      "source_file_sha256": "38a08ee63930ed4247eb61cd646f66cacc7d0d7dbec094a39b2bb93205d9d19b",
+      "report_sha256": "013597713fae310a1fb5aad97078add744fd7e292fc09569f512cc631cbe911f",
+      "production_status": "FAIL",
+      "geometry_status": "FAIL",
+      "production_source": {
+        "building_sha256": "626687f660db474611c243439a34dac4a461fa32aae9e81d6b98993acf356bb0",
+        "layout_sha256": "4363905616cdb0d2b7001ce9ae51d6c9e5603b2f4ea9d790e3ccd823c9ada7ff",
+        "production_program_sha256": "f6a5a8d0eaaff4852b7e1990d5c3b88bc3d11b9b205507d35f726d7040ebe938",
+        "program_base_building_sha256": "626687f660db474611c243439a34dac4a461fa32aae9e81d6b98993acf356bb0"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "2a63b850f2320ce193776dd5b9fe6d7745eb3f0774a5a41f5048330f6ff6400a",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "FAIL",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "pressure",
+      "status": "FAIL",
+      "source_file_sha256": "2832e7d73b1dda12903edb0c88184aa5dd2f8b461149b1252dcff9064be44f60",
+      "report_sha256": "4c99d2281115fd81c6ad3042ac128c9d571b08933b39f69640339cab9044aaaa",
+      "production_status": "UNKNOWN",
+      "geometry_status": "PASS",
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "6ec7d15aa0957c054187f9c8bf0d1f40f2687fded41658c1691661e0fbf1fc60",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "abcb674d5bbba20ce12c0003eced6be2c135850e3dafe0b78c08d4236a40b1ac",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "PASS",
+          "maximum_contiguous_mm": 6000.0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "body",
+      "status": "FAIL",
+      "source_file_sha256": "53924d319b04a0b6930885840da3b8e20706ca8fe869c3eda1caf7598c34741f",
+      "report_sha256": "1fa3e532bd46b2591f52eaa43e0cc0728f3c022c41010ee14646b396d8cba4e3",
+      "production_status": "UNKNOWN",
+      "geometry_status": "PASS",
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "68e270f1989d05dd70ed2eafa1665a7a25ac62af4804b4b2a9cfe95a560e803f",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "2a63b850f2320ce193776dd5b9fe6d7745eb3f0774a5a41f5048330f6ff6400a",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "PASS",
+          "maximum_contiguous_mm": 6000.0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "gap-pressure",
+      "status": "FAIL",
+      "source_file_sha256": "71674af184e65b400a4fb8f719b6f32025082979320c191f145109f1c37ab9a1",
+      "report_sha256": "ae5691071bd725936a816c55c2e6c411c0fb31fd3ba5769aae1f985de440fcaa",
+      "production_status": "FAIL",
+      "geometry_status": "FAIL",
+      "production_source": {
+        "building_sha256": "626687f660db474611c243439a34dac4a461fa32aae9e81d6b98993acf356bb0",
+        "layout_sha256": "4363905616cdb0d2b7001ce9ae51d6c9e5603b2f4ea9d790e3ccd823c9ada7ff",
+        "production_program_sha256": "343fa407d021eddfc41513f30bcdd3bc4d84082ad87ee311c3d5765dff690303",
+        "program_base_building_sha256": "626687f660db474611c243439a34dac4a461fa32aae9e81d6b98993acf356bb0"
+      },
+      "requirements": [
+        {
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "abcb674d5bbba20ce12c0003eced6be2c135850e3dafe0b78c08d4236a40b1ac",
+          "room_a": "entry",
+          "room_b": "work",
+          "status": "FAIL",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0
+        }
+      ]
+    },
+    {
+      "case": "unsupported",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8f9d859d3e6d4cbe314b31b2971f2c4626683864fcde00c9719525d770a78533",
+      "report_sha256": "dff32498230f913e4b1dac598573c108f3071c6a21b2f9a5587c0ceef48ceef3",
+      "inventory_status": "NOT_EVALUATED",
+      "production_status": "UNKNOWN",
+      "geometry_status": "NOT_EVALUATED",
+      "production_source": {
+        "building_sha256": "8f60439eb7ba484c2a804634870f8e42b05b7ffdfabd279b9168831f22d0f93b",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "ebba764ed997763c5220a3fbd7ca24386bd0f6b22aa8bcc5f1881fffac25e79d",
+        "program_base_building_sha256": "8f60439eb7ba484c2a804634870f8e42b05b7ffdfabd279b9168831f22d0f93b"
+      },
+      "requirements": []
+    },
+    {
+      "case": "stale-base",
+      "status": "FAIL",
+      "source_file_sha256": "2b69315abd681268095b67e70f79c9b55ee89cf089a161bb7937068ad2fa305d",
+      "report_sha256": "991f0ea4ebf816e4baa6aa2a19f58a9f6f21e34acd6cd9bcb2666f1bc5cd1d45",
+      "inventory_status": "NOT_EVALUATED",
+      "production_status": "FAIL",
+      "geometry_status": "NOT_EVALUATED",
+      "production_source": {
+        "building_sha256": "8f60439eb7ba484c2a804634870f8e42b05b7ffdfabd279b9168831f22d0f93b",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "6ad53618df0f0beebdc24596c5b4f0f2d7cae216af0aafcdb9f254d3248ad418",
+        "program_base_building_sha256": "8f60439eb7ba484c2a804634870f8e42b05b7ffdfabd279b9168831f22d0f93b"
+      },
+      "requirements": []
+    },
+    {
+      "case": "embedded-mismatch",
+      "status": "FAIL",
+      "source_file_sha256": "fe86bbcc237403a4811c040b6465c13835dac23bf4d6dbb58f4dbd874ade97d2",
+      "report_sha256": "3860ca1613734b7cabbc578d3410b4996de6ada30e17db21b57990d091af6268",
+      "inventory_status": "NOT_EVALUATED",
+      "production_status": "FAIL",
+      "geometry_status": "NOT_EVALUATED",
+      "production_source": {
+        "building_sha256": "9a2dcb7bbb3231de4792221a4cf667baef6892099e0e3791d41bd21e40a9d68a",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "ebba764ed997763c5220a3fbd7ca24386bd0f6b22aa8bcc5f1881fffac25e79d",
+        "program_base_building_sha256": "8f60439eb7ba484c2a804634870f8e42b05b7ffdfabd279b9168831f22d0f93b"
+      },
+      "requirements": []
+    },
+    {
+      "case": "tiny-positive",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8cc0826fcf84ea35fb138cecca3742e4b9faee62a632244414e28eb642a27bb4",
+      "report_sha256": "e18cb70107152fa569a5a4527562b095df79a4f62a4a2382e79db30aa6483066",
+      "inventory_status": "NOT_EVALUATED"
+    },
+    {
+      "case": "geometry-cap",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "report_sha256": "77e02e83e809dd748d7cc4344f5fa4b336b681023d8197320e66868c224fb58a",
+      "inventory_status": "NOT_EVALUATED"
+    },
+    {
+      "case": "vertex-cap",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "report_sha256": "70042999affe61f6ea9ae1544411d0a87b846c6745dcd6affb9e16301f9522aa",
+      "inventory_status": "NOT_EVALUATED"
+    },
+    {
+      "case": "node-cap",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "report_sha256": "4203e13ce06d0b6406e1e98e42a7b3d07145787645a1fa61e99620739890abd2",
+      "inventory_status": "NOT_EVALUATED"
+    },
+    {
+      "case": "byte-cap",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "report_sha256": "7575fd7f7d48fa933005ea603470d709af66fcdf3032bbf976339a48f7eecf41",
+      "inventory_status": "NOT_EVALUATED"
+    },
+    {
+      "case": "snapshot-utf-cap",
+      "status": "UNKNOWN",
+      "source_file_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "report_sha256": "7575fd7f7d48fa933005ea603470d709af66fcdf3032bbf976339a48f7eecf41",
+      "inventory_status": "NOT_EVALUATED"
+    },
+    {
+      "case": "embedded-utf-cap",
+      "status": "UNKNOWN",
+      "source_file_sha256": "93342e92c2ff8fe09f905dc1af4435abb187ff5229b09b4b6ee80c337339420c",
+      "report_sha256": "cd45bb9c6c016afdc87bee8fa8a13023b6dd06204db2b58e8a795583c2f465c0",
+      "inventory_status": "NOT_EVALUATED"
+    },
+    {
+      "case": "stale-tiny-base",
+      "status": "FAIL",
+      "source_file_sha256": "28c42f8c032538170878464a9fa703f4004bffb06e7ff681a185999e60a0d877",
+      "report_sha256": "216a8c628f2c13f1f3900631ff96eea32d863b5e77d2312b50707485c8d2dd96",
+      "inventory_status": "NOT_EVALUATED",
+      "production_status": "FAIL",
+      "geometry_status": "NOT_EVALUATED",
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "2458b434de263b830ea58f9fdb4923249e7f9813796f823ef4804c75b7954c86",
+        "production_program_sha256": "6ad53618df0f0beebdc24596c5b4f0f2d7cae216af0aafcdb9f254d3248ad418",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": []
+    },
+    {
+      "case": "stale-tiny-embedded",
+      "status": "FAIL",
+      "source_file_sha256": "40db5dbf0b1fca2d418a4475f17eb835d2d189cce136e858846635fbc4f7a37e",
+      "report_sha256": "4ca969720b90b26c6f2789601996affef87034ce8c99781dd8c4205201efd21d",
+      "inventory_status": "NOT_EVALUATED",
+      "production_status": "FAIL",
+      "geometry_status": "NOT_EVALUATED",
+      "production_source": {
+        "building_sha256": "fb537b42b0329351034b30e32e0f5492755d077ae846eb7bb0790f17733bd237",
+        "layout_sha256": "2458b434de263b830ea58f9fdb4923249e7f9813796f823ef4804c75b7954c86",
+        "production_program_sha256": "a621b7c1b31a4cd4ac502e63f997fa0e619b6b47c908946b55f7b1f8337b1843",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "requirements": []
+    },
+    {
+      "case": "compact",
+      "status": "FAIL",
+      "source_file_sha256": "71674af184e65b400a4fb8f719b6f32025082979320c191f145109f1c37ab9a1",
+      "report_sha256": "702c8ac43297e83d5b23311a229c1e9f8c90797c797c6d5be555d47e965cf90d",
+      "inventory_status": "INCOMPLETE",
+      "bytes": 3763,
+      "retained_failure": {
+        "component": "production_layout",
+        "identity": {
+          "drawing_revision": "D01",
+          "variant": 1,
+          "component_sha256": {
+            "building": "626687f660db474611c243439a34dac4a461fa32aae9e81d6b98993acf356bb0",
+            "layout": "4363905616cdb0d2b7001ce9ae51d6c9e5603b2f4ea9d790e3ccd823c9ada7ff",
+            "equipment": "762f7f394927c1b84af3ae9b3a9195389dd680c7fe27e4f93f66868b0c2236e4",
+            "flow_routes": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e",
+            "production_program": "343fa407d021eddfc41513f30bcdd3bc4d84082ad87ee311c3d5765dff690303",
+            "transfer_program": "01995fe5ebfb104d4d3358c30a46c3bce2c094d082885339762570e627c6a663",
+            "environment_program": "7b210dcb9436deb3ae9d50a75717d887e7d6a9a5b17a2a293c9f22b9a31aa0f0",
+            "library": "e8b50d05a86bacca6e64dea785be1c936ce54d6c7dd74bd55d0b361abbfd54fd",
+            "scenario_requests": "f489939fc012fe22bb78d6dba5adaa053eb8f05cfc254705fbe8a7be28a5a9da"
+          }
+        },
+        "failure": {
+          "code": "required_room_adjacency_failed",
+          "status": "FAIL",
+          "requirement_id": "entry_work_contact",
+          "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+          "operation_id": "handover",
+          "source_id": "transfer_brief",
+          "source_sha256": "abcb674d5bbba20ce12c0003eced6be2c135850e3dafe0b78c08d4236a40b1ac",
+          "room_a": "entry",
+          "room_b": "work",
+          "maximum_contiguous_mm": 0,
+          "required_contiguous_mm": 1600.0,
+          "overlap_area_mm2": 0.0,
+          "message": "Actual room geometry conflicts with the originating production requirement"
+        }
+      },
+      "failure_inventory": {
+        "status": "INCOMPLETE",
+        "originating_failures": 14,
+        "retained": 1,
+        "omitted": 13,
+        "count_scope": "Available distinct originating witnesses after bounded leaf inventories",
+        "leaf_delivery_incomplete": true
+      }
+    }
+  ],
+  "clear_shared_work": {
+    "common_core_geometry_upper_bound": 320,
+    "common_additional_geometry_upper_bound": 5176,
+    "path_geometry_upper_bound": 459,
+    "production_layout_geometry_upper_bound": 112,
+    "combined_geometry_upper_bound": 6067,
+    "combined_source_geometry_vertices": 58,
+    "production_layout_source_vertices": 12,
+    "combined_consumer_source_vertices": 70,
+    "production_layout_snapshot_nodes": 355,
+    "production_layout_snapshot_json_bytes": 3998,
+    "production_layout_snapshot_source_bytes": 326,
+    "node_work_upper_bound": 9764,
+    "source_byte_work_upper_bound": 74856
+  },
+  "historical_v01_sha256": "f2e55b6af95c0094066cb37a63383022563bb4431bee4377e76712b7c42611be",
+  "historical_v02_sha256": {
+    "clear": "9985b714155a51e004a3e9addcc86ac016bf31549e5327b70221b2ce25644b20",
+    "optional": "c427a0541e93cc72ec350ed0266c833aeb00e913c0b5c3c6471637c1c4a10517",
+    "embedded-integer": "6a984bed83164c3a0af2f3ba35e145528ba7590903a7c18903abc7d954320786",
+    "embedded-float": "8f1ea18fa7315b60c6a22d99b1eb16f4373d5fe77e81365e114a433d53b0dffe",
+    "gap": "9523361fb42249f2df07fae121aa66abfb8ca5ce055414246b78745553b44627",
+    "pressure": "1eeccdb83c9ab78b14ad4aa70d1ea479de8436608c724d1cc1e2508aac2693fe",
+    "body": "0e4d17ad32deb6b61473db8cdfea8dbaddfad3c7135321dae43e1fdc35908327",
+    "gap-pressure": "eb252611b07a724dd8ba8fca3491b42646f7d171c9a39dae9927774312ed8b43"
+  },
+  "historical_outputs_and_limits_unchanged": true,
+  "limit_field_counts": {
+    "process": 35,
+    "path": 7,
+    "production": 17
+  },
+  "old_public_path_signature_unchanged": true,
+  "cp_calls": 0,
+  "document_status": "DRAFT",
+  "full_facility_validation": {
+    "status": "UNKNOWN",
+    "ok": false
+  },
+  "engineering_acceptance": "PENDING",
+  "authenticated_approval": "UNKNOWN",
+  "proven_building_infeasible": false,
+  "full_suite_run": false,
+  "background_execution": false,
+  "scope": "Explicit closed0.2 process reader with fresh additional actual room requirements; default documents and producers unchanged",
+  "local_proof": "out/checkpoints/process-production-layout-review-i432/"
+}

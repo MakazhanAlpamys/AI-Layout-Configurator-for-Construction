@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.4.3.2 integrates fresh actual room requirements through an explicit
+closed version0.2 process reader. Original raw identities, whole scalar binding,
+shared preconstructor geometry/vertex/node/full UTF work and one delivery cap
+retain known failures beside incomplete evidence. Fourteen tests/fifteen
+subtests, historical path checks and twenty-one ordinary-wheel cases pass.
+[Scope](PROCESS_PRODUCTION_LAYOUT_REVIEW.md). Document attachment, producer
+enforcement and complete Cycle I acceptance remain open.
+
 Checkpoint QA.24 repairs actual rectangular main-PDF equipment lettering:
 room/dimension/font reservations, bounded captions and guide strips protect
 later lettering while literal geometry and clear anchors remain fixed.
