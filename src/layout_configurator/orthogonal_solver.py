@@ -93,6 +93,20 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
     domain exhaustion is UNKNOWN; a selected combination is only a DRAFT after
     complete scoped room QA passes. No bbox is used for collision/containment.
     """
+    return _solve_orthogonal_candidates(spec, catalog=catalog,
+        fixed_footprints=fixed_footprints, variants=variants, seed=seed,
+        time_limit_seconds=time_limit_seconds, deterministic_units=deterministic_units,
+        budget=budget, include_windows=include_windows)
+
+
+def _solve_orthogonal_candidates(spec: LayoutIR, *,
+        catalog: Mapping[str, Sequence[Rect | OrthogonalPolygon]] | None = None,
+        fixed_footprints: Mapping[str, Rect | OrthogonalPolygon] | None = None,
+        variants: int = 1, seed: int = 42, time_limit_seconds: float = 10,
+        deterministic_units: float | None = None,
+        budget: OrthogonalSolverBudget = OrthogonalSolverBudget(),
+        include_windows: bool = False, _postselection=None) -> OrthogonalSolveResult:
+    """Private per-call extension; default public search has no extra gate."""
     window_options = _window_options(include_windows)
     from ortools.sat.python import cp_model
 
@@ -261,7 +275,14 @@ def solve_orthogonal_candidates(spec: LayoutIR, *, catalog: Mapping[str, Sequenc
         result = LayoutResult(len(accepted) + 1, {room_id: domains[room_id][index][1] for room_id, index in selected.items()}, solver.Value(objective))
         report = validate_orthogonal_layout(spec, result, dimension_policy=budget.dimension_policy, **window_options)
         if report.ok:
-            accepted.append(OrthogonalRoomCandidate(result, report, {room_id: domains[room_id][index][0] for room_id, index in selected.items()}))
+            candidate_ids = {room_id: domains[room_id][index][0] for room_id, index in selected.items()}
+            decision = None if _postselection is None else _postselection(result, report, candidate_ids, state["attempts"])
+            if _postselection is None or type(decision) is dict and decision.get("accepted") is True:
+                accepted.append(OrthogonalRoomCandidate(result, report, candidate_ids))
+            else:
+                detail = decision if type(decision) is dict else {}
+                reject("production_qa", detail.get("reason", "Postselection did not explicitly admit the candidate"),
+                    attempt=state["attempts"], **detail.get("evidence", {}))
         else:
             reject("room_qa", "; ".join(f"{check.id}: {'; '.join(check.evidence)}" for check in report.checks if check.status != "PASS"),
                    attempt=state["attempts"], status=report.status, **({"report": report.to_dict()} if include_windows else {}))
