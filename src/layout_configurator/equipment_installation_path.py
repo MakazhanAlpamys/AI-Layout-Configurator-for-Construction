@@ -66,6 +66,7 @@ def _base():
         "status": "UNKNOWN", "ok": False, "local_2d_path_status": "UNKNOWN",
         "declared_premises_status": "UNKNOWN", "source": {}, "source_binding_status": "UNKNOWN",
         "moving_body": None, "entry_validation": {"status": "UNKNOWN"},
+        "admitted_path_geometry": {"transport_clearance": None, "exterior_staging": None},
         "segments": [], "opening_crossings": [], "actions": [], "issues": [],
         "three_dimensional_feasibility": "UNKNOWN", "full_scenario_validation": "UNKNOWN",
         "engineering_acceptance": "PENDING", "source_authentication": "UNKNOWN",
@@ -433,6 +434,7 @@ def validate_equipment_installation_path(request, *, building, layout, equipment
                 path_issues.append(_issue("unverified_card_dimension", "Moving 2D source dimension is unavailable", status="UNKNOWN", dimension=name))
     staging_value = _bound_value(request["exterior_staging"], "staging", sources, documents, path_issues)
     clearance_value = _bound_value(request["transport_clearance"], "transport_clearance", sources, documents, path_issues)
+    raw["admitted_path_geometry"]["transport_clearance"] = clearance_value
     body_local = Rect(0.0, 0.0, target.rect.width, target.rect.height)
     moving = [("body", body_local)]
     if clearance_value is not None:
@@ -480,6 +482,7 @@ def validate_equipment_installation_path(request, *, building, layout, equipment
         try:
             floor = unary_union((floor, _geometry(_shape(staging_value["floor"], unit_optional=True))))
             staging_obstacles = [_geometry(_shape(value, unit_optional=True)) for value in staging_value["obstacles"]]
+            raw["admitted_path_geometry"]["exterior_staging"] = staging_value
         except _InputError as exc:
             path_issues.append(_issue(exc.code, str(exc), status=exc.status))
     bodies = {key: box(item.rect.x, item.rect.y, item.rect.right, item.rect.top)

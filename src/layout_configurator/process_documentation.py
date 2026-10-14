@@ -121,10 +121,11 @@ def _read_json(data, maximum, limits):
     return value
 
 
-def _current_review(source, limits):
+def _current_review(source, limits, contract=None):
     original = _read_bytes(source, limits.max_input_bytes)
     parent = ProcessReviewLimits(**{row.name: getattr(limits, row.name) for row in fields(ProcessReviewLimits)})
-    review = load_process_review(source, limits=parent)
+    loader = _contract_value(contract, "review_loader", load_process_review)
+    review = loader(source, limits=parent)
     if _read_bytes(source, limits.max_input_bytes) != original or review["review_source"]["file_sha256"] != _sha(original):
         raise ValueError("Original process source changed during fresh review")
     if review.get("inventory_status") in ("INCOMPLETE", "NOT_EVALUATED") or review.get("identity") is None or \
@@ -132,6 +133,9 @@ def _current_review(source, limits):
         raise ValueError("Complete process schedules require an admitted complete review inventory")
     if len(_json(review)) > limits.max_report_bytes:
         raise ValueError("Fresh process review exceeds the document delivery bound")
+    admission = _contract_value(contract, "admit_review", None)
+    if admission is not None:
+        admission(review)
     return original, review
 
 
@@ -177,6 +181,11 @@ def _source_paths(review, limits):
         for row in evidence.get("connections", []):
             if row["status"] == "PASS":
                 records.append(("pressure", row["edge_id"], row["opening_segment"], False))
+    return _admit_source_paths(records, limits)
+
+
+def _admit_source_paths(records, limits):
+    """Bound and admit literal vector paths for the selected document contract."""
     if len(records) > limits.max_overlay_paths or sum(len(row[2]) for row in records) > limits.max_overlay_vertices:
         raise ValueError("Process document source path budget exceeded")
     for _, _, points, closed in records:
@@ -193,8 +202,39 @@ def _source_projection(review):
         wall_thickness_mm=source["wall_thickness_mm"])))
 
 
-def _page_plan(review, regular, limits):
-    sections = _content_sections(review)
+@dataclass(frozen=True)
+class _DocumentContract:
+    """Private per-call choices for an explicitly selected document version."""
+    version: str = "0.1"
+    scope: str = "Synchronized supplied process appendix and literal source overlays"
+    review_loader: object = None
+    admit_review: object = None
+    sections: object = None
+    source_paths: object = None
+    projection: object = None
+    styles: object = None
+    extra_index: object = None
+    check_appendix: object = None
+    legend: object = None
+    legend_size: float = 9.0
+    legend_leading: float = 20.0
+    legend_wrap: bool = False
+    plan_bounds: object = None
+    plan_title: str = "Literal room and environmental source overlays"
+
+
+def _contract_value(contract, name, default):
+    value = getattr(contract, name, None)
+    return default if value is None else value
+
+
+def _document_projection(review, limits, contract=None):
+    callback = _contract_value(contract, "projection", None)
+    return _source_projection(review) if callback is None else callback(review, limits)
+
+
+def _page_plan(review, regular, limits, contract=None):
+    sections = _contract_value(contract, "sections", _content_sections)(review)
     if sum(len(text) for _, _, title, lines in sections for text in (title, *lines)) > limits.max_text_chars:
         raise ValueError("Process document text budget exceeded")
     all_text = [text for _, _, title, lines in sections for text in (title, *lines)]
@@ -206,25 +246,27 @@ def _page_plan(review, regular, limits):
         lines = [line for entry in entries for line in _wrap(entry, regular, 9, _WIDTH - 2*_LEFT)]
         for offset in range(0, len(lines), capacity):
             pages.append((kind, identifier, title, lines[offset:offset + capacity]))
-    pages.append(("plan", "source_overlays", "Literal room and environmental source overlays", []))
+    pages.append(("plan", "source_overlays", _contract_value(contract, "plan_title",
+        "Literal room and environmental source overlays"), []))
     if not pages or len(pages) > limits.max_pages:
         raise ValueError("Process document page budget exceeded")
     return pages
 
 
-def _paint(document, kind, identifier, points, closed, scale):
+def _paint(document, kind, identifier, points, closed, scale, styles=None):
     # JSON-escaped PDF strings are not interchangeable with PDF literal strings.
     from pypdf.generic import TextStringObject
     text = io.BytesIO()
     TextStringObject(identifier).write_to_stream(text)
-    style = _STYLES[kind]
+    style = (_STYLES if styles is None else styles)[kind]
     document.saveState()
     document._code.append(f"/FLC << /Kind /{kind} /Id {text.getvalue().decode('ascii')} >> BDC")
     document.setFillColorRGB(*style["fill"])
     document.setStrokeColorRGB(*style["stroke"])
     document.setLineWidth(style["width"] / scale)
-    if kind == "ventilation_zone":
-        document.setDash(4/scale, 2/scale)
+    dash = style.get("dash", (4, 2) if kind == "ventilation_zone" else ())
+    if dash:
+        document.setDash([value/scale for value in dash])
     for number, (x, y) in enumerate(points):
         document._code.append(f"{x:.17g} {y:.17g} {'m' if number == 0 else 'l'}")
     if closed:
@@ -233,11 +275,12 @@ def _paint(document, kind, identifier, points, closed, scale):
     document.restoreState()
 
 
-def _render(review, limits):
+def _render(review, limits, contract=None):
     regular, bold = _fonts(None)
-    plan = _page_plan(review, regular, limits)
-    paths = _source_paths(review, limits)
-    projection = _source_projection(review)
+    plan = _page_plan(review, regular, limits, contract)
+    paths = _contract_value(contract, "source_paths", _source_paths)(review, limits)
+    projection = _document_projection(review, limits, contract)
+    styles = _contract_value(contract, "styles", _STYLES)
     memory = io.BytesIO()
     document = canvas.Canvas(memory, pagesize=(_WIDTH, _HEIGHT), pageCompression=0)
     document.setTitle("Supplied process concept | DRAFT")
@@ -263,14 +306,24 @@ def _render(review, limits):
             document.saveState()
             document._code.append(f"{scale:.17g} 0 0 {scale:.17g} {ox:.17g} {oy:.17g} cm")
             for role, object_id, points, closed in paths:
-                _paint(document, role, object_id, points, closed, scale)
+                _paint(document, role, object_id, points, closed, scale, styles)
             document.restoreState()
             document.setFillColorRGB(*INK)
-            document.setFont(regular, 9)
-            for position, text in enumerate(("Room: original contour", "Clean zone: literal boundary",
+            size = _contract_value(contract, "legend_size", 9)
+            leading = _contract_value(contract, "legend_leading", 20)
+            legend = _contract_value(contract, "legend", None)
+            entries = (("Room: original contour", "Clean zone: literal boundary",
                     "Ventilation zone: literal dashed boundary", "Pressure: independently resolved portal segment",
-                    "Design and measured pressure remain separate", "No airflow or installation-path approval")):
-                document.drawString(875, 685 - 20*position, text)
+                    "Design and measured pressure remain separate", "No airflow or installation-path approval")
+                if legend is None else legend(review))
+            _check_glyphs(entries, regular)
+            lines = [line for entry in entries for line in (_wrap(entry, regular, size, _WIDTH - 925)
+                if _contract_value(contract, "legend_wrap", False) else [entry])]
+            if lines and 685 - leading*(len(lines) - 1) < _BODY_BOTTOM:
+                raise ValueError("Process source legend exceeds the readable plan frame")
+            document.setFont(regular, size)
+            for position, text in enumerate(lines):
+                document.drawString(875, 685 - leading*position, text)
         document.setFillColorRGB(*INK)
         document.setFont(regular, 8)
         document.drawString(_LEFT, 97, "Full facility validation: UNKNOWN | Engineering acceptance: PENDING")
@@ -284,15 +337,16 @@ def _render(review, limits):
     return data, index, projection
 
 
-def _base_qa():
-    return {"format": "FLC-process-documentation-qa", "version": "0.1", "scope": "Persisted source, printed evidence and painted source geometry only",
+def _base_qa(contract=None):
+    return {"format": "FLC-process-documentation-qa", "version": _contract_value(contract, "version", "0.1"), "scope": "Persisted source, printed evidence and painted source geometry only",
         "status": "FAIL", "ok": False, "document_status": "DRAFT", "review_status": "UNKNOWN", "issues": [],
         "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
         "authenticated_approval": "UNKNOWN"}
 
 
-def _read_vectors(page, reader, limits, projection, is_plan):
+def _read_vectors(page, reader, limits, projection, is_plan, *, styles=None, plan_bounds=None):
     """Read new process roles independently of the existing PDF role contract."""
+    styles = _STYLES if styles is None else styles
     streams = page.get("/Contents")
     if streams is None:
         raise ValueError("PDF page has no content stream")
@@ -372,9 +426,9 @@ def _read_vectors(page, reader, limits, projection, is_plan):
             if not isinstance(properties, DictionaryObject) or set(properties) != {"/Kind", "/Id"}:
                 raise ValueError("Source vector requires closed kind/identity properties")
             role, identifier = str(properties["/Kind"])[1:], str(properties["/Id"])
-            if role not in _STYLES or not identifier or len(identifier) > 128 or _STYLES[role]["layer"] < stage:
+            if role not in styles or not identifier or len(identifier) > 128 or styles[role]["layer"] < stage:
                 raise ValueError("Unknown vector role or obscuring layer order")
-            stage, tag = _STYLES[role]["layer"], (role, identifier)
+            stage, tag = styles[role]["layer"], (role, identifier)
         elif operator == b"EMC":
             if tag is None or paths or tag not in observed:
                 raise ValueError("Source vector group has no actual painted geometry")
@@ -400,18 +454,28 @@ def _read_vectors(page, reader, limits, projection, is_plan):
         elif operator in paints:
             if tag is None or not paths or tag in observed:
                 raise ValueError("Unmarked, duplicate or empty source painting")
-            style = _STYLES[tag[0]]
+            style = styles[tag[0]]
             if operator.decode("ascii") != style["paint"] or not _same_color(state["stroke"], style["stroke"]):
                 raise ValueError("Source paint operation or stroke style changed")
             if style["paint"] == "B*" and not _same_color(state["fill"], style["fill"]):
                 raise ValueError("Source room material was hidden or restyled")
             a, b, c, d, _, _ = state["matrix"]
             transform_scale = max(math.hypot(a, b), math.hypot(c, d))
-            if abs(state["width"]*transform_scale - style["width"]) > .002 or bool(state["dash"]) != (tag[0] == "ventilation_zone"):
+            wanted_dash = style.get("dash", (4, 2) if tag[0] == "ventilation_zone" else ())
+            if abs(state["width"]*transform_scale - style["width"]) > .002 or bool(state["dash"]) != bool(wanted_dash):
                 raise ValueError("Source stroke is invisible, obscuring or incorrectly dashed")
-            if state["dash"] and (len(state["dash"]) != 2 or abs(state["phase"]) > .001 or
-                    any(abs(value*transform_scale - wanted) > .002 for value, wanted in zip(state["dash"], (4, 2)))):
-                raise ValueError("Ventilation boundary dash pattern changed")
+            if state["dash"] and (len(state["dash"]) != len(wanted_dash) or abs(state["phase"]) > .001 or
+                    any(abs(value*transform_scale - wanted) > .002 for value, wanted in zip(state["dash"], wanted_dash))):
+                raise ValueError("Source boundary dash pattern changed")
+            if plan_bounds is not None:
+                scale, (ox, oy) = projection["scale_pt_per_mm"], projection["origin_pt"]
+                left, bottom, right, top = plan_bounds
+                for points, _ in paths:
+                    for x, y in points:
+                        px, py = x*scale + ox, y*scale + oy
+                        if not math.isfinite(px) or not math.isfinite(py) or not left - .002 <= px <= right + .002 or \
+                                not bottom - .002 <= py <= top + .002:
+                            raise ValueError("Actual painted source point is outside the readable plan frame")
             observed[tag], paths = paths, []
         elif operator == b"n":
             if paths:
@@ -423,18 +487,21 @@ def _read_vectors(page, reader, limits, projection, is_plan):
     return observed, len(operations)
 
 
-def _expected_groups(review):
+def _expected_groups(review, contract=None):
     # Artifact QA derives group inventories from the freshly recomputed review,
     # not saved page metadata or a renderer-generated text digest.
+    if contract is not None and contract.sections is not None:
+        return [(kind, identifier) for kind, identifier, _, _ in contract.sections(review)] + [("plan", "source_overlays")]
     return [("identity", None), *(("schedule", name) for name in _SCHEDULES),
             *(("report", name) for name in _REPORTS), ("plan", "source_overlays")]
 
 
-def _check_pdf(data, index, review, limits):
-    sections = _content_sections(review)
+def _check_pdf(data, index, review, limits, contract=None):
+    sections = _contract_value(contract, "sections", _content_sections)(review)
+    expected_groups = _expected_groups(review, contract)
     if sum(len(text) for _, _, title, lines in sections for text in (title, *lines)) > limits.max_text_chars:
         raise ValueError("Fresh process document text exceeds its declared bound")
-    source_paths = _source_paths(review, limits)
+    source_paths = _contract_value(contract, "source_paths", _source_paths)(review, limits)
     reader = PdfReader(io.BytesIO(data), strict=True)
     if reader.is_encrypted or not 1 <= len(reader.pages) <= limits.max_pages:
         raise ValueError("Unreadable or over-budget process PDF")
@@ -447,7 +514,7 @@ def _check_pdf(data, index, review, limits):
                 row["page_number"] != number or row["page_id"] != f"PR-{number:04d}":
             raise ValueError("Malformed or duplicate process PDF page identity")
         group = (row["kind"], row["source_id"])
-        if group not in _expected_groups(review):
+        if group not in expected_groups:
             raise ValueError("Page references an undeclared schedule, report or projection")
         if not groups or groups[-1] != group:
             groups.append(group)
@@ -463,7 +530,8 @@ def _check_pdf(data, index, review, limits):
         if page.get("/Annots"):
             raise ValueError("Annotations can obscure source evidence and are outside this static document contract")
         _resources(page, limits)
-        paths, operations = _read_vectors(page, reader, limits, index["projection"], row["kind"] == "plan")
+        paths, operations = _read_vectors(page, reader, limits, index["projection"], row["kind"] == "plan",
+            styles=_contract_value(contract, "styles", _STYLES), plan_bounds=_contract_value(contract, "plan_bounds", None))
         total_operations += operations
         if total_operations > limits.max_total_pdf_operations or set(observed).intersection(paths):
             raise ValueError("Aggregate PDF work exceeded or source contours were repeated")
@@ -490,7 +558,7 @@ def _check_pdf(data, index, review, limits):
                 f"Page {number}/{len(rows)} | Full installation paths: UNKNOWN")):
             raise ValueError("Printed source SHA, revision, variant, verdict or acceptance scope changed")
         body.setdefault(group, []).extend(text for _, y, text in fragments if _BODY_BOTTOM <= y <= _BODY_TOP + .02)
-    if groups != _expected_groups(review):
+    if groups != expected_groups:
         raise ValueError("Required source groups were omitted, repeated or reordered")
     # Check each full canonical record rather than only an ID/status substring.
     for name in _SCHEDULES:
@@ -509,6 +577,9 @@ def _check_pdf(data, index, review, limits):
     identity_text = "\n".join(body[("identity", None)])
     if any(f"Component {name}: {digest}" not in identity_text for name, digest in review["identity"]["component_sha256"].items()):
         raise ValueError("Printed source component identity is incomplete")
+    appendix = _contract_value(contract, "check_appendix", None)
+    if appendix is not None:
+        appendix(review, body)
     expected_paths = {(role, identifier): (points, closed) for role, identifier, points, closed in source_paths}
     if set(observed) != set(expected_paths):
         raise ValueError("Actual painted source contours or resolved pressure IDs are incomplete")
@@ -528,11 +599,11 @@ def _check_pdf(data, index, review, limits):
     return {"page_count": len(rows), "pdf_operations": total_operations, "source_paths": actual}
 
 
-def _validate(source, destination, limits, *, verify_saved=True):
-    report = _base_qa()
+def _validate(source, destination, limits, *, verify_saved=True, contract=None):
+    report = _base_qa(contract)
     try:
         _valid_limits(limits)
-        original, review = _current_review(source, limits)
+        original, review = _current_review(source, limits, contract)
         root = Path(destination)
         if not root.is_dir() or root.is_symlink():
             raise ValueError("Process documents require an actual directory")
@@ -557,6 +628,8 @@ def _validate(source, destination, limits, *, verify_saved=True):
         index = _read_json(contents["index.json"], limits.max_metadata_bytes, limits)
         keys = {"format", "version", "status", "ok", "review_status", "identity", "review_source", "files", "pages", "projection",
                 "full_facility_validation", "engineering_acceptance", "authenticated_approval", "scope", "limits"}
+        extras = _contract_value(contract, "extra_index", {})
+        keys.update(extras)
         if type(index) is not dict or set(index) != keys:
             raise ValueError("Process document index has missing or unknown fields")
         declared = index["limits"]
@@ -566,11 +639,12 @@ def _validate(source, destination, limits, *, verify_saved=True):
         _valid_limits(declared)
         effective = ProcessDocumentationLimits(**{name: min(value, getattr(declared, name)) for name, value in asdict(limits).items()})
         _valid_limits(effective)
-        expected = {"format": _FORMAT, "version": "0.1", "status": "DRAFT", "ok": False,
+        expected = {"format": _FORMAT, "version": _contract_value(contract, "version", "0.1"), "status": "DRAFT", "ok": False,
             "review_status": review["status"], "identity": review["identity"], "review_source": review["review_source"],
             "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "engineering_acceptance": "PENDING",
-            "authenticated_approval": "UNKNOWN", "scope": "Synchronized supplied process appendix and literal source overlays",
-            "projection": _source_projection(review)}
+            "authenticated_approval": "UNKNOWN", "scope": _contract_value(contract, "scope",
+                "Synchronized supplied process appendix and literal source overlays"),
+            "projection": _document_projection(review, effective, contract), **extras}
         if not _same({key: index[key] for key in expected}, expected) or type(index["files"]) is not dict or set(index["files"]) != set(_FILES):
             raise ValueError("Process document index identity, source or acceptance scope changed")
         for kind, name in _FILES.items():
@@ -585,10 +659,10 @@ def _validate(source, destination, limits, *, verify_saved=True):
                 raise ValueError("Artifact exceeds its declared byte bound")
         # Declared tightening applies to fresh evidence as well as artifact bytes.
         if not _same(asdict(effective), asdict(limits)):
-            current_bytes, current_review = _current_review(source, effective)
+            current_bytes, current_review = _current_review(source, effective, contract)
             if current_bytes != original or not _same(current_review, review):
                 raise ValueError("Process source or applicable admitted evidence changed during delivery QA")
-        actual = _check_pdf(contents["documentation.pdf"], index, review, effective)
+        actual = _check_pdf(contents["documentation.pdf"], index, review, effective, contract)
         if _read_bytes(source, limits.max_input_bytes) != original or any(_read_bytes(root / name,
                 len(data)) != data for name, data in contents.items()):
             raise ValueError("Source or persisted artifact changed during independent readback")
@@ -607,7 +681,7 @@ def validate_process_documentation(source_path, destination, *, limits=ProcessDo
     return _validate(source_path, destination, limits)
 
 
-def export_process_documentation(source_path, destination, *, limits=ProcessDocumentationLimits()):
+def _export(source_path, destination, limits, *, contract=None, publish_directory=None):
     """Publish a new DRAFT package only after fresh source and artifact readback.
 
     Existing destinations are preserved, including an alias of the source. The
@@ -617,17 +691,18 @@ def export_process_documentation(source_path, destination, *, limits=ProcessDocu
     source, target = Path(source_path), Path(destination).absolute()
     if target.exists() or target.is_symlink():
         raise FileExistsError("Process-document destination already exists")
-    original, review = _current_review(source, limits)
-    pdf, pages, projection = _render(review, limits)
+    original, review = _current_review(source, limits, contract)
+    pdf, pages, projection = _render(review, limits, contract)
     if _read_bytes(source, limits.max_input_bytes) != original:
         raise ValueError("Original process source changed while rendering")
     review_data = _json(review)
-    index = {"format": _FORMAT, "version": "0.1", "status": "DRAFT", "ok": False,
+    index = {"format": _FORMAT, "version": _contract_value(contract, "version", "0.1"), "status": "DRAFT", "ok": False,
         "review_status": review["status"], "identity": review["identity"], "review_source": review["review_source"],
         "files": {kind: {"file": name, "sha256": _sha(data)} for (kind, name), data in zip(_FILES.items(), (original, review_data, pdf))},
         "pages": pages, "projection": projection, "full_facility_validation": {"status": "UNKNOWN", "ok": False},
         "engineering_acceptance": "PENDING", "authenticated_approval": "UNKNOWN",
-        "scope": "Synchronized supplied process appendix and literal source overlays", "limits": asdict(limits)}
+        "scope": _contract_value(contract, "scope", "Synchronized supplied process appendix and literal source overlays"),
+        "limits": asdict(limits), **_contract_value(contract, "extra_index", {})}
     index_data = _json(index)
     if len(index_data) > limits.max_metadata_bytes or sum(map(len, (original, review_data, pdf, index_data))) > limits.max_total_bytes:
         raise ValueError("Process document staged inventory exceeds its byte bound")
@@ -637,18 +712,23 @@ def export_process_documentation(source_path, destination, *, limits=ProcessDocu
         stage.mkdir()
         for name, data in (("source.json", original), ("review.json", review_data), ("documentation.pdf", pdf), ("index.json", index_data)):
             (stage / name).write_bytes(data)
-        qa = _validate(source, stage, limits, verify_saved=False)
+        qa = _validate(source, stage, limits, verify_saved=False, contract=contract)
         if not qa["ok"]:
             raise ValueError("Staged process documents failed independent QA: " + qa["issues"][0]["message"])
         qa_data = _json(qa)
         if len(qa_data) > limits.max_metadata_bytes or sum(map(len, (original, review_data, pdf, index_data, qa_data))) > limits.max_total_bytes:
             raise ValueError("Process document final inventory exceeds its byte bound")
         (stage / "qa.json").write_bytes(qa_data)
-        final = _validate(source, stage, limits)
+        final = _validate(source, stage, limits, contract=contract)
         if not final["ok"] or _read_bytes(source, limits.max_input_bytes) != original:
             raise ValueError("Original process source or saved QA changed before publication")
-        _publish_directory(stage, target)
-    final = _validate(source, target, limits)
+        (_publish_directory if publish_directory is None else publish_directory)(stage, target)
+    final = _validate(source, target, limits, contract=contract)
     if not final["ok"]:
         raise ValueError("Published DRAFT failed final current-source readback: " + final["issues"][0]["message"])
     return _strict_json(index_data.decode("utf-8"))
+
+
+def export_process_documentation(source_path, destination, *, limits=ProcessDocumentationLimits()):
+    """Publish the original version 0.1 five-file source-bound DRAFT contract."""
+    return _export(source_path, destination, limits)

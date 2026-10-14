@@ -1,5 +1,10 @@
 # Synchronized DRAFT Process Documentation
 
+Checkpoint I.5.4.2 separately exports version `0.2` supplied installation paths
+with fresh body/sweep/staging diagrams and independent actual PDF readback.
+[Explicit path-document contract](PROCESS_INSTALLATION_DOCUMENTATION.md).
+The version `0.1` APIs described below remain unchanged.
+
 Checkpoint I.5.3 separately attaches these unchanged process documents to an
 exact matching, freshly checked facility child in a bounded outer package.
 [Attachment contract](PROCESS_FACILITY_PACKAGES.md).
@@ -60,9 +65,10 @@ Artifact QA PASS means this appendix agrees with its exact source and fresh
 scoped evidence. The document remains DRAFT and the process review remains
 UNKNOWN or FAIL. Full facility validation is UNKNOWN, authenticated approval
 is UNKNOWN and engineering acceptance is PENDING. The existing facility
-bundle's fourteen-file inventory is unchanged. Complete bundle attachment,
-I.4.2 path integration, additional discipline views and Cycle I benchmark and
-engineering acceptance remain separate work.
+bundle's fourteen-file inventory is unchanged. I.5.3 separately implements
+explicit version `0.1` outer attachment and I.5.4.2 supplies the version `0.2`
+path diagrams. Additional discipline views, version `0.2` outer attachment and
+Cycle I benchmark and engineering acceptance remain separate work.
 
 Fresh root single-file verification passes 14 tests and 25 subtests in 48.15 s.
 Actual regressions first exposed omitted resolved portals, clipped/shifted

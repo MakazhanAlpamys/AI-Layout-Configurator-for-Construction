@@ -1,5 +1,10 @@
 # Supplied Installation Paths in a Process Revision
 
+Checkpoint I.5.4.2 separately publishes
+[source-bound path diagrams](PROCESS_INSTALLATION_DOCUMENTATION.md). Fresh
+admitted clearance and exterior inventory are exposed in leaf evidence for
+that consumer; raw unbound requests do not become drawing authority.
+
 The explicit version `0.2` process input adds `installation_paths` to the
 closed [version `0.1` review contract](PROCESS_REVIEW.md). Each entry is a
 complete supplied [whole-equipment 2D path request](EQUIPMENT_INSTALLATION_PATHS.md).
@@ -64,8 +69,9 @@ document and outer-package APIs do not implicitly accept version `0.2`.
 The process stays DRAFT with `.ok == False`, full facility/scenario and 3D
 feasibility UNKNOWN, authenticated approval UNKNOWN and engineering acceptance
 PENDING. A local 2D path PASS concerns only supplied supported motion and its
-declared premises. Process enforcement in the producer, path diagrams,
-engineering review and the Cycle I benchmark remain separate requirements.
+declared premises. Process enforcement in the producer, explicit version `0.2`
+outer attachment, engineering review and the Cycle I benchmark remain separate
+requirements.
 
 Checkpoint I.5.4.1 passes fresh root single-file verification: 17 tests and
 21 subtests in 21.08 seconds. Actual regressions exposed missing-library FAIL

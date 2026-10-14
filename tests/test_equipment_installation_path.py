@@ -110,6 +110,35 @@ class EquipmentInstallationPathTests(unittest.TestCase):
     def rebind(self):
         refresh_binding(self.request, self.building, self.layout, self.equipment, self.library)
 
+    def test_admitted_source_geometry_is_detached_and_unbound_staging_is_not_exposed(self):
+        value = {"kind": "rectangle", "unit": "mm", "x": -200.0, "y": -100.0,
+                 "width": 1400.0, "depth": 1000.0}
+        source = self.library["sources"][0]
+        document = json.loads(source["content"])
+        document["installation_path"]["transport_clearance"] = value
+        source_content({"sources": [source]}, document)
+        self.request["transport_clearance"] = {"source_id": source["id"], "source_sha256": source["sha256"],
+            "source_pointer": "/installation_path/transport_clearance", "value": copy.deepcopy(value)}
+        self.rebind()
+        before = copy.deepcopy((self.request, self.library))
+        raw = self.validate().to_dict()
+        self.assertEqual(raw["admitted_path_geometry"]["transport_clearance"], value)
+        self.assertEqual(raw["admitted_path_geometry"]["exterior_staging"], self.request["exterior_staging"]["value"])
+        raw["admitted_path_geometry"]["exterior_staging"]["floor"]["x"] = 1234
+        self.assertEqual((self.request, self.library), before)
+        for mutation in ("stale_staging", "unavailable_rights"):
+            request, library = copy.deepcopy(before)
+            if mutation == "stale_staging":
+                request["exterior_staging"]["source_sha256"] = "0" * 64
+            else:
+                library["sources"][0]["usage_rights"]["state"] = "UNKNOWN"
+                refresh_binding(request, self.building, self.layout, self.equipment, library)
+            with self.subTest(mutation=mutation):
+                evidence = self.validate(request=request, library=library).to_dict()
+                self.assertIsNone(evidence["admitted_path_geometry"]["exterior_staging"])
+                self.assertFalse(evidence["ok"])
+                self.assertEqual(evidence["three_dimensional_feasibility"], "UNKNOWN")
+
     def test_complete_narrow_body_path_binds_actual_sources_without_sweeping_stationary_reservation(self):
         before = copy.deepcopy((self.building, self.layout, self.equipment, self.library, self.request))
         report = self.validate()

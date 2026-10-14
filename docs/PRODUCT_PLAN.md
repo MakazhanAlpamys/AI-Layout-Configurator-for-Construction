@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.4.2 adds explicit source-bound installation diagrams to version
+`0.2` process documents. Fresh admitted complete bodies, supported sweeps and
+exterior inventory are drawn and independently read back with request/status
+legends. Ten tests/twelve subtests, three installed nineteen-page examples,
+historical PDF/outer QA and visual inspection of all fifty-seven pages pass.
+[Scope](PROCESS_INSTALLATION_DOCUMENTATION.md). Explicit version `0.2` outer
+attachment, producer enforcement and full Cycle I acceptance remain open.
+
 Checkpoint I.5.4.1 adds an explicit version `0.2` process reader with supplied
 installation paths. Nine raw component hashes and four canonical leaf hashes
 retain their distinct identities; combined work/vertices are admitted before

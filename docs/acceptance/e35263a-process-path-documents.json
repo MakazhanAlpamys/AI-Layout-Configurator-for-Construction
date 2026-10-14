@@ -1,0 +1,124 @@
+{
+  "checkpoint": "I.5.4.2",
+  "verified_on": "2026-10-14",
+  "status": "PASS",
+  "base_commit": "e35263acd14cf4266e1e2add6cb690a923c8c3ca",
+  "source_sha256": {
+    "src/layout_configurator/process_documentation.py": "3194bdce616cc6bc3fc069a68e5b9c4b23fd70524f8f246abf724dc7ca64724c",
+    "src/layout_configurator/process_installation_documentation.py": "02d2a0e92f095e9a2c0e840a7a3df6a1bb591fed6dccadeb5b6be4a4f72ad050",
+    "src/layout_configurator/equipment_installation_path.py": "014fc0738f9203267263ba973e51431a3a0494b5e873426bf115cfa4e1954768",
+    "tests/test_equipment_installation_path.py": "dbc9e6c1fd8cb5f598912619947a7cd40225ddd4d5972b69c5df30bc5208a446",
+    "tests/test_process_installation_documentation.py": "7f9901757efb1b06dba46e00bcc0db6520c5d9e7d8043ce66038ce22b91f7782"
+  },
+  "archive_sha256": "8cb2fea63535c97aa341cf0e510aae6e1048246b407f5ac31c19158b7c7977af",
+  "wheel_sha256": "2187d52ce4a4a7afb43a39b38ff4a363cdbdfabb13b850eddfebcd5c08e24a52",
+  "imports": "regular installed wheel from foreign cwd",
+  "cp_calls": 0,
+  "cases": {
+    "clear": {
+      "pages": 19,
+      "document_status": "DRAFT",
+      "review_status": "UNKNOWN",
+      "local_2d_path_status": "PASS",
+      "artifact_consistency": "PASS",
+      "source_sha256": "80bf60f0382eec11822d83796f283c0cb68847774165c6a1e9da63ce1f1d0057",
+      "pdf_sha256": "5ce0a0828bbd4f4a553e3b6d9c82f866a4831eeaae4e1a22470529d7fcb4c8df",
+      "request_sha256": "7d6844269c26a9b891925f73d744f90c960c3646ced45098bf1acc449baa0f64",
+      "actual_path_count": 10,
+      "projection": {
+        "origin_pt": [
+          159.9290780141844,
+          190.4964539007092
+        ],
+        "scale_pt_per_mm": 0.0549645390070922
+      }
+    },
+    "blocked": {
+      "pages": 19,
+      "document_status": "DRAFT",
+      "review_status": "FAIL",
+      "local_2d_path_status": "FAIL",
+      "artifact_consistency": "PASS",
+      "source_sha256": "a4b72a590c4dac0d2203ff835549d6ada6e56689fac5e325c271736c0b719086",
+      "pdf_sha256": "1bf59ebb7eca2596dd578b4a5fd84ca476a63adbe71000fde1b7ae76bcde2276",
+      "request_sha256": "804e84fb1187dba31a994bd840c369a8a478f3fa3ef51afb6bfed6248981a4ff",
+      "actual_path_count": 9,
+      "projection": {
+        "origin_pt": [
+          119.92481203007519,
+          190.82706766917292
+        ],
+        "scale_pt_per_mm": 0.05827067669172932
+      }
+    },
+    "unsupported": {
+      "pages": 19,
+      "document_status": "DRAFT",
+      "review_status": "UNKNOWN",
+      "local_2d_path_status": "UNKNOWN",
+      "artifact_consistency": "PASS",
+      "source_sha256": "bf395ab3186432673bbc5c6a83cfbed187ec31b4e73b8ccf215eeae807df79ba",
+      "pdf_sha256": "2eac433b024e4c2c1186cde854741b648bb4b1ed76741356ceb6fc9ce6ccce16",
+      "request_sha256": "d242aae318aa699a444903b8fd49e225a19a6f12bd63e45ee41175c27e656730",
+      "actual_path_count": 8,
+      "projection": {
+        "origin_pt": [
+          159.9290780141844,
+          190.4964539007092
+        ],
+        "scale_pt_per_mm": 0.0549645390070922
+      }
+    }
+  },
+  "historical_documentation_qa": "PASS",
+  "historical_outer_package_qa": "PASS",
+  "historical_result_sha256": "7c9bc8895fbc3c9907d960aa30b6e99c240054189d020edfd3fb6f11766d542a",
+  "historical_limit_fields_unchanged": true,
+  "root_sequential_single_file_tests": [
+    {
+      "file": "tests/test_process_installation_documentation.py",
+      "tests": 10,
+      "subtests": 12,
+      "seconds": 42.91,
+      "exit_code": 0
+    },
+    {
+      "file": "tests/test_process_documentation.py",
+      "tests": 14,
+      "subtests": 25,
+      "seconds": 39.34,
+      "exit_code": 0
+    },
+    {
+      "file": "tests/test_process_installation_review.py",
+      "tests": 17,
+      "subtests": 21,
+      "seconds": 24.47,
+      "exit_code": 0
+    },
+    {
+      "file": "tests/test_equipment_installation_path.py",
+      "tests": 24,
+      "subtests": 23,
+      "seconds": 3.57,
+      "exit_code": 0
+    }
+  ],
+  "rendered_pages": 57,
+  "visual_inspection": [
+    "All57pages contact-inspected",
+    "Clear, blocked and unsupported plan pages19 inspected individually",
+    "Dense fresh path evidence page18 inspected individually"
+  ],
+  "scope": {
+    "document_status": "DRAFT",
+    "full_facility_validation": "UNKNOWN",
+    "three_dimensional_feasibility": "UNKNOWN",
+    "authenticated_approval": "UNKNOWN",
+    "engineering_acceptance": "PENDING",
+    "full_suite_run": false,
+    "benchmark_run": false,
+    "background_scripts": false,
+    "overview_minimum_contour_bbox_pt": 1
+  }
+}
