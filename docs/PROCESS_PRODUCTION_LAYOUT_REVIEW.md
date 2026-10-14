@@ -109,3 +109,8 @@ remain local under `out/checkpoints/process-production-layout-review-i432/`.
 Root helper assumptions about a nonexistent input envelope and optional normal
 inventory metadata were corrected without changing production code. No full
 suite, benchmark, background task or full CI dispatch is run by this checkpoint.
+
+The pushed `357ddce` source checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38590587537)
+in thirty-eight seconds including setup. Full acceptance jobs are skipped;
+the pending changed full gate remains separate.

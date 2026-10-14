@@ -124,3 +124,8 @@ The QA.24 `7c10594` push also passes
 [quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38584729033)
 in forty seconds including setup. Complete collection/partition and four
 sequential contract files pass; full acceptance jobs are skipped.
+
+The I.4.3.2 `357ddce` source push passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38590587537)
+in thirty-eight seconds including setup. All full jobs are skipped; scoped
+push checks remain separate from the pending changed full acceptance.
