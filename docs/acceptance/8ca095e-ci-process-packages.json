@@ -107,5 +107,24 @@
   "benchmark_run": false,
   "full_ci_dispatched": false,
   "changed_full_ci_acceptance": "PENDING",
-  "raw_evidence_local": "out/checkpoints/ci-process-package-shard-qa25/"
+  "raw_evidence_local": "out/checkpoints/ci-process-package-shard-qa25/",
+  "checkpoint_commit": "84431211ba8d1b039c07f2e5cff7f8754b6fb7b6",
+  "quick_ci": {
+    "run_id": 38624524611,
+    "head_sha": "84431211ba8d1b039c07f2e5cff7f8754b6fb7b6",
+    "status": "SUCCESS",
+    "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38624524611",
+    "quick_job": "Quick contracts and complete test collection",
+    "job_seconds": 41,
+    "started_at_utc": "2026-10-14T19:32:26Z",
+    "completed_at_utc": "2026-10-14T19:33:07Z",
+    "full_jobs": {
+      "pharma-cleanroom": "SKIPPED",
+      "api-container": "SKIPPED",
+      "tests": "SKIPPED"
+    },
+    "full_acceptance": "PENDING",
+    "manually_dispatched_full_run": false,
+    "causal_timing_or_billed_savings_claim": false
+  }
 }

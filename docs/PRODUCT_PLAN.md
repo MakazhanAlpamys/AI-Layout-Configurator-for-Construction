@@ -6,6 +6,11 @@ and thirteen fixture/workflow tests plus 26 subtests pass. Quick push checks and
 API/pharma gates stay unchanged. [CI policy](CI.md). Changed full runtime,
 aggregate runner savings and full acceptance remain unmeasured/pending.
 
+The `8443121` QA.25 source passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38624524611)
+in forty-one seconds including setup, with full jobs skipped. Full-shard timing
+and changed full acceptance remain separate.
+
 Checkpoint I.5.5.2 attaches these production documents to an unchanged original
 facility in explicit outer version0.3. Initial source/base and outer/child
 metadata pins, effective minima and combined actual artifact bounds precede

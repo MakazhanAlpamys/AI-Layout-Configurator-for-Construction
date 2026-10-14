@@ -37,6 +37,12 @@ delivery work; changed full GitHub elapsed time and aggregate billed-minute
 savings are unmeasured. Full acceptance remains pending and is not dispatched
 locally to verify this partition change.
 
+The pushed QA.25 `8443121` source passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38624524611)
+in forty-one seconds including setup. Complete collection, the four-group
+partition and four sequential contract files pass. All full jobs are skipped;
+this does not measure full-shard balance or aggregate runner savings.
+
 QA.22 runs the four quick contract files sequentially, with exactly one file
 per pytest invocation. The file list, complete collection, shard partition,
 workflow triggers, concurrency and full acceptance jobs remain unchanged.
