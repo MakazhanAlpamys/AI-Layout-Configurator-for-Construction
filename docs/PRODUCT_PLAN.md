@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.3 attaches unchanged facility artifacts and process documents
+through an opted source-bound outer package. Exact original frames, supplied
+routes, revision and profile are rechecked; actual child QA detects rehashed
+physical/evidence corruption. Fresh single-file eight tests/14 subtests and
+regular installed-wheel verification pass.
+[Scope](PROCESS_FACILITY_PACKAGES.md). Process FAIL remains DRAFT even beside
+accepted base artifacts; path diagrams and engineering acceptance remain open.
+
 Checkpoint I.5.2 delivers a source-bound standalone DRAFT process appendix:
 eight schedules, five fresh reports and literal room/environment/pressure
 overlays. Independent actual PDF readback detects rehashed source, text,

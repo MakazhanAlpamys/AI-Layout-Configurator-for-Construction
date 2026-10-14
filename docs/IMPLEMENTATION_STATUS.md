@@ -149,6 +149,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | QA.23 | Preserve quick workflow checks after single-file policy | Parse actual quick pytest invocations; require one test file each, sequential execution and exactly the existing four contract files. Full workflow/jobs and acceptance assertions remain. Both scheduled core failures are the same obsolete combined-command assertion. | Root actual selected RED0.19 s; fresh single-file `test_ci_test_shards.py`: 10 tests / 15 subtests PASS4.28 s. Both saved scheduled log hashes match; [negative evidence](acceptance/34abb9e-ci-failure.json). Subsequent4217633 quick job SUCCESS44 s; no full rerun. | complete 2026-10-14 for test repair; changed full acceptance pending |
 | I.5.2 | Standalone synchronized process documentation | Exact original input, freshly recomputed review, paginated vector appendix and literal source overlays share one revision/variant/component identity. Independent actual text/path/page/visibility readback precedes native new-directory publication; saved hashes alone cannot authorize altered evidence. Known review FAIL and missing UNKNOWN remain DRAFT. | Initial12-method missing-module RED; actual omitted pressure portal and four visibility RED entries repaired. Fresh root single-file14 tests/25 subtests PASS48.15 s. Regular installed wheel reproduces17-page readback outside checkout; 16-page concave example preserves20M/1.04M mm2 geometry. All33pages rendered/contact-inspected, four representative pages separately viewed. [Scope](PROCESS_DOCUMENTATION.md). | complete 2026-10-14 for standalone appendix/source overlays; full bundle, additional views/path integration and engineering acceptance open |
 
+| I.5.3 | Source-bound outer facility/process package | Exact original building/layout/equipment/routes/revision and separate profile identity cross-bind unchanged orthogonal or single-variant rectangular facility child and unchanged five-file process child. Fresh physical base/document QA detects coherently rehashed tampering; bounded staged native publication preserves original/raced work. Process FAIL remains DRAFT. | Initial8-method missing-module RED2.39 s; one rectangular fixture property corrected after actual first run. Fresh root single-file8 tests/14 subtests PASS70.28 s. Regular installed wheel repeats14 byte-identical base files and positive child QA beside pressure-cycle FAIL with zero CP calls;20 process pages rendered/contact-inspected. [Scope](PROCESS_FACILITY_PACKAGES.md). | complete 2026-10-14 for explicit software attachment; version0.2 path diagrams and Cycle I/engineering acceptance open |
+
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
 All six jobs succeeded; detailed downloaded evidence is recorded in QA.5.
@@ -196,7 +198,7 @@ Cyrillic text.
   JSON schedules, fresh process evidence and a standalone independently checked
   PDF appendix/source overlays exist, with verified regular installed APIs.
   Agreed engineering program, unified producer enforcement, complete
-  scenario/3D/installation-path integration, remaining views/full bundle delivery, medical-plastics
+  scenario/3D/installation-path integration, remaining views, medical-plastics
   benchmark and change scenario remain.
 
 ## External acceptance

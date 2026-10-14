@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint I.5.3 adds a current-product source-bound outer facility/process
+package with exact child preservation and fresh physical/evidence checks.
+Software attachment passes; full engineering acceptance and MVP archive scope
+remain separate.
+
 Checkpoint I.5.2 adds current-product source-bound DRAFT process appendices
 and literal environmental overlays with independent actual PDF readback.
 Local/installed/rendered verification passes; full current-product and

@@ -1,5 +1,9 @@
 # Synchronized DRAFT Process Documentation
 
+Checkpoint I.5.3 separately attaches these unchanged process documents to an
+exact matching, freshly checked facility child in a bounded outer package.
+[Attachment contract](PROCESS_FACILITY_PACKAGES.md).
+
 Checkpoint I.5.2 publishes a standalone technical appendix from the original
 [process-review input](PROCESS_REVIEW.md). It preserves the exact input bytes,
 freshly computes the eight schedules and five local reports, and prints them
