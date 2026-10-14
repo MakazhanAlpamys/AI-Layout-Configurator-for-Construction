@@ -1,0 +1,145 @@
+{
+  "checkpoint": "I.5.4.3",
+  "verified_on": "2026-10-14",
+  "status": "PASS",
+  "base_commit": "e481922021f59c013ec0fb5842ae3c1730c47f6a",
+  "source_sha256": {
+    "src/layout_configurator/process_facility_package.py": "96758a3d9cfab53b7ff0897ce8a7c7a3f3e19ca542de605d2ac7de2f99ef4977",
+    "src/layout_configurator/process_installation_facility_package.py": "10fad8a58f4904bdc23ab7d5b8af7b719e83587ee68ecf8d036786da12f8b9ed",
+    "tests/test_process_installation_facility_package.py": "97b6064bd186b390ae30aff2472c863a9c7dad952aa331d7ecbe15e4a2d979b9"
+  },
+  "archive_sha256": "05ea993fa5ff42fa4080912363d0c47a3ed7b2269a404805cd48674537951e67",
+  "wheel_sha256": "0d1d503041038f230545fa89614c046486c2b162de4921b8ef878a67cce6a9d3",
+  "imports": "regular installed wheel from foreign cwd",
+  "cases": [
+    {
+      "case": "clear",
+      "kind": "orthogonal",
+      "status": "PASS",
+      "document_status": "DRAFT",
+      "review_status": "UNKNOWN",
+      "local_2d_path_status": "PASS",
+      "unchanged_facility_files": 14,
+      "process_pages": 19,
+      "source_sha256": "80bf60f0382eec11822d83796f283c0cb68847774165c6a1e9da63ce1f1d0057",
+      "profile_sha256": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+      "request_sha256": "7d6844269c26a9b891925f73d744f90c960c3646ced45098bf1acc449baa0f64",
+      "manifest_sha256": "b278838f7446a427b5bfabe03d4b0b58796ae8cf61418e4ec0c3bf79858af344",
+      "pdf_sha256": "560b4f62e0aab205a04d6c05ddb7b3dcfe1dda0a910c13fe26d185e6cc23cc99",
+      "collision": null
+    },
+    {
+      "case": "clear",
+      "kind": "rectangular",
+      "status": "PASS",
+      "document_status": "DRAFT",
+      "review_status": "UNKNOWN",
+      "local_2d_path_status": "PASS",
+      "unchanged_facility_files": 9,
+      "process_pages": 19,
+      "source_sha256": "80bf60f0382eec11822d83796f283c0cb68847774165c6a1e9da63ce1f1d0057",
+      "profile_sha256": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+      "request_sha256": "7d6844269c26a9b891925f73d744f90c960c3646ced45098bf1acc449baa0f64",
+      "manifest_sha256": "7a0852c4651c45e8043b8433cafbfcd893798ab04455aa512ba7dbb6e91ff63c",
+      "pdf_sha256": "4fc39a5196f79a10dabd36bcdddd776d2be63e05254ab2048db0033a8880c403",
+      "collision": null
+    },
+    {
+      "case": "blocked",
+      "kind": "orthogonal",
+      "status": "PASS",
+      "document_status": "DRAFT",
+      "review_status": "FAIL",
+      "local_2d_path_status": "FAIL",
+      "unchanged_facility_files": 14,
+      "process_pages": 19,
+      "source_sha256": "2833370badb61c3c9da3c994056520f773cf2e9efd3510ac05e10ba3ee42c77c",
+      "profile_sha256": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+      "request_sha256": "9307a9e468f5e01d3053c5a8a7539835e277b97c0d8bd1b2775880daba952f47",
+      "manifest_sha256": "d677e4c5cced5939b657e35a9e21bd82136c632070440cb9232fc8bb1e4bbe72",
+      "pdf_sha256": "7feb00b522ef15075ae6e8f0868d5f216537d08d84933da191741b0dc620cfb9",
+      "collision": {
+        "code": "swept_body_collision",
+        "message": "Whole supplied segment intersects an installed physical body",
+        "overlap_area_mm2": 700000.0,
+        "related_equipment_id": "neighbor",
+        "role": "body",
+        "segment_index": 1,
+        "status": "FAIL"
+      }
+    },
+    {
+      "case": "blocked",
+      "kind": "rectangular",
+      "status": "PASS",
+      "document_status": "DRAFT",
+      "review_status": "FAIL",
+      "local_2d_path_status": "FAIL",
+      "unchanged_facility_files": 9,
+      "process_pages": 19,
+      "source_sha256": "2833370badb61c3c9da3c994056520f773cf2e9efd3510ac05e10ba3ee42c77c",
+      "profile_sha256": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+      "request_sha256": "9307a9e468f5e01d3053c5a8a7539835e277b97c0d8bd1b2775880daba952f47",
+      "manifest_sha256": "5b110ebc61a7ea783e3eb7a6f54a28513201d008f5fd655fbe2126c830747764",
+      "pdf_sha256": "047a6c3e6f70c0547b6913a36cdb2ab6813e5ddf3a8a07af21bd203719fb7798",
+      "collision": {
+        "code": "swept_body_collision",
+        "message": "Whole supplied segment intersects an installed physical body",
+        "overlap_area_mm2": 700000.0,
+        "related_equipment_id": "neighbor",
+        "role": "body",
+        "segment_index": 1,
+        "status": "FAIL"
+      }
+    }
+  ],
+  "cp_calls": 0,
+  "historical_outer_qa": "PASS",
+  "historical_saved_qa_exact": true,
+  "historical_pdf_qa": "PASS",
+  "historical_path_pdf_qa": "PASS",
+  "historical_outer_limit_fields_and_values_unchanged": true,
+  "historical_outer_limit_field_count": 59,
+  "root_sequential_single_file_tests": [
+    {
+      "file": "tests/test_process_installation_facility_package.py",
+      "tests": 10,
+      "subtests": 29,
+      "seconds": 185.29,
+      "exit_code": 0
+    },
+    {
+      "file": "tests/test_process_facility_package.py",
+      "tests": 8,
+      "subtests": 14,
+      "seconds": 118.15,
+      "exit_code": 0
+    }
+  ],
+  "actual_recapture_regression": {
+    "red_seconds": 45.18,
+    "old_source_geometry_calls": 1,
+    "final_source_geometry_calls": 0,
+    "all_enclosing_hashes_rebound": true
+  },
+  "rendered_pages": 106,
+  "visual_inspection": [
+    "All106pages contact-inspected across12PDFsets",
+    "Two whole process path plans and one original main plan individually viewed"
+  ],
+  "inherited_legacy_limitations": [
+    "Main-plan work and press labels overlap in supplied fixture",
+    "Local renderer emits Symbol/ArialUnicode fallback-font warnings for unchanged legacy main plans",
+    "Receiving-tool and font-portability acceptance remains open"
+  ],
+  "scope": {
+    "document_status": "DRAFT",
+    "full_facility_validation": "UNKNOWN",
+    "full_process_validation": "UNKNOWN",
+    "engineering_acceptance": "PENDING",
+    "authenticated_approval": "UNKNOWN",
+    "full_suite_run": false,
+    "benchmark_run": false,
+    "background_scripts": false
+  }
+}

@@ -38,6 +38,26 @@ _OPTION_KEYS = {"include_windows", "include_grid", "include_groups"}
 
 
 @dataclass(frozen=True)
+class _PackageContract:
+    """Private immutable per-call choices for an explicit attachment version."""
+    version: str = "0.1"
+    scope: str = _SCOPE
+    document_contract: object = None
+    document_limits: object = None
+    export_documents: object = None
+    validate_documents: object = None
+    extra_manifest: object = None
+    prepare_validation: object = None
+    prepare_export: object = None
+    finish_validation: object = None
+
+
+def _choice(contract, name, default):
+    value = getattr(contract, name, None)
+    return default if value is None else value
+
+
+@dataclass(frozen=True)
 class ProcessFacilityPackageLimits(ProcessDocumentationLimits):
     max_total_bytes: int = 67_108_864
     max_files: int = 128
@@ -67,6 +87,16 @@ def _document_limits(limits):
     # bounds before the process reader reaches source constructors or geometry.
     values["max_input_bytes"] = min(values["max_input_bytes"], limits.max_file_bytes, limits.max_total_bytes)
     return ProcessDocumentationLimits(**values)
+
+
+def _selected_document_limits(limits, contract=None):
+    return _choice(contract, "document_limits", _document_limits)(limits)
+
+
+def _package_review(source, limits, contract=None):
+    document = _selected_document_limits(limits, contract)
+    selected = _choice(contract, "document_contract", None)
+    return _current_review(source, document) if selected is None else _current_review(source, document, contract=selected)
 
 
 def _sha(data):
@@ -278,8 +308,8 @@ def _child_files(base, process):
             **{"process/" + name: data for name, data in process.items()}}
 
 
-def _base_report():
-    return {"format": "FLC-process-facility-package-qa", "version": "0.1", "scope": _SCOPE,
+def _base_report(contract=None):
+    return {"format": "FLC-process-facility-package-qa", "version": _choice(contract, "version", "0.1"), "scope": _choice(contract, "scope", _SCOPE),
         "status": "FAIL", "ok": False, "document_status": "DRAFT", "review_status": "UNKNOWN", "issues": [],
         "base_qa": {"status": "UNKNOWN", "ok": False, "checks": []},
         "process_qa": {"status": "UNKNOWN", "ok": False, "issues": []},
@@ -287,11 +317,15 @@ def _base_report():
         "engineering_acceptance": "PENDING", "authenticated_approval": "UNKNOWN", "proven_building_infeasible": False}
 
 
-def _validate(source, original_base, package, limits, *, verify_saved=True):
-    report = _base_report()
+def _validate(source, original_base, package, limits, *, verify_saved=True, contract=None):
+    report = _base_report(contract)
     try:
         _valid_limits(limits)
-        original, review = _current_review(source, _document_limits(limits))
+        prepare = _choice(contract, "prepare_validation", None)
+        if prepare is not None:
+            limits, contract = prepare(source, original_base, package, limits, verify_saved)
+            _valid_limits(limits)
+        original, review = _package_review(source, limits, contract)
         report["review_status"] = review["status"]
         original_files = _snapshot(original_base, limits, maximum=limits.max_base_bytes)
         root = Path(package)
@@ -306,6 +340,8 @@ def _validate(source, original_base, package, limits, *, verify_saved=True):
         keys = {"format", "version", "scope", "status", "ok", "review_status", "identity", "review_source", "base_kind",
             "base_profile_sha256", "base_projection_options", "files", "limits", "full_facility_validation",
             "full_process_validation", "engineering_acceptance", "authenticated_approval"}
+        extras = _choice(contract, "extra_manifest", {})
+        keys.update(extras)
         if type(manifest) is not dict or set(manifest) != keys or type(manifest["limits"]) is not dict or set(manifest["limits"]) != set(asdict(limits)):
             raise ValueError("Outer manifest or declared limits are not closed")
         declared = ProcessFacilityPackageLimits(**manifest["limits"])
@@ -313,7 +349,7 @@ def _validate(source, original_base, package, limits, *, verify_saved=True):
         effective = ProcessFacilityPackageLimits(**{name: min(value, getattr(declared, name)) for name, value in asdict(limits).items()})
         _valid_limits(effective)
         if not _same(asdict(effective), asdict(limits)):
-            original, review = _current_review(source, _document_limits(effective))
+            original, review = _package_review(source, effective, contract)
             original_files = _snapshot(original_base, effective, maximum=effective.max_base_bytes)
             captured = _snapshot(root, effective)
             parsed = _bounded_json(captured, effective)
@@ -327,11 +363,11 @@ def _validate(source, original_base, package, limits, *, verify_saved=True):
             raise ValueError("Original orthogonal child inventory must remain exactly fourteen files")
         original_parsed = _bounded_json(original_files, effective)
         binding = _binding(review, original_parsed, kind, options)
-        expected = {"format": _FORMAT, "version": "0.1", "scope": _SCOPE, "status": "DRAFT", "ok": False,
+        expected = {"format": _FORMAT, "version": _choice(contract, "version", "0.1"), "scope": _choice(contract, "scope", _SCOPE), "status": "DRAFT", "ok": False,
             "review_status": review["status"], "identity": review["identity"], "review_source": review["review_source"],
             "base_profile_sha256": binding["profile_sha256"], "files": _inventory(_child_files(base, process)),
             "full_facility_validation": {"status": "UNKNOWN", "ok": False}, "full_process_validation": "UNKNOWN",
-            "engineering_acceptance": "PENDING", "authenticated_approval": "UNKNOWN"}
+            "engineering_acceptance": "PENDING", "authenticated_approval": "UNKNOWN", **extras}
         if not _same({key: manifest[key] for key in expected}, expected):
             raise ValueError("Outer source, profile, revision, child bytes or acceptance scope changed")
         for name in manifest["files"]:
@@ -340,12 +376,16 @@ def _validate(source, original_base, package, limits, *, verify_saved=True):
         report["base_qa"] = _base_qa(root / "facility", kind, review, options, effective)
         if not report["base_qa"]["ok"]:
             raise ValueError("Fresh original-format physical facility QA failed")
-        report["process_qa"] = validate_process_documentation(source, root / "process", limits=_document_limits(effective))
+        report["process_qa"] = _choice(contract, "validate_documents", validate_process_documentation)(
+            source, root / "process", limits=_selected_document_limits(effective, contract))
         if not report["process_qa"]["ok"]:
             raise ValueError("Fresh current-source process document readback failed")
         if _read_bytes(source, effective.max_input_bytes) != original or _snapshot(original_base, effective, maximum=effective.max_base_bytes) != original_files or \
                 _snapshot(root, effective) != captured:
             raise ValueError("Original source, original base or copied artifacts changed during readback")
+        finish = _choice(contract, "finish_validation", None)
+        if finish is not None:
+            finish(root)
         report.update(status="PASS", ok=True, identity=review["identity"], review_source=review["review_source"],
             manifest_sha256=_sha(captured["manifest.json"]))
         if verify_saved and not _same(parsed["qa.json"], report):
@@ -361,8 +401,9 @@ def validate_process_facility_package(review_source, original_base, package, *, 
     return _validate(review_source, original_base, package, limits)
 
 
-def export_process_facility_package(review_source, original_base, destination, *, base_kind="orthogonal",
-        include_windows=False, include_grid=False, include_groups=False, limits=ProcessFacilityPackageLimits()):
+def _export(review_source, original_base, destination, *, base_kind="orthogonal",
+        include_windows=False, include_grid=False, include_groups=False, limits=ProcessFacilityPackageLimits(),
+        contract=None, publish_directory=None):
     """Publish a new outer DRAFT without changing either original child format."""
     _valid_limits(limits)
     options = _options({"include_windows": include_windows, "include_grid": include_grid, "include_groups": include_groups}, base_kind)
@@ -371,8 +412,14 @@ def export_process_facility_package(review_source, original_base, destination, *
         raise FileExistsError("Outer package destination already exists")
     if target.resolve().is_relative_to(base.resolve()):
         raise ValueError("Outer destination cannot modify the original base directory")
-    original, review = _current_review(source, _document_limits(limits))
-    base_files = _snapshot(base, limits, maximum=limits.max_base_bytes)
+    prepare = _choice(contract, "prepare_export", None)
+    if prepare is None:
+        original, review = _package_review(source, limits, contract)
+        base_files = _snapshot(base, limits, maximum=limits.max_base_bytes)
+    else:
+        base_files = _snapshot(base, limits, maximum=limits.max_base_bytes)
+        contract = prepare(base_files, limits)
+        original, review = _package_review(source, limits, contract)
     if base_kind == "orthogonal" and set(base_files) != _ORTHOGONAL_INVENTORY:
         raise ValueError("Original orthogonal child requires its unchanged fourteen-file inventory")
     if len(base_files) + 7 > limits.max_files:
@@ -395,21 +442,23 @@ def export_process_facility_package(review_source, original_base, destination, *
             path = facility / name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_bytes(data)
-        export_process_documentation(source, stage / "process", limits=_document_limits(limits))
+        _choice(contract, "export_documents", export_process_documentation)(
+            source, stage / "process", limits=_selected_document_limits(limits, contract))
         if _read_bytes(source, limits.max_input_bytes) != original or _snapshot(base, limits, maximum=limits.max_base_bytes) != base_files:
             raise ValueError("Original source or base changed while saving process documents")
         process = _snapshot(stage / "process", limits)
         children = _child_files(base_files, process)
-        manifest = {"format": _FORMAT, "version": "0.1", "scope": _SCOPE, "status": "DRAFT", "ok": False,
+        manifest = {"format": _FORMAT, "version": _choice(contract, "version", "0.1"), "scope": _choice(contract, "scope", _SCOPE), "status": "DRAFT", "ok": False,
             "review_status": review["status"], "identity": review["identity"], "review_source": review["review_source"],
             "base_kind": base_kind, "base_profile_sha256": binding["profile_sha256"], "base_projection_options": options,
             "files": _inventory(children), "limits": asdict(limits), "full_facility_validation": {"status": "UNKNOWN", "ok": False},
-            "full_process_validation": "UNKNOWN", "engineering_acceptance": "PENDING", "authenticated_approval": "UNKNOWN"}
+            "full_process_validation": "UNKNOWN", "engineering_acceptance": "PENDING", "authenticated_approval": "UNKNOWN",
+            **_choice(contract, "extra_manifest", {})}
         manifest_bytes = _json(manifest)
         if len(manifest_bytes) > limits.max_metadata_bytes:
             raise ValueError("Outer manifest exceeds its bounded metadata delivery")
         (stage / "manifest.json").write_bytes(manifest_bytes)
-        qa = _validate(source, base, stage, limits, verify_saved=False)
+        qa = _validate(source, base, stage, limits, verify_saved=False, contract=contract)
         if not qa["ok"]:
             raise ValueError("Staged outer package failed fresh independent QA: " + qa["issues"][0]["message"])
         qa_bytes = _json(qa)
@@ -423,8 +472,15 @@ def export_process_facility_package(review_source, original_base, destination, *
         # children remain byte-identical to the independently checked stage.
         if any(captured[name] != data for name, data in children.items()) or captured["manifest.json"] != manifest_bytes:
             raise ValueError("Copied child or manifest changed after staged physical QA")
-        _publish_directory(stage, target)
-    final = _validate(source, base, target, limits)
+        (_publish_directory if publish_directory is None else publish_directory)(stage, target)
+    final = _validate(source, base, target, limits, contract=contract)
     if not final["ok"]:
         raise ValueError("Published outer DRAFT failed current-source verification: " + final["issues"][0]["message"])
     return _strict_json(manifest_bytes.decode("utf-8"))
+
+
+def export_process_facility_package(review_source, original_base, destination, *, base_kind="orthogonal",
+        include_windows=False, include_grid=False, include_groups=False, limits=ProcessFacilityPackageLimits()):
+    """Publish the original version 0.1 attachment with unchanged child formats."""
+    return _export(review_source, original_base, destination, base_kind=base_kind, include_windows=include_windows,
+        include_grid=include_grid, include_groups=include_groups, limits=limits)

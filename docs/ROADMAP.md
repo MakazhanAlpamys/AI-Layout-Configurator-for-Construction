@@ -1,5 +1,10 @@
 # Original MVP roadmap archive
 
+Checkpoint I.5.4.3 adds current-product original-bound facility/path-document
+attachment with shared pre-geometry admission and unchanged child artifacts.
+Local/installed checks pass; full engineering acceptance and the original MVP
+archive remain separate.
+
 Checkpoint I.5.4.2 adds current-product source-bound installation diagrams with
 fresh pose/sweep/exterior inventories and independent actual PDF readback.
 Local, installed and rendered checks pass; complete current-product and

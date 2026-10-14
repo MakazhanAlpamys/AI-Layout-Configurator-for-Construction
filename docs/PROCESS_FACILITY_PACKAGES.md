@@ -1,5 +1,9 @@
 # Source-Bound Facility and Process Packages
 
+Checkpoint I.5.4.3 separately attaches version `0.2` supplied-path documents.
+[Explicit path attachment](PROCESS_INSTALLATION_FACILITY_PACKAGES.md) preserves
+the version `0.1` APIs and inventories described below.
+
 Checkpoint I.5.3 links an existing independently checked facility
 bundle with its [process documentation](PROCESS_DOCUMENTATION.md). Both
 children retain their original file inventories. The outer package records
@@ -69,5 +73,6 @@ The pushed `72b7fd6` checkpoint also passes
 [quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38548214431)
 in 39 seconds including setup. Full acceptance jobs are skipped on this push;
 this is separate from changed full-suite acceptance.
-Version `0.2` installation-path diagrams and complete Cycle I engineering
-acceptance remain subsequent work.
+Version `0.2` path diagrams and their explicit attachment are separately
+implemented at I.5.4.2/I.5.4.3. Complete Cycle I engineering acceptance remains
+open.

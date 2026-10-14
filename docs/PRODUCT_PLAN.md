@@ -1,5 +1,12 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.4.3 attaches explicit version `0.2` path documents to unchanged
+original facility artifacts. Caller/outer/child controls and combined artifact
+bounds are admitted before fresh geometry; metadata-recapture races reject.
+Ten tests/twenty-nine subtests, historical package checks and four regular-wheel
+examples pass. [Scope](PROCESS_INSTALLATION_FACILITY_PACKAGES.md). Known path
+FAIL remains separate from artifact PASS; producer and full acceptance stay open.
+
 Checkpoint I.5.4.2 adds explicit source-bound installation diagrams to version
 `0.2` process documents. Fresh admitted complete bodies, supported sweeps and
 exterior inventory are drawn and independently read back with request/status

@@ -1,5 +1,8 @@
 # Source-Bound Installation Diagrams in Process Documents
 
+Checkpoint I.5.4.3 separately attaches these documents to unchanged original
+facility artifacts. [Attachment contract](PROCESS_INSTALLATION_FACILITY_PACKAGES.md).
+
 Checkpoint I.5.4.2 explicitly exports the original version `0.2`
 [process/path input](PROCESS_INSTALLATION_REVIEW.md). Eight schedules, five
 process reports, supplied requests, coverage and fresh installation evidence
@@ -59,8 +62,8 @@ Artifact-consistency PASS means exact agreement with the supplied source and
 fresh scoped evidence. Documents remain DRAFT with `.ok == False`; process
 review can be UNKNOWN or FAIL. Full installation, 3D and facility feasibility
 remain UNKNOWN, source authentication UNKNOWN and engineering acceptance
-PENDING. Path search, producer enforcement, outer attachment for this explicit
-version, additional discipline views and Cycle I benchmark remain separate.
+PENDING. Path search, producer enforcement, additional discipline views and
+Cycle I benchmark remain separate. Explicit attachment is implemented at I.5.4.3.
 
 Fresh root sequential single-file verification passes ten document tests and
 twelve subtests in 42.91 seconds, fourteen historical document tests/twenty-five
