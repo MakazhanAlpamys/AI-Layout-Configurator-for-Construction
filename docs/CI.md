@@ -119,3 +119,8 @@ and I.5.2 (`0286843`,
 also pass. The I.5.2 quick job takes 41 seconds including setup, with full jobs
 skipped. Collection includes the new documentation tests; quick CI does not
 execute their local 14-test artifact/readback verification or replace full acceptance.
+
+The QA.24 `7c10594` push also passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38584729033)
+in forty seconds including setup. Complete collection/partition and four
+sequential contract files pass; full acceptance jobs are skipped.

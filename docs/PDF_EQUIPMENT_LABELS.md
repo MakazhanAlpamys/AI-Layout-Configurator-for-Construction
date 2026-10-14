@@ -65,3 +65,8 @@ archive, wheel and actual PDF hashes. Local raw proof lives under
 `output/pdf/equipment-labels-qa24/`. Poppler emits Symbol/ArialUnicode fallback
 warnings although the actual PDF font inventory contains only Helvetica and
 Helvetica-Bold. Full acceptance is not run by this checkpoint.
+
+The pushed `7c10594` checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38584729033)
+in forty seconds including setup. Full jobs are skipped; changed full
+acceptance remains pending.
