@@ -8,6 +8,11 @@ pages are rendered/contact-inspected and seven new plans inspected in full.
 [Scope](PDF_ROOM_LABELS.md). Original attachment bytes remain intact; general
 dense drawing, producer enforcement and full acceptance remain open.
 
+The `3627520` QA.26 source passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38628626452)
+in forty-two seconds including setup. Collection, complete four-group partition
+and four sequential contract files pass; all full acceptance jobs are skipped.
+
 Checkpoint QA.25 isolates complete process facility-package tests in a fourth
 full-CI group. All 1,532 ordered unique IDs remain, 29 package IDs move from core,
 and thirteen fixture/workflow tests plus 26 subtests pass. Quick push checks and

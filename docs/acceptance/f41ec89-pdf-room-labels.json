@@ -2111,5 +2111,23 @@
     "selected_baseline": "Ordinary QA.24 installed-final wheel with exact raw b314d57f exporter",
     "fresh_retry": "wheel-logs-final-v2",
     "source_test_changes_due_to_preflight": false
+  },
+  "pushed_quick_ci": {
+    "run_id": 38628626452,
+    "head_sha": "3627520f2fc7866e94d774ae9b1f6dd2332e5bda",
+    "status": "SUCCESS",
+    "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38628626452",
+    "quick_job": "Quick contracts and complete test collection",
+    "job_seconds": 42.0,
+    "started_at_utc": "2026-10-14T20:01:59Z",
+    "completed_at_utc": "2026-10-14T20:02:41Z",
+    "full_jobs": {
+      "pharma-cleanroom": "SKIPPED",
+      "api-container": "SKIPPED",
+      "tests (${{ matrix.os }}, ${{ matrix.shard }})": "SKIPPED"
+    },
+    "full_acceptance": "PENDING",
+    "manually_dispatched_full_run": false,
+    "causal_timing_or_billed_savings_claim": false
   }
 }

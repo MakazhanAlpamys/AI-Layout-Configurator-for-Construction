@@ -110,3 +110,9 @@ equipment captions against native symbol ink, main-PDF font portability,
 professional drawing review and the changed full
 acceptance gate remain open. This caption repair does not lift production,
 full process, installation, three-dimensional or engineering barriers.
+
+The pushed `3627520` source checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38628626452)
+in forty-two seconds including setup. Complete collection, exhaustive four-group
+partition and four sequential contract files pass; all full jobs are skipped.
+Changed full acceptance remains pending.
