@@ -184,6 +184,11 @@ acceptance at QA.23 remains pending.
 
 ## Remaining implementation
 
+The I.4.3.1 `16d3691` push passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38578402195)
+in 40 seconds including setup; full acceptance jobs are skipped. This is a
+scoped push check, not the pending changed full acceptance.
+
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
   scoped current predicates and three-format persisted draft QA are implemented;

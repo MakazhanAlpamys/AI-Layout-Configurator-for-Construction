@@ -77,3 +77,8 @@ the original requirement failure in 2,921 bytes; no solver runs.
 [Compact evidence](acceptance/a8f1e44-production-layout.json) records exact
 source/wheel identities and witnesses. Local proof remains under
 `out/checkpoints/production-layout-review-i431/`.
+
+The pushed `16d3691` checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38578402195)
+in forty seconds including setup. Full acceptance jobs are skipped; changed
+full-suite acceptance remains separate.
