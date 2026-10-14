@@ -1,5 +1,10 @@
 # Opted production geometry in process review
 
+Checkpoint I.5.5.1 explicitly publishes this additional evidence in version0.3
+production requirement documents with independent physical PDF readback.
+Historical document APIs and acceptance boundaries remain unchanged.
+[Document contract](PROCESS_PRODUCTION_LAYOUT_DOCUMENTATION.md).
+
 Checkpoint I.4.3.2 adds an explicit reader for the existing closed process
 source version `0.2`:
 
@@ -79,9 +84,10 @@ pressure/path witnesses. Failure inventories state omissions and incomplete
 leaf delivery. An incomplete report never acquires an approval claim.
 
 Historical document exporters and package APIs use their existing readers and
-inventories. Publishing this additional evidence in documents, enforcing the
-program in generation, complete scenarios/3D, the medical-plastics benchmark
-and professional acceptance remain later checkpoints.
+inventories. I.5.5.1 separately publishes the additional evidence in opted
+documents. New-format outer attachment, enforcing the program in generation,
+complete scenarios/3D, the medical-plastics benchmark and professional
+acceptance remain later checkpoints.
 
 ## Verification
 

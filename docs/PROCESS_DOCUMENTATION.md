@@ -1,5 +1,10 @@
 # Synchronized DRAFT Process Documentation
 
+Checkpoint I.5.5.1 separately exports complete original production requirement
+appendices in an explicit version `0.3` document format from source `0.2`.
+[Production requirement contract](PROCESS_PRODUCTION_LAYOUT_DOCUMENTATION.md).
+The historical APIs described below retain their original scope and versions.
+
 Checkpoint I.5.4.2 separately exports version `0.2` supplied installation paths
 with fresh body/sweep/staging diagrams and independent actual PDF readback.
 [Explicit path-document contract](PROCESS_INSTALLATION_DOCUMENTATION.md).

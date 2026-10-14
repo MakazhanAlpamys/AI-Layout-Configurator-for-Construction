@@ -221,6 +221,7 @@ class _DocumentContract:
     legend_wrap: bool = False
     plan_bounds: object = None
     plan_title: str = "Literal room and environmental source overlays"
+    delivery_validator: object = None
 
 
 def _contract_value(contract, name, default):
@@ -681,6 +682,15 @@ def validate_process_documentation(source_path, destination, *, limits=ProcessDo
     return _validate(source_path, destination, limits)
 
 
+def _validate_delivery(source, destination, limits, *, verify_saved=True, contract=None):
+    callback = _contract_value(contract, "delivery_validator", None)
+    if callback is None:
+        if verify_saved:
+            return _validate(source, destination, limits, contract=contract)
+        return _validate(source, destination, limits, verify_saved=False, contract=contract)
+    return callback(source, destination, limits, verify_saved=verify_saved)
+
+
 def _export(source_path, destination, limits, *, contract=None, publish_directory=None):
     """Publish a new DRAFT package only after fresh source and artifact readback.
 
@@ -712,18 +722,18 @@ def _export(source_path, destination, limits, *, contract=None, publish_director
         stage.mkdir()
         for name, data in (("source.json", original), ("review.json", review_data), ("documentation.pdf", pdf), ("index.json", index_data)):
             (stage / name).write_bytes(data)
-        qa = _validate(source, stage, limits, verify_saved=False, contract=contract)
+        qa = _validate_delivery(source, stage, limits, verify_saved=False, contract=contract)
         if not qa["ok"]:
             raise ValueError("Staged process documents failed independent QA: " + qa["issues"][0]["message"])
         qa_data = _json(qa)
         if len(qa_data) > limits.max_metadata_bytes or sum(map(len, (original, review_data, pdf, index_data, qa_data))) > limits.max_total_bytes:
             raise ValueError("Process document final inventory exceeds its byte bound")
         (stage / "qa.json").write_bytes(qa_data)
-        final = _validate(source, stage, limits, contract=contract)
+        final = _validate_delivery(source, stage, limits, contract=contract)
         if not final["ok"] or _read_bytes(source, limits.max_input_bytes) != original:
             raise ValueError("Original process source or saved QA changed before publication")
         (_publish_directory if publish_directory is None else publish_directory)(stage, target)
-    final = _validate(source, target, limits, contract=contract)
+    final = _validate_delivery(source, target, limits, contract=contract)
     if not final["ok"]:
         raise ValueError("Published DRAFT failed final current-source readback: " + final["issues"][0]["message"])
     return _strict_json(index_data.decode("utf-8"))

@@ -1,0 +1,379 @@
+{
+  "format": "FLC-product-checkpoint-evidence",
+  "version": "1",
+  "checkpoint": "I.5.5.1",
+  "status": "SCOPED_PASS",
+  "date": "2026-10-14",
+  "base_commit": "c2a8f11f32778a7a9e56bc5f5e89a5abfbe182d8",
+  "archive_sha256": "0cdf98cc6ff4c256fc816d08e377b17f13adebb494c207be8c255df507df1e11",
+  "source_sha256": {
+    "src/layout_configurator/process_production_layout_documentation.py": "c1072a2417f087489b2d12b40392aa7c141a920d4d4dea734ebe3e75dc4c8593",
+    "src/layout_configurator/process_documentation.py": "22552366b10b1de1c779a75951377274fc6e5bb2c8341f7eb9db330ab47e4222",
+    "tests/test_process_production_layout_documentation.py": "ae72d4d964922ccc764501533046721b5567a6d55da8c7c4df0287c66920ee85"
+  },
+  "wheel_sha256": "ce640b7b0cb7988319122fe29ca8d217f525ff47edac21afedf7de961dfe2999",
+  "imports": "regular installed wheels from foreign working directories",
+  "source_version": "0.2",
+  "document_version": "0.3",
+  "inventory_files": 5,
+  "closed_index_fields": 18,
+  "root_test_invocations": [
+    {
+      "file": "tests/test_process_production_layout_documentation.py",
+      "selection": "All methods in this file",
+      "exit_code": 0,
+      "passed": 16,
+      "subtests_passed": 54,
+      "seconds": 94.44
+    },
+    {
+      "file": "tests/test_process_production_layout_documentation.py",
+      "selection": "fitting_stricter or rehashed_authored",
+      "exit_code": 0,
+      "passed": 3,
+      "deselected": 13,
+      "subtests_passed": 10,
+      "seconds": 28.4
+    }
+  ],
+  "historical_test_invocations": [
+    {
+      "file": "tests/test_process_documentation.py",
+      "exit_code": 0,
+      "passed": 14,
+      "subtests_passed": 25,
+      "seconds": 38.79
+    },
+    {
+      "file": "tests/test_process_installation_documentation.py",
+      "exit_code": 0,
+      "passed": 10,
+      "subtests_passed": 12,
+      "seconds": 42.2
+    }
+  ],
+  "authoring_control_counterfactual": {
+    "kind": "Actual focused counterfactual regression; only authored annotation projection bypassed after effective fresh admission",
+    "file": "tests/test_process_production_layout_documentation.py",
+    "selection": "fitting_stricter_common_and_path_controls_preserve",
+    "pytest_exit_code": 1,
+    "baseline_sha256": "c1072a2417f087489b2d12b40392aa7c141a920d4d4dea734ebe3e75dc4c8593",
+    "counterfactual_sha256": "f356891ba17d0daae31b7d6ebb5462c66abbc533eaec3354041b9ed679990770",
+    "original_source_restored_exactly": true,
+    "full_file_before_counterfactual": "16 passed, 54 subtests passed in 94.44 seconds",
+    "tests_are_user_authorized": true
+  },
+  "cases": {
+    "clear": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i551\\cases-final\\clear",
+      "source_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "pdf_sha256": "da2f82e58b3f5ad442a3d1c6d5162bc7edc53ca16b4158098ee73cad1099c221",
+      "files": {
+        "documentation.pdf": "da2f82e58b3f5ad442a3d1c6d5162bc7edc53ca16b4158098ee73cad1099c221",
+        "index.json": "cd562bebcfcbabdc0813d842e0a7773cebbf310e7ce778653d31e93468b4d662",
+        "qa.json": "ea02f77cb6fc9035e2c703d37b486c036fea109c4d0af69383abee6a94a2f055",
+        "review.json": "5054f50afaab54aadf913eec43d1dbf5531321bc18500eec666d7d0876323b6f",
+        "source.json": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7"
+      },
+      "page_count": 21,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "provenance_status": "PASS",
+      "include_windows": false,
+      "requirement_ids": [
+        "entry_work_contact"
+      ],
+      "requirement_sha256": [
+        "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454"
+      ],
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "a621b7c1b31a4cd4ac502e63f997fa0e619b6b47c908946b55f7b1f8337b1843",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "original_sources_unchanged": true
+    },
+    "gap-pressure": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i551\\cases-final\\gap-pressure",
+      "source_sha256": "71674af184e65b400a4fb8f719b6f32025082979320c191f145109f1c37ab9a1",
+      "pdf_sha256": "2e6629d57b6d1d518956f0d67e8ea245a70f69347f9903f5ab047249c00524a4",
+      "files": {
+        "documentation.pdf": "2e6629d57b6d1d518956f0d67e8ea245a70f69347f9903f5ab047249c00524a4",
+        "index.json": "44ab1e5c7768c3049d7f838f407cb57362708a7d5bab41161bc1ccf57c1abe3c",
+        "qa.json": "978e477ec828cbbff52f8328eb4872f78495aad8302be04634fae2d71ad779f6",
+        "review.json": "ae5691071bd725936a816c55c2e6c411c0fb31fd3ba5769aae1f985de440fcaa",
+        "source.json": "71674af184e65b400a4fb8f719b6f32025082979320c191f145109f1c37ab9a1"
+      },
+      "page_count": 24,
+      "artifact_status": "PASS",
+      "review_status": "FAIL",
+      "production_status": "FAIL",
+      "geometry_status": "FAIL",
+      "provenance_status": "UNKNOWN",
+      "include_windows": false,
+      "requirement_ids": [
+        "entry_work_contact"
+      ],
+      "requirement_sha256": [
+        "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454"
+      ],
+      "production_source": {
+        "building_sha256": "626687f660db474611c243439a34dac4a461fa32aae9e81d6b98993acf356bb0",
+        "layout_sha256": "4363905616cdb0d2b7001ce9ae51d6c9e5603b2f4ea9d790e3ccd823c9ada7ff",
+        "production_program_sha256": "343fa407d021eddfc41513f30bcdd3bc4d84082ad87ee311c3d5765dff690303",
+        "program_base_building_sha256": "626687f660db474611c243439a34dac4a461fa32aae9e81d6b98993acf356bb0"
+      },
+      "original_sources_unchanged": true
+    },
+    "embedded-float": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i551\\cases-final\\embedded-float",
+      "source_sha256": "93342e92c2ff8fe09f905dc1af4435abb187ff5229b09b4b6ee80c337339420c",
+      "pdf_sha256": "334265dd4c5335d8a77d225fa1032b08789230ad40585fa900520c9afd1ea95f",
+      "files": {
+        "documentation.pdf": "334265dd4c5335d8a77d225fa1032b08789230ad40585fa900520c9afd1ea95f",
+        "index.json": "02fe0bc44f4127c317b0a355b26125e3046e0fec4669bd7a9862cc8bb14029d0",
+        "qa.json": "bb4f33a1b7afd1887274d39321a3d4127986aaea0a4a3c24e29611208739a12d",
+        "review.json": "05d7ac7858933f871c98ef977ab246033b34ec57df57829cf7f515701b2ddf00",
+        "source.json": "93342e92c2ff8fe09f905dc1af4435abb187ff5229b09b4b6ee80c337339420c"
+      },
+      "page_count": 21,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "provenance_status": "PASS",
+      "include_windows": false,
+      "requirement_ids": [
+        "entry_work_contact"
+      ],
+      "requirement_sha256": [
+        "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454"
+      ],
+      "production_source": {
+        "building_sha256": "fb537b42b0329351034b30e32e0f5492755d077ae846eb7bb0790f17733bd237",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "e5bfe1a4d22b2a5537e4590c3bed472e7d875da9b9a945a9a7c353ffca843da3",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "original_sources_unchanged": true
+    },
+    "windows-true": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i551\\cases-final\\windows-true",
+      "source_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "pdf_sha256": "9630b5d67d597779ad81c71de7d8ca74448e4197b06cebb6741be45c6fbd6331",
+      "files": {
+        "documentation.pdf": "9630b5d67d597779ad81c71de7d8ca74448e4197b06cebb6741be45c6fbd6331",
+        "index.json": "34d5d32e0e5bf038be81fb187acf59ff41132bbe41e14a1be8e53b0362e0455a",
+        "qa.json": "f0e0af3aaba40223df0198fbd474e3554e3939323f9c128805531138e1392915",
+        "review.json": "9430b163a1f3b83c8eac485b2a6e3e48529b775ca5f08081f3e180a0379f624a",
+        "source.json": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7"
+      },
+      "page_count": 22,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "provenance_status": "PASS",
+      "include_windows": true,
+      "requirement_ids": [
+        "entry_work_contact"
+      ],
+      "requirement_sha256": [
+        "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454"
+      ],
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "a621b7c1b31a4cd4ac502e63f997fa0e619b6b47c908946b55f7b1f8337b1843",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "original_sources_unchanged": true
+    },
+    "six": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i551\\cases-final\\six",
+      "source_sha256": "c76648cac8329f1e8f044345d5d7f0445b910055fc3275c2a8c83db150ab6da1",
+      "pdf_sha256": "5252cab745cc8705308ab28157d1a593589374a9c347b63c7172a68caea22728",
+      "files": {
+        "documentation.pdf": "5252cab745cc8705308ab28157d1a593589374a9c347b63c7172a68caea22728",
+        "index.json": "2f106bd2dafa260de58ead0c690a37ea75cce2c2513bbfc7c4f7671f65c72766",
+        "qa.json": "bb2e60aee98f89398b3bb2a8b83c723f53979697330be6c52eeade6f162a9a2a",
+        "review.json": "77d42fa0b943b1a7e80d9f193889fe4d187cfdcdb798608459cff146a5156ea0",
+        "source.json": "c76648cac8329f1e8f044345d5d7f0445b910055fc3275c2a8c83db150ab6da1"
+      },
+      "page_count": 26,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_status": "PASS",
+      "geometry_status": "PASS",
+      "provenance_status": "PASS",
+      "include_windows": false,
+      "requirement_ids": [
+        "original_contact_00",
+        "original_contact_01",
+        "original_contact_02",
+        "original_contact_03",
+        "original_contact_04",
+        "original_contact_05"
+      ],
+      "requirement_sha256": [
+        "264c8eed857bd268568c925b5785887c9ede7eb837ad176593b1f608234f9b81",
+        "d8545f78661e7b1f3e2e745cfa3287c19eea000b25ed6afaa8c8d30ab153265a",
+        "343faadd3de973cd8584ae71b99d4da3f5367fa875f6a2ad595d829ab223a0c1",
+        "46144c028da00890d02353c123872d57095683c981d7e60b6b4afabed7a118eb",
+        "4cbc8783d3d262a3fe9e85f285af2678e844d23fa61a3c220f75c71fbb1cec01",
+        "2dc2e6b3d3593c2754c50a5251eabd7b796696a98f8f0750996d8e208068e994"
+      ],
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "ef1d09def98534a79824d2ef2a1e5b67b723fb9ba0798f79cc4da6072aba0e83",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "original_sources_unchanged": true
+    },
+    "empty": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i551\\cases-final\\empty",
+      "source_sha256": "705fb30378e377f3605888b7a71fbb4fbeae8de225b33ab0ae141731fc26b513",
+      "pdf_sha256": "67e7fdeb47bc2bb97a7a1ea229109a39952a36e7e80ec0811638940777b0419b",
+      "files": {
+        "documentation.pdf": "67e7fdeb47bc2bb97a7a1ea229109a39952a36e7e80ec0811638940777b0419b",
+        "index.json": "f58830ce88a6fcfa479c7af3b01d5572e04e72ee5e248e62c37bf2ceb6f2071b",
+        "qa.json": "f7824925579f905863986bb32d97b4b1c5003940eda2c9415bfc295120856975",
+        "review.json": "4b706d2c940a2982d3c256970fd449e4df625e28a74b2658043b78e335f0e2ad",
+        "source.json": "705fb30378e377f3605888b7a71fbb4fbeae8de225b33ab0ae141731fc26b513"
+      },
+      "page_count": 20,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_status": "UNKNOWN",
+      "geometry_status": "UNKNOWN",
+      "provenance_status": "PASS",
+      "include_windows": false,
+      "requirement_ids": [],
+      "requirement_sha256": [],
+      "production_source": {
+        "building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "layout_sha256": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "production_program_sha256": "d91e4d42afb5cc30284d9f27102de8a3684f83d35aa0a22c7cc485d0eec57bb3",
+        "program_base_building_sha256": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6"
+      },
+      "original_sources_unchanged": true
+    }
+  },
+  "tighter_readback": {
+    "clear": {
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "source_and_artifacts_unchanged": true,
+      "rerenders": 0
+    },
+    "gap-pressure": {
+      "artifact_status": "PASS",
+      "review_status": "FAIL",
+      "source_and_artifacts_unchanged": true,
+      "rerenders": 0
+    }
+  },
+  "forged_rejections": {
+    "false-verdict": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\process-production-layout-documentation-i551\\forgeries-final\\false-verdict",
+      "status": "FAIL",
+      "pdf_sha256": "853b14eaad266aaacd38c902430063035b7099d56ec3f85bc03cbe99364546b0",
+      "coherent_hashes_rebound": true,
+      "original_source_and_artifacts_unchanged": true,
+      "issues": [
+        {
+          "code": "PROCESS_DOCUMENT_READBACK",
+          "status": "FAIL",
+          "message": "Printed production identity, declaration, rights, local verdict or measured witness differs from fresh evidence"
+        }
+      ]
+    },
+    "invisible-lettering": {
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\process-production-layout-documentation-i551\\forgeries-final\\invisible-lettering",
+      "status": "FAIL",
+      "pdf_sha256": "c94bff161bf736b44433bc35a7b64bd4860975cd457e6dd5f8e8ced0119ffe47",
+      "coherent_hashes_rebound": true,
+      "original_source_and_artifacts_unchanged": true,
+      "issues": [
+        {
+          "code": "PROCESS_DOCUMENT_READBACK",
+          "status": "FAIL",
+          "message": "Hidden, raised or artificially spaced source text is unsupported"
+        }
+      ]
+    }
+  },
+  "old_baseline_equality": true,
+  "historical_document_limit_fields": 48,
+  "historical_baseline_sha256": "0faf72a5d6af37434b8901d90f82b4ab639a5209e0ca988d1d76e9f70d5dd8bb",
+  "cp_calls": 0,
+  "visual_inspection": {
+    "status": "ROOT_VISUALLY_INSPECTED",
+    "pages_rendered": 134,
+    "contact_sheets_inspected": 13,
+    "full_pages_inspected": [
+      {
+        "case": "clear",
+        "page_number": 20
+      },
+      {
+        "case": "clear",
+        "page_number": 21
+      },
+      {
+        "case": "gap-pressure",
+        "page_number": 22
+      },
+      {
+        "case": "gap-pressure",
+        "page_number": 23
+      },
+      {
+        "case": "gap-pressure",
+        "page_number": 24
+      },
+      {
+        "case": "six",
+        "page_number": 25
+      },
+      {
+        "case": "empty",
+        "page_number": 19
+      },
+      {
+        "case": "windows-true",
+        "page_number": 22
+      },
+      {
+        "case": "embedded-float",
+        "page_number": 3
+      }
+    ],
+    "observations": "Complete page inventories, readable new declarations and witnesses, no observed clipping or footer/legend collisions; source poses/sweeps and known FAIL/UNKNOWN retained",
+    "scope": "Six supplied software fixtures at 100 dpi; not professional drawing or engineering acceptance"
+  },
+  "full_suite_run": false,
+  "background_execution": false,
+  "benchmark_run": false,
+  "full_ci_dispatched": false,
+  "changed_full_ci_acceptance": "PENDING",
+  "document_status": "DRAFT",
+  "document_ok": false,
+  "full_facility_validation": {
+    "status": "UNKNOWN",
+    "ok": false
+  },
+  "engineering_acceptance": "PENDING",
+  "authenticated_approval": "UNKNOWN",
+  "remaining_scope": [
+    "New-format outer attachment",
+    "Production-enforcing generation with original binding",
+    "Complete scenarios and 3D installation",
+    "Cycle I reference-facility and external engineering acceptance"
+  ],
+  "raw_evidence_local": "out/checkpoints/process-production-layout-documentation-i551/"
+}

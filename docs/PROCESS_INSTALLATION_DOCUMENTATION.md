@@ -1,5 +1,10 @@
 # Source-Bound Installation Diagrams in Process Documents
 
+Checkpoint I.5.5.1 reuses these admitted diagrams and adds complete original
+production requirement appendices through separate document version `0.3`
+entry points. [Production requirement contract](PROCESS_PRODUCTION_LAYOUT_DOCUMENTATION.md).
+The version `0.2` document and attachment APIs below remain unchanged.
+
 Checkpoint I.5.4.3 separately attaches these documents to unchanged original
 facility artifacts. [Attachment contract](PROCESS_INSTALLATION_FACILITY_PACKAGES.md).
 

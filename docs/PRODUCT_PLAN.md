@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.5.1 publishes complete original production requirement appendices
+in explicit version0.3 process documents. Effective minimum controls and actual
+artifact bounds precede fresh geometry; original identities and known failures
+survive fitting stricter readback. Sixteen tests/54 subtests, historical document
+checks, six ordinary-wheel examples and visual inspection of 134 pages pass.
+[Scope](PROCESS_PRODUCTION_LAYOUT_DOCUMENTATION.md). New-format outer attachment,
+producer enforcement and complete Cycle I acceptance remain open.
+
 Checkpoint I.4.3.2 integrates fresh actual room requirements through an explicit
 closed version0.2 process reader. Original raw identities, whole scalar binding,
 shared preconstructor geometry/vertex/node/full UTF work and one delivery cap
