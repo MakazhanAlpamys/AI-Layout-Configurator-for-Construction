@@ -421,6 +421,13 @@ vertical cores, structural grid lines, a stair check and a shared IFC were added
 
 ## Fixed project boundaries
 
+Checkpoint QA.26 separates future current-product room captions from actual
+equipment stroke and native symbol ink while retaining source geometry,
+current gear captions and original saved artifacts. Root, ordinary installed
+wheel and rendered checks pass for bounded fixtures; archived MVP criteria,
+general drawing and engineering acceptance remain separate.
+[Caption scope](PDF_ROOM_LABELS.md).
+
 Checkpoint QA.25 moves complete current-product process facility-package test
 families into a fourth full-CI group without changing archived acceptance,
 quick checks, API/pharma gates or test coverage. Actual full-CI timing and

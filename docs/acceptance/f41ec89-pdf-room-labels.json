@@ -1,0 +1,2115 @@
+{
+  "checkpoint": "QA.26",
+  "verified_on": "2026-10-15",
+  "status": "SCOPED_PASS",
+  "base_commit": "f41ec895d5d8647e3d9fd307e160a03ccb35af43",
+  "archive_sha256": "ca88fa6d1a2bbcb72f073bbfa6d9ea0a81d504b43972bee86d3f6a72e5721afd",
+  "archive_overlay": [
+    "src/layout_configurator/export.py",
+    "tests/test_pdf_room_labels.py"
+  ],
+  "source_sha256": {
+    "src/layout_configurator/export.py": "c1984b5d27a1e4e68113db3bb9868387ea19bcb4458b43c06fe0c60175f456dd",
+    "tests/test_pdf_room_labels.py": "acbb59dd95aae01ffa854f6c4836a6216ebdd39994a1d5c35261fb8873e1cb87"
+  },
+  "wheel_sha256": "ed690ca23cbdbc07136ec69d192b88da2452460fd0b5523006ada1dbab21da83",
+  "old_export_module_sha256": "b314d57fcb116dabbfaf12ab4e618bd271345945835a94e622bc00fb3ca50c50",
+  "imports": "Ordinary installed old/new wheels from foreign working directories",
+  "root_tests": [
+    {
+      "file": "tests/test_pdf_room_labels.py",
+      "tests": 6,
+      "seconds": 1.08,
+      "status": "PASS",
+      "source": "Final LF source after native miter repair",
+      "log": "root-final-green.log"
+    },
+    {
+      "file": "tests/test_pdf_equipment_labels.py",
+      "tests": 6,
+      "seconds": 0.95,
+      "status": "PASS",
+      "source": "Before assigned-symbol-only miter padding; plain-body and caption planner unchanged",
+      "log": "root-equipment-regression.log"
+    },
+    {
+      "file": "tests/test_exports.py",
+      "tests": 10,
+      "seconds": 3.48,
+      "status": "PASS",
+      "source": "Before assigned-symbol-only miter padding; exercised default paths unchanged",
+      "log": "root-export-regression.log"
+    },
+    {
+      "file": "tests/test_drawing_symbols.py",
+      "tests": 6,
+      "subtests": 10,
+      "seconds": 1.09,
+      "status": "PASS",
+      "source": "Final LF source after native miter repair",
+      "log": "root-final-symbol-regression.log"
+    }
+  ],
+  "observed_red": {
+    "checkpoint": "QA.26",
+    "status": "ACTUAL_ARTIFACT_RED",
+    "test_file": "tests/test_pdf_room_labels.py",
+    "test_sha256": "e1801daeca2c95705494d9bf228a86589874b4775ceec29136e9e608061845fc",
+    "source_sha256": "b314d57fcb116dabbfaf12ab4e618bd271345945835a94e622bc00fb3ca50c50",
+    "base_commit": "f41ec895d5d8647e3d9fd307e160a03ccb35af43",
+    "pytest_exit_code": 1,
+    "failed": 5,
+    "seconds": 1.17,
+    "log": "root-artifact-red.log",
+    "actual_intersections_pt2": {
+      "clear_body": 8.14,
+      "true_half_stroke_grazing": 2.0339824999995635,
+      "flow_body": 8.14,
+      "generic_symbol": 13.030366486490829
+    },
+    "unplaceable_caption": "No ValueError; initial exporter overwrites destination",
+    "initial_draft_collection_error": {
+      "fix": "Use keyword msg= after keyword delta= in one unittest assertion",
+      "status": "FIXED_BEFORE_FEATURE_IMPLEMENTATION",
+      "seconds": 0.27,
+      "log": "root-red.log",
+      "exit_code": 2
+    },
+    "background_execution": false,
+    "full_suite_run": false
+  },
+  "native_miter_red": {
+    "failed": 1,
+    "deselected": 5,
+    "seconds": 0.73,
+    "glyph_ink_intersection_pt2": 0.03538523317535935,
+    "log": "root-symbol-miter-red.log",
+    "body_glyph_intersection_pt2": 0,
+    "scope": "Intermediate body-plus-half-width symbol reservation"
+  },
+  "cases": [
+    {
+      "case": "room-only",
+      "pdf_sha256": "b998291425ff21af7f4596baac50ace1b27a50f70225e76ff7122aa4f0b9ecb1",
+      "source_sha256": "e71d6dc0811c85e909e97b65509fe19b180731defbde32dbb64ec8da33606a57",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [],
+      "max_room_blue_ink_intersection_pt2": 0,
+      "painted_paths_sha256": "14b19e06a177c9a5a569480a1cd7889a23321f8ee091eb23aee60dcb50c194d1",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "before"
+    },
+    {
+      "case": "clear",
+      "pdf_sha256": "a0e7f4de9c2c870263f1c63bc9fb59698e96cb86622d3d308f886a0c64290efc",
+      "source_sha256": "37a60d4f9d2eb2b7021b0a8f21600374dc176d87410957b194dc911c107f90b9",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            906.9317,
+            376.3378
+          ],
+          "bounds": [
+            906.9317,
+            374.8888,
+            925.6077,
+            381.3638
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 8.139999999999546,
+      "painted_paths_sha256": "379956ec2628e2301f3954f63d0a1fdf0fc69707dbad36cdc37fbc95cdf7848d",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "before"
+    },
+    {
+      "case": "coincident-generic",
+      "pdf_sha256": "7a73c9804b20d9d2d04950e1be0c258eaaab1064c86459a3b8080eeb4078ed0e",
+      "source_sha256": "dd327004e4cd3dfb33b82dc6173f5b32cac0024c831a556702ef336b753077ca",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            861.0754,
+            376.3378
+          ],
+          "bounds": [
+            861.0754,
+            374.8888,
+            879.7514,
+            381.3638
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 13.030366486490829,
+      "painted_paths_sha256": "f452dfb70535458e6e76b36b9217d97de7aa56cdcd35881e9695f920d896cf79",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "before"
+    },
+    {
+      "case": "stroke-grazing",
+      "pdf_sha256": "c258f59a585c69a67dbfaf20055dc3c98ff80cd1cde69c44d8c432d02050a313",
+      "source_sha256": "75cea4be4793b0f12eaf84b16b7e5859dda4312393bf9b22a01b36bbef3f55af",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            943.8058,
+            365.1378
+          ],
+          "bounds": [
+            943.8058,
+            363.6888,
+            962.4818,
+            370.16380000000004
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 2.0339824999995635,
+      "painted_paths_sha256": "5044dece96362b9870190991fe7f3ee3a6c5284b7120c7249231a7f7ab13d104",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "before"
+    },
+    {
+      "case": "tiny-native-miter",
+      "pdf_sha256": "2a3c6801d936fc86fea68934ded3f308a4a376de3b07710beeae4da4fa8971b0",
+      "source_sha256": "a9e90e6d905af81634cd611b3282e3a828427822513db6d27c5a0fe27a49f20e",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 3.5,
+          "page": 0,
+          "baseline": [
+            865.7444,
+            373.9944
+          ],
+          "bounds": [
+            865.7444,
+            373.2699,
+            875.0824,
+            376.50739999999996
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 0.03538523317535935,
+      "painted_paths_sha256": "646588c09359b7965c465c71c9d677503cc729356977a1ee620c63334c4f2846",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          3.5
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "original_glyph_body_intersection_pt2": 0.0,
+      "original_glyph_native_miter_intersection_pt2": 0.03538523317535935,
+      "role": "before"
+    },
+    {
+      "case": "rotated-vessel",
+      "pdf_sha256": "bb47231be41b47f38a11d50aaae4f5aabddc098fdc11d2eacdd8716d2ead035f",
+      "source_sha256": "37d49ed2b3a668ae5eebfd033611a4365b12ff777facdf3bcb2c522f6bbced3b",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            897.7604,
+            385.5091
+          ],
+          "bounds": [
+            897.7604,
+            384.0601,
+            916.4364,
+            390.5351
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 8.242418528395962,
+      "painted_paths_sha256": "ad395340dfbcb3d02d4a94d6c69db0f02447d690466fec6c82e1a9181b2cdd58",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "before"
+    },
+    {
+      "case": "unplaceable",
+      "status": "LEGACY_OVERSIZED_CAPTION_WRITTEN",
+      "pdf_sha256": "58d8a413b158c27503000b7fab8e543034ea4866187aef0f89e3631e5662a0a9",
+      "source_sha256": "15fb45cb5ce2abf6d21515055f5dcf932c03cc42bdeb53bf356685744b780aa9",
+      "pages": 1,
+      "room": {
+        "text": "work_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          -819.3186,
+          365.1378
+        ],
+        "bounds": [
+          -819.3186,
+          362.86080000000004,
+          2560.1454,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [],
+      "max_room_blue_ink_intersection_pt2": 0,
+      "painted_paths_sha256": "14b19e06a177c9a5a569480a1cd7889a23321f8ee091eb23aee60dcb50c194d1",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "before"
+    },
+    {
+      "case": "flow",
+      "pdf_sha256": "a95e9f6ce709bb060da2bddb3af50db0782ace0086a194899717fa8cfca72949",
+      "source_sha256": "d151e77069dec4ab635901dea2addc98f9c38d12fda7372b207fc5476ac9e8b4",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            906.9317,
+            376.3378
+          ],
+          "bounds": [
+            906.9317,
+            374.8888,
+            925.6077,
+            381.3638
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 8.139999999999546,
+      "painted_paths_sha256": "0b5c60cace2f78beb36c87b7de926ce346278191740afc82d7bbf4e0b917da34",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          5.0
+        ],
+        [
+          "Helvetica",
+          6.0
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "flow": {
+        "text": "FLOW room_annotation_fixture [unspecified] / 20 mm",
+        "font": "Helvetica",
+        "size": 5.0,
+        "page": 0,
+        "baseline": [
+          836.7395,
+          417.9379
+        ],
+        "bounds": [
+          836.7395,
+          416.9029,
+          955.3995,
+          421.5279
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "flow_caption_intersections_pt2": {
+        "work (36.0 m2)": 0.0,
+        "entry (36.0 m2)": 0.0,
+        "press": 0.0,
+        "neighbor": 0.0
+      },
+      "role": "before"
+    },
+    {
+      "case": "room-only",
+      "pdf_sha256": "afbc49956f16a51ff8c5fc1a9fa3daea1d2470f8aab47174a013ff25ed160a18",
+      "source_sha256": "e71d6dc0811c85e909e97b65509fe19b180731defbde32dbb64ec8da33606a57",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [],
+      "max_room_blue_ink_intersection_pt2": 0,
+      "painted_paths_sha256": "14b19e06a177c9a5a569480a1cd7889a23321f8ee091eb23aee60dcb50c194d1",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "after"
+    },
+    {
+      "case": "clear",
+      "pdf_sha256": "339f27dc941fafcb52d0ecb670f9b6dda5ee450bb9f3b0226e715d2013875795",
+      "source_sha256": "37a60d4f9d2eb2b7021b0a8f21600374dc176d87410957b194dc911c107f90b9",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          417.9378
+        ],
+        "bounds": [
+          833.7394,
+          415.6608,
+          907.0874,
+          425.8358
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            906.9317,
+            376.3378
+          ],
+          "bounds": [
+            906.9317,
+            374.8888,
+            925.6077,
+            381.3638
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 0.0,
+      "painted_paths_sha256": "379956ec2628e2301f3954f63d0a1fdf0fc69707dbad36cdc37fbc95cdf7848d",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "after"
+    },
+    {
+      "case": "coincident-generic",
+      "pdf_sha256": "ff79266562e5d543900eea2d4b8a63c4d18dd6120e40f5df808bd29d2281afb5",
+      "source_sha256": "dd327004e4cd3dfb33b82dc6173f5b32cac0024c831a556702ef336b753077ca",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          417.9378
+        ],
+        "bounds": [
+          833.7394,
+          415.6608,
+          907.0874,
+          425.8358
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            861.0754,
+            376.3378
+          ],
+          "bounds": [
+            861.0754,
+            374.8888,
+            879.7514,
+            381.3638
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 0.0,
+      "painted_paths_sha256": "f452dfb70535458e6e76b36b9217d97de7aa56cdcd35881e9695f920d896cf79",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "after"
+    },
+    {
+      "case": "stroke-grazing",
+      "pdf_sha256": "df420f02363c144b8e62a14f5efa7d039727ed26a991e62ccf1c3e83508bfa0b",
+      "source_sha256": "75cea4be4793b0f12eaf84b16b7e5859dda4312393bf9b22a01b36bbef3f55af",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          417.9378
+        ],
+        "bounds": [
+          833.7394,
+          415.6608,
+          907.0874,
+          425.8358
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            943.8058,
+            365.1378
+          ],
+          "bounds": [
+            943.8058,
+            363.6888,
+            962.4818,
+            370.16380000000004
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 0.0,
+      "painted_paths_sha256": "5044dece96362b9870190991fe7f3ee3a6c5284b7120c7249231a7f7ab13d104",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "after"
+    },
+    {
+      "case": "tiny-native-miter",
+      "pdf_sha256": "b6f42fee37e84e6d6d51afd0ae88769fd60863c33a1f1ce56861bab9a99238b2",
+      "source_sha256": "a9e90e6d905af81634cd611b3282e3a828427822513db6d27c5a0fe27a49f20e",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          382.7378
+        ],
+        "bounds": [
+          833.7394,
+          380.4608,
+          907.0874,
+          390.6358
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 3.5,
+          "page": 0,
+          "baseline": [
+            865.7444,
+            373.9944
+          ],
+          "bounds": [
+            865.7444,
+            373.2699,
+            875.0824,
+            376.50739999999996
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 0.0,
+      "painted_paths_sha256": "646588c09359b7965c465c71c9d677503cc729356977a1ee620c63334c4f2846",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          3.5
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "original_glyph_body_intersection_pt2": 0.0,
+      "original_glyph_native_miter_intersection_pt2": 0.03538523317535935,
+      "role": "after"
+    },
+    {
+      "case": "rotated-vessel",
+      "pdf_sha256": "7b387b69b0223374d93c417c50c87425d2c96e94ec333b8e40ea90c7482c6c0f",
+      "source_sha256": "37d49ed2b3a668ae5eebfd033611a4365b12ff777facdf3bcb2c522f6bbced3b",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          312.3378
+        ],
+        "bounds": [
+          833.7394,
+          310.06080000000003,
+          907.0874,
+          320.23580000000004
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            897.7604,
+            385.5091
+          ],
+          "bounds": [
+            897.7604,
+            384.0601,
+            916.4364,
+            390.5351
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 0.0,
+      "painted_paths_sha256": "ad395340dfbcb3d02d4a94d6c69db0f02447d690466fec6c82e1a9181b2cdd58",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "role": "after"
+    },
+    {
+      "case": "flow",
+      "pdf_sha256": "4d13478971615254b87fb85ac7a6e45924767713401091703e4511768df83a7f",
+      "source_sha256": "d151e77069dec4ab635901dea2addc98f9c38d12fda7372b207fc5476ac9e8b4",
+      "pages": 1,
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          417.9378
+        ],
+        "bounds": [
+          833.7394,
+          415.6608,
+          907.0874,
+          425.8358
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "entry": {
+        "text": "entry (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          282.8478,
+          365.1378
+        ],
+        "bounds": [
+          282.8478,
+          362.86080000000004,
+          357.4278,
+          373.03580000000005
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "equipment_captions": [
+        {
+          "text": "press",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            906.9317,
+            376.3378
+          ],
+          "bounds": [
+            906.9317,
+            374.8888,
+            925.6077,
+            381.3638
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        },
+        {
+          "text": "neighbor",
+          "font": "Helvetica-Bold",
+          "size": 7.0,
+          "page": 0,
+          "baseline": [
+            351.0211,
+            539.3917
+          ],
+          "bounds": [
+            351.0211,
+            537.9427000000001,
+            380.9671,
+            544.4177
+          ],
+          "render_mode": 0,
+          "fill_alpha": 1.0,
+          "fill": [
+            0.05,
+            0.25,
+            0.65
+          ]
+        }
+      ],
+      "max_room_blue_ink_intersection_pt2": 0.0,
+      "painted_paths_sha256": "0b5c60cace2f78beb36c87b7de926ce346278191740afc82d7bbf4e0b917da34",
+      "fonts": [
+        [
+          "Helvetica",
+          4.5
+        ],
+        [
+          "Helvetica",
+          5.0
+        ],
+        [
+          "Helvetica",
+          6.0
+        ],
+        [
+          "Helvetica",
+          7.0
+        ],
+        [
+          "Helvetica",
+          8.0
+        ],
+        [
+          "Helvetica",
+          11.0
+        ],
+        [
+          "Helvetica-Bold",
+          7.0
+        ],
+        [
+          "Helvetica-Bold",
+          12.0
+        ]
+      ],
+      "flow": {
+        "text": "FLOW room_annotation_fixture [unspecified] / 20 mm",
+        "font": "Helvetica",
+        "size": 5.0,
+        "page": 0,
+        "baseline": [
+          836.7395,
+          409.9379
+        ],
+        "bounds": [
+          836.7395,
+          408.9029,
+          955.3995,
+          413.5279
+        ],
+        "render_mode": 0,
+        "fill_alpha": 1.0,
+        "fill": [
+          0.0,
+          0.0,
+          0.0
+        ]
+      },
+      "flow_caption_intersections_pt2": {
+        "work (36.0 m2)": 0.0,
+        "entry (36.0 m2)": 0.0,
+        "press": 0.0,
+        "neighbor": 0.0
+      },
+      "role": "after"
+    },
+    {
+      "case": "unplaceable",
+      "status": "REJECTED_PREVIOUS_DESTINATION_PRESERVED",
+      "pdf_sha256": "339f27dc941fafcb52d0ecb670f9b6dda5ee450bb9f3b0226e715d2013875795",
+      "source_sha256": "15fb45cb5ce2abf6d21515055f5dcf932c03cc42bdeb53bf356685744b780aa9",
+      "previous_destination_sha256": "339f27dc941fafcb52d0ecb670f9b6dda5ee450bb9f3b0226e715d2013875795",
+      "role": "after"
+    }
+  ],
+  "comparison": [
+    {
+      "case": "room-only",
+      "before_room_ink_pt2": 0,
+      "after_room_ink_pt2": 0,
+      "pages": 1,
+      "literal_paths_and_styles_unchanged": true,
+      "legacy_equipment_captions_unchanged": true
+    },
+    {
+      "case": "clear",
+      "before_room_ink_pt2": 8.139999999999546,
+      "after_room_ink_pt2": 0.0,
+      "pages": 1,
+      "literal_paths_and_styles_unchanged": true,
+      "legacy_equipment_captions_unchanged": true
+    },
+    {
+      "case": "coincident-generic",
+      "before_room_ink_pt2": 13.030366486490829,
+      "after_room_ink_pt2": 0.0,
+      "pages": 1,
+      "literal_paths_and_styles_unchanged": true,
+      "legacy_equipment_captions_unchanged": true
+    },
+    {
+      "case": "stroke-grazing",
+      "before_room_ink_pt2": 2.0339824999995635,
+      "after_room_ink_pt2": 0.0,
+      "pages": 1,
+      "literal_paths_and_styles_unchanged": true,
+      "legacy_equipment_captions_unchanged": true
+    },
+    {
+      "case": "tiny-native-miter",
+      "before_room_ink_pt2": 0.03538523317535935,
+      "after_room_ink_pt2": 0.0,
+      "pages": 1,
+      "literal_paths_and_styles_unchanged": true,
+      "legacy_equipment_captions_unchanged": true
+    },
+    {
+      "case": "rotated-vessel",
+      "before_room_ink_pt2": 8.242418528395962,
+      "after_room_ink_pt2": 0.0,
+      "pages": 1,
+      "literal_paths_and_styles_unchanged": true,
+      "legacy_equipment_captions_unchanged": true
+    },
+    {
+      "case": "flow",
+      "before_room_ink_pt2": 8.139999999999546,
+      "after_room_ink_pt2": 0.0,
+      "pages": 1,
+      "literal_paths_and_styles_unchanged": true,
+      "legacy_equipment_captions_unchanged": true
+    },
+    {
+      "case": "unplaceable",
+      "before": "LEGACY_OVERSIZED_CAPTION_WRITTEN",
+      "after": "REJECTED_PREVIOUS_DESTINATION_PRESERVED"
+    }
+  ],
+  "cp_calls": 0,
+  "public_exporter_signatures_unchanged": true,
+  "source_models_and_original_bytes_unchanged": true,
+  "literal_path_scope": "All actual painted paths, transforms, widths, dashes, caps, joins and miter states equal across seven source-identical before/after drawings",
+  "caption_scope": "Complete Helvetica room text; clear entry and frozen QA24 equipment captions remain; only colliding room baselines move within their host and plot",
+  "unplaceable_caption": "Original oversized output retained; new rejection retains exact previous valid PDF and source bytes",
+  "rendered_pages": 16,
+  "contact_sheets": 3,
+  "visual_inspection": {
+    "status": "SCOPED_PASS",
+    "inspector": "Root actual image inspection",
+    "verified_on": "2026-10-15",
+    "all_contact_sheets_inspected": true,
+    "contact_sheets": [
+      "contact-01.png",
+      "contact-02.png",
+      "contact-03.png"
+    ],
+    "new_pages_inspected_full": [
+      "clear",
+      "coincident-generic",
+      "flow",
+      "room-only",
+      "rotated-vessel",
+      "stroke-grazing",
+      "tiny-native-miter"
+    ],
+    "protected_destination": "After unplaceable PDF is exact clear PDF sentinel; contact-inspected, separate full inspection covered the identical clear artifact",
+    "observations": [
+      "Complete room captions are readable within their host in every newly authored plan; header/footer and literal wall geometry remain visible",
+      "Clear entry and current equipment captions remain at their original anchors",
+      "Real flow caption is visibly separate from the final room caption",
+      "Original oversized identifier deliberately crosses the page and remains negative evidence; repaired rejection retains valid previous PDF bytes",
+      "Tiny symbol ink avoidance is established by actual saved stroke/metric geometry; whole-page rendering does not resolve the small miter area",
+      "Existing equipment caption versus native symbol ink separation is outside this room-caption repair; the rotated vessel keeps its original gear caption"
+    ],
+    "scope": "Room caption readability for retained fixtures, not general drawing or professional acceptance"
+  },
+  "raster_sha256": [
+    "ebc10a44f10b62c768eb23e22286ae7c6795612e0e4ce33cdbc9935c314c6cdc",
+    "228359285c3431163fdeff1fd01acf428a5f3a524dc18e533dbd07f5ef23c5c1",
+    "cc1f91ecea9e224bb89cba9ce4696630aed21962053bbab8b4afa46eaf845faf",
+    "f1b45e8b9694d9094d61609f91e8aeacb887569309c3548ef359a554750f5630",
+    "59a6b6661d284a14c16d14f11599d060d2b263efae794f25c28ccf3c6a9209c9",
+    "cc0c0642d7c64a8cb7a9f851ee006c47dac9cdcddade6c60737e590896c6f8ce",
+    "052c5e9850958747b0d9680f7104c4f6ab40e204f68a7235b11f495c53920cbe",
+    "b07f5fd55c5dbe3034599ae0d582a9bcf6e89704f9abe8f734e7e24cd655f76f",
+    "e171812f44c59cd5e2f862ebef543ce7b6a0e6ad6079bd2f01e9e6c52eb32859",
+    "0eb5832614ee1ff87fc3355b02188af7ddc43e6f3ec3e333c7993da326f4a72c",
+    "239c55869efef98ab77736b9e5c5f590388b948f8ec58c2fb7a9e3b1147bc78f",
+    "f1b45e8b9694d9094d61609f91e8aeacb887569309c3548ef359a554750f5630",
+    "b1eddc3a9e84b096b5ddcb53ab24813120e79300db4c74cdc5be0a5bbbec1c36",
+    "6a9c6cad9a7ac87fa8eb8ccb90b538774fe21c962fb4147ad82267ecf5e55db9",
+    "fb733c3c134dba9b5446d7c4421f93792ce6e51611a024b82373a2dc5db66236",
+    "e171812f44c59cd5e2f862ebef543ce7b6a0e6ad6079bd2f01e9e6c52eb32859"
+  ],
+  "source_line_endings": "Final LF overlay bytes equal the Git index and actual installed exporter",
+  "retained_original_i552_artifacts": "Not rewritten; repair applies to future exports",
+  "full_suite_run": false,
+  "background_execution": false,
+  "manually_dispatched_full_ci": false,
+  "scope": "Bounded rectangular room captions versus solid body/guide ink and native straight symbol polylines",
+  "remaining": [
+    "General dense annotations",
+    "Arbitrary curved or dashed ink avoidance",
+    "Main-PDF font portability",
+    "Changed full acceptance",
+    "Production-enforcing facility generation",
+    "External engineering review"
+  ],
+  "retained_outputs": "output/pdf/room-labels-qa26/",
+  "local_proof": "out/checkpoints/pdf-room-labels-qa26/",
+  "wheel_baseline_preflight": {
+    "historical_candidate": "I.5.5.2 installed wheel",
+    "raw_sha256": "5f6b17535eeaf00f30cdc7b038ddb501f6c3b8838bb5e8043571d81eeccbd715",
+    "crlf_count": 912,
+    "canonical_lf_equal_to_original_exporter": true,
+    "status": "Rejected by exact raw module-hash guard before any build or drawing",
+    "retained_failure": "wheel-error-evidence-final.json",
+    "selected_baseline": "Ordinary QA.24 installed-final wheel with exact raw b314d57f exporter",
+    "fresh_retry": "wheel-logs-final-v2",
+    "source_test_changes_due_to_preflight": false
+  }
+}

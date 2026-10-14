@@ -1,5 +1,10 @@
 # Main-PDF equipment annotation placement
 
+Checkpoint [QA.26](PDF_ROOM_LABELS.md) separately moves future room captions
+away from actual body and native symbol ink. It freezes the current QA.24
+equipment caption/guide choices against original room/dimension reservations
+before selecting room positions. This document retains its original evidence.
+
 Checkpoint QA.24 addresses a saved rectangular main-plan defect: the literal
 `work (36.0 m2)` room label overlapped the `press` equipment identifier. The
 change applies to `export_pdf()` and `export_building_pdf()` and future facility

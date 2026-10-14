@@ -180,8 +180,9 @@ All 129 pages of ten distinct physical PDFs are rendered and inspected across
 fifteen contact sheets; six full pages separately cover requirement lettering,
 the conflict summary/witness/plan, true-window policy and the native main plan.
 The unchanged rectangular main plan still has a room caption crossing an
-equipment outline. General annotation placement and main-font portability
-remain separate; the supplied base is not altered to hide that limitation.
+equipment outline. [QA.26](PDF_ROOM_LABELS.md) separately repairs this placement
+in future exports, retaining the original supplied base bytes. General
+annotation placement and main-font portability remain separate.
 
 [Compact evidence](acceptance/4ca8a39-process-production-packages.json) retains
 exact source/archive/wheel/input/artifact identities and actual results. Raw

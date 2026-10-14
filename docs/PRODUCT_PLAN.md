@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.26 separates future main-PDF room captions from actual equipment
+stroke and native symbol ink. Existing gear captions freeze before bounded
+room placement; final reservations reach flow text. Six actual-PDF regressions,
+historical exports/symbols and ordinary old/new wheel witnesses pass; all sixteen
+pages are rendered/contact-inspected and seven new plans inspected in full.
+[Scope](PDF_ROOM_LABELS.md). Original attachment bytes remain intact; general
+dense drawing, producer enforcement and full acceptance remain open.
+
 Checkpoint QA.25 isolates complete process facility-package tests in a fourth
 full-CI group. All 1,532 ordered unique IDs remain, 29 package IDs move from core,
 and thirteen fixture/workflow tests plus 26 subtests pass. Quick push checks and
@@ -19,7 +27,8 @@ four stricter readbacks, three rejected forgeries/budget copies and 129 rendered
 pages pass. Old saved packages/APIs/defaults remain unchanged.
 [Scope](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md). Production-enforcing
 generation, complete scenarios/3D and external engineering acceptance remain
-open. The original main-plan room-caption/outline collision is separately open.
+open. QA.26 separately repairs future room-caption/outline placement; the
+original supplied main-plan bytes and their observed collision remain intact.
 
 The `8ca095e` source checkpoint passes
 [quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38623080447)
