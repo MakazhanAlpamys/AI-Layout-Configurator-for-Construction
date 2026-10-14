@@ -172,6 +172,11 @@ Cyrillic text.
 
 ## Remaining implementation
 
+The I.5.4.2 `e5f0009` push passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38562618459)
+in 38 seconds including setup; full acceptance jobs are skipped. This scoped
+push result does not replace the pending changed full acceptance at QA.23.
+
 - B: finish remaining orthogonal downstream capabilities and independent
   complete facility acceptance. Selectable canonical generation, finite solvers,
   scoped current predicates and three-format persisted draft QA are implemented;

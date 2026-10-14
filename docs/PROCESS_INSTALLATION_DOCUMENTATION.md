@@ -79,3 +79,8 @@ three complete plan pages and a dense evidence page were separately inspected.
 [Compact evidence](acceptance/e35263a-process-path-documents.json) records exact
 source, wheel, input and PDF identities. Detailed local proof remains under
 `out/checkpoints/process-installation-documentation-i542/`.
+
+The pushed `e5f0009` checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38562618459)
+in thirty-eight seconds including setup. Full acceptance jobs are skipped on
+this push; changed full-suite acceptance remains separate.
