@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.25 isolates complete process facility-package tests in a fourth
+full-CI group. All 1,532 ordered unique IDs remain, 29 package IDs move from core,
+and thirteen fixture/workflow tests plus 26 subtests pass. Quick push checks and
+API/pharma gates stay unchanged. [CI policy](CI.md). Changed full runtime,
+aggregate runner savings and full acceptance remain unmeasured/pending.
+
 Checkpoint I.5.5.2 attaches these production documents to an unchanged original
 facility in explicit outer version0.3. Initial source/base and outer/child
 metadata pins, effective minima and combined actual artifact bounds precede
@@ -9,6 +15,11 @@ pages pass. Old saved packages/APIs/defaults remain unchanged.
 [Scope](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md). Production-enforcing
 generation, complete scenarios/3D and external engineering acceptance remain
 open. The original main-plan room-caption/outline collision is separately open.
+
+The `8ca095e` source checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38623080447)
+in thirty-nine seconds including setup. All full jobs are skipped; this does
+not establish changed full acceptance or new shard timing.
 
 Checkpoint I.5.5.1 publishes complete original production requirement appendices
 in explicit version0.3 process documents. Effective minimum controls and actual

@@ -811,6 +811,24 @@ match. Changed fixtures/source, 89 additional tests and six VMs prevent causal
 attribution or guaranteed aggregate runner savings;
 [evidence](acceptance/70ee96e.json) retains actual individual test/job times.
 
+### Fourth complete CI shard
+
+QA.25 subsequently adds a fourth full-CI group, `process-packages`, for the
+three explicit original-facility process/path/production attachment test
+families. The earlier three-shard evidence above stays pinned to its source.
+Whole modules and caches remain intact; documentation/review stays in core.
+Actual repository partition-only checks preserve all 1,532 ordered unique IDs
+and move exactly 29 package IDs: core 1,401 becomes 1,372, with 53 bundles/78 exchange
+unchanged. No actual repository tests execute during this check. Thirteen
+single-file fixture/workflow tests, 26 subtests, final LF workflow verification,
+actionlint and whole-workflow matrix-only comparison pass.
+
+Eight test VMs replace six, adding two setup/discovery costs. Quick push and
+all API/pharma gates remain unchanged. This is workload isolation; no changed
+full GitHub wall time or aggregate billed-minute saving is established.
+[Evidence](acceptance/8ca095e-ci-process-packages.json). Full acceptance remains
+pending; no full or scale workflow is manually dispatched here.
+
 ### Source-derived three-room leaf repacking
 
 H.3.6.12 follows a pure check of the exact failed `4604a10` family. Within each

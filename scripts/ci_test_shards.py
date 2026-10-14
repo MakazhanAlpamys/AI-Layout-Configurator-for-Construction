@@ -1,9 +1,11 @@
 """Run an exhaustive, disjoint partition of the existing unittest discovery.
 
-Every invocation discovers the complete test root once. The draft-bundles
-shard keeps exactly modules starting with test_orthogonal_bundle. Complete
-CLI, floor exchange, packaging and domain-pilot modules form exchange-and-cli;
-the core shard keeps the remainder. Future modules follow the same prefixes.
+Every invocation discovers the complete test root once for four groups.
+Draft-bundles keeps modules starting with test_orthogonal_bundle. Complete
+CLI, floor exchange, packaging and domain-pilot modules form exchange-and-cli.
+The three process facility-package module families form process-packages;
+core keeps the remainder, including process documentation and review modules.
+Future modules follow the same prefixes.
 Collection failures, duplicate identities and empty partitions stop execution.
 """
 
@@ -20,11 +22,15 @@ import time
 import unittest
 
 
-SHARDS = ("core", "draft-bundles", "exchange-and-cli")
+SHARDS = ("core", "draft-bundles", "exchange-and-cli", "process-packages")
 BUNDLE_MODULE_PREFIX = "test_orthogonal_bundle"
 EXCHANGE_MODULE_PREFIXES = (
     "test_orthogonal_cli", "test_facility_floors", "test_packaging",
     "test_domain_pilots", "test_plan_import_cli",
+)
+PROCESS_PACKAGE_MODULE_PREFIXES = (
+    "test_process_facility_package", "test_process_installation_facility_package",
+    "test_process_production_layout_facility_package",
 )
 MAX_DETAIL_RECORDS = 100
 MAX_DETAIL_CHARACTERS = 2048
@@ -49,6 +55,8 @@ def partition(cases):
             shard = "draft-bundles"
         elif module.startswith(EXCHANGE_MODULE_PREFIXES):
             shard = "exchange-and-cli"
+        elif module.startswith(PROCESS_PACKAGE_MODULE_PREFIXES):
+            shard = "process-packages"
         else:
             shard = "core"
         selected[shard].append(case)

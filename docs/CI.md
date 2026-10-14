@@ -5,6 +5,38 @@ test (including import errors), and fast canonical/source/geometry contracts.
 Documentation-only pushes do not start it. This is explicitly a quick check,
 not full facility acceptance. Local affected checks still precede each commit.
 
+QA.25 isolates the three complete process facility-package module families in
+`process-packages`. The full Windows/Linux test matrix now has four groups per
+OS, or eight test jobs:
+
+| Group | Complete module families |
+| --- | --- |
+| `core` | Remaining modules, including process documentation and review |
+| `draft-bundles` | `test_orthogonal_bundle*` |
+| `exchange-and-cli` | Existing orthogonal CLI, floor, packaging, domain-pilot and plan-import CLI prefixes |
+| `process-packages` | `test_process_facility_package*`, `test_process_installation_facility_package*`, `test_process_production_layout_facility_package*` |
+
+Whole modules retain their class caches and discovery order. Current and
+future matching package modules move together; unrelated future names stay in
+core. Every invocation still discovers the full inventory once and rejects
+import errors, duplicate identities, overlap, incomplete coverage or any empty
+group before execution. The report schema stays `ci-test-shards/0.2`.
+
+Actual single-file verification passes thirteen tests and twenty-six subtests;
+actionlint and an entire-workflow structural comparison pass. Repository
+partition-only checks preserve all 1,532 ordered unique IDs, with zero tests
+executed. Exactly twenty-nine package IDs move from core: 1,401 becomes 1,372;
+the unchanged bundle/exchange groups contain 53/78 IDs. These counts include
+the frozen QA.25 test changes, not the earlier `8ca095e` inventory.
+[Evidence](acceptance/8ca095e-ci-process-packages.json).
+
+Only the full-test matrix changes in the workflow. Quick commands, triggers,
+concurrency, caches, artifacts, timeout, API and pharma gates remain unchanged.
+Two additional test VMs add setup/discovery costs. This isolates heavy native
+delivery work; changed full GitHub elapsed time and aggregate billed-minute
+savings are unmeasured. Full acceptance remains pending and is not dispatched
+locally to verify this partition change.
+
 QA.22 runs the four quick contract files sequentially, with exactly one file
 per pytest invocation. The file list, complete collection, shard partition,
 workflow triggers, concurrency and full acceptance jobs remain unchanged.
@@ -129,3 +161,10 @@ The I.4.3.2 `357ddce` source push passes
 [quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38590587537)
 in thirty-eight seconds including setup. All full jobs are skipped; scoped
 push checks remain separate from the pending changed full acceptance.
+
+The I.5.5.2 `8ca095e` source push passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38623080447)
+in thirty-nine seconds including setup. Complete collection/partition and the
+four sequential contract files pass; all full jobs are skipped. The new local
+artifact/readback tests and later four-shard implementation remain separate
+from that pinned quick result.

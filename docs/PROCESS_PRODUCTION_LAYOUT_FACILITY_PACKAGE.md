@@ -188,3 +188,8 @@ exact source/archive/wheel/input/artifact identities and actual results. Raw
 evidence stays local under
 `out/checkpoints/process-production-layout-facility-package-i552/`.
 No full suite, benchmark, background task or full CI dispatch is run here.
+
+The pushed `8ca095e` source checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38623080447)
+in thirty-nine seconds including setup. Full jobs are skipped. This is scoped
+push evidence, with changed full acceptance still pending.

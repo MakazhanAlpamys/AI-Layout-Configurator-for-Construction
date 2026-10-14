@@ -766,5 +766,23 @@
     "Cycle I reference-facility and external engineering acceptance",
     "Receiving-tool review and main drawing portability"
   ],
-  "raw_evidence_local": "out/checkpoints/process-production-layout-facility-package-i552/"
+  "raw_evidence_local": "out/checkpoints/process-production-layout-facility-package-i552/",
+  "checkpoint_commit": "8ca095ec1cb3e3d6daef071adaa48cc1a31392e3",
+  "quick_ci": {
+    "run_id": 38623080447,
+    "head_sha": "8ca095ec1cb3e3d6daef071adaa48cc1a31392e3",
+    "status": "SUCCESS",
+    "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38623080447",
+    "quick_job": "Quick contracts and complete test collection",
+    "job_seconds": 39,
+    "started_at_utc": "2026-10-14T19:22:13Z",
+    "completed_at_utc": "2026-10-14T19:22:52Z",
+    "full_jobs": {
+      "api-container": "SKIPPED",
+      "tests": "SKIPPED",
+      "pharma-cleanroom": "SKIPPED"
+    },
+    "full_acceptance": "PENDING",
+    "manually_dispatched_full_run": false
+  }
 }

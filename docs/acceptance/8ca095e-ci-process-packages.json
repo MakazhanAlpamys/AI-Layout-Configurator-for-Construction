@@ -1,0 +1,111 @@
+{
+  "format": "FLC-product-checkpoint-evidence",
+  "version": "1",
+  "checkpoint": "QA.25",
+  "status": "SCOPED_PASS",
+  "date": "2026-10-15",
+  "base_commit": "8ca095ec1cb3e3d6daef071adaa48cc1a31392e3",
+  "source_sha256": {
+    "scripts/ci_test_shards.py": "e8a39990ea12af8bf11a7343716349a1301f944749d6acbdca86fe3adb152701",
+    "tests/test_ci_test_shards.py": "f13c7251a9bb565670604948fcc342aec42e64fb6aef514353b68730aadf5450",
+    ".github/workflows/ci.yml": "453efbe684e7a7eafe75c7106237385caf6e9173f798917a250faa29e2739495"
+  },
+  "actual_red": {
+    "file": "tests/test_ci_test_shards.py",
+    "exit_code": 1,
+    "failed": 15,
+    "passed": 9,
+    "subtests_passed": 15,
+    "seconds": 5.6,
+    "log": "root-red.log",
+    "test_sha256": "f13c7251a9bb565670604948fcc342aec42e64fb6aef514353b68730aadf5450"
+  },
+  "actual_green": {
+    "file": "tests/test_ci_test_shards.py",
+    "exit_code": 0,
+    "passed": 13,
+    "subtests_passed": 26,
+    "seconds": 5.66,
+    "log": "root-green.log"
+  },
+  "final_lf_workflow_green": {
+    "file": "tests/test_ci_test_shards.py",
+    "selection": "full_workflow",
+    "exit_code": 0,
+    "passed": 1,
+    "deselected": 12,
+    "seconds": 0.08,
+    "log": "final-lf-workflow-green.log"
+  },
+  "actionlint": {
+    "status": "PASS",
+    "exit_code": 0,
+    "file": ".github/workflows/ci.yml",
+    "log": "actionlint-final-lf.log"
+  },
+  "workflow_structure": "Parsed entire workflow equals prior workflow after restoring only the shard list",
+  "test_report_schema": "ci-test-shards/0.2",
+  "full_test_jobs": 8,
+  "whole_module_cache_and_order_preserved": true,
+  "quick_push_policy_unchanged": true,
+  "real_repository_collection": {
+    "status": "PASS",
+    "discovered": 1532,
+    "unique": true,
+    "import_errors": 0,
+    "ordered_inventory_sha256": "26e75235f83c2bc6ddcb7a5ab117c28c8f77f47631af6800db425e6a6a44ec85",
+    "before_counts": {
+      "core": 1401,
+      "draft-bundles": 53,
+      "exchange-and-cli": 78
+    },
+    "after_counts": {
+      "core": 1372,
+      "draft-bundles": 53,
+      "exchange-and-cli": 78,
+      "process-packages": 29
+    },
+    "exact_existing_ids_moved": [
+      "test_process_facility_package.ProcessFacilityPackageTests.test_both_original_bundle_kinds_copy_exact_artifacts_and_bind_all_components_without_solver",
+      "test_process_facility_package.ProcessFacilityPackageTests.test_input_bounds_existing_destinations_and_source_aliases_preserve_original_work",
+      "test_process_facility_package.ProcessFacilityPackageTests.test_known_process_pressure_conflict_is_not_approved_by_an_accepted_base",
+      "test_process_facility_package.ProcessFacilityPackageTests.test_original_base_changes_and_raced_destinations_cannot_publish_stale_or_replace_work",
+      "test_process_facility_package.ProcessFacilityPackageTests.test_original_scalar_clearance_route_revision_and_whole_embedded_program_cannot_be_reinterpreted",
+      "test_process_facility_package.ProcessFacilityPackageTests.test_outer_and_original_child_inventories_reject_extra_or_escaped_artifacts",
+      "test_process_facility_package.ProcessFacilityPackageTests.test_rehashed_corruption_of_original_and_copied_base_requires_actual_fresh_physical_qa",
+      "test_process_facility_package.ProcessFacilityPackageTests.test_rehashed_process_report_cannot_substitute_saved_pass_for_a_fresh_cycle_failure",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_actual_path_body_shift_fails_after_child_and_outer_hashes_and_cached_qa_are_rebound",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_both_actual_base_formats_keep_original_bytes_five_file_child_and_common_request_identity",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_changed_declared_controls_between_admission_snapshots_reject_before_geometry",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_changed_original_request_or_bytes_cannot_authorize_a_stale_pdf_with_fresh_rebound_json",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_child_export_source_base_changes_and_native_destination_races_preserve_user_work",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_closed_outer_and_child_metadata_and_effective_path_limits_are_admitted_before_source_geometry",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_combined_file_pdf_page_and_json_node_budgets_hold_when_each_child_fits_alone",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_known_moving_body_collision_remains_fail_beside_fresh_accepted_installed_base",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_old_version_one_public_contract_rejects_version_two_and_keeps_original_defaults",
+      "test_process_installation_facility_package.ProcessInstallationFacilityPackageTests.test_original_raw_scalar_clearance_whole_program_and_coherently_rehashed_base_remain_authorities",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_both_initial_metadata_snapshots_and_during_geometry_changes_remain_bound_to_the_first_controls",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_both_native_base_kinds_keep_original_bytes_closed_twenty_field_identity_and_actual_requirement_pdf",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_closed_caller_outer_and_child_controls_take_minimums_before_any_source_construction",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_combined_file_byte_json_page_text_and_operation_consumers_cannot_reset_the_outer_budget",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_edited_forbidden_contact_and_pressure_fail_keep_valid_original_bases_and_unknown_rights_without_approval",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_export_initial_source_and_base_admission_stay_bound_before_model_reading",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_fitting_outer_and_caller_tightening_uses_child_authored_annotations_and_fresh_strict_admission",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_old_versions_defaults_and_child_source_publication_races_preserve_originals_and_existing_work",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_rehashed_pdf_witness_saved_review_and_actual_base_geometry_cannot_be_authorized_by_cached_qa",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_true_window_policy_cross_binds_outer_child_and_actual_base_while_rectangular_true_flags_reject",
+      "test_process_production_layout_facility_package.ProcessProductionLayoutFacilityPackageTests.test_whole_embedded_float_and_original_scalar_frame_mismatches_reject_without_stripping_or_rebinding_base"
+    ],
+    "unaffected_group_ids_equal": true,
+    "execution_status": "NOT_RUN",
+    "tests_run": 0,
+    "selected": 0
+  },
+  "measurement_scope": "Workload isolation only. Two additional test VMs add setup/discovery costs. No changed full GitHub timing or billed-minute savings measured",
+  "full_suite_run": false,
+  "background_execution": false,
+  "benchmark_run": false,
+  "full_ci_dispatched": false,
+  "changed_full_ci_acceptance": "PENDING",
+  "raw_evidence_local": "out/checkpoints/ci-process-package-shard-qa25/"
+}

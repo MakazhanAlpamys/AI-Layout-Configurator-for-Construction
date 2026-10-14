@@ -421,6 +421,11 @@ vertical cores, structural grid lines, a stair check and a shared IFC were added
 
 ## Fixed project boundaries
 
+Checkpoint QA.25 moves complete current-product process facility-package test
+families into a fourth full-CI group without changing archived acceptance,
+quick checks, API/pharma gates or test coverage. Actual full-CI timing and
+engineering acceptance remain separate. [CI policy](CI.md).
+
 Checkpoint I.5.5.2 attaches current-product production requirement documents to
 unchanged supplied facility bytes. Root, regular installed-wheel and rendered
 checks pass, with known concept failures retained beside scoped artifact PASS.
