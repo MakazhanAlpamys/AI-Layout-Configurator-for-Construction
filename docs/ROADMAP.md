@@ -421,6 +421,12 @@ vertical cores, structural grid lines, a stair check and a shared IFC were added
 
 ## Fixed project boundaries
 
+Checkpoint I.5.5.2 attaches current-product production requirement documents to
+unchanged supplied facility bytes. Root, regular installed-wheel and rendered
+checks pass, with known concept failures retained beside scoped artifact PASS.
+Archived MVP criteria, producer barriers and engineering acceptance stay
+unchanged. [Attachment contract](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md).
+
 Checkpoint I.5.5.1 adds verified current-product original production requirement
 document appendices with fresh evidence and independent physical PDF readback.
 Root, installed-wheel and rendered checks pass; archived MVP criteria stay

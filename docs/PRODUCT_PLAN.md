@@ -1,12 +1,23 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.5.2 attaches these production documents to an unchanged original
+facility in explicit outer version0.3. Initial source/base and outer/child
+metadata pins, effective minima and combined actual artifact bounds precede
+fresh readers. Eleven tests/sixty subtests, five ordinary-wheel publications,
+four stricter readbacks, three rejected forgeries/budget copies and 129 rendered
+pages pass. Old saved packages/APIs/defaults remain unchanged.
+[Scope](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md). Production-enforcing
+generation, complete scenarios/3D and external engineering acceptance remain
+open. The original main-plan room-caption/outline collision is separately open.
+
 Checkpoint I.5.5.1 publishes complete original production requirement appendices
 in explicit version0.3 process documents. Effective minimum controls and actual
 artifact bounds precede fresh geometry; original identities and known failures
 survive fitting stricter readback. Sixteen tests/54 subtests, historical document
 checks, six ordinary-wheel examples and visual inspection of 134 pages pass.
-[Scope](PROCESS_PRODUCTION_LAYOUT_DOCUMENTATION.md). New-format outer attachment,
-producer enforcement and complete Cycle I acceptance remain open.
+[Scope](PROCESS_PRODUCTION_LAYOUT_DOCUMENTATION.md). New-format outer attachment
+is separately completed at I.5.5.2; producer enforcement and complete Cycle I
+acceptance remain open.
 
 The `1222423` source checkpoint passes
 [quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38614685540)

@@ -1,5 +1,9 @@
 # Original Facility Packages with Supplied Installation Documents
 
+Checkpoint I.5.5.2 separately attaches version `0.3` production requirement
+documents. [Explicit production attachment](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md)
+keeps the version `0.2` contract below unchanged.
+
 Checkpoint I.5.4.3 explicitly attaches version `0.2`
 [process/path documents](PROCESS_INSTALLATION_DOCUMENTATION.md) to an
 independently supplied matching facility package. The original facility and

@@ -1,5 +1,9 @@
 # Source-Bound Facility and Process Packages
 
+Checkpoint I.5.5.2 separately attaches version `0.3` original production
+requirement documents. [Explicit production attachment](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md)
+preserves the historical APIs, inventories and original facility bytes.
+
 Checkpoint I.5.4.3 separately attaches version `0.2` supplied-path documents.
 [Explicit path attachment](PROCESS_INSTALLATION_FACILITY_PACKAGES.md) preserves
 the version `0.1` APIs and inventories described below.

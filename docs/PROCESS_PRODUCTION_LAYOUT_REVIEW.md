@@ -1,5 +1,9 @@
 # Opted production geometry in process review
 
+Checkpoint I.5.5.2 separately attaches the new production document child to
+unchanged original facility bytes. [Attachment contract](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md)
+retains original input authority and known scoped failures.
+
 Checkpoint I.5.5.1 explicitly publishes this additional evidence in version0.3
 production requirement documents with independent physical PDF readback.
 Historical document APIs and acceptance boundaries remain unchanged.

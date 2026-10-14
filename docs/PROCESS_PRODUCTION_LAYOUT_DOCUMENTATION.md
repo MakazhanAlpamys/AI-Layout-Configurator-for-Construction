@@ -1,5 +1,9 @@
 # Production Requirement Appendices in Process Documents
 
+Checkpoint I.5.5.2 separately attaches this version `0.3` document child to
+unchanged original facility files with pinned input and aggregate artifact
+admission. [Original attachment](PROCESS_PRODUCTION_LAYOUT_FACILITY_PACKAGE.md).
+
 Checkpoint I.5.5.1 publishes complete original production requirement
 appendices with fresh actual-room evidence. Scoped root, ordinary installed-wheel
 and rendered-page verification pass, including fitting tighter common/path
@@ -150,5 +154,6 @@ the pending changed full acceptance remains separate.
 Artifact QA PASS establishes consistency with supplied evidence. The
 documents still remain DRAFT with `ok=False`; full facility validation stays
 UNKNOWN, engineering acceptance PENDING and authenticated approval UNKNOWN.
-Production-enforcing generation, outer package attachment of this new format,
-complete scenarios/3D and the Cycle I reference-facility review stay separate.
+Outer attachment is separately completed at I.5.5.2. Production-enforcing
+generation, complete scenarios/3D and the Cycle I reference-facility review
+stay separate.

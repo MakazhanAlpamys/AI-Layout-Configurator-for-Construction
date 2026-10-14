@@ -1,0 +1,770 @@
+{
+  "format": "FLC-product-checkpoint-evidence",
+  "version": "1",
+  "checkpoint": "I.5.5.2",
+  "status": "SCOPED_PASS",
+  "date": "2026-10-15",
+  "base_commit": "4ca8a399d359a2d9e91158af51699af3e7d0553c",
+  "archive_sha256": "1e67a0ff66cd3cdaef265be86486d786b64330aac6b22fe08001856943bb57f9",
+  "source_sha256": {
+    "src/layout_configurator/process_production_layout_facility_package.py": "b9f7e813aaeeee71d1698f2bff7ff8eaa5f3e9e6a176be015371a22da70b0425",
+    "tests/test_process_production_layout_facility_package.py": "1fbb00c4f04626f3d9acdf7abdd10052ceda8e0779610ac0cb104746e4eb7fb2"
+  },
+  "wheel_sha256": "5ba26aa3a70c63f0212760c2a0ed0e265d01863325b6337ef11b50ee689a428e",
+  "imports": "Regular installed wheel from foreign cwd; module path and exact source SHA checked",
+  "source_version": "0.2",
+  "document_version": "0.3",
+  "outer_version": "0.3",
+  "closed_outer_manifest_fields": 20,
+  "root_entries": 4,
+  "process_inventory_files": 5,
+  "root_test_invocations": [
+    {
+      "selection": "export_initial",
+      "passed": 1,
+      "exit_code": 0,
+      "log": "pre-admission-race-green.log",
+      "seconds": 9.37,
+      "subtests_passed": 2,
+      "deselected": 10,
+      "file": "tests/test_process_production_layout_facility_package.py"
+    },
+    {
+      "exit_code": 0,
+      "file": "tests/test_process_production_layout_facility_package.py",
+      "log": "final-green.log",
+      "passed": 11,
+      "selection": "All eleven methods after initial-input race guard",
+      "subtests_passed": 60,
+      "seconds": 232.32
+    }
+  ],
+  "historical_test_invocations": [
+    {
+      "fresh_saved_qa_and_original_bytes_equal": true,
+      "versions": [
+        "0.1",
+        "0.2"
+      ],
+      "document_limit_fields": 48,
+      "saved_packages": 5,
+      "defaults_unchanged": true,
+      "status": "PASS",
+      "method": "Regular installed old/new wheel comparison",
+      "additional_historical_pytest_run": false,
+      "reason": "Historical source modules unchanged; new-file tests also export and read both old versions",
+      "public_signatures_unchanged": true,
+      "package_limit_fields": 59
+    }
+  ],
+  "initial_red": {
+    "checkpoint": "I.5.5.2",
+    "status": "EXPECTED_MISSING_MODULE_RED",
+    "pytest_exit_code": 1,
+    "test_file": "tests/test_process_production_layout_facility_package.py",
+    "test_sha256": "43de9078eb04114be6f0e39a5cdf9e10610727d31d70e3e6ad25e2194457edbe",
+    "invocations": [
+      {
+        "selection": "All ten methods after text counting correction",
+        "log": "missing-module-red-text-corrected.log",
+        "failed": 10,
+        "seconds": 1.9
+      },
+      {
+        "selection": "whole_embedded strengthened pure binding before constructors",
+        "log": "pure-binding-missing-module-red.log",
+        "deselected": 9,
+        "failed": 1,
+        "seconds": 1.86
+      }
+    ],
+    "fixture_admission": "fixture-admission.json",
+    "root_sole_runtime_runner": true,
+    "background_execution": false,
+    "pre_admission_race": {
+      "test_sha256": "1fbb00c4f04626f3d9acdf7abdd10052ceda8e0779610ac0cb104746e4eb7fb2",
+      "seconds": 10.17,
+      "status": "ACTUAL_RED",
+      "log": "pre-admission-race-red.log",
+      "deselected": 10,
+      "pytest_exit_code": 1,
+      "parent_passed": 1,
+      "reason": "Initial source and base can change after pure binding before source model construction",
+      "subtests_failed": 2,
+      "selection": "export_initial",
+      "source_sha256": "27663f69a3cdbd88bd198b7d2fdd1b0d1ef01713fc936a8b2c959474475d04fc"
+    }
+  },
+  "cases": [
+    {
+      "case": "clear",
+      "kind": "orthogonal",
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-orthogonal",
+      "base": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\process-production-layout-facility-package-i552\\fixture-admission\\clear\\orthogonal",
+      "source_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "base_files": {
+        "building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "dxf-index.json": "d3a36dfb92d10c77878221838c86dfb291e5584c27cb54ab525a115af2414ce3",
+        "equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility-predicates.json": "6e101f51fddedcd02ab9abd7d54e2616ddcb8c071529f291464e291092a7a2c6",
+        "geometry.dxf": "fa882f1279a27f964351f5d7482e0897d5656af51f765f619d8119072217e42f",
+        "geometry.ifc": "b02edf4056aeebbbcac4886f35a2c788a23cce46b9bc0eb41896e59ee27672e4",
+        "geometry.pdf": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+        "ifc-index.json": "cf0e6630c76f2f656b90b6f7f4b050517040e29d39698e2897e8e0f002bfadc5",
+        "layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "manifest.json": "dbbe3a8d36228ef5bc76314d2d24de2dbcde19998ec4b1cda564d21f862e1c16",
+        "pdf-index.json": "633573f7a28a866f04e40690e313b5f98cc24cee2586a614b65b5b3088e71fc2",
+        "profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "qa.json": "70d78b101786b68047debed727d2649f7e8e64a780d3a4ed179e5589e3fa02bf",
+        "routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e"
+      },
+      "package_files": {
+        "facility/building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "facility/dxf-index.json": "d3a36dfb92d10c77878221838c86dfb291e5584c27cb54ab525a115af2414ce3",
+        "facility/equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility/facility-predicates.json": "6e101f51fddedcd02ab9abd7d54e2616ddcb8c071529f291464e291092a7a2c6",
+        "facility/geometry.dxf": "fa882f1279a27f964351f5d7482e0897d5656af51f765f619d8119072217e42f",
+        "facility/geometry.ifc": "b02edf4056aeebbbcac4886f35a2c788a23cce46b9bc0eb41896e59ee27672e4",
+        "facility/geometry.pdf": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+        "facility/ifc-index.json": "cf0e6630c76f2f656b90b6f7f4b050517040e29d39698e2897e8e0f002bfadc5",
+        "facility/layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "facility/manifest.json": "dbbe3a8d36228ef5bc76314d2d24de2dbcde19998ec4b1cda564d21f862e1c16",
+        "facility/pdf-index.json": "633573f7a28a866f04e40690e313b5f98cc24cee2586a614b65b5b3088e71fc2",
+        "facility/profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "facility/qa.json": "70d78b101786b68047debed727d2649f7e8e64a780d3a4ed179e5589e3fa02bf",
+        "facility/routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e",
+        "manifest.json": "2051986096d8c679c3a79b4b815626244c28e90c369bef48c3bc4b43b6ee4687",
+        "process/documentation.pdf": "37a508d73ac341553acf3e5edf616324f530e306ef36908d4da0d05c7fc5eca7",
+        "process/index.json": "a5e206d02cd5853554552add56ff899bccf0e3c74eaf249fbe2cd962b2d5cdda",
+        "process/qa.json": "0cb290739fd1ac653b532fb9c12a277cbf9e948ab3bc1fd9ffa4ee95b5a01470",
+        "process/review.json": "5054f50afaab54aadf913eec43d1dbf5531321bc18500eec666d7d0876323b6f",
+        "process/source.json": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+        "qa.json": "061016d58cee5d1405e51b910bca67bb525d8dc06b4325bba830469047995e44"
+      },
+      "process_pages": 21,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_geometry": "PASS",
+      "production_provenance": "PASS",
+      "requirement_id": "entry_work_contact",
+      "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+      "maximum_contiguous_mm": 6000.0,
+      "required_contiguous_mm": 1600.0,
+      "include_windows": false
+    },
+    {
+      "case": "clear",
+      "kind": "rectangular",
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular",
+      "base": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\process-production-layout-facility-package-i552\\fixture-admission\\clear\\rectangular",
+      "source_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "base_files": {
+        "building_01.bcf": "c0011eb7d0114e3f8aded15429b1b889816fb9b5b29feb46f56b86fbb8b537a6",
+        "building_01.coordination.json": "252c185229d2b6a302eb866cde2ed2e329ddf6156e08f9a93a159f3d7ce625f2",
+        "building_01.dxf": "25a5aa87a5056c307a1570527f2d94ffb52fccec17b524e626eb66da53d5c629",
+        "building_01.ifc": "de9f153739ad27b7d8467e7225afe3018693310022d5e45b8a730797ec991332",
+        "building_01.json": "9140bbe00f32e22ba9479dcc4ab8b95f25f60dfd8c4ff4c64c5de13cc5c9b916",
+        "building_01.pdf": "b3b0aab330e78b86dcfd2d49f0abb4a94984878a63f6bf38c6843292e846e277",
+        "building_01_report.pdf": "b0ce156b5fb3b43aca9ad313068dc263a1cb2158c846314dfd87d559f09ef4ae",
+        "building_01_sheets.pdf": "2df7da95690944394978d383b900dded71076a0a207aa55b30e2c24a6cdc0dc4",
+        "manifest.json": "e30e685cdee22853c1b2246d7a2ea6d0fed43f1bde06f71c7aa882fce44b1fde"
+      },
+      "package_files": {
+        "facility/building_01.bcf": "c0011eb7d0114e3f8aded15429b1b889816fb9b5b29feb46f56b86fbb8b537a6",
+        "facility/building_01.coordination.json": "252c185229d2b6a302eb866cde2ed2e329ddf6156e08f9a93a159f3d7ce625f2",
+        "facility/building_01.dxf": "25a5aa87a5056c307a1570527f2d94ffb52fccec17b524e626eb66da53d5c629",
+        "facility/building_01.ifc": "de9f153739ad27b7d8467e7225afe3018693310022d5e45b8a730797ec991332",
+        "facility/building_01.json": "9140bbe00f32e22ba9479dcc4ab8b95f25f60dfd8c4ff4c64c5de13cc5c9b916",
+        "facility/building_01.pdf": "b3b0aab330e78b86dcfd2d49f0abb4a94984878a63f6bf38c6843292e846e277",
+        "facility/building_01_report.pdf": "b0ce156b5fb3b43aca9ad313068dc263a1cb2158c846314dfd87d559f09ef4ae",
+        "facility/building_01_sheets.pdf": "2df7da95690944394978d383b900dded71076a0a207aa55b30e2c24a6cdc0dc4",
+        "facility/manifest.json": "e30e685cdee22853c1b2246d7a2ea6d0fed43f1bde06f71c7aa882fce44b1fde",
+        "manifest.json": "0dfa1ea66ef8ecbf41def860d022b6d28147a4666d91b2d808461600b2c51c79",
+        "process/documentation.pdf": "848ab2d7b6b1c0a3f9cf34eb1f7107a77ab6b29ad6ebf822aa2bf8c8a04f5c37",
+        "process/index.json": "9f0f5280452a8e66f663e33fa603e8c138fcd44ac25a238a19f18b166da677fb",
+        "process/qa.json": "6ee99bf783c11beeb8c0ca231a3d2d725042332ef9b837aa86495b837c2edbe3",
+        "process/review.json": "5054f50afaab54aadf913eec43d1dbf5531321bc18500eec666d7d0876323b6f",
+        "process/source.json": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+        "qa.json": "86ae90f3114a327c3940640acc35ee2af9d07262643700304f5e34860f9d22af"
+      },
+      "process_pages": 21,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_geometry": "PASS",
+      "production_provenance": "PASS",
+      "requirement_id": "entry_work_contact",
+      "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+      "maximum_contiguous_mm": 6000.0,
+      "required_contiguous_mm": 1600.0,
+      "include_windows": false
+    },
+    {
+      "case": "forbidden-pressure",
+      "kind": "orthogonal",
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-orthogonal",
+      "base": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\process-production-layout-facility-package-i552\\fixture-admission\\forbidden-pressure\\orthogonal",
+      "source_sha256": "a9d8912036982ed6d906d2cb7b5957de528d4af2a0861cbff7c10d10375b9761",
+      "base_files": {
+        "building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "dxf-index.json": "d3a36dfb92d10c77878221838c86dfb291e5584c27cb54ab525a115af2414ce3",
+        "equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility-predicates.json": "6e101f51fddedcd02ab9abd7d54e2616ddcb8c071529f291464e291092a7a2c6",
+        "geometry.dxf": "fa882f1279a27f964351f5d7482e0897d5656af51f765f619d8119072217e42f",
+        "geometry.ifc": "b02edf4056aeebbbcac4886f35a2c788a23cce46b9bc0eb41896e59ee27672e4",
+        "geometry.pdf": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+        "ifc-index.json": "cf0e6630c76f2f656b90b6f7f4b050517040e29d39698e2897e8e0f002bfadc5",
+        "layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "manifest.json": "dbbe3a8d36228ef5bc76314d2d24de2dbcde19998ec4b1cda564d21f862e1c16",
+        "pdf-index.json": "633573f7a28a866f04e40690e313b5f98cc24cee2586a614b65b5b3088e71fc2",
+        "profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "qa.json": "70d78b101786b68047debed727d2649f7e8e64a780d3a4ed179e5589e3fa02bf",
+        "routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e"
+      },
+      "package_files": {
+        "facility/building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "facility/dxf-index.json": "d3a36dfb92d10c77878221838c86dfb291e5584c27cb54ab525a115af2414ce3",
+        "facility/equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility/facility-predicates.json": "6e101f51fddedcd02ab9abd7d54e2616ddcb8c071529f291464e291092a7a2c6",
+        "facility/geometry.dxf": "fa882f1279a27f964351f5d7482e0897d5656af51f765f619d8119072217e42f",
+        "facility/geometry.ifc": "b02edf4056aeebbbcac4886f35a2c788a23cce46b9bc0eb41896e59ee27672e4",
+        "facility/geometry.pdf": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+        "facility/ifc-index.json": "cf0e6630c76f2f656b90b6f7f4b050517040e29d39698e2897e8e0f002bfadc5",
+        "facility/layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "facility/manifest.json": "dbbe3a8d36228ef5bc76314d2d24de2dbcde19998ec4b1cda564d21f862e1c16",
+        "facility/pdf-index.json": "633573f7a28a866f04e40690e313b5f98cc24cee2586a614b65b5b3088e71fc2",
+        "facility/profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "facility/qa.json": "70d78b101786b68047debed727d2649f7e8e64a780d3a4ed179e5589e3fa02bf",
+        "facility/routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e",
+        "manifest.json": "5821c7625ff73ac5a920b93cc466fb3a7a7a0fd7c109687196004cd2e5b33b8c",
+        "process/documentation.pdf": "7ab8700ea4556400d467531bcfc8535a8d4f82c5a2c01565296f7cc37127c7dc",
+        "process/index.json": "c8d09ca0bda0c655852d10b299ca614b8db37496023e280f53ad60756fd95a1b",
+        "process/qa.json": "809269f51561c36279d27ded53de0b1d2576daad8358c6c1d47e83e71ae45565",
+        "process/review.json": "f3f61fad3ce19698c0c78bc8324fb433c50c75fd645cb22357a6c8f00ea0d3b7",
+        "process/source.json": "a9d8912036982ed6d906d2cb7b5957de528d4af2a0861cbff7c10d10375b9761",
+        "qa.json": "7f2f1a3584849b4ee91fa78116ee75c599a285c29fa1484154746c485045ea46"
+      },
+      "process_pages": 24,
+      "artifact_status": "PASS",
+      "review_status": "FAIL",
+      "production_geometry": "FAIL",
+      "production_provenance": "FAIL",
+      "requirement_id": "entry_work_separation",
+      "requirement_sha256": "31daed7b208d57ec3b58f0476339cf397f77f2986e9a9034a9919f2c4234b9d6",
+      "maximum_contiguous_mm": 6000.0,
+      "required_contiguous_mm": null,
+      "include_windows": false
+    },
+    {
+      "case": "forbidden-pressure",
+      "kind": "rectangular",
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-rectangular",
+      "base": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\process-production-layout-facility-package-i552\\fixture-admission\\forbidden-pressure\\rectangular",
+      "source_sha256": "a9d8912036982ed6d906d2cb7b5957de528d4af2a0861cbff7c10d10375b9761",
+      "base_files": {
+        "building_01.bcf": "c0011eb7d0114e3f8aded15429b1b889816fb9b5b29feb46f56b86fbb8b537a6",
+        "building_01.coordination.json": "252c185229d2b6a302eb866cde2ed2e329ddf6156e08f9a93a159f3d7ce625f2",
+        "building_01.dxf": "25a5aa87a5056c307a1570527f2d94ffb52fccec17b524e626eb66da53d5c629",
+        "building_01.ifc": "de9f153739ad27b7d8467e7225afe3018693310022d5e45b8a730797ec991332",
+        "building_01.json": "9140bbe00f32e22ba9479dcc4ab8b95f25f60dfd8c4ff4c64c5de13cc5c9b916",
+        "building_01.pdf": "b3b0aab330e78b86dcfd2d49f0abb4a94984878a63f6bf38c6843292e846e277",
+        "building_01_report.pdf": "b0ce156b5fb3b43aca9ad313068dc263a1cb2158c846314dfd87d559f09ef4ae",
+        "building_01_sheets.pdf": "2df7da95690944394978d383b900dded71076a0a207aa55b30e2c24a6cdc0dc4",
+        "manifest.json": "e30e685cdee22853c1b2246d7a2ea6d0fed43f1bde06f71c7aa882fce44b1fde"
+      },
+      "package_files": {
+        "facility/building_01.bcf": "c0011eb7d0114e3f8aded15429b1b889816fb9b5b29feb46f56b86fbb8b537a6",
+        "facility/building_01.coordination.json": "252c185229d2b6a302eb866cde2ed2e329ddf6156e08f9a93a159f3d7ce625f2",
+        "facility/building_01.dxf": "25a5aa87a5056c307a1570527f2d94ffb52fccec17b524e626eb66da53d5c629",
+        "facility/building_01.ifc": "de9f153739ad27b7d8467e7225afe3018693310022d5e45b8a730797ec991332",
+        "facility/building_01.json": "9140bbe00f32e22ba9479dcc4ab8b95f25f60dfd8c4ff4c64c5de13cc5c9b916",
+        "facility/building_01.pdf": "b3b0aab330e78b86dcfd2d49f0abb4a94984878a63f6bf38c6843292e846e277",
+        "facility/building_01_report.pdf": "b0ce156b5fb3b43aca9ad313068dc263a1cb2158c846314dfd87d559f09ef4ae",
+        "facility/building_01_sheets.pdf": "2df7da95690944394978d383b900dded71076a0a207aa55b30e2c24a6cdc0dc4",
+        "facility/manifest.json": "e30e685cdee22853c1b2246d7a2ea6d0fed43f1bde06f71c7aa882fce44b1fde",
+        "manifest.json": "c9ebd28579d6952f282cce8f2e97994ee97f3610d2f10f8d97f70df7e00a169b",
+        "process/documentation.pdf": "2555540e5697f372edaa240825f79ee5da5b101a85fc02f1edb6362d821802a4",
+        "process/index.json": "51026055127e9312258eb84d81eb8ef82bd4772e7f3d7b4a345faba9ba0824b4",
+        "process/qa.json": "3225c83eaab98578c3551c82ab71036b8fa87b2b7a18d10c4db1fa5d097ff20c",
+        "process/review.json": "f3f61fad3ce19698c0c78bc8324fb433c50c75fd645cb22357a6c8f00ea0d3b7",
+        "process/source.json": "a9d8912036982ed6d906d2cb7b5957de528d4af2a0861cbff7c10d10375b9761",
+        "qa.json": "73f2a9ec92b0fdd8822a1633d1b20c2e71424ee0825fc10d177c6f706c1f63dd"
+      },
+      "process_pages": 24,
+      "artifact_status": "PASS",
+      "review_status": "FAIL",
+      "production_geometry": "FAIL",
+      "production_provenance": "FAIL",
+      "requirement_id": "entry_work_separation",
+      "requirement_sha256": "31daed7b208d57ec3b58f0476339cf397f77f2986e9a9034a9919f2c4234b9d6",
+      "maximum_contiguous_mm": 6000.0,
+      "required_contiguous_mm": null,
+      "include_windows": false
+    },
+    {
+      "case": "windows-true",
+      "kind": "orthogonal",
+      "destination": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\windows-true-orthogonal",
+      "base": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\out\\checkpoints\\process-production-layout-facility-package-i552\\window-original-base",
+      "source_sha256": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+      "base_files": {
+        "building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "dxf-index.json": "94914f884258e3a4b0b41f7b945363f20108710a744b6f8960b34de17c176689",
+        "equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility-predicates.json": "edd9ce9344bfa22823c056567f102ff340216a7af0008120185f7173a47c7deb",
+        "geometry.dxf": "dbb8f93f3aaee49f8f7570775c192d4a05388261f3454fc01c1bc185f796f4ca",
+        "geometry.ifc": "902a9119698df5350f58c3c24d2a9dad2c2b093a5792455a6f4817a86e4a0781",
+        "geometry.pdf": "80ad0f1b3255ccdf0c044ab47316ca61c4c3cc70f3b6e6383ff091f52d866118",
+        "ifc-index.json": "4a30aab1ca31befe74cac22555f06eb6a081a7a61e60ee1e70d6c99c81d0b64d",
+        "layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "manifest.json": "6d1f3158596ae2cc960d79541b58f178bfac6f0275aadf26b1f7f82056c298c8",
+        "pdf-index.json": "4a5d127c66a0a842583f2645d7303d6518f6590c1602a7909e769f8b0aaa500c",
+        "profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "qa.json": "f12e07debf09b40f4cb5d1819a3a559d01e0752fca169219b69c9f011446df69",
+        "routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e"
+      },
+      "package_files": {
+        "facility/building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "facility/dxf-index.json": "94914f884258e3a4b0b41f7b945363f20108710a744b6f8960b34de17c176689",
+        "facility/equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility/facility-predicates.json": "edd9ce9344bfa22823c056567f102ff340216a7af0008120185f7173a47c7deb",
+        "facility/geometry.dxf": "dbb8f93f3aaee49f8f7570775c192d4a05388261f3454fc01c1bc185f796f4ca",
+        "facility/geometry.ifc": "902a9119698df5350f58c3c24d2a9dad2c2b093a5792455a6f4817a86e4a0781",
+        "facility/geometry.pdf": "80ad0f1b3255ccdf0c044ab47316ca61c4c3cc70f3b6e6383ff091f52d866118",
+        "facility/ifc-index.json": "4a30aab1ca31befe74cac22555f06eb6a081a7a61e60ee1e70d6c99c81d0b64d",
+        "facility/layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "facility/manifest.json": "6d1f3158596ae2cc960d79541b58f178bfac6f0275aadf26b1f7f82056c298c8",
+        "facility/pdf-index.json": "4a5d127c66a0a842583f2645d7303d6518f6590c1602a7909e769f8b0aaa500c",
+        "facility/profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "facility/qa.json": "f12e07debf09b40f4cb5d1819a3a559d01e0752fca169219b69c9f011446df69",
+        "facility/routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e",
+        "manifest.json": "05551e00efcd4a6128aa775427d09ff9af0c6ca09fd32f9627b528dd8ada65ce",
+        "process/documentation.pdf": "96c5ae5b1198e5a42545ad00687e3961949c7b873872438be824d4f7f845075c",
+        "process/index.json": "fd81c3996f65aee688cbbfa31a83c5389930f42db86033f0f0888c88f6bbc6c3",
+        "process/qa.json": "2d25b0ef8092a669eba4e91672eac2aab330ba3a3ea59b0706e4a779b6779dfc",
+        "process/review.json": "9430b163a1f3b83c8eac485b2a6e3e48529b775ca5f08081f3e180a0379f624a",
+        "process/source.json": "8be030c6de62623d6b10d62e7b64960b2642095d40e86c34f3d17007a29384c7",
+        "qa.json": "279219d208ec07df6690d76508207cbfa382ddc661ba297bde7f5ff96534e0ec"
+      },
+      "process_pages": 22,
+      "artifact_status": "PASS",
+      "review_status": "UNKNOWN",
+      "production_geometry": "PASS",
+      "production_provenance": "PASS",
+      "requirement_id": "entry_work_contact",
+      "requirement_sha256": "30c153397c177679affb28daab4e5275dc6d9b58ac7a9d7b09bd469738030454",
+      "maximum_contiguous_mm": 6000.0,
+      "required_contiguous_mm": 1600.0,
+      "include_windows": true
+    }
+  ],
+  "tighter_readback": [
+    {
+      "case": "clear",
+      "kind": "orthogonal",
+      "status": "PASS",
+      "source_and_artifacts_unchanged": true,
+      "rerenders": 0
+    },
+    {
+      "case": "clear",
+      "kind": "rectangular",
+      "status": "PASS",
+      "source_and_artifacts_unchanged": true,
+      "rerenders": 0
+    },
+    {
+      "case": "forbidden-pressure",
+      "kind": "orthogonal",
+      "status": "PASS",
+      "source_and_artifacts_unchanged": true,
+      "rerenders": 0
+    },
+    {
+      "case": "forbidden-pressure",
+      "kind": "rectangular",
+      "status": "PASS",
+      "source_and_artifacts_unchanged": true,
+      "rerenders": 0
+    }
+  ],
+  "forged_rejections": [
+    {
+      "case": "false-verdict",
+      "status": "FAIL",
+      "issues": [
+        {
+          "status": "FAIL",
+          "code": "PROCESS_FACILITY_PACKAGE_READBACK",
+          "message": "Fresh current-source process document readback failed"
+        }
+      ],
+      "process_issues": [
+        {
+          "code": "PROCESS_DOCUMENT_READBACK",
+          "status": "FAIL",
+          "message": "Printed production identity, declaration, rights, local verdict or measured witness differs from fresh evidence"
+        }
+      ],
+      "copied_artifact_sha256": {
+        "facility/building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "facility/dxf-index.json": "d3a36dfb92d10c77878221838c86dfb291e5584c27cb54ab525a115af2414ce3",
+        "facility/equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility/facility-predicates.json": "6e101f51fddedcd02ab9abd7d54e2616ddcb8c071529f291464e291092a7a2c6",
+        "facility/geometry.dxf": "fa882f1279a27f964351f5d7482e0897d5656af51f765f619d8119072217e42f",
+        "facility/geometry.ifc": "b02edf4056aeebbbcac4886f35a2c788a23cce46b9bc0eb41896e59ee27672e4",
+        "facility/geometry.pdf": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+        "facility/ifc-index.json": "cf0e6630c76f2f656b90b6f7f4b050517040e29d39698e2897e8e0f002bfadc5",
+        "facility/layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "facility/manifest.json": "dbbe3a8d36228ef5bc76314d2d24de2dbcde19998ec4b1cda564d21f862e1c16",
+        "facility/pdf-index.json": "633573f7a28a866f04e40690e313b5f98cc24cee2586a614b65b5b3088e71fc2",
+        "facility/profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "facility/qa.json": "70d78b101786b68047debed727d2649f7e8e64a780d3a4ed179e5589e3fa02bf",
+        "facility/routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e",
+        "manifest.json": "9bf3c9eb72c6ae75c62733bfce43bc4d8f53b0929f843861e21d1291c9a2c214",
+        "process/documentation.pdf": "cc607d6055d4d0014cfa36870280692d3cf1a843773a4cd77da6e089b6439976",
+        "process/index.json": "a9b2f5435b817ac2ef34550ab3b3422d94fd0809f5adeb5c590518444f5ca6fb",
+        "process/qa.json": "0df971520484485d6873d9973292cba63605ee5f87b2ec54464e7b2b632ed647",
+        "process/review.json": "f3f61fad3ce19698c0c78bc8324fb433c50c75fd645cb22357a6c8f00ea0d3b7",
+        "process/source.json": "a9d8912036982ed6d906d2cb7b5957de528d4af2a0861cbff7c10d10375b9761",
+        "qa.json": "c38818c4486749616c5bb519d29506a1256784c0de43364151664946c1cc153c"
+      },
+      "originals_unchanged": true,
+      "preconstructor_rejection": false
+    },
+    {
+      "case": "saved-span",
+      "status": "FAIL",
+      "issues": [
+        {
+          "status": "FAIL",
+          "code": "PROCESS_FACILITY_PACKAGE_READBACK",
+          "message": "Fresh current-source process document readback failed"
+        }
+      ],
+      "process_issues": [
+        {
+          "code": "PROCESS_DOCUMENT_READBACK",
+          "status": "FAIL",
+          "message": "Saved review differs from freshly recomputed original source evidence"
+        }
+      ],
+      "copied_artifact_sha256": {
+        "facility/building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "facility/dxf-index.json": "d3a36dfb92d10c77878221838c86dfb291e5584c27cb54ab525a115af2414ce3",
+        "facility/equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility/facility-predicates.json": "6e101f51fddedcd02ab9abd7d54e2616ddcb8c071529f291464e291092a7a2c6",
+        "facility/geometry.dxf": "fa882f1279a27f964351f5d7482e0897d5656af51f765f619d8119072217e42f",
+        "facility/geometry.ifc": "b02edf4056aeebbbcac4886f35a2c788a23cce46b9bc0eb41896e59ee27672e4",
+        "facility/geometry.pdf": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+        "facility/ifc-index.json": "cf0e6630c76f2f656b90b6f7f4b050517040e29d39698e2897e8e0f002bfadc5",
+        "facility/layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "facility/manifest.json": "dbbe3a8d36228ef5bc76314d2d24de2dbcde19998ec4b1cda564d21f862e1c16",
+        "facility/pdf-index.json": "633573f7a28a866f04e40690e313b5f98cc24cee2586a614b65b5b3088e71fc2",
+        "facility/profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "facility/qa.json": "70d78b101786b68047debed727d2649f7e8e64a780d3a4ed179e5589e3fa02bf",
+        "facility/routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e",
+        "manifest.json": "7ac4a2f35db3d4d86890d00bc8f9e52974746d74a9e9d91bf7ffcbcbb732ca81",
+        "process/documentation.pdf": "7ab8700ea4556400d467531bcfc8535a8d4f82c5a2c01565296f7cc37127c7dc",
+        "process/index.json": "9ad711a636d8ca9b6f84bac1d89efe4508a9c8315eafc2b88a23148b706a9bc2",
+        "process/qa.json": "970ffa20cf00896e5b1e37b8a5e94520a6e39d4b25b2891233c253ba6553eba7",
+        "process/review.json": "71a8afb4e492aff1f82910f01cc397a5659224f87a249de75a68b9bfaf1fece8",
+        "process/source.json": "a9d8912036982ed6d906d2cb7b5957de528d4af2a0861cbff7c10d10375b9761",
+        "qa.json": "3ac194292bdcfda6e6c461f3065ca3faefe6fd93195adc648031bf9694451998"
+      },
+      "originals_unchanged": true,
+      "preconstructor_rejection": false
+    },
+    {
+      "case": "combined-text",
+      "status": "FAIL",
+      "issues": [
+        {
+          "status": "FAIL",
+          "code": "PROCESS_FACILITY_PACKAGE_READBACK",
+          "message": "Aggregate actual facility and process PDF text exceeds its outer bound before geometry"
+        }
+      ],
+      "process_issues": [],
+      "copied_artifact_sha256": {
+        "facility/building.json": "42ea95ae49012803e910e6d68349cd3810595f839f8090e62074e92fbabed7e6",
+        "facility/dxf-index.json": "d3a36dfb92d10c77878221838c86dfb291e5584c27cb54ab525a115af2414ce3",
+        "facility/equipment.json": "9d910182a9cf984da398d7a66e4968e039e80fe79a2a45311f77e3ba0b3cb636",
+        "facility/facility-predicates.json": "6e101f51fddedcd02ab9abd7d54e2616ddcb8c071529f291464e291092a7a2c6",
+        "facility/geometry.dxf": "fa882f1279a27f964351f5d7482e0897d5656af51f765f619d8119072217e42f",
+        "facility/geometry.ifc": "b02edf4056aeebbbcac4886f35a2c788a23cce46b9bc0eb41896e59ee27672e4",
+        "facility/geometry.pdf": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+        "facility/ifc-index.json": "cf0e6630c76f2f656b90b6f7f4b050517040e29d39698e2897e8e0f002bfadc5",
+        "facility/layout.json": "597fd3678d3b1e91588c5120361bdcb082029aee48ec0476bae26e431d4b0978",
+        "facility/manifest.json": "dbbe3a8d36228ef5bc76314d2d24de2dbcde19998ec4b1cda564d21f862e1c16",
+        "facility/pdf-index.json": "633573f7a28a866f04e40690e313b5f98cc24cee2586a614b65b5b3088e71fc2",
+        "facility/profile.json": "c393346d66bec452aa80a2de543f9a282071cd6f9e04978f2a42efa212390197",
+        "facility/qa.json": "70d78b101786b68047debed727d2649f7e8e64a780d3a4ed179e5589e3fa02bf",
+        "facility/routing.json": "18a08e2a6a64fe8f8b178453908493eec71b62c1250d47734466736c98c6431e",
+        "manifest.json": "ef2df72bc03406153e44eee2fc8ef82ae92a1f67c089a5a693c7d7453268c23b",
+        "process/documentation.pdf": "7ab8700ea4556400d467531bcfc8535a8d4f82c5a2c01565296f7cc37127c7dc",
+        "process/index.json": "c8d09ca0bda0c655852d10b299ca614b8db37496023e280f53ad60756fd95a1b",
+        "process/qa.json": "809269f51561c36279d27ded53de0b1d2576daad8358c6c1d47e83e71ae45565",
+        "process/review.json": "f3f61fad3ce19698c0c78bc8324fb433c50c75fd645cb22357a6c8f00ea0d3b7",
+        "process/source.json": "a9d8912036982ed6d906d2cb7b5957de528d4af2a0861cbff7c10d10375b9761",
+        "qa.json": "495a8e142cfc14e25573b3458d736a3a72dc0f07f0d6d6fd177bc62d1b80c9c3"
+      },
+      "originals_unchanged": true,
+      "preconstructor_rejection": true
+    }
+  ],
+  "old_baseline_equality": true,
+  "historical_package_limit_fields": 59,
+  "historical_document_limit_fields": 48,
+  "historical_saved_packages": [
+    {
+      "version": "0.1",
+      "qa_sha256": "33774ebb5f98123655429ab5eea709f878347a9d5b655fd6589f030ebb9a0895",
+      "source_sha256": "f2197fbb9bdbd09359195953ad63294c83f19541e004b9a43a1a416f185853a6"
+    },
+    {
+      "version": "0.2",
+      "qa_sha256": "80abc915a8abcae4d9ad0d1e46c9f94157a076e2ba454d5e2448d90ffae97e91",
+      "source_sha256": "80bf60f0382eec11822d83796f283c0cb68847774165c6a1e9da63ce1f1d0057"
+    },
+    {
+      "version": "0.2",
+      "qa_sha256": "623d897bdaa2488a410ca5ae324cc98c6b7b3e8d4dcce2a4ed44462f6f8898c8",
+      "source_sha256": "80bf60f0382eec11822d83796f283c0cb68847774165c6a1e9da63ce1f1d0057"
+    },
+    {
+      "version": "0.2",
+      "qa_sha256": "61c332ea5ccbb90d44301ed014e39aff79407212c3bcffd89962afd79dd89f14",
+      "source_sha256": "2833370badb61c3c9da3c994056520f773cf2e9efd3510ac05e10ba3ee42c77c"
+    },
+    {
+      "version": "0.2",
+      "qa_sha256": "c38fce0d556caebb021079f09c327ac6320524f348f1eb0d95082c1ed876c132",
+      "source_sha256": "2833370badb61c3c9da3c994056520f773cf2e9efd3510ac05e10ba3ee42c77c"
+    }
+  ],
+  "historical_baseline_sha256": "b1244669c3438e0771eb701e509db8720728950797fe191b91eeb23e27e821b5",
+  "cp_calls": 0,
+  "visual_inspection": {
+    "status": "ROOT_VISUALLY_INSPECTED",
+    "dpi": 100,
+    "distinct_physical_pdfs": 10,
+    "pages_rendered": 129,
+    "contact_sheets_inspected": 15,
+    "full_pages_inspected": [
+      {
+        "label": "clear-orthogonal-process-documentation",
+        "page_number": 20
+      },
+      {
+        "label": "forbidden-pressure-orthogonal-process-documentation",
+        "page_number": 22
+      },
+      {
+        "label": "forbidden-pressure-orthogonal-process-documentation",
+        "page_number": 23
+      },
+      {
+        "label": "forbidden-pressure-orthogonal-process-documentation",
+        "page_number": 24
+      },
+      {
+        "label": "windows-true-orthogonal-process-documentation",
+        "page_number": 22
+      },
+      {
+        "label": "clear-rectangular-facility-building_01",
+        "page_number": 1
+      }
+    ],
+    "observations": "Complete new process page inventories, readable original requirement identities/rights/witnesses and no observed new process clipping or footer/legend collision; known FAIL/UNKNOWN and literal source poses retained",
+    "inherited_native_limitation": "The unchanged rectangular main PDF work-room caption crosses an equipment outline. General room annotation placement remains open; supplied facility bytes are preserved",
+    "scope": "Five supplied software fixture packages at 100 dpi; not professional drawing or engineering acceptance"
+  },
+  "distinct_physical_pdfs": [
+    {
+      "label": "clear-orthogonal-facility-geometry",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-orthogonal\\facility\\geometry.pdf",
+      "pdf_sha256": "b65c392ec45d97159f7db4943490fc24208c2b4a474efcba10ce03c48373e4db",
+      "pages": 2,
+      "aliases": [
+        {
+          "case": "clear",
+          "kind": "orthogonal",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-orthogonal\\facility\\geometry.pdf",
+          "relative_path": "facility/geometry.pdf"
+        },
+        {
+          "case": "forbidden-pressure",
+          "kind": "orthogonal",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-orthogonal\\facility\\geometry.pdf",
+          "relative_path": "facility/geometry.pdf"
+        }
+      ]
+    },
+    {
+      "label": "clear-orthogonal-process-documentation",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-orthogonal\\process\\documentation.pdf",
+      "pdf_sha256": "37a508d73ac341553acf3e5edf616324f530e306ef36908d4da0d05c7fc5eca7",
+      "pages": 21,
+      "aliases": [
+        {
+          "case": "clear",
+          "kind": "orthogonal",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-orthogonal\\process\\documentation.pdf",
+          "relative_path": "process/documentation.pdf"
+        }
+      ]
+    },
+    {
+      "label": "clear-rectangular-facility-building_01",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\facility\\building_01.pdf",
+      "pdf_sha256": "b3b0aab330e78b86dcfd2d49f0abb4a94984878a63f6bf38c6843292e846e277",
+      "pages": 1,
+      "aliases": [
+        {
+          "case": "clear",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\facility\\building_01.pdf",
+          "relative_path": "facility/building_01.pdf"
+        },
+        {
+          "case": "forbidden-pressure",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-rectangular\\facility\\building_01.pdf",
+          "relative_path": "facility/building_01.pdf"
+        }
+      ]
+    },
+    {
+      "label": "clear-rectangular-facility-building_01_report",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\facility\\building_01_report.pdf",
+      "pdf_sha256": "b0ce156b5fb3b43aca9ad313068dc263a1cb2158c846314dfd87d559f09ef4ae",
+      "pages": 8,
+      "aliases": [
+        {
+          "case": "clear",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\facility\\building_01_report.pdf",
+          "relative_path": "facility/building_01_report.pdf"
+        },
+        {
+          "case": "forbidden-pressure",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-rectangular\\facility\\building_01_report.pdf",
+          "relative_path": "facility/building_01_report.pdf"
+        }
+      ]
+    },
+    {
+      "label": "clear-rectangular-facility-building_01_sheets",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\facility\\building_01_sheets.pdf",
+      "pdf_sha256": "2df7da95690944394978d383b900dded71076a0a207aa55b30e2c24a6cdc0dc4",
+      "pages": 4,
+      "aliases": [
+        {
+          "case": "clear",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\facility\\building_01_sheets.pdf",
+          "relative_path": "facility/building_01_sheets.pdf"
+        },
+        {
+          "case": "forbidden-pressure",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-rectangular\\facility\\building_01_sheets.pdf",
+          "relative_path": "facility/building_01_sheets.pdf"
+        }
+      ]
+    },
+    {
+      "label": "clear-rectangular-process-documentation",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\process\\documentation.pdf",
+      "pdf_sha256": "848ab2d7b6b1c0a3f9cf34eb1f7107a77ab6b29ad6ebf822aa2bf8c8a04f5c37",
+      "pages": 21,
+      "aliases": [
+        {
+          "case": "clear",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\clear-rectangular\\process\\documentation.pdf",
+          "relative_path": "process/documentation.pdf"
+        }
+      ]
+    },
+    {
+      "label": "forbidden-pressure-orthogonal-process-documentation",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-orthogonal\\process\\documentation.pdf",
+      "pdf_sha256": "7ab8700ea4556400d467531bcfc8535a8d4f82c5a2c01565296f7cc37127c7dc",
+      "pages": 24,
+      "aliases": [
+        {
+          "case": "forbidden-pressure",
+          "kind": "orthogonal",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-orthogonal\\process\\documentation.pdf",
+          "relative_path": "process/documentation.pdf"
+        }
+      ]
+    },
+    {
+      "label": "forbidden-pressure-rectangular-process-documentation",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-rectangular\\process\\documentation.pdf",
+      "pdf_sha256": "2555540e5697f372edaa240825f79ee5da5b101a85fc02f1edb6362d821802a4",
+      "pages": 24,
+      "aliases": [
+        {
+          "case": "forbidden-pressure",
+          "kind": "rectangular",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\forbidden-pressure-rectangular\\process\\documentation.pdf",
+          "relative_path": "process/documentation.pdf"
+        }
+      ]
+    },
+    {
+      "label": "windows-true-orthogonal-facility-geometry",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\windows-true-orthogonal\\facility\\geometry.pdf",
+      "pdf_sha256": "80ad0f1b3255ccdf0c044ab47316ca61c4c3cc70f3b6e6383ff091f52d866118",
+      "pages": 2,
+      "aliases": [
+        {
+          "case": "windows-true",
+          "kind": "orthogonal",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\windows-true-orthogonal\\facility\\geometry.pdf",
+          "relative_path": "facility/geometry.pdf"
+        }
+      ]
+    },
+    {
+      "label": "windows-true-orthogonal-process-documentation",
+      "pdf": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\windows-true-orthogonal\\process\\documentation.pdf",
+      "pdf_sha256": "96c5ae5b1198e5a42545ad00687e3961949c7b873872438be824d4f7f845075c",
+      "pages": 22,
+      "aliases": [
+        {
+          "case": "windows-true",
+          "kind": "orthogonal",
+          "path": "C:\\Users\\user\\projects\\AI-Layout-Configurator-for-Construction\\output\\pdf\\process-production-layout-i552\\cases\\windows-true-orthogonal\\process\\documentation.pdf",
+          "relative_path": "process/documentation.pdf"
+        }
+      ]
+    }
+  ],
+  "full_suite_run": false,
+  "background_execution": false,
+  "benchmark_run": false,
+  "full_ci_dispatched": false,
+  "changed_full_ci_acceptance": "PENDING",
+  "document_status": "DRAFT",
+  "document_ok": false,
+  "full_facility_validation": {
+    "status": "UNKNOWN",
+    "ok": false
+  },
+  "full_process_validation": "UNKNOWN",
+  "engineering_acceptance": "PENDING",
+  "authenticated_approval": "UNKNOWN",
+  "remaining_scope": [
+    "Production-enforcing generation with original binding and exact contact semantics",
+    "Complete scenarios and 3D installation",
+    "Cycle I reference-facility and external engineering acceptance",
+    "Receiving-tool review and main drawing portability"
+  ],
+  "raw_evidence_local": "out/checkpoints/process-production-layout-facility-package-i552/"
+}
