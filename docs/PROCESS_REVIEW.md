@@ -63,6 +63,16 @@ Regressions cover source identity, actual permission and geometry failures,
 missing library evidence, exact placement/request admission, source budgets,
 world precision and bounded originating-failure retention.
 
-Local verification details and the paused continuation state are recorded under
-`out/checkpoints/process-review-i51/`. A fresh regular installed-wheel check
-remains a separate verification before shipping this new review API.
+Checkpoint I.5.1.1 verifies the exact committed `34abb9e` API and bundled schema
+in a regular installed wheel from a foreign working directory. The supplied
+consistent example retains UNKNOWN with resolved pressure PASS; an actual
+three-edge pressure cycle retains FAIL. A 4,096-byte delivery budget preserves
+the originating source failure in 2,940 bytes. Eight schedules, five fresh
+reports, common identities and unchanged source bytes are checked.
+
+Local verification and the earlier pause record are retained under
+`out/checkpoints/process-review-i51/`; resumed installed-wheel evidence is
+`installed-wheel-verification-resumed.json`. Wheel SHA-256 is
+`f00676637087e0e587bff24270949a3ec1eda20a8792e9a1c58adc8a0592a863`.
+The user explicitly resumed work on 2026-10-14. PDF/overlay delivery and complete
+validated bundle integration remain separate requirements.

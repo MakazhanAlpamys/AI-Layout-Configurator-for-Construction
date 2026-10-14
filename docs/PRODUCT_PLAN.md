@@ -1,12 +1,20 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint I.5.1.1 verifies the exact `34abb9e` process-review API and offline
+schema in a regular installed wheel outside the checkout. Consistent UNKNOWN,
+actual pressure-cycle FAIL and bounded originating-failure retention pass,
+with common schedule/report identities and unchanged sources.
+[Evidence scope](PROCESS_REVIEW.md). The user resumed work on 2026-10-14;
+PDF/overlays and full facility bundle integration remain open.
+
 Checkpoint I.5.1 synchronizes eight JSON schedules and five fresh scoped
 process reports from one exact supplied revision. Source identities, strict
 equipment/request admission and combined source budgets remain mandatory;
 bounded delivery preserves originating failures. A single-file check passes
 21 tests and 26 subtests. [Contract](PROCESS_REVIEW.md). Installed-wheel
 verification, PDF/overlay delivery and complete bundle integration remain open.
-Work is paused at the user's request after this checkpoint.
+Work was paused at the user's request after this checkpoint and subsequently
+resumed explicitly; I.5.1.1 records the installed-wheel verification.
 
 Checkpoint H.3.6.14 preserves the exact finite-family obstruction from saved
 physical80 evidence: all 1,664 receiving-bridge joins conflict with separation,

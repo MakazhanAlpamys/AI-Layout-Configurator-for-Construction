@@ -145,6 +145,8 @@ their own evidence. The old GitHub billing blocker is no longer current.
 | H.3.6.14 | Saved physical80 finite-family obstruction | Exact captured family has 1,664 receiving-bridge joins incompatible with clean/staff separation; closest gap 1,600 mm. Prior concrete 80-room witness fails only the original receiving bridge within its room/zone check scope. Local append examples and support bounds do not prove augmented feasibility. | Fresh six saved byte identities, canonical source/family and ordered shape hashes, 1,664 saved inequalities, 80 saved coordinate identities and source pointers PASS; no new geometry, CP, producer, test or full CI run. [Compact evidence](acceptance/9632549-family-obstruction.json). | complete 2026-10-14 for derivative evidence; original-source feasibility and full scaling acceptance open |
 | I.5.1 | Synchronized supplied process schedules and evidence | One original revision produces eight detached JSON schedules and five fresh scoped reports with common component identities. Exact equipment frames/request IDs and combined production/library source budgets precede geometry even without a library. Embedded source identity is retained; bounded incomplete delivery preserves originating FAIL evidence. | Actual missing-module and numerical/admission/delivery RED regressions preceded fixes. Fresh root single-file `test_process_review.py`: 21 tests / 26 subtests PASS in 4.09 s. No full suite, solver, benchmark or wheel build at this pause. [Contract](PROCESS_REVIEW.md). | local core complete 2026-10-14; installed-wheel verification, PDF/overlays and full bundle attachment pending; user-requested pause |
 
+| I.5.1.1 | Regular installed process review | Exact committed API and offline schema run outside the checkout. Eight schedules and five fresh reports share identities; original source bytes survive consistent review, pressure conflict and bounded failure delivery. | Fresh regular wheel from `34abb9e`: consistent UNKNOWN/resolved pressure PASS; actual three-edge cycle FAIL; 4096-byte cap retains original source/edge failure in 2940 bytes. Exact module/schema hashes and wheel SHA are retained. [Scope](PROCESS_REVIEW.md). No full suite or benchmark. | complete 2026-10-14 for installed API; PDF/overlays/full bundle integration open; explicitly resumed |
+
 The repaired production-install scale series passed against `35eff27`:
 [run 38282006413](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38282006413).
 All six jobs succeeded; detailed downloaded evidence is recorded in QA.5.
@@ -187,8 +189,8 @@ Cyrillic text.
   CLI, typed transfer sidecars/actual checks, sourced finite equipment cards/local
   projection, independent environment/scenario declarations, pressure checks
   and local equipment scenario geometry checks exist. Source-bound synchronized
-  JSON schedules and fresh process evidence exist; installed-wheel verification
-  for this new API remains pending. Agreed engineering program, unified producer enforcement, complete
+  JSON schedules and fresh process evidence exist, with a verified regular
+  installed review API. Agreed engineering program, unified producer enforcement, complete
   scenario/installation paths, synchronized drawings/PDF/bundle delivery, medical-plastics
   benchmark and change scenario remain.
 
