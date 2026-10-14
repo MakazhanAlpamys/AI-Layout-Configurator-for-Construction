@@ -142,6 +142,11 @@ source/archive/wheel/input/PDF identities and actual results. Raw evidence stays
 local under `out/checkpoints/process-production-layout-documentation-i551/`.
 No full suite, benchmark, background task or full CI dispatch is run here.
 
+The pushed `1222423` source checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38614685540)
+in thirty-four seconds including setup. Full acceptance jobs are skipped;
+the pending changed full acceptance remains separate.
+
 Artifact QA PASS establishes consistency with supplied evidence. The
 documents still remain DRAFT with `ok=False`; full facility validation stays
 UNKNOWN, engineering acceptance PENDING and authenticated approval UNKNOWN.

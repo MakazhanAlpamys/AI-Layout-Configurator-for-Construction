@@ -187,6 +187,11 @@ acceptance at QA.23 remains pending.
 
 ## Remaining implementation
 
+The I.5.5.1 `1222423` push passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38614685540)
+in thirty-four seconds including setup; all full jobs are skipped. Complete
+collection and partition checks do not replace changed full acceptance.
+
 The I.4.3.2 `357ddce` push passes
 [quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38590587537)
 in thirty-eight seconds including setup; full jobs are skipped. No changed

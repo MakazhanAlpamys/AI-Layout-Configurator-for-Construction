@@ -8,6 +8,11 @@ checks, six ordinary-wheel examples and visual inspection of 134 pages pass.
 [Scope](PROCESS_PRODUCTION_LAYOUT_DOCUMENTATION.md). New-format outer attachment,
 producer enforcement and complete Cycle I acceptance remain open.
 
+The `1222423` source checkpoint passes
+[quick CI](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38614685540)
+in thirty-four seconds including setup. Full jobs are skipped; the changed
+full acceptance gate remains pending.
+
 Checkpoint I.4.3.2 integrates fresh actual room requirements through an explicit
 closed version0.2 process reader. Original raw identities, whole scalar binding,
 shared preconstructor geometry/vertex/node/full UTF work and one delivery cap
