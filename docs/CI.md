@@ -95,3 +95,19 @@ The change uses six test VMs instead of four and includes different source,
 measurement establishes the observed shorter wait, not causal attribution or
 a guaranteed reduction in aggregate billed runner minutes. Later source edits
 are outside this pinned acceptance.
+
+QA.23 repairs an obsolete test expectation exposed by the already completed
+scheduled `34abb9e` run. Both core jobs report exactly one failure: the workflow
+test still expects adjacent filenames in the old multi-file pytest command.
+It now parses the quick pytest commands, requires one file per invocation,
+sequential execution and exactly the same four contract files. The workflow
+and full acceptance gates are unchanged. Fresh single-file verification passes
+10 tests and 15 subtests in 4.28 s; no full rerun is started.
+[Pinned negative evidence](acceptance/34abb9e-ci-failure.json) retains both log
+identities and all completed job outcomes. Changed full acceptance is pending.
+
+The subsequent `4217633` push has successful quick CI:
+[run 38540041353](https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38540041353).
+Its one quick job takes 44 seconds including setup; queue time is separate.
+Complete collection/partition and four sequential single-file gates pass.
+Full jobs are skipped for this push, so it is not full acceptance evidence.

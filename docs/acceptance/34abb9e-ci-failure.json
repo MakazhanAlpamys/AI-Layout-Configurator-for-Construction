@@ -1,0 +1,102 @@
+{
+  "evidence_version": 1,
+  "scope": "Verified negative scheduled CI evidence; not full acceptance",
+  "commit": "34abb9e564bf7b43f7aca5503a20d7bfe8b6fd9d",
+  "run_id": 38523528637,
+  "url": "https://github.com/MakazhanAlpamys/AI-Layout-Configurator-for-Construction/actions/runs/38523528637",
+  "event": "schedule",
+  "status": "completed",
+  "conclusion": "failure",
+  "created_utc": "2026-10-14T06:39:50Z",
+  "completed_utc": "2026-10-14T06:46:42Z",
+  "workflow_elapsed_seconds": 412,
+  "jobs": [
+    {
+      "id": 115718479311,
+      "name": "pharma-cleanroom",
+      "conclusion": "success"
+    },
+    {
+      "id": 115718479422,
+      "name": "tests (ubuntu-latest, draft-bundles)",
+      "conclusion": "success"
+    },
+    {
+      "id": 115718479457,
+      "name": "tests (windows-latest, draft-bundles)",
+      "conclusion": "success"
+    },
+    {
+      "id": 115718479491,
+      "name": "api-container",
+      "conclusion": "success"
+    },
+    {
+      "id": 115718479501,
+      "name": "tests (windows-latest, core)",
+      "conclusion": "failure"
+    },
+    {
+      "id": 115718479506,
+      "name": "tests (ubuntu-latest, exchange-and-cli)",
+      "conclusion": "success"
+    },
+    {
+      "id": 115718479536,
+      "name": "tests (ubuntu-latest, core)",
+      "conclusion": "failure"
+    },
+    {
+      "id": 115718479601,
+      "name": "tests (windows-latest, exchange-and-cli)",
+      "conclusion": "success"
+    },
+    {
+      "id": 115718480751,
+      "name": "Quick contracts and complete test collection",
+      "conclusion": "skipped"
+    }
+  ],
+  "failed_core_jobs": [
+    {
+      "job_id": 115718479536,
+      "name": "tests (ubuntu-latest, core)",
+      "tests_run": 1252,
+      "failure_count": 1,
+      "skipped": 4,
+      "unittest_elapsed_seconds": 208.903,
+      "log_file": "ubuntu-core.log",
+      "log_file_sha256": "f988f3117b54ff38c70c49c05184e4fad2d5fdb35e682d61e7321f2cf0aed922",
+      "failure_line": 1636
+    },
+    {
+      "job_id": 115718479501,
+      "name": "tests (windows-latest, core)",
+      "tests_run": 1252,
+      "failure_count": 1,
+      "skipped": 8,
+      "unittest_elapsed_seconds": 315.604,
+      "log_file": "windows-core.log",
+      "log_file_sha256": "7e23a63f5d69bf5b4bb8e8efe3e2153619c490bb230eda2c8c8168f0fbadda11",
+      "failure_line": 1629
+    }
+  ],
+  "shared_failure": {
+    "test_id": "test_ci_test_shards.CITestShardTests.test_full_workflow_matrix_artifacts_and_independent_pharma_preserve_acceptance_gates",
+    "source_location": "tests/test_ci_test_shards.py:277",
+    "cause": "QA.22 changed the quick pytest gate from one command containing four files to four sequential one-file commands. The workflow preservation test still requires an obsolete contiguous pair of filenames in the joined command text.",
+    "platform_specific": false
+  },
+  "local_repair": {
+    "checkpoint": "QA.23",
+    "change": "Parse single-file pytest commands; require exactly the four existing files and sequential execution",
+    "command": ".venv/Scripts/python.exe -m pytest tests/test_ci_test_shards.py -q --tb=short",
+    "tests_passed": 10,
+    "subtests_passed": 15,
+    "seconds": 4.28,
+    "initial_red_seconds": 0.19,
+    "workflow_modified": false,
+    "full_ci_rerun": false,
+    "changed_full_acceptance": "PENDING"
+  }
+}

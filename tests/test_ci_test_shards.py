@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import shlex
 import subprocess
 import sys
 import tempfile
@@ -274,7 +275,19 @@ class CITestShardTests(unittest.TestCase):
         self.assertIn("--collect-only", quick)
         self.assertIn("--verify-partition", quick)
         self.assertNotIn("--shard", quick)
-        self.assertIn("tests/test_schema.py tests/test_building.py", quick)
+        contract_files = []
+        for step in jobs["quick-contracts"]["steps"]:
+            for line in step.get("run", "").splitlines():
+                arguments = shlex.split(line)
+                if arguments[:3] != ["python", "-m", "pytest"] or "--collect-only" in arguments:
+                    continue
+                selected = [value for value in arguments[3:] if value.startswith("tests/")]
+                self.assertEqual(len(selected), 1, "Quick contract checks must execute one file per invocation")
+                self.assertFalse({";", "&&", "&", "||"} & set(arguments),
+                                 "Quick contract commands must retain sequential execution")
+                contract_files.extend(selected)
+        self.assertCountEqual(contract_files, ["tests/test_schema.py", "tests/test_building.py",
+                                              "tests/test_result_geometry.py", "tests/test_orthogonal.py"])
 
 
 if __name__ == "__main__":

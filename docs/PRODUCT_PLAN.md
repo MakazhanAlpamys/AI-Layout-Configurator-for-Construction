@@ -1,5 +1,11 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.23 repairs the obsolete combined-command workflow assertion
+found in scheduled `34abb9e` CI. Exact single-file contract coverage and
+sequential execution are checked; ten tests/15 subtests pass locally.
+[Pinned negative evidence](acceptance/34abb9e-ci-failure.json) remains distinct
+from successful 44-second quick CI at `4217633`. No full rerun is launched.
+
 Checkpoint I.4.2 checks a supplied source-bound whole-equipment 2D installation
 path through actual explicit openings, walls, staging obstacles and neighboring
 bodies/operating reservations. Unsupported motion stays UNKNOWN while known

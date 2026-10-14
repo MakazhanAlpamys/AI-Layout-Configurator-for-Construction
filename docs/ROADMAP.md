@@ -1,5 +1,9 @@
 # Original MVP roadmap archive
 
+Checkpoint QA.23 repairs the workflow test's obsolete combined pytest command
+expectation, preserving current-product coverage and sequential execution.
+Pinned negative full CI and successful quick CI stay distinct; archive unchanged.
+
 Checkpoint I.4.2 supplies current-product source-bound whole-body installation
 path review with actual opening and collision evidence. Local and installed
 verification pass; full 3D/scenario and external acceptance stay separate.
