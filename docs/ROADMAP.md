@@ -421,6 +421,11 @@ vertical cores, structural grid lines, a stair check and a shared IFC were added
 
 ## Fixed project boundaries
 
+Checkpoint QA.24 repairs future rectangular main-PDF equipment captions using
+actual font boxes and bounded placement, with unchanged literal geometry and
+retained old artifact evidence. It does not change the archived MVP or establish
+general drawing readability, full facility or professional acceptance.
+
 Checkpoint B.11.1 adds an atomic canonical polygon DXF/PDF/IFC draft bundle and
 independent saved-source/readback QA. This extends cycle B without changing the
 archived residential MVP or claiming engineering acceptance.

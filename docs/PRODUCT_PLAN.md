@@ -1,5 +1,13 @@
 # Product Plan: Regulated Facility Layout Compiler
 
+Checkpoint QA.24 repairs actual rectangular main-PDF equipment lettering:
+room/dimension/font reservations, bounded captions and guide strips protect
+later lettering while literal geometry and clear anchors remain fixed.
+Six focused tests, historical exports/symbols and ordinary installed old/new
+wheel witnesses pass; all seven pages are rendered and inspected.
+[Scope](PDF_EQUIPMENT_LABELS.md). General dense annotation, multilingual main
+text and full professional acceptance remain separate.
+
 Checkpoint I.4.3.1 independently checks actual production room adjacency:
 one contiguous project-width span, forbidden positive contact and actual
 overlap, with original requirement/source identities and bounded failures.

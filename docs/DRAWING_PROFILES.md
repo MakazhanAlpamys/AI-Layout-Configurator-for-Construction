@@ -16,6 +16,11 @@ generation, DXF/PDF projection, bundle indexing and cache fingerprinting. Curren
 canonical serialization retains every effective setting. Source geometry,
 equipment placement, routes and rule thresholds are unaffected.
 
+Main rectangular PDFs use bounded source-font reservations to separate
+equipment captions from room lettering and earlier equipment guides. Clear
+anchors remain fixed; unplaceable identifiers reject before saving.
+[Placement and verified scope](PDF_EQUIPMENT_LABELS.md).
+
 | Preset | Room dimensions | Equipment service envelopes | Flow labels and legend | Structural grid |
 | --- | --- | --- | --- | --- |
 | `coordination_review` | shown | shown | shown | shown |

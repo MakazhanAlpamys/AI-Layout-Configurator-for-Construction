@@ -273,18 +273,29 @@ def export_pdf(
     if chains:
         draw_dimension_chains_pdf(pdf, point, chains)
 
+    reserved = []
     for room in spec.rooms:
         rect = result.placements[room.id]
         x, y = point(rect.x, rect.y)
-        pdf.setFont("Helvetica", max(5, min(11, rect.width * scale / 16)))
-        pdf.drawCentredString(x + rect.width * scale / 2, y + rect.height * scale / 2, f"{room.id} ({rect.area_m2:.1f} m2)")
+        size = max(5, min(11, rect.width * scale / 16))
+        center_x, center_y = x + rect.width * scale / 2, y + rect.height * scale / 2
+        text = f"{room.id} ({rect.area_m2:.1f} m2)"
+        pdf.setFont("Helvetica", size)
+        pdf.drawCentredString(center_x, center_y, text)
+        reserved.append(
+            _pdf_centered_text_box(pdf, center_x, center_y, text, "Helvetica", size)
+        )
         if drawing.show_room_dimensions:
             pdf.setFont("Helvetica", 4.5)
             pdf.setFillColorRGB(0.35, 0.35, 0.35)
+            dimension = f"{rect.width:.0f} x {rect.height:.0f} mm"
             pdf.drawCentredString(
-                x + rect.width * scale / 2,
+                center_x,
                 y + 5,
-                f"{rect.width:.0f} x {rect.height:.0f} mm",
+                dimension,
+            )
+            reserved.append(
+                _pdf_centered_text_box(pdf, center_x, y + 5, dimension, "Helvetica", 4.5)
             )
             pdf.setFillColorRGB(0.0, 0.0, 0.0)
 
@@ -296,36 +307,21 @@ def export_pdf(
             pdf.line(*point(opening.start, opening.fixed), *point(opening.end, opening.fixed))
 
     if equipment is not None:
-        _draw_equipment_pdf(
+        equipment_annotations = _draw_equipment_pdf(
             pdf,
             point,
             equipment,
             equipment_specs or (),
             show_clearance=drawing.show_equipment_clearance,
             symbols=symbols,
+            reserved=reserved,
+            plot_bounds=(
+                origin_x, origin_y, origin_x + spec.boundary.width_mm * scale,
+                origin_y + spec.boundary.height_mm * scale,
+            ),
         )
+        reserved.extend(equipment_annotations)
     if flows is not None:
-        reserved = []
-        for room in spec.rooms:
-            rect = result.placements[room.id]
-            room_x, room_y = point(rect.x, rect.y)
-            size = max(5, min(11, rect.width * scale / 16))
-            text = f"{room.id} ({rect.area_m2:.1f} m2)"
-            width = pdf.stringWidth(text, "Helvetica", size)
-            center_x = room_x + rect.width * scale / 2
-            center_y = room_y + rect.height * scale / 2
-            reserved.append((center_x - width / 2, center_y - size * 0.3, center_x + width / 2, center_y + size))
-            if drawing.show_room_dimensions:
-                dimension = f"{rect.width:.0f} x {rect.height:.0f} mm"
-                dimension_width = pdf.stringWidth(dimension, "Helvetica", 4.5)
-                reserved.append(
-                    (
-                        center_x - dimension_width / 2,
-                        room_y + 5 - 1.5,
-                        center_x + dimension_width / 2,
-                        room_y + 5 + 4.5,
-                    )
-                )
         _draw_flows_pdf(
             pdf,
             point,
@@ -563,6 +559,62 @@ def _draw_structural_grid_dxf(modelspace, spec: LayoutIR, grid: StructuralGridSp
         )
 
 
+def _pdf_centered_text_box(pdf, x, y, text, font, size):
+    """Measure actual PDF-point centered text in its existing font."""
+    from reportlab.pdfbase import pdfmetrics
+
+    width = pdf.stringWidth(text, font, size)
+    ascent, descent = pdfmetrics.getAscentDescent(font, size)
+    return x - width / 2, y + descent, x + width / 2, y + ascent
+
+
+def _pdf_leader_box(leader):
+    """Reserve the actual painted 0.4-point guide strip for later text."""
+    return (
+        min(leader[0], leader[2]) - .2, min(leader[1], leader[3]) - .2,
+        max(leader[0], leader[2]) + .2, max(leader[1], leader[3]) + .2,
+    )
+
+
+def _equipment_pdf_label(pdf, text, size, anchor, body, reserved, plot_bounds, leaders):
+    """Keep a clear anchor or choose a bounded, nonobscuring vertical offset."""
+    anchor_x, anchor_y = anchor
+    step = size * 1.6
+    for attempt in range(13):
+        shift = (
+            0.0 if attempt == 0
+            else step * ((attempt + 1) // 2) * (1.0 if attempt % 2 else -1.0)
+        )
+        x, y = anchor_x, anchor_y + shift
+        bounds = _pdf_centered_text_box(pdf, x, y, text, "Helvetica-Bold", size)
+        if plot_bounds is not None and (
+            bounds[0] < plot_bounds[0] or bounds[1] < plot_bounds[1]
+            or bounds[2] > plot_bounds[2] or bounds[3] > plot_bounds[3]
+        ):
+            continue
+        if any(_boxes_overlap(bounds, other) for other in reserved) or any(
+            _boxes_overlap(bounds, other) for other in leaders
+        ):
+            continue
+        leader = None
+        # Text that still meets its own literal body retains its association
+        # and needs no line through the room's existing lettering. Separated
+        # text connects the nearest body edge to the text edge without crossing
+        # already reserved room, dimension or equipment glyph box.
+        if bounds[1] > body[3]:
+            leader = (x, body[3], x, bounds[1])
+        elif bounds[3] < body[1]:
+            leader = (x, body[1], x, bounds[3])
+        if leader is not None:
+            # Guide-guide coincidence remains allowed. Only glyph boxes block
+            # a new guide; its painted strip blocks all later glyph placement.
+            strip = _pdf_leader_box(leader)
+            if any(_boxes_overlap(strip, other) for other in reserved):
+                continue
+        return x, y, bounds, leader
+    raise ValueError("Equipment annotation density exceeds readable plan capacity")
+
+
 def _draw_equipment_pdf(
     pdf,
     point,
@@ -571,8 +623,11 @@ def _draw_equipment_pdf(
     *,
     show_clearance: bool = True,
     symbols: Mapping[str, str] | None = None,
-) -> None:
+    reserved: Sequence[tuple[float, float, float, float]] = (),
+    plot_bounds: tuple[float, float, float, float] | None = None,
+) -> list[tuple[float, float, float, float]]:
     specs = {item.id: item for item in equipment_specs}
+    occupied, annotations, leaders = list(reserved), [], []
     for placement in equipment.placements:
         spec = specs.get(placement.equipment_id)
         if spec is None:
@@ -596,13 +651,28 @@ def _draw_equipment_pdf(
             draw_equipment_symbol_pdf(pdf, point, symbols[spec.id], spec, placement)
         pdf.setFillColorRGB(0.05, 0.25, 0.65)
         font_size = max(3.5, min(7.0, placement.rect.height * (top_y - y) / max(clearance.height, 1.0) / 3.0))
+        label_x, label_y, label_box, leader = _equipment_pdf_label(
+            pdf, spec.id, font_size,
+            ((physical_x + physical_right) / 2, (physical_y + physical_top) / 2),
+            (physical_x, physical_y, physical_right, physical_top),
+            occupied, plot_bounds, leaders,
+        )
+        if leader is not None:
+            pdf.setLineWidth(.4)
+            pdf.line(*leader)
+            strip = _pdf_leader_box(leader)
+            leaders.append(strip)
+            annotations.append(strip)
         pdf.setFont("Helvetica-Bold", font_size)
         pdf.drawCentredString(
-            (physical_x + physical_right) / 2,
-            (physical_y + physical_top) / 2,
+            label_x,
+            label_y,
             spec.id,
         )
+        occupied.append(label_box)
+        annotations.append(label_box)
         pdf.setFillColorRGB(0.0, 0.0, 0.0)
+    return annotations
 
 
 def _draw_flows_pdf(

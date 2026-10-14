@@ -1,0 +1,499 @@
+{
+  "checkpoint": "QA.24",
+  "verified_on": "2026-10-14",
+  "status": "PASS",
+  "base_commit": "103088743b29eb2f71607ec73df83cca08e23bee",
+  "archive_sha256": "e9b18cb45d48d6a2a522add78c292b69a0fd2cadadfc427a6b350dbdc1cc3fa9",
+  "archive_overlay": [
+    "src/layout_configurator/export.py",
+    "tests/test_pdf_equipment_labels.py"
+  ],
+  "source_sha256": {
+    "src/layout_configurator/export.py": "b314d57fcb116dabbfaf12ab4e618bd271345945835a94e622bc00fb3ca50c50",
+    "tests/test_pdf_equipment_labels.py": "08b91b57773e0c439c6d6f1f95eb51e5dd51dfd70591d4376265ca6e696ae057"
+  },
+  "wheel_sha256": "2b4b960045edd4d6afa6427457087deaa244b6899cd5d568c9e2f5b319854241",
+  "old_export_module_sha256": "0acad0e1e16486b54b7cb138b52460066eb739f65a79c99b087f2d7d6a5ff3bb",
+  "imports": "regular installed wheels from foreign working directories",
+  "root_tests": [
+    {
+      "file": "tests/test_pdf_equipment_labels.py",
+      "tests": 6,
+      "seconds": 0.86,
+      "status": "PASS"
+    },
+    {
+      "file": "tests/test_exports.py",
+      "tests": 10,
+      "seconds": 3.06,
+      "status": "PASS"
+    },
+    {
+      "file": "tests/test_drawing_symbols.py",
+      "tests": 6,
+      "subtests": 10,
+      "seconds": 1.05,
+      "status": "PASS"
+    }
+  ],
+  "observed_red": {
+    "room_equipment_tests_failed": 2,
+    "tests_passed": 2,
+    "seconds": 0.95,
+    "leader_test_failed": 1,
+    "leader_seconds": 0.94,
+    "guide_caption_intersection_pt": 3.2374999999999545
+  },
+  "cases": [
+    {
+      "case": "clear",
+      "pdf_sha256": "a6e9a347b232d6348051afc78b9fb6184fc8d29ddfd40d6f5f073a0cd7c7e932",
+      "work_press_font_box_overlap_pt2": 1.0081575000001615,
+      "closed_painted_geometry_sha256": "35b847728c16258334a27edf4c937d3a76d75544b40949c499e4f2ee8c9145d1",
+      "fonts": [
+        "Helvetica",
+        "Helvetica-Bold"
+      ],
+      "role": "before",
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ]
+      },
+      "equipment": {
+        "text": "press",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          906.9317,
+          365.1378
+        ],
+        "bounds": [
+          906.9317,
+          363.6888,
+          925.6077,
+          370.16380000000004
+        ]
+      },
+      "neighbor": {
+        "text": "neighbor",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          351.0211,
+          539.3917
+        ],
+        "bounds": [
+          351.0211,
+          537.9427000000001,
+          380.9671,
+          544.4177
+        ]
+      }
+    },
+    {
+      "case": "coincident",
+      "pdf_sha256": "ad330d640ef03eee13adbbc45dcab68461a6b4934afec4075c8ff7c99fc9a11c",
+      "work_press_font_box_overlap_pt2": 120.9271000000007,
+      "closed_painted_geometry_sha256": "b87c9ab92ca62e09341fb4a5d7f9c84f3c74f78235bd01f9fbaed7a0e6c9d011",
+      "fonts": [
+        "Helvetica",
+        "Helvetica-Bold"
+      ],
+      "role": "before",
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ]
+      },
+      "equipment": {
+        "text": "press",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          861.0754,
+          365.1378
+        ],
+        "bounds": [
+          861.0754,
+          363.6888,
+          879.7514,
+          370.16380000000004
+        ]
+      },
+      "neighbor": {
+        "text": "neighbor",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          351.0211,
+          539.3917
+        ],
+        "bounds": [
+          351.0211,
+          537.9427000000001,
+          380.9671,
+          544.4177
+        ]
+      }
+    },
+    {
+      "case": "leader-order",
+      "pdf_sha256": "df68b18893628cf5a4661dc4e3bbdda4771c30e0e485e62702158cf1906197d3",
+      "work_press_font_box_overlap_pt2": 5.664740250000023,
+      "closed_painted_geometry_sha256": "3970c1fcada6602cd6a1dab5367588e004d7d252246e0b8682f00e11c791947f",
+      "fonts": [
+        "Helvetica",
+        "Helvetica-Bold"
+      ],
+      "role": "before",
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ]
+      },
+      "equipment": {
+        "text": "press",
+        "font": "Helvetica-Bold",
+        "size": 3.5,
+        "page": 0,
+        "baseline": [
+          904.4185,
+          371.6378
+        ],
+        "bounds": [
+          904.4185,
+          370.91330000000005,
+          913.7565,
+          374.1508
+        ]
+      },
+      "neighbor": {
+        "text": "neighbor",
+        "font": "Helvetica-Bold",
+        "size": 3.5,
+        "page": 0,
+        "baseline": [
+          901.601,
+          373.9378
+        ],
+        "bounds": [
+          901.601,
+          373.2133,
+          916.574,
+          376.45079999999996
+        ]
+      }
+    },
+    {
+      "case": "clear",
+      "pdf_sha256": "7819b6cbc547585f72992e09adb555ae804f51043e7ee30640d8e50b3f33dcee",
+      "work_press_font_box_overlap_pt2": 0.0,
+      "closed_painted_geometry_sha256": "35b847728c16258334a27edf4c937d3a76d75544b40949c499e4f2ee8c9145d1",
+      "fonts": [
+        "Helvetica",
+        "Helvetica-Bold"
+      ],
+      "role": "after",
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ]
+      },
+      "equipment": {
+        "text": "press",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          906.9317,
+          376.3378
+        ],
+        "bounds": [
+          906.9317,
+          374.8888,
+          925.6077,
+          381.3638
+        ]
+      },
+      "neighbor": {
+        "text": "neighbor",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          351.0211,
+          539.3917
+        ],
+        "bounds": [
+          351.0211,
+          537.9427000000001,
+          380.9671,
+          544.4177
+        ]
+      }
+    },
+    {
+      "case": "coincident",
+      "pdf_sha256": "b849624fb29ab0ad013ff1e3e1796593940c9f46fb92a9326201e8260e843ea1",
+      "work_press_font_box_overlap_pt2": 0.0,
+      "closed_painted_geometry_sha256": "b87c9ab92ca62e09341fb4a5d7f9c84f3c74f78235bd01f9fbaed7a0e6c9d011",
+      "fonts": [
+        "Helvetica",
+        "Helvetica-Bold"
+      ],
+      "role": "after",
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ]
+      },
+      "equipment": {
+        "text": "press",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          861.0754,
+          376.3378
+        ],
+        "bounds": [
+          861.0754,
+          374.8888,
+          879.7514,
+          381.3638
+        ]
+      },
+      "neighbor": {
+        "text": "neighbor",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          351.0211,
+          539.3917
+        ],
+        "bounds": [
+          351.0211,
+          537.9427000000001,
+          380.9671,
+          544.4177
+        ]
+      }
+    },
+    {
+      "case": "flow",
+      "pdf_sha256": "ac950ad357b374bdfad552c8bdabcaf3f9d5fc6ba5aa2a0498f58503caa59613",
+      "work_press_font_box_overlap_pt2": 0.0,
+      "closed_painted_geometry_sha256": "35b847728c16258334a27edf4c937d3a76d75544b40949c499e4f2ee8c9145d1",
+      "fonts": [
+        "Helvetica",
+        "Helvetica-Bold"
+      ],
+      "role": "after",
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ]
+      },
+      "equipment": {
+        "text": "press",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          906.9317,
+          376.3378
+        ],
+        "bounds": [
+          906.9317,
+          374.8888,
+          925.6077,
+          381.3638
+        ]
+      },
+      "neighbor": {
+        "text": "neighbor",
+        "font": "Helvetica-Bold",
+        "size": 7.0,
+        "page": 0,
+        "baseline": [
+          351.0211,
+          539.3917
+        ],
+        "bounds": [
+          351.0211,
+          537.9427000000001,
+          380.9671,
+          544.4177
+        ]
+      },
+      "flow": {
+        "text": "FLOW annotation_fixture [unspecified] / 20 mm",
+        "font": "Helvetica",
+        "size": 5.0,
+        "page": 0,
+        "baseline": [
+          901.9318,
+          384.3378
+        ],
+        "bounds": [
+          901.9318,
+          383.3028,
+          1006.4218,
+          387.9278
+        ]
+      }
+    },
+    {
+      "case": "leader-order",
+      "pdf_sha256": "0ab70c4f7bb8a1d24bfdb1987cec5d46fb3c52bcf2f17eed5ed892b4a3f57a47",
+      "work_press_font_box_overlap_pt2": 0.0,
+      "closed_painted_geometry_sha256": "3970c1fcada6602cd6a1dab5367588e004d7d252246e0b8682f00e11c791947f",
+      "fonts": [
+        "Helvetica",
+        "Helvetica-Bold"
+      ],
+      "role": "after",
+      "room": {
+        "text": "work (36.0 m2)",
+        "font": "Helvetica",
+        "size": 11.0,
+        "page": 0,
+        "baseline": [
+          833.7394,
+          365.1378
+        ],
+        "bounds": [
+          833.7394,
+          362.86080000000004,
+          907.0874,
+          373.03580000000005
+        ]
+      },
+      "equipment": {
+        "text": "press",
+        "font": "Helvetica-Bold",
+        "size": 3.5,
+        "page": 0,
+        "baseline": [
+          904.4185,
+          377.2378
+        ],
+        "bounds": [
+          904.4185,
+          376.5133,
+          913.7565,
+          379.75079999999997
+        ]
+      },
+      "neighbor": {
+        "text": "neighbor",
+        "font": "Helvetica-Bold",
+        "size": 3.5,
+        "page": 0,
+        "baseline": [
+          901.601,
+          357.1378
+        ],
+        "bounds": [
+          901.601,
+          356.41330000000005,
+          916.574,
+          359.6508
+        ]
+      },
+      "leader_count": 2,
+      "guide_glyph_intersection_pt": 0.0
+    }
+  ],
+  "cp_calls": 0,
+  "source_models_unchanged": true,
+  "public_exporter_signatures_unchanged": true,
+  "unchanged_geometry_scope": "Actual closed painted walls, bodies and clearances in all three before/after witnesses",
+  "unchanged_caption_scope": "Original room/font inventory; already-clear neighbor anchor in clear/coincident witnesses",
+  "protected_existing_destination_on_unplaceable_identifier": true,
+  "rendered_pages": 7,
+  "all_pages_contact_inspected": true,
+  "four_after_pages_inspected_full": true,
+  "leader_detail_300dpi_inspected": true,
+  "leader_detail_sha256": "9beff5b3a77c29c42a1c1b6434e400234569ce16034a235c674159463c7f7cfd",
+  "source_line_endings": "Final LF source/test bytes equal the staged Git bytes and final installed wheel witness",
+  "final_raster_agreement": "All seven final pages and the detail exactly match the inspected PNG bytes before LF normalization",
+  "rendering_note": "Poppler reports Symbol/ArialUnicode fallback warnings; actual PDF font inventory is Helvetica/Helvetica-Bold only",
+  "full_suite_run": false,
+  "background_execution": false,
+  "scope": "Bounded rectangular main-PDF equipment annotation repair; no general dense annotation or engineering acceptance",
+  "retained_outputs": "output/pdf/equipment-labels-qa24/",
+  "local_proof": "out/checkpoints/pdf-equipment-labels-qa24/"
+}
